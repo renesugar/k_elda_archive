@@ -1,4 +1,4 @@
 package version
 
 // Version is the Quilt version number.
-const Version = "master"
+const Version = "0.0.0"
