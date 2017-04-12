@@ -1,8 +1,8 @@
 Quilt Change Log
 ================
 
-Release 0.0.0
--------------
+Release 0.0
+-----------
 
 We are proud to announce the initial release of [Quilt](http://quilt.io)!  This
 release provides an alpha quality implementation which can deploy a whole [host
