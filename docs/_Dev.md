@@ -86,16 +86,22 @@ started.
 
 Checkout the source code:
 
-    git clone https://github.com/quilt/quilt $GOPATH/src/github.com/quilt/quilt
+```console
+git clone https://github.com/quilt/quilt $GOPATH/src/github.com/quilt/quilt
+```
 
 Once this is done you can install the AWS API and various other dependencies
 automatically:
 
-    go get github.com/quilt/quilt/...
+```console
+go get github.com/quilt/quilt/...
+```
 
 And finally to build the project run:
 
-    go install github.com/quilt/quilt
+```console
+go install github.com/quilt/quilt
+```
 
 Or alternatively just "go install" if you're in the repo.
 
@@ -109,18 +115,24 @@ If you change any of the proto files, you'll need to regenerate the protobuf
 code. We currently use protoc v3. On a Mac with homebrew, you can install protoc v3
 using:
 
-    brew install --devel protobuf
+```console
+brew install --devel protobuf
+```
 
 On other operating systems you can directly download the protoc binary
 [here](https://github.com/google/protobuf/releases), and then add it to your `$PATH`.
 
 You'll also need to install protobuf go bindings:
 
-    go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+```console
+go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+```
 
 To generate the protobufs simply call:
 
-    make generate
+```console
+make generate
+```
 
 ## Dependencies
 We use [govendor](https://github.com/kardianos/govendor) for dependency

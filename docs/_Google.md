@@ -4,7 +4,7 @@ Quilt supports the `Google` provider for booting instances on the Google Compute
 Engine. For example, to deploy a GCE machine in the `us-east1-b` zone of size
 `n1-standard-1` as a `Worker`:
 
-```
+```javascript
 deployment.deploy(new Machine({
   provider: "Google",
   region: "us-east1-b",

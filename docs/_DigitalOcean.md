@@ -3,7 +3,7 @@
 To deploy a DigitalOcean droplet in the `sfo1` zone of size
 `512mb` as a `Worker`:
 
-```
+```javascript
 deployment.deploy(new Machine({
   provider: "DigitalOcean",
   region: "sfo1",
@@ -23,7 +23,7 @@ Quilt daemon.
 ## Floating IPs
 To assign a floating IP to a machine, simply specify the IP as an attribute. For example,
 
-```
+```javascript
 deployment.deploy(new Machine({
   provider: "DigitalOcean",
   region: "sfo1",

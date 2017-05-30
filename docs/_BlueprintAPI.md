@@ -1,5 +1,6 @@
-# Quilt.js
-Documentation for quilt.js
+# Quilt.js API Documentation
+This section documents use of the Quilt JavaScript library, which is used
+to write blueprints.
 
 ## Container
 The Container object represents a container to be deployed.
@@ -17,17 +18,20 @@ images in the cluster. When specifying a `Dockerfile` to be built, an `Image`
 object must be passed to the `Container` constructor.
 
 For example,
-```
+
+```javascript
 new Container(new Image("my-image-name",
   "FROM nginx\n" +
   "RUN cd /web_root && git clone github.com/my/web_repo"
 ))
 ```
+
 would deploy an image called `my-image-name` built on top of the `nginx` image,
 with the `github.com/my/web_repo` repository cloned into `/web_root`.
 
 If the Dockerfile is saved as a file, it can simply be `read` in:
-```
+
+```javascript
 new Container(new Image("my-image-name", read("./Dockerfile")))
 ```
 
@@ -47,18 +51,21 @@ error is thrown.
 before the container starts. Both the key and value are `string`s.
 
 For example,
-```
+
+```javascript
 {
   "/etc/myconf": "foo"
 }
 ```
+
 would create a file at `/etc/myconf` containing the text `foo`.
 
-```
+```javascript
 new Container("haproxy").withFiles({
   "/etc/myconf": "foo"
 });
 ```
+
 would create a `haproxy` instance with a text file `/etc/myconf` containing `foo`.
 
 If the files change after the container boots, Quilt does not restart the container.
@@ -85,6 +92,7 @@ vetting process.
 The Machine object represents a machine to be deployed.
 
 Its attributes are:
+
 - `role` *string*: The Quilt role the machine will run as. *required*
     - Master
     - Worker
@@ -118,9 +126,11 @@ read() reads the contents of a file into a string.  The file path is passed in
 as an argument to the function. For example, in the below example, `contents`
 will contain a string representing the contents of the file located at
 `/path/to/file.txt`.
+
 ```javascript
 var contents = read("/path/to/file.txt")
 ```
+
 #### readDir()
 
 readDir() lists the contents of a directory.  It takes the file path of a
