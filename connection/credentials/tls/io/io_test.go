@@ -53,6 +53,28 @@ func TestWriteAndReadMinionCerts(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestReadDaemonCerts(t *testing.T) {
+	util.AppFs = afero.NewMemMapFs()
+
+	ca, err := rsa.NewCertificateAuthority()
+	assert.NoError(t, err)
+
+	signed, err := rsa.NewSigned(ca, net.IP{0, 0, 0, 0})
+	assert.NoError(t, err)
+
+	testDir := "/tls"
+	util.Mkdir(testDir, 0755)
+	for _, f := range DaemonFiles(testDir, ca, signed) {
+		util.WriteFile(f.Path, []byte(f.Content), f.Mode)
+	}
+
+	_, err = ReadCredentials("/tls")
+	assert.NoError(t, err)
+
+	_, err = ReadCA("/tls")
+	assert.NoError(t, err)
+}
+
 func TestReadCAErrors(t *testing.T) {
 	testDir := "/tls"
 

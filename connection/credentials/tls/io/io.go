@@ -72,6 +72,12 @@ func MinionFiles(dir string, ca, signed rsa.KeyPair) []File {
 	}
 }
 
+// DaemonFiles defines how files should be written to disk for use by the daemon.
+func DaemonFiles(dir string, ca, signed rsa.KeyPair) []File {
+	return append(MinionFiles(dir, ca, signed),
+		File{Path: caKeyPath(dir), Content: ca.PrivateKeyString(), Mode: 0600})
+}
+
 // caCertPath defines where to write the certificate for the certificate authority.
 func caCertPath(dir string) string {
 	return filepath.Join(dir, caCertFilename)

@@ -81,7 +81,8 @@ func (dCmd *Daemon) Run() int {
 
 	creds, err := credentials.Read(dCmd.tlsDir)
 	if err != nil {
-		log.WithError(err).Error("Failed to parse credentials")
+		log.WithError(err).Error("Failed to parse credentials. " +
+			"Did you run `quilt setup-tls` to generate TLS credentials?")
 		return 1
 	}
 
