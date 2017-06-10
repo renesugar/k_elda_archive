@@ -4,9 +4,8 @@ import (
 	"net"
 	"time"
 
-	"google.golang.org/grpc"
-
 	log "github.com/Sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 // The timeout for clients to connect to servers.

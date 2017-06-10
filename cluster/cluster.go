@@ -55,6 +55,11 @@ type cluster struct {
 	namespace string
 	conn      db.Conn
 	providers map[launchLoc]provider
+
+	// The directory from which minions will read their TLS certificates when
+	// they boot. This should match the location to which the daemon is
+	// installing certificates.
+	minionTLSDir string
 }
 
 var myIP = util.MyIP
@@ -62,12 +67,12 @@ var sleep = time.Sleep
 
 // Run continually checks 'conn' for cluster changes and recreates the cluster as
 // needed.
-func Run(conn db.Conn, creds connection.Credentials) {
+func Run(conn db.Conn, creds connection.Credentials, minionTLSDir string) {
 	go updateMachineStatuses(conn)
 	var clst *cluster
 	for range conn.TriggerTick(30, db.ClusterTable, db.MachineTable, db.ACLTable).C {
 		c.Inc("Run")
-		clst = updateCluster(conn, clst, creds)
+		clst = updateCluster(conn, clst, creds, minionTLSDir)
 
 		// Somewhat of a crude rate-limit of once every five seconds to avoid
 		// stressing out the cloud providers with too many API calls.
@@ -75,14 +80,15 @@ func Run(conn db.Conn, creds connection.Credentials) {
 	}
 }
 
-func updateCluster(conn db.Conn, clst *cluster, creds connection.Credentials) *cluster {
+func updateCluster(conn db.Conn, clst *cluster, creds connection.Credentials,
+	minionTLSDir string) *cluster {
 	namespace, err := conn.GetClusterNamespace()
 	if err != nil {
 		return clst
 	}
 
 	if clst == nil || clst.namespace != namespace {
-		clst = newCluster(conn, namespace)
+		clst = newCluster(conn, namespace, minionTLSDir)
 		clst.runOnce()
 		foreman.Init(clst.conn, creds)
 	}
@@ -93,11 +99,12 @@ func updateCluster(conn db.Conn, clst *cluster, creds connection.Credentials) *c
 	return clst
 }
 
-func newCluster(conn db.Conn, namespace string) *cluster {
+func newCluster(conn db.Conn, namespace string, minionTLSDir string) *cluster {
 	clst := &cluster{
-		namespace: namespace,
-		conn:      conn,
-		providers: make(map[launchLoc]provider),
+		namespace:    namespace,
+		conn:         conn,
+		providers:    make(map[launchLoc]provider),
+		minionTLSDir: minionTLSDir,
 	}
 
 	for _, p := range allProviders {
@@ -160,7 +167,8 @@ func (clst cluster) boot(machines []db.Machine) {
 				CloudCfgOpts: cloudcfg.Options{
 					SSHKeys: m.SSHKeys,
 					MinionOpts: cloudcfg.MinionOptions{
-						Role: m.Role,
+						Role:   m.Role,
+						TLSDir: clst.minionTLSDir,
 					},
 				},
 			},

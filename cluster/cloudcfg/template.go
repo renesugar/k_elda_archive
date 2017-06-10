@@ -66,7 +66,7 @@ initialize_minion() {
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt \
 	-v /home/quilt/.ssh:/home/quilt/.ssh:rw \
-	-v /run/docker:/run/docker:rw {{.QuiltImage}} \
+	-v /run/docker:/run/docker:rw {{.DockerOpts}} {{.QuiltImage}} \
 	quilt -l {{.LogLevel}} minion {{.MinionOpts}}
 	Restart=on-failure
 

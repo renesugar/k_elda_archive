@@ -19,6 +19,7 @@ import (
 	"github.com/quilt/quilt/minion/registry"
 	"github.com/quilt/quilt/minion/scheduler"
 	"github.com/quilt/quilt/minion/supervisor"
+	"github.com/quilt/quilt/quiltctl/command/credentials"
 	"github.com/quilt/quilt/util"
 
 	log "github.com/Sirupsen/logrus"
@@ -27,8 +28,7 @@ import (
 var c = counter.New("Minion")
 
 // Run blocks executing the minion.
-func Run(role db.Role, inboundPubIntf, outboundPubIntf string,
-	creds connection.Credentials) {
+func Run(role db.Role, inboundPubIntf, outboundPubIntf, tlsDir string) {
 	// XXX Uncomment the following line to run the profiler
 	//runProfiler(5 * time.Minute)
 
@@ -58,13 +58,32 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string,
 
 	supervisor.Run(conn, dk, role)
 
-	go minionServerRun(conn, creds)
 	go scheduler.Run(conn, dk)
 	go network.Run(conn, inboundPubIntf, outboundPubIntf)
 	go registry.Run(conn, dk)
 	go etcd.Run(conn)
 	go syncAuthorizedKeys(conn)
 
+	// Block until the credentials are in place on the local filesystem. We
+	// can't simply fail if the first read fails because the daemon might still
+	// be generating and copying keys onto the local filesystem. The key
+	// installation is handled by SyncCredentials in cluster/credentials.go.
+	var creds connection.Credentials
+	err := util.BackoffWaitFor(func() bool {
+		var err error
+		creds, err = credentials.Read(tlsDir)
+		if err != nil {
+			log.WithError(err).Debug("TLS keys not ready yet")
+			return false
+		}
+		return true
+	}, 30*time.Second, 1*time.Hour)
+	if err != nil {
+		log.Error("Failed to read minion credentials")
+		return
+	}
+
+	go minionServerRun(conn, creds)
 	go apiServer.Run(conn, fmt.Sprintf("tcp://0.0.0.0:%d", api.DefaultRemotePort),
 		false, creds)
 

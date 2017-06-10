@@ -27,6 +27,14 @@ func Ubuntu(opts Options) string {
 
 	img := fmt.Sprintf("%s:%s", quiltImage, ver)
 
+	dockerOpts := ""
+	if opts.MinionOpts.TLSDir != "" {
+		// Mount the TLSDir as a read-only host volume. This is necessary for
+		// the minion container to access the TLS certificates copied by
+		// the daemon onto the host machine.
+		dockerOpts = fmt.Sprintf("-v %[1]s:%[1]s:ro", opts.MinionOpts.TLSDir)
+	}
+
 	var cloudConfigBytes bytes.Buffer
 	err := t.Execute(&cloudConfigBytes, struct {
 		QuiltImage    string
@@ -34,12 +42,14 @@ func Ubuntu(opts Options) string {
 		SSHKeys       string
 		LogLevel      string
 		MinionOpts    string
+		DockerOpts    string
 	}{
 		QuiltImage:    img,
 		UbuntuVersion: "xenial",
 		SSHKeys:       strings.Join(opts.SSHKeys, "\n"),
 		LogLevel:      log.GetLevel().String(),
 		MinionOpts:    opts.MinionOpts.String(),
+		DockerOpts:    dockerOpts,
 	})
 	if err != nil {
 		panic(err)
@@ -59,6 +69,7 @@ type MinionOptions struct {
 	Role            db.Role
 	InboundPubIntf  string
 	OutboundPubIntf string
+	TLSDir          string
 }
 
 func (opts MinionOptions) String() string {
@@ -66,6 +77,7 @@ func (opts MinionOptions) String() string {
 		"role":              string(opts.Role),
 		"inbound-pub-intf":  opts.InboundPubIntf,
 		"outbound-pub-intf": opts.OutboundPubIntf,
+		"tls-dir":           opts.TLSDir,
 	}
 
 	// Sort the option keys so that the command line arguments are consistently

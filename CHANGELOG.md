@@ -28,6 +28,7 @@ text printed to stdout would break the deployment object.
 connected, and reconnecting).
 - Allow an admin SSH key access to all machines deployed by the daemon. The key is
 specified using the `admin-ssh-private-key` flag to the daemon.
+- Support for TLS-encrypted communication between Quilt clients and servers.
 
 Release 0.1.0
 -------------

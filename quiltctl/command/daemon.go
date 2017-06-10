@@ -9,9 +9,11 @@ import (
 
 	"github.com/quilt/quilt/api/server"
 	"github.com/quilt/quilt/cluster"
-	"github.com/quilt/quilt/connection/credentials"
+	"github.com/quilt/quilt/connection/credentials/tls"
+	tlsIO "github.com/quilt/quilt/connection/credentials/tls/io"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/engine"
+	"github.com/quilt/quilt/quiltctl/command/credentials"
 	"github.com/quilt/quilt/util"
 	"github.com/quilt/quilt/version"
 
@@ -77,10 +79,35 @@ func (dCmd *Daemon) Run() int {
 		}
 	}
 
+	creds, err := credentials.Read(dCmd.tlsDir)
+	if err != nil {
+		log.WithError(err).Error("Failed to parse credentials")
+		return 1
+	}
+
 	conn := db.New()
 	go engine.Run(conn, getPublicKey(sshKey))
-	go server.Run(conn, dCmd.host, true, credentials.Insecure{})
-	cluster.Run(conn, credentials.Insecure{})
+	go server.Run(conn, dCmd.host, true, creds)
+
+	var minionTLSDir string
+	if _, isTLS := creds.(tls.TLS); isTLS {
+		minionTLSDir = "/home/quilt/.quilt/tls"
+		if sshKey == nil {
+			log.Error("A SSH private key must be supplied to " +
+				"distribute TLS certificates")
+			return 1
+		}
+
+		ca, err := tlsIO.ReadCA(dCmd.tlsDir)
+		if err != nil {
+			log.WithError(err).Error("Failed to parse certificate authority")
+			return 1
+		}
+
+		go cluster.SyncCredentials(conn, minionTLSDir, sshKey, ca)
+	}
+
+	cluster.Run(conn, creds, minionTLSDir)
 	return 0
 }
 

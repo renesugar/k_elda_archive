@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion"
 	"github.com/quilt/quilt/util"
@@ -21,6 +20,8 @@ import (
 type Minion struct {
 	role                            string
 	inboundPubIntf, outboundPubIntf string
+
+	connectionFlags
 }
 
 // NewMinionCommand creates a new Minion command instance.
@@ -34,6 +35,7 @@ var minionExplanation = "`role` defines the role of the quilt minion to run, " +
 
 // InstallFlags sets up parsing for command line flags.
 func (mCmd *Minion) InstallFlags(flags *flag.FlagSet) {
+	mCmd.connectionFlags.InstallFlags(flags)
 	flags.StringVar(&mCmd.role, "role", "", "the role of this quilt minion")
 	flags.StringVar(&mCmd.inboundPubIntf, "inbound-pub-intf", "",
 		"the interface on which to allow inbound traffic")
@@ -63,6 +65,7 @@ func (mCmd *Minion) AfterRun() error {
 // Run starts the minion.
 func (mCmd *Minion) Run() int {
 	log.WithField("version", version.Version).Info("Starting Quilt minion")
+
 	if err := mCmd.run(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
@@ -76,7 +79,6 @@ func (mCmd *Minion) run() error {
 		return errors.New("no or improper role specified")
 	}
 
-	minion.Run(role, mCmd.inboundPubIntf, mCmd.outboundPubIntf,
-		credentials.Insecure{})
+	minion.Run(role, mCmd.inboundPubIntf, mCmd.outboundPubIntf, mCmd.tlsDir)
 	return nil
 }

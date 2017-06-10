@@ -13,6 +13,7 @@ import (
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/api/pb"
 	"github.com/quilt/quilt/connection"
+	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/stitch"
@@ -51,6 +52,12 @@ func Run(conn db.Conn, listenAddr string, runningOnDaemon bool,
 	proto, addr, err := api.ParseListenAddress(listenAddr)
 	if err != nil {
 		return err
+	}
+
+	// Don't enforce TLS on local connections. This way, local connections to the
+	// daemon (e.g. when running a spec), don't need to provide credentials.
+	if proto == "unix" {
+		creds = credentials.Insecure{}
 	}
 
 	sock, s := connection.Server(proto, addr, creds.ServerOpts())

@@ -107,7 +107,7 @@ func (p *fakeProvider) UpdateFloatingIPs(machines []machine.Machine) error {
 func newTestCluster(namespace string) *cluster {
 	sleep = func(t time.Duration) {}
 	mock()
-	return newCluster(db.New(), namespace)
+	return newCluster(db.New(), namespace, "")
 }
 
 func TestPanicBadProvider(t *testing.T) {
@@ -119,7 +119,7 @@ func TestPanicBadProvider(t *testing.T) {
 	}()
 	allProviders = []db.Provider{FakeAmazon}
 	conn := db.New()
-	newCluster(conn, "test")
+	newCluster(conn, "test", "")
 }
 
 func TestSyncDB(t *testing.T) {
@@ -609,6 +609,40 @@ func TestSync(t *testing.T) {
 	})
 }
 
+func TestBootTLSDir(t *testing.T) {
+	t.Parallel()
+
+	prvdr := fakeProvider{
+		machines: make(map[string]machine.Machine),
+		roles:    make(map[string]db.Role),
+	}
+
+	testTLSDir := "tlsdir"
+	clst := cluster{
+		conn:         db.New(),
+		minionTLSDir: testTLSDir,
+		providers: map[launchLoc]provider{
+			{FakeAmazon, testRegion}: &prvdr,
+		},
+	}
+	clst.boot([]db.Machine{
+		{
+			Provider: FakeAmazon,
+			Region:   testRegion,
+		},
+	})
+
+	assert.Equal(t, []machine.Machine{
+		{
+			CloudCfgOpts: cloudcfg.Options{
+				MinionOpts: cloudcfg.MinionOptions{
+					TLSDir: testTLSDir,
+				},
+			},
+		},
+	}, prvdr.bootRequests)
+}
+
 func TestACLs(t *testing.T) {
 	myIP = func() (string, error) {
 		return "5.6.7.8", nil
@@ -662,11 +696,11 @@ func TestACLs(t *testing.T) {
 func TestUpdateCluster(t *testing.T) {
 	conn := db.New()
 
-	clst := updateCluster(conn, nil, nil)
+	clst := updateCluster(conn, nil, nil, "")
 	assert.Nil(t, clst)
 
 	setNamespace(conn, "ns1")
-	clst = updateCluster(conn, clst, nil)
+	clst = updateCluster(conn, clst, nil, "")
 	assert.NotNil(t, clst)
 	assert.Equal(t, "ns1", clst.namespace)
 
@@ -688,7 +722,7 @@ func TestUpdateCluster(t *testing.T) {
 	oldClst := clst
 	oldAmzn := amzn
 
-	clst = updateCluster(conn, clst, nil)
+	clst = updateCluster(conn, clst, nil, "")
 	assert.NotNil(t, clst)
 
 	// Pointers shouldn't have changed
@@ -713,7 +747,7 @@ func TestUpdateCluster(t *testing.T) {
 	oldClst = clst
 	oldAmzn = amzn
 	setNamespace(conn, "ns2")
-	clst = updateCluster(conn, clst, nil)
+	clst = updateCluster(conn, clst, nil, "")
 	assert.NotNil(t, clst)
 
 	// Pointers should have changed
