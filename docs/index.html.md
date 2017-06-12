@@ -10,7 +10,6 @@ includes:
   - DigitalOcean
   - BlueprintWritersGuide
   - BlueprintAPI
-  - Contributing
   - Dev
 
 search: true
