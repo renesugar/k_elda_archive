@@ -6,8 +6,6 @@ toc_footers:
 
 includes:
   - GettingStarted
-  - Google
-  - DigitalOcean
   - BlueprintWritersGuide
   - BlueprintAPI
   - Dev
