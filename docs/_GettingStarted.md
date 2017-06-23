@@ -1,55 +1,85 @@
 # Getting Started
-This section explains how to install Quilt, and also serves as a
-brief, hands-on introduction to some Quilt basics.
 
-## Install Node.js
-Quilt blueprints are written in Node.js. Only Node version v7.10.0 has been
-tested.
+## How Quilt Works
 
-Installation instructions for various operating systems are available
-[here](https://nodejs.org/en/download/).
+This section describes what happens when you run an application using Quilt;
+feel free to skip this section and head straight to [Installing
+Quilt](#installing-quilt) if you'd like to quickly get up and running with
+Quilt.
 
-## Install Go
-Quilt supports Go version 1.5 or later.
+The key idea behind Quilt is a blueprint: a blueprint describes every aspect of
+running a particular application in the cloud, and is written in JavaScript.
+Quilt blueprints exist for many common applications.  Using Quilt, you can run
+one of those applications by executing just two commands on your laptop:
 
-Find Go using your package manager or on the [Golang website](https://golang.org/doc/install).
+![Quilt Diagram](Quilt_Diagram.png)
 
-### Setup GOPATH
-We recommend reading the overview to Go workplaces [here](https://golang.org/doc/code.html).
+The first command,`quilt daemon`, starts a long-running process that handles
+launching machines in the cloud (on your choice of cloud provider), configuring
+those machines, and managing them (e.g., detecting when they've failed so need
+to be re-started).  The `quilt daemon` command starts the daemon, but doesn't
+yet launch any machines. To launch an application, call `quilt run` with a
+JavaScript blueprint (in this example, the blueprint is called `my_app.js`).
+The `run` command passes the parsed blueprint to the daemon, and the daemon
+sets up the infrastructure described in the blueprint.
 
-Before installing Quilt, you'll need to set up your GOPATH. Assuming the root of
-your Go workspace will be `$HOME/gowork`, execute the following `export` commands in
-your terminal to set up your `GOPATH`.
+Quilt runs applications using Docker containers. You can think of a container
+as being like a process: as a coarse rule-of-thumb, anything that you'd launch
+as its own process should have it's own container with Quilt.  While containers 
+are lightweight (like processes), they each have their own environment
+(including their own filesystem and their own software installed) and are
+isolated from other containers running on the same machine (unlike processes). 
+If you've never used containers before, it may be helpful to review the
+[Docker getting started guide](https://docs.docker.com/get-started).
+
+In this example, `my_app.js` described an application made up of three
+containers, and it described a cluster with one master machine and two worker
+machines.  The master is responsible for managing the worker machines, and no
+application containers run on the master.  The application containers are run on
+the workers; in this case, Quilt ran two containers on one worker machine and
+one container on the other.
+
+## Installing Quilt
+
+Quilt relies on Node.js.  Start by downloading Node.js from the [Node.js
+download page](https://nodejs.org/en/download/).  We have only tested Quilt with
+Node version v7.10.0 and above.
+
+Next, use Node.js's package manager, `npm`, to install Quilt:
 
 ```console
-export GOPATH="$HOME/gowork"
-export PATH="$PATH:$GOPATH/bin"
+$ npm install -g @quilt/install
 ```
 
-It would be a good idea to add these commands to your `.bashrc` so that they do
-not have to be run again.
+To check that this worked, try launching the Quilt daemon.  This is a
+long-running process, so it will not return (you'll need to use a new shell
+window to edit and run blueprints).
 
-## Download and Install Quilt
-Clone the repository into your Go workspace: `go get github.com/quilt/quilt`.
-
-This command also automatically installs Quilt. If the installation was
-successful, then the `quilt` command should execute successfully in your shell.
+```console
+$ quilt daemon
+```
 
 ## Configure A Cloud Provider
 
-Quilt currently supports Amazon EC2, Digital Ocean, and Google Compute
-Engine; support for running locally with Vagrant is currently experimental.
-Refer to the relevant section below to setup the cloud provider that you
-would like to use.  Contact us if you're interested in a different cloud
-provider.
+In order to run any applications with Quilt, you'll need to setup a cloud
+provider that Quilt will use to launch machines.  Quilt currently supports
+Amazon EC2, Digital Ocean, and Google Compute Engine; support for running
+locally with Vagrant is currently experimental.  Contact us if you're interested
+in a cloud provider that we don't yet support.
+
+Below, we describe how to setup Amazon EC2; refer to the
+[Cloud Providers](#cloud-provider-configuration) section if you'd like to setup
+a different cloud provider.
 
 ### Amazon EC2
 
 For Amazon EC2, you'll first need to create an account with [Amazon Web
-Services](https://aws.amazon.com/ec2/) and then find your
-[access credentials](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-set-up.html#cli-signup).
-That done, you simply need to populate the file `~/.aws/credentials`, with your
-Amazon credentials:
+Services](https://aws.amazon.com/ec2/) and then find your access credentials
+from the
+[Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential)
+page in the AWS Management Console.
+Once you've done that, populate the file `~/.aws/credentials` with your Amazon
+credentials:
 
 ```conf
 [default]
@@ -57,207 +87,152 @@ aws_access_key_id = <YOUR_ID>
 aws_secret_access_key = <YOUR_SECRET_KEY>
 ```
 
-### DigitalOcean
+The file needs to appear exactly as above (including the `[default]` at the
+top), except with `<YOUR_ID>` and `<YOUR_SECRET_KEY>` filled in appropriately.
 
-To deploy a DigitalOcean droplet in the `sfo1` zone of size
-`512mb` as a `Worker`:
+## Running Your First Quilt Blueprint
 
-```javascript
-deployment.deploy(new Machine({
-  provider: "DigitalOcean",
-  region: "sfo1",
-  size: "512mb",
-  role: "Worker"
-}));
-```
-
-#### Setup
-
-1. Create a new key [here](https://cloud.digitalocean.com/settings/api/tokens).
-Both read and write permissions are required.
-
-2. Save the key in `~/.digitalocean/key` on the machine that will be running the
-Quilt daemon.
-
-#### Floating IPs
-To assign a floating IP to a machine, simply specify the IP as an attribute. For example,
-
-```javascript
-deployment.deploy(new Machine({
-  provider: "DigitalOcean",
-  region: "sfo1",
-  size: "512mb",
-  floatingIp: "8.8.8.8",
-  role: "Worker"
-}));
-```
-
-Creating a floating IP is slightly unintuitive. Unless there are already
-droplets running, the floating IP tab under "Networking" doesn't allow users to
-create floating IPs. However, [this
-link](https://cloud.digitalocean.com/networking/floating_ips/datacenter) can be
-used to reserve IPs for a specific datacenter. If that link breaks, floating
-IPs can always be created by creating a droplet, _then_ assigning it a new
-floating IP. The floating IP will still be reserved for use after
-disassociating it.
-
-Note that DigitalOcean charges a fee of $.0006/hr for floating IPs that have
-been reserved, but are not associated with a droplet.
-
-### Google Compute Engine
-
-Quilt supports the `Google` provider for booting instances on the Google Compute
-Engine. For example, to deploy a GCE machine in the `us-east1-b` zone of size
-`n1-standard-1` as a `Worker`:
-
-```javascript
-deployment.deploy(new Machine({
-  provider: "Google",
-  region: "us-east1-b",
-  size: "n1-standard-1",
-  role: "Worker"
-}));
-```
-
-#### Setup
-
-1. Create a Google Cloud Platform Project:
-All instances are booted under a Cloud Platform project. To setup a project for
-use with Quilt, go to the [console page](http://console.cloud.google.com), then
-click the project dropdown at the top of page, and hit the plus icon. Pick a
-name, and create your project.
-
-2. Enable the Compute API:
-Select your newly created project from the project selector at the top of the
-[console page](http://console.cloud.google.com), and then select `API Manager
--> Library` from the navbar on the left. Search for and enable the `Google
-Compute Engine API`.
-
-3. Save the Credentials File:
-Go to `Credentials` on the left navbar (under `API Manager`), and create
-credentials for a `Service account key`. Create a new service account with the
-`Project -> Editor` role, and select the JSON output option. Copy the
-downloaded file to `~/.gce/quilt.json` on the machine from which you will be
-running the Quilt daemon.
-
-That's it! You should now be able to boot machines on the `Google` provider.
-
-## Your First Quilt-managed Infrastructure
-We suggest you read
-[`quilt/nginx/main.js`](https://github.com/quilt/nginx/blob/master/main.js)
-to understand the infrastructure defined by this Quilt.js blueprint.
-
-### Acquire the Nginx Blueprint
-In order to run the Nginx blueprint, we'll have to download it first. We'll simply
-clone it:
+This section will walk you through using Quilt to run Nginx, which is an
+open-source HTTP server that.  In the example, we'll use Nginx to serve a
+simple webpage. Start by downloading the blueprint using git:
 
 ```console
-git clone https://github.com/quilt/nginx
-cd nginx
+$ git clone https://github.com/kayousterhout/nginx.git -b website
 ```
 
-### Install Blueprint Dependencies
-The Nginx blueprint depends on the `@quilt/quilt` module. More complicated
-blueprints
-may have other dependencies that would get pulled in as well. To install all
-dependencies, run `npm install .`.
+The blueprint is the `main.js` file in the nginx directory; take a look at this
+file if you'd like an to see an example of what blueprints look like.  This
+blueprint will start one master and one worker machine on Amazon AWS, using
+t2.micro instances (which are in Amazon's
+[free tier](https://aws.amazon.com/free/), meaning that you can run them for
+a few hours for free if you're a new Amazon user).  Recall from [How Quilt Works](#how-quilt-works) that the
+master is responsible for managing the worker machines, and worker machines are
+used to run application containers.  In this case, the worker machine will
+serve the webpage in `index.html`.
 
-### Configure `quilt/nginx/main.js`
-#### Set Up Your SSH Authentication
-Quilt-managed Machines use public key authentication to control SSH access.
-SSH authentication is configured with the `sshKeys` Machine attribute.
-Currently,  the easiest way to set up your SSH access, is by using the
-`githubKeys()` function. Given your GitHub username, the function grabs your
-public keys from GitHub, so they can be used to configure SSH authentication.
-If you can access GitHub repositories through SSH, then you can also SSH into a
-`githubKey`-configured Machine.
+Note that if you decided
+above to setup a different cloud provider, you'll need to update the `Machine`
+in `main.js` to use the corresponding cloud provider (e.g., by changing
+`"Amazon"` to `"Google"`).
 
-If you would like to use `githubKey` authentication, open `main.js`, import the
-`githubKeys` function from `@quilt/quilt`, and set the `sshKeys` appropriately.
-
-```javascript
-const {createDeployment, Machine, githubKeys} = require('@quilt/quilt');
-...
-var baseMachine = new Machine({
-    ...
-    sshKeys: githubKeys("CHANGE_ME"),
-    ...
-});
-```
-
-### Deploying `quilt/nginx/main.js`
-In one shell, start the Quilt daemon with `quilt daemon`. In another shell,
-execute `quilt run ./main.js`. Quilt will set up several
-Ubuntu VMs on your cloud provider as Workers, and these Workers will host Nginx
-Docker containers as specified in
-[`quilt/nginx/app.js`](https://github.com/quilt/nginx/blob/master/app.js)
-(you do not have to understand or edit this file).
-
-
-### Accessing the Worker VM
-It will take a while for the VMs to boot up, for Quilt to configure the network,
-and for Docker containers to be initialized. When a machine is marked
-`Connected` in the console output, the corresponding VM is fully booted and has
-begun communicating with Quilt.
-
-The public IP of the Worker VM can be deduced from the console output. The
-following output shows the Worker VM's public IP to be 52.53.177.110:
+Before running anything, you'll need to download the JavaScript dependencies of
+the blueprint.  The Nginx blueprint depends on the `@quilt/quilt` module; more
+complicated blueprints may have other dependencies that need to be installed.
+Use `npm`, the Node.js package manager, to install all dependencies in the
+`nginx` folder:
 
 ```console
-INFO [Nov 11 13:23:10.266] db.Machine:
-	Machine-2{Master, Amazon us-west-1 m4.large, sir-3sngfxdh, PublicIP=54.183.169.245, PrivateIP=172.31.2.178, Disk=32GB, Connected}
-	Machine-4{Worker, Amazon us-west-1 m4.large, sir-19bid86g, PublicIP=52.53.177.110, PrivateIP=172.31.0.87, Disk=32GB, Connected}
-...
+npm install .
 ```
 
-Run `ssh quilt@<WORKER_PUBLIC_IP>` to access a privileged shell on the Worker VM.
-
-### Inspecting Docker Containers on the Worker VM
-You can run `docker ps` to list the containers running on your Worker VM.
+To run a blueprint, you first need to have a Quilt daemon running.  If you
+haven't already started one, open a new terminal window and start it:
 
 ```console
-quilt@ip-172-31-0-87:~$ docker ps
-CONTAINER ID        IMAGE                        COMMAND                  CREATED             STATUS              PORTS               NAMES
-a2ac27cfd313        quay.io/coreos/etcd:v3.0.2   "/usr/local/bin/etcd "   11 minutes ago      Up 11 minutes                           etcd
-0f407bd0d5c4        quilt/ovs                    "run ovs-vswitchd"       11 minutes ago      Up 11 minutes                           ovs-vswitchd
-7b65a447fe54        quilt/ovs                    "run ovsdb-server"       11 minutes ago      Up 11 minutes                           ovsdb-server
-deb4f98db8eb        quilt/quilt:latest           "quilt minion"           11 minutes ago      Up 11 minutes                           minion
+$ quilt daemon
 ```
 
-Any docker containers defined in a blueprint are placed on one of
-your Worker VMs.  In addition to these user-defined containers, Quilt also
-places several support containers on each VM. Among these support containers is
-`minion`, which locally manages Docker and allows Quilt VMs to talk to each
-other and your local computer.
+The daemon is a long running process that periodically prints some log messages.
+Leave this running, and use a new terminal window to run the blueprint:
 
-### Loading the Nginx Webpage
+```console
+$ quilt run ./main.js
+```
+
+This command tells the daemon to launch the machines and containers described in
+`main.js`.  It will return immediately, but if you return to the `daemon`
+window, you'll see some things starting to happen.  The best way to see what's
+happening is to return to the window where you typed `quilt run`, and now
+use Quilt's `ps	` command (`ps` stands for "processes", and lists everything
+that's running in Quilt):
+
+```console
+$ quilt ps
+MACHINE         ROLE      PROVIDER    REGION       SIZE     PUBLIC IP    STATUS e5b1839d2bea    Master    Amazon      us-west-1    t2.micro              disconnected
+e2401c348c78    Worker    Amazon      us-west-1    t2.micro              disconnected
+```
+
+Your output will look similar to the output above.  This output means that Quilt
+has launched two machines, one as a master and one as a worker, in Amazon.  Both
+machines are disconnected, because they're still being initialized. When a
+machine is fully booted and configured, it will be marked as connected.
+Launching machines on AWS takes a few minutes, and eventually the output of
+`ps` will look like:
+
+```console
+$ quilt ps
+MACHINE         ROLE      PROVIDER    REGION       SIZE        PUBLIC IP         STATUS
+e5b1839d2bea    Master    Amazon      us-west-1    t2.micro    54.183.98.15      connected
+e2401c348c78    Worker    Amazon      us-west-1    t2.micro    54.241.251.192    connected
+
+CONTAINER       MACHINE         COMMAND        LABELS           STATUS     CREATED               PUBLIC IP
+bd681b3d3af7    e2401c348c78    nginx:1.13     nginx_example    running    About a minute ago    54.241.251.192:80
+```
+
+The bottom row lists the container that's running `nginx`.  The `nginx`
+deployment is relatively simple and has just one container, but a typical
+application running in Quilt will have many containers running (one for each
+part of the application; for example, your website application might require a
+second container that runs a database).  The last column in that row,
+`PUBLIC IP`, says the address you can use to access your website.
+
 By default, Quilt-managed containers are disconnected from the public internet
-and isolated from one another. In order to make the Nginx container accessible
+and isolated from one another. This helps to keep your application secure by
+preventing all access except for what you explicitly specify.
+In order to make the Nginx container accessible
 from the public internet,
-[`quilt/nginx/app.js`](https://github.com/quilt/nginx/blob/master/app.js)
-explicitly opens port 80 on the Nginx container to the outside world:
+[`nginx/main.js`](https://github.com/quilt/nginx/blob/master/main.js) explicitly
+opens port 80 on the Nginx service to the outside world:
 
 ```javascript
-publicInternet.connect(port, webTier);
+webTier.allowFrom(publicInternet, 80);
 ```
 
-From your browser via `http://<WORKER_PUBLIC_IP>`, or on the command-line via
-`curl <WORKER_PUBLIC_IP>`, you can load the Nginx welcome page served by your
-Quilt cluster.
+This means you can
+access the webpage you launched by copy-pasting the IP address from `quilt ps`
+into a browser window.  A site with "Hello, world!" text should appear.
 
-### Cleaning up
+Once you've launched a container, you'll often need to login to change something
+or debug an issue.  The `quilt ssh` command makes this easy.  Use the container
+ID in the `quilt ps` output as the argument to `quilt ssh` to login to that
+container:
 
-If you'd like to destroy the infrastructure you just deployed, you can either
-modify the blueprint to remove all of the Machines, or use the command,
-`quilt stop`. Both options will cause Quilt to destroy all of the
-Machines in the deployment.
+```console
+$ quilt ssh bd68 # Replace the argument to ssh with the ID of your container
+```
 
-## Next Steps: Writing your own Quilt Blueprint
+Note that you don't need to type the whole ID; as long as you use a unique
+subset of it, Quilt will log in to the correct machine.
 
-This guide illustrated how to use Quilt to run an application that already had a
-blueprint written.  Next, you can try writing your own Quilt blueprints for new
-applications
-that don't yet have blueprints written; to do that, check out the
-[guide to writing Quilt blueprints](https://github.com/quilt/quilt/blob/master/docs/BlueprintWritersGuide.md).
+You may later decide that you'd like to change the contents of the simple
+website.  You could do this by logging into the container, but for the sake of
+example, let's do it using Quilt.  On your laptop, open the `nginx/index.html`
+that was downloaded from github and change the contents of the page (e.g., you
+can change the "Hello, World!" message).  Now, with the daemon still running,
+re-deploy the webpage with Quilt:
 
+```console
+$ quilt run ./main.js
+```
 
+Quilt automatically detects the changes to your deployment, and will update the
+cluster to implement your changes.  Note that we didn't need to tell Quilt to
+stop the nginx container and start a new one; we just updated the view of what
+the deployment should look like (in this case, by changing `index.html`), and
+Quilt automatically detects this and updates the cluster accordingly.  Quilt
+will prompt you to accept the changes that you're making to your deployment;
+type `y`.  If you run `quilt ps`, you'll notice that Quilt has stopped the old
+container and is starting a new one.  If you navigate to the new IP address,
+you'll notice your new page is up.
+
+When you're done experimenting with Quilt, __make sure to stop the machines
+you've started!__.  Otherwise, they will continue running on Amazon and you will
+be charged for the unused time.  You can stop everything with Quilt's `stop`
+command:
+
+```console
+$ quilt stop
+```
+
+You can use `quilt ps` to ensure nothing is still running.  At this point, you
+can kill the Quilt daemon.

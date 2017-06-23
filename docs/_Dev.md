@@ -2,39 +2,61 @@
 
 ## Developer Setup
 
-The project is written in Go and therefore follows the standard Go
-workspaces project style.  The first step is to create a go workspace as
-suggested in the [documentation](https://golang.org/doc/code.html).
+### Install Go
 
-We currently require go version 1.3 or later.  Ubuntu 15.10 uses this version
-by default, so you should just be able to apt-get install golang to get
-started.
+The project is written in Go and supports Go version 1.8 or later. Install
+Go using your package manager (Go is commonly referred to as "golang" in
+package managers and elsewhere) or via the
+[Go website](https://golang.org/doc/install).
 
-Checkout the source code:
-
-```console
-git clone https://github.com/quilt/quilt $GOPATH/src/github.com/quilt/quilt
-```
-
-Once this is done you can install the AWS API and various other dependencies
-automatically:
+If you've never used Go before, we recommend reading the overview to Go
+workspaces [here](https://golang.org/doc/code.html#Workspaces). In short,
+you'll need to configure the `GOPATH` environment variable to be the location
+where you'll keep all Go code. For example, if you'd like your Go workspace
+to be `$HOME/gowork`:
 
 ```console
-go get github.com/quilt/quilt/...
+export GOPATH="$HOME/gowork"
+export PATH="$GOPATH/bin:$PATH"
 ```
 
-And finally to build the project run:
+Add these commands to your `.bashrc` so that they'll be run automatically each
+time you open a new shell.
+
+### Download Quilt
+
+Clone the Quilt repository into your Go workspace using `go get`:
 
 ```console
-go install github.com/quilt/quilt
+go get github.com/quilt/quilt
 ```
 
-Or alternatively just "go install" if you're in the repo.
+This will install Quilt in your Go workspace at
+`$GOPATH/src/github.com/quilt/quilt`, and compile Quilt. After running
+installing Quilt, the `quilt` command should execute successfully in your shell.
 
-### Build Tools
+Note that if you've previously installed Quilt with npm, there will be
+another Quilt binary installed on your machine (that was downloaded during the
+npm installation).  If you want to develop Quilt,
+you probably want to make sure that when you run `quilt`, the version you're
+developing (that was compiled from the Go code) gets run, and not the Quilt
+release that was downloaded from npm. Check that this is the case:
 
-To do things beyond basic build and install, several additional build tools are
-required.  These can be installed with the `make go-get` target.
+```console
+$ which quilt
+/Users/kay/gowork/bin/quilt
+```
+
+If running `which quilt` results in a path that includes your `$GOPATH$`, like
+the one above, you're all set.  If it instead returns someplace else, e.g.,
+`/usr/local/bin/quilt`, you'll need to fix your `$PATH` variable so that
+`$GOPATH/bin` comes first.
+
+### Building Quilt
+
+To build quilt, run `go install` in the Quilt directory. To do things beyond
+basic build and install, several additional build tools are required.  These
+can be installed with the `make go-get` target.
 
 ### Protobufs
 If you change any of the proto files, you'll need to regenerate the protobuf

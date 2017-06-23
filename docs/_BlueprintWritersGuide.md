@@ -1,29 +1,21 @@
 # Blueprint Writers Guide
 
-This guide describes how to write the Quilt blueprint for a new application,
-using the lobste.rs application as an example.  lobste.rs is an open source
-project that implements a reddit-like web page, where users can post content
-and vote up or down other content.
+The previous section described how to use Quilt to run an application that
+already had a blueprint. This guide describes how to write the Quilt
+blueprint for a new application, using the lobste.rs application as an example.
+lobste.rs is an open source project that implements a reddit-like web page,
+where users can post content and vote up or down other content.
 
 ### Decomposing the application into containers
 
 The first question you should ask yourself is "how should this application be
-decomposed into different containers?"  If you've already figured this out for
-your application (e.g., if you're copying from a Kubernetes setup that already
-has Dockerfiles defined), you can skip the rest of this section.
+decomposed into different containers?"  Be sure you've read the [How Quilt
+Works](#how-quilt-works) section, which gives a brief overview of containers.
+If you've already figured out the containers that are needed for your
+application (e.g., if you're already using Docker), you can skip the rest of
+this section.
 
-##### A very brief introduction to containers
-
-You can think of a container as being like a process: as a coarse rule-of-thumb,
-anything that you'd launch as its own process should have it's own container
-with Quilt.  While containers are lightweight (like processes), they each have
-their own environment (including their own filesystem and their own software
-installed) and are isolated from other containers running on the same machine
-(unlike processes).  If you've never used containers before, we suggest starting
-with the Docker [getting started
-guide](https://docs.docker.com/engine/getstarted).
-
-##### Specifying the containers for your application
+#### Specifying the containers for your application
 
 As an example of how to specify the containers for your application, let's use
 the lobste.rs example.  lobste.rs requires mysql to run, so we'll use one
