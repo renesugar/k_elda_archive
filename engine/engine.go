@@ -17,14 +17,16 @@ var defaultDiskSize = 32
 var c = counter.New("Engine")
 
 // Run updates the database in response to stitch changes in the cluster table.
-func Run(conn db.Conn) {
+func Run(conn db.Conn, adminKey string) {
 	for range conn.TriggerTick(30, db.ClusterTable, db.MachineTable, db.ACLTable).C {
-		conn.Txn(db.ACLTable, db.ClusterTable,
-			db.MachineTable).Run(updateTxn)
+		conn.Txn(db.ACLTable, db.ClusterTable, db.MachineTable).Run(
+			func(view db.Database) error {
+				return updateTxn(view, adminKey)
+			})
 	}
 }
 
-func updateTxn(view db.Database) error {
+func updateTxn(view db.Database, adminKey string) error {
 	c.Inc("Update")
 
 	cluster, err := view.GetCluster()
@@ -40,7 +42,7 @@ func updateTxn(view db.Database) error {
 	cluster.Namespace = stitch.Namespace
 	view.Commit(cluster)
 
-	machineTxn(view, stitch)
+	machineTxn(view, stitch, adminKey)
 	aclTxn(view, stitch)
 	return nil
 }
@@ -72,7 +74,9 @@ func aclTxn(view db.Database, blueprintHandle stitch.Stitch) {
 // Specifically, it sets the role of the db.Machine, the size (which may depend
 // on RAM and CPU constraints), and the provider.
 // Additionally, it skips machines with invalid roles, sizes or providers.
-func toDBMachine(machines []stitch.Machine, maxPrice float64) []db.Machine {
+func toDBMachine(machines []stitch.Machine, maxPrice float64,
+	adminKey string) []db.Machine {
+
 	var hasMaster, hasWorker bool
 	var dbMachines []db.Machine
 	for _, stitchm := range machines {
@@ -111,8 +115,12 @@ func toDBMachine(machines []stitch.Machine, maxPrice float64) []db.Machine {
 			m.DiskSize = defaultDiskSize
 		}
 
-		m.StitchID = stitchm.ID
 		m.SSHKeys = stitchm.SSHKeys
+		if adminKey != "" {
+			m.SSHKeys = append(m.SSHKeys, adminKey)
+		}
+
+		m.StitchID = stitchm.ID
 		m.Region = stitchm.Region
 		m.FloatingIP = stitchm.FloatingIP
 		dbMachines = append(dbMachines, cluster.DefaultRegion(m))
@@ -129,10 +137,10 @@ func toDBMachine(machines []stitch.Machine, maxPrice float64) []db.Machine {
 	return dbMachines
 }
 
-func machineTxn(view db.Database, stitch stitch.Stitch) {
+func machineTxn(view db.Database, stitch stitch.Stitch, adminKey string) {
 	// XXX: How best to deal with machines that don't specify enough information?
 	maxPrice := stitch.MaxPrice
-	stitchMachines := toDBMachine(stitch.Machines, maxPrice)
+	stitchMachines := toDBMachine(stitch.Machines, maxPrice, adminKey)
 
 	dbMachines := view.SelectFromMachine(nil)
 

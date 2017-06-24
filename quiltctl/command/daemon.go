@@ -1,7 +1,11 @@
 package command
 
 import (
+	"encoding/base64"
 	"flag"
+	"fmt"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/quilt/quilt/api/server"
 	"github.com/quilt/quilt/cluster"
@@ -16,6 +20,8 @@ import (
 
 // Daemon contains the options for running the Quilt daemon.
 type Daemon struct {
+	adminSSHPrivateKey string
+
 	*connectionFlags
 }
 
@@ -26,13 +32,16 @@ func NewDaemonCommand() *Daemon {
 	}
 }
 
-var daemonCommands = "quilt daemon [-H=<daemon_host>]"
+var daemonCommands = "quilt daemon [-H=<daemon_host> -admin-ssh-private-key=<key_path>]"
 var daemonExplanation = "`daemon` starts the quilt daemon, which listens for quilt " +
 	"API requests."
 
 // InstallFlags sets up parsing for command line flags
 func (dCmd *Daemon) InstallFlags(flags *flag.FlagSet) {
 	dCmd.connectionFlags.InstallFlags(flags)
+	flags.StringVar(&dCmd.adminSSHPrivateKey, "admin-ssh-private-key", "",
+		"if specified, all machines will be configured to allow access from "+
+			"this private SSH key")
 	flags.Usage = func() {
 		util.PrintUsageString(daemonCommands, daemonExplanation, flags)
 	}
@@ -56,9 +65,39 @@ func (dCmd *Daemon) AfterRun() error {
 // Run starts the daemon.
 func (dCmd *Daemon) Run() int {
 	log.WithField("version", version.Version).Info("Starting Quilt daemon")
+
+	var sshKey ssh.Signer
+	if dCmd.adminSSHPrivateKey != "" {
+		var err error
+		sshKey, err = parseSSHPrivateKey(dCmd.adminSSHPrivateKey)
+		if err != nil {
+			log.WithError(err).Errorf(
+				"Failed to parse private key %s", dCmd.adminSSHPrivateKey)
+			return 1
+		}
+	}
+
 	conn := db.New()
-	go engine.Run(conn)
+	go engine.Run(conn, getPublicKey(sshKey))
 	go server.Run(conn, dCmd.host, true, credentials.Insecure{})
 	cluster.Run(conn, credentials.Insecure{})
 	return 0
+}
+
+func parseSSHPrivateKey(path string) (ssh.Signer, error) {
+	keyStr, err := util.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %s", err)
+	}
+
+	return ssh.ParsePrivateKey([]byte(keyStr))
+}
+
+func getPublicKey(sshPrivKey ssh.Signer) string {
+	if sshPrivKey == nil {
+		return ""
+	}
+	pubKey := base64.StdEncoding.EncodeToString(sshPrivKey.PublicKey().Marshal())
+	pubKeyType := sshPrivKey.PublicKey().Type()
+	return pubKeyType + " " + pubKey
 }

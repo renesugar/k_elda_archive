@@ -26,6 +26,8 @@ to complete. This decreases the number of cloud provider API calls done by Quilt
 text printed to stdout would break the deployment object.
 - `quilt ps` now has more status options for machines (booting, connecting,
 connected, and reconnecting).
+- Allow an admin SSH key access to all machines deployed by the daemon. The key is
+specified using the `admin-ssh-private-key` flag to the daemon.
 
 Release 0.1.0
 -------------

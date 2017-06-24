@@ -24,7 +24,7 @@ func TestEngine(t *testing.T) {
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "5"},
 		},
 	}
-	updateStitch(t, conn, stc)
+	updateStitch(t, conn, stc, "")
 	acl, err := selectACL(conn)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(acl.Admin))
@@ -45,7 +45,7 @@ func TestEngine(t *testing.T) {
 			Role: "Worker", ID: "9"},
 	)
 
-	updateStitch(t, conn, stc)
+	updateStitch(t, conn, stc, "")
 	masters, workers = selectMachines(conn)
 	assert.Equal(t, 4, len(masters))
 	assert.Equal(t, 5, len(workers))
@@ -81,7 +81,7 @@ func TestEngine(t *testing.T) {
 		{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 		{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "3"},
 	}
-	updateStitch(t, conn, stc)
+	updateStitch(t, conn, stc, "")
 
 	masters, workers = selectMachines(conn)
 
@@ -97,7 +97,7 @@ func TestEngine(t *testing.T) {
 
 	/* Empty Namespace does nothing. */
 	stc.Namespace = ""
-	updateStitch(t, conn, stc)
+	updateStitch(t, conn, stc, "")
 	masters, workers = selectMachines(conn)
 
 	assert.Equal(t, 1, len(masters))
@@ -115,7 +115,7 @@ func TestEngine(t *testing.T) {
 		Machines: []stitch.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker"},
 		},
-	})
+	}, "")
 	masters, workers = selectMachines(conn)
 	assert.Zero(t, len(masters))
 	assert.Zero(t, len(workers))
@@ -141,7 +141,7 @@ func TestEngine(t *testing.T) {
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "3"},
 			{Provider: "Google", Size: "g.large", Role: "Worker", ID: "4"},
 		},
-	})
+	}, "")
 	masters, workers = selectMachines(conn)
 	assert.True(t, providersInSlice(masters,
 		db.ProviderSlice{db.Amazon, db.Vagrant}))
@@ -153,9 +153,61 @@ func TestEngine(t *testing.T) {
 			{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "2"},
 		},
-	})
+	}, "")
 	masters, _ = selectMachines(conn)
 	assert.True(t, providersInSlice(masters, db.ProviderSlice{db.Amazon}))
+}
+
+func TestAdminKey(t *testing.T) {
+	t.Parallel()
+
+	conn := db.New()
+
+	updateStitch(t, conn, stitch.Stitch{
+		Machines: []stitch.Machine{
+			{
+				ID:       "1",
+				Provider: "Amazon",
+				Role:     "Master",
+				SSHKeys:  []string{"app"},
+			},
+			{
+				ID:       "2",
+				Provider: "Amazon",
+				Role:     "Worker",
+				SSHKeys:  []string{"app"},
+			},
+		},
+	}, "admin")
+
+	machines := conn.SelectFromMachine(nil)
+	assert.Len(t, machines, 2)
+	for _, m := range machines {
+		assert.Equal(t, []string{"app", "admin"}, m.SSHKeys)
+	}
+
+	updateStitch(t, conn, stitch.Stitch{
+		Machines: []stitch.Machine{
+			{
+				ID:       "1",
+				Provider: "Amazon",
+				Role:     "Master",
+				SSHKeys:  []string{"app"},
+			},
+			{
+				ID:       "2",
+				Provider: "Amazon",
+				Role:     "Worker",
+				SSHKeys:  []string{"app"},
+			},
+		},
+	}, "")
+
+	machines = conn.SelectFromMachine(nil)
+	assert.Len(t, machines, 2)
+	for _, m := range machines {
+		assert.Equal(t, []string{"app"}, m.SSHKeys)
+	}
 }
 
 func TestSort(t *testing.T) {
@@ -168,7 +220,7 @@ func TestSort(t *testing.T) {
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker"},
 		},
-	})
+	}, "")
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		machines := view.SelectFromMachine(func(m db.Machine) bool {
 			return m.Role == db.Master
@@ -196,7 +248,7 @@ func TestSort(t *testing.T) {
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker"},
 		},
-	})
+	}, "")
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		machines := view.SelectFromMachine(func(m db.Machine) bool {
 			return m.Role == db.Master
@@ -225,7 +277,7 @@ func TestACLs(t *testing.T) {
 	myIP = func() (string, error) {
 		return "5.6.7.8", nil
 	}
-	updateStitch(t, conn, stc)
+	updateStitch(t, conn, stc, "")
 	acl, err := selectACL(conn)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"1.2.3.4/32", "5.6.7.8/32"}, acl.Admin)
@@ -233,7 +285,7 @@ func TestACLs(t *testing.T) {
 	myIP = func() (string, error) {
 		return "", errors.New("")
 	}
-	updateStitch(t, conn, stc)
+	updateStitch(t, conn, stc, "")
 	acl, err = selectACL(conn)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"1.2.3.4/32"}, acl.Admin)
@@ -260,7 +312,7 @@ func selectACL(conn db.Conn) (acl db.ACL, err error) {
 	return
 }
 
-func updateStitch(t *testing.T, conn db.Conn, stitch stitch.Stitch) {
+func updateStitch(t *testing.T, conn db.Conn, stitch stitch.Stitch, adminKey string) {
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		cluster, err := view.GetCluster()
 		if err != nil {
@@ -270,5 +322,8 @@ func updateStitch(t *testing.T, conn db.Conn, stitch stitch.Stitch) {
 		view.Commit(cluster)
 		return nil
 	})
-	assert.Nil(t, conn.Txn(db.AllTables...).Run(updateTxn))
+	assert.Nil(t, conn.Txn(db.AllTables...).Run(
+		func(view db.Database) error {
+			return updateTxn(view, adminKey)
+		}))
 }
