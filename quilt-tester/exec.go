@@ -39,7 +39,7 @@ func runBlueprintUntilConnected(blueprint string) (string, string, error) {
 		return true
 	}
 
-	err = util.WaitFor(allMachinesConnected, 1*time.Second, 8*time.Minute)
+	err = util.BackoffWaitFor(allMachinesConnected, 15*time.Second, 8*time.Minute)
 	return stdout, stderr, err
 }
 

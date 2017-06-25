@@ -312,7 +312,7 @@ func waitForContainers(blueprintPath string) error {
 	}
 	defer c.Close()
 
-	return util.WaitFor(func() bool {
+	return util.BackoffWaitFor(func() bool {
 		curr, err := c.QueryContainers()
 		if err != nil {
 			return false

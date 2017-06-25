@@ -13,6 +13,7 @@ import (
 	"github.com/quilt/quilt/cluster/cloudcfg"
 	"github.com/quilt/quilt/cluster/google/client"
 	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cluster/wait"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/util"
 
@@ -167,7 +168,7 @@ func (clst *Cluster) Stop(machines []machine.Machine) error {
 // Get() and operationWait() don't always present the same results, so
 // Boot() and Stop() must have a special wait to stay in sync with Get().
 func (clst *Cluster) wait(ids []string, shouldLive bool) error {
-	return util.WaitFor(func() bool {
+	return wait.Wait(func() bool {
 		machines, err := clst.List()
 		if err != nil {
 			return false
@@ -184,7 +185,7 @@ func (clst *Cluster) wait(ids []string, shouldLive bool) error {
 			}
 		}
 		return true
-	}, 3*time.Second, 3*time.Minute)
+	})
 }
 
 // Blocking wait with a hardcoded timeout.
@@ -196,7 +197,7 @@ func (clst *Cluster) operationWait(ops []*compute.Operation, domain int) (err er
 		return fmt.Errorf("domain not recognized: %d", domain)
 	}
 
-	return util.WaitFor(func() bool {
+	return util.BackoffWaitFor(func() bool {
 		for _, op := range ops {
 			var res *compute.Operation
 			switch domain {
@@ -212,7 +213,7 @@ func (clst *Cluster) operationWait(ops []*compute.Operation, domain int) (err er
 			}
 		}
 		return true
-	}, 3*time.Second, 3*time.Minute)
+	}, 30*time.Second, 3*time.Minute)
 }
 
 // Create new GCE instance.

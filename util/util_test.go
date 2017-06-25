@@ -42,30 +42,29 @@ func TestToTar(t *testing.T) {
 }
 
 func TestWaitFor(t *testing.T) {
-	Sleep = func(t time.Duration) {}
+	var sleepCalls []time.Duration
+	Sleep = func(t time.Duration) {
+		sleepCalls = append(sleepCalls, t)
+	}
 
 	calls := 0
-	callThreeTimes := func() bool {
+	callFourTimes := func() bool {
 		calls++
-		if calls == 3 {
+		if calls == 4 {
 			return true
 		}
 		return false
 	}
-	err := WaitFor(callThreeTimes, 1*time.Second, 5*time.Second)
-	if err != nil {
-		t.Errorf("Unexpected error: %s", err.Error())
-	}
-	if calls != 3 {
-		t.Errorf("Incorrect number of calls to predicate: %d", calls)
-	}
+	err := BackoffWaitFor(callFourTimes, 1*time.Second, 5*time.Second)
+	assert.NoError(t, err)
+	assert.Equal(t, 4, calls, "predicate should be tested 4 times")
+	assert.True(t, sleepCalls[1] > sleepCalls[0], "sleep interval should increase")
+	assert.True(t, sleepCalls[2] > sleepCalls[1], "sleep interval should increase")
 
-	err = WaitFor(func() bool {
+	err = BackoffWaitFor(func() bool {
 		return false
 	}, 1*time.Second, 300*time.Millisecond)
-	if err.Error() != "timed out" {
-		t.Errorf("Expected waitFor to timeout")
-	}
+	assert.EqualError(t, err, "timed out")
 }
 
 func TestMapAsString(t *testing.T) {

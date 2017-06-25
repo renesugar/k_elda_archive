@@ -19,6 +19,8 @@ each region within a namespace.
 fixes a bug where containers would sometimes fail to resolve DNS on DigitalOcean.
 - Fixed a bug where etcd would sometimes restart when the daemon connected to machines
 that had already been booted. This most visibly resulted in containers restarting.
+- Use an exponential backoff algorithm when waiting for cloud provider actions
+to complete. This decreases the number of cloud provider API calls done by Quilt.
 
 Release 0.1.0
 -------------

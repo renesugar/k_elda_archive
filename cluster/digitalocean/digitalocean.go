@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/digitalocean/godo"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/quilt/quilt/cluster/cloudcfg"
 	"github.com/quilt/quilt/cluster/digitalocean/client"
 	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cluster/wait"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/util"
@@ -179,7 +179,7 @@ func (clst Cluster) createAndAttach(m machine.Machine) error {
 		d, _, err := clst.client.GetDroplet(d.ID)
 		return err == nil && d.Status == "active"
 	}
-	return util.WaitFor(pred, 10*time.Second, 2*time.Minute)
+	return wait.Wait(pred)
 }
 
 // UpdateFloatingIPs updates Droplet to Floating IP associations.
@@ -273,7 +273,7 @@ func (clst Cluster) deleteAndWait(ids string) error {
 		d, _, err := clst.client.GetDroplet(id)
 		return err != nil || d == nil
 	}
-	return util.WaitFor(pred, 500*time.Millisecond, 1*time.Minute)
+	return wait.Wait(pred)
 }
 
 // SetACLs is not supported in DigitalOcean.

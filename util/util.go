@@ -191,9 +191,11 @@ var After = func(t time.Time) bool {
 	return time.Now().After(t)
 }
 
-// WaitFor waits until `pred` is satisfied, or `timeout` Duration has passed, checking
-// at every `interval`.
-func WaitFor(pred func() bool, interval time.Duration, timeout time.Duration) error {
+// BackoffWaitFor waits until `pred` is satisfied, or `timeout` Duration has
+// passed. Every time the predicate fails, double the sleep interval until
+// `cap` is reached.
+func BackoffWaitFor(pred func() bool, cap time.Duration, timeout time.Duration) error {
+	interval := 1 * time.Second
 	deadline := time.Now().Add(timeout)
 	for {
 		if pred() {
@@ -203,6 +205,7 @@ func WaitFor(pred func() bool, interval time.Duration, timeout time.Duration) er
 			return errors.New("timed out")
 		}
 		Sleep(interval)
+		interval *= 2
 	}
 }
 

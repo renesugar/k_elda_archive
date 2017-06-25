@@ -11,8 +11,8 @@ import (
 	"github.com/quilt/quilt/cluster/amazon/client"
 	"github.com/quilt/quilt/cluster/cloudcfg"
 	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cluster/wait"
 	"github.com/quilt/quilt/join"
-	"github.com/quilt/quilt/util"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/defaults"
@@ -469,7 +469,7 @@ func (clst Cluster) getInstanceID(spotID string) (string, error) {
 /* Wait for the 'ids' to have booted or terminated depending on the value
  * of 'boot' */
 func (clst *Cluster) wait(ids []string, boot bool) error {
-	return util.WaitFor(func() bool {
+	return wait.Wait(func() bool {
 		machines, err := clst.List()
 		if err != nil {
 			log.WithError(err).Warn("Failed to list machines in the cluster.")
@@ -497,7 +497,7 @@ func (clst *Cluster) wait(ids []string, boot bool) error {
 		}
 
 		return true
-	}, 10*time.Second, timeout)
+	})
 }
 
 // SetACLs adds and removes acls in `clst` so that it conforms to `acls`.

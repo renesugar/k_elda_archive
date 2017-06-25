@@ -42,7 +42,7 @@ func main() {
 
 	// The Spark job takes some time to complete, so we wait for the appropriate
 	// result for up to a minute.
-	err = util.WaitFor(func() bool {
+	err = util.BackoffWaitFor(func() bool {
 		logs, err := exec.Command("quilt", "logs", id).CombinedOutput()
 		if err != nil {
 			log.WithError(err).Fatal(
@@ -53,7 +53,7 @@ func main() {
 		fmt.Printf("`quilt logs %s` output:\n", id)
 		fmt.Println(string(logs))
 		return strings.Contains(string(logs), "Pi is roughly")
-	}, 5*time.Second, time.Minute)
+	}, 15*time.Second, time.Minute)
 
 	if err != nil {
 		fmt.Println("FAILED, sparkPI did not execute correctly.")
