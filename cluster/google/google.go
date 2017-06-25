@@ -14,6 +14,7 @@ import (
 	"github.com/quilt/quilt/cluster/google/client"
 	"github.com/quilt/quilt/cluster/machine"
 	"github.com/quilt/quilt/join"
+	"github.com/quilt/quilt/util"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/satori/go.uuid"
@@ -165,86 +166,53 @@ func (clst *Cluster) Stop(machines []machine.Machine) error {
 
 // Get() and operationWait() don't always present the same results, so
 // Boot() and Stop() must have a special wait to stay in sync with Get().
-func (clst *Cluster) wait(names []string, live bool) error {
-	if len(names) == 0 {
-		return nil
-	}
-
-	after := time.After(3 * time.Minute)
-	tick := time.NewTicker(3 * time.Second)
-	defer tick.Stop()
-
-	for range tick.C {
-		select {
-		case <-after:
-			return errors.New("wait(): timeout")
-		default:
+func (clst *Cluster) wait(ids []string, shouldLive bool) error {
+	return util.WaitFor(func() bool {
+		machines, err := clst.List()
+		if err != nil {
+			return false
 		}
 
-		for len(names) > 0 {
-			name := names[0]
-			instances, err := clst.List()
-			if err != nil {
-				return err
-			}
-			exists := false
-			for _, ist := range instances {
-				if name == ist.ID {
-					exists = true
-				}
-			}
-			if live == exists {
-				names = append(names[:0], names[1:]...)
+		liveMachines := map[string]struct{}{}
+		for _, m := range machines {
+			liveMachines[m.ID] = struct{}{}
+		}
+
+		for _, id := range ids {
+			if _, live := liveMachines[id]; live != shouldLive {
+				return false
 			}
 		}
-		if len(names) == 0 {
-			return nil
-		}
-	}
-	return nil
+		return true
+	}, 3*time.Second, 3*time.Minute)
 }
 
 // Blocking wait with a hardcoded timeout.
 //
 // Waits on operations, the type of which is indicated by 'domain'. All
 // operations must be of the same 'domain'
-func (clst *Cluster) operationWait(ops []*compute.Operation, domain int) error {
-	if len(ops) == 0 {
-		return nil
+func (clst *Cluster) operationWait(ops []*compute.Operation, domain int) (err error) {
+	if domain != local && domain != global {
+		return fmt.Errorf("domain not recognized: %d", domain)
 	}
 
-	after := time.After(3 * time.Minute)
-	tick := time.NewTicker(3 * time.Second)
-	defer tick.Stop()
-
-	var op *compute.Operation
-	var err error
-	for {
-		select {
-		case <-after:
-			return fmt.Errorf("operationWait(): timeout")
-		case <-tick.C:
-			for len(ops) > 0 {
-				switch {
-				case domain == local:
-					op, err = clst.gce.GetZoneOperation(
-						ops[0].Zone, ops[0].Name)
-				case domain == global:
-					op, err = clst.gce.GetGlobalOperation(ops[0].Name)
-				}
-				if err != nil {
-					return err
-				}
-				if op.Status != "DONE" {
-					break
-				}
-				ops = append(ops[:0], ops[1:]...)
+	return util.WaitFor(func() bool {
+		for _, op := range ops {
+			var res *compute.Operation
+			switch domain {
+			case local:
+				res, err = clst.gce.GetZoneOperation(
+					op.Zone, op.Name)
+			case global:
+				res, err = clst.gce.GetGlobalOperation(op.Name)
 			}
-			if len(ops) == 0 {
-				return nil
+
+			if err != nil || res.Status != "DONE" {
+				return false
 			}
 		}
-	}
+		return true
+	}, 3*time.Second, 3*time.Minute)
 }
 
 // Create new GCE instance.
