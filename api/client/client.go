@@ -64,7 +64,7 @@ type Client interface {
 }
 
 // Getter obtains a client connected to the given address.
-type Getter func(string) (Client, error)
+type Getter func(string, connection.Credentials) (Client, error)
 
 type clientImpl struct {
 	pbClient pb.APIClient
@@ -72,13 +72,13 @@ type clientImpl struct {
 }
 
 // New creates a new Quilt client connected to `lAddr`.
-func New(lAddr string) (Client, error) {
+func New(lAddr string, creds connection.Credentials) (Client, error) {
 	proto, addr, err := api.ParseListenAddress(lAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	cc, err := connection.Client(proto, addr)
+	cc, err := connection.Client(proto, addr, creds.ClientOpts())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			err = daemonTimeoutError{

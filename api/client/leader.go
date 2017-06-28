@@ -7,11 +7,12 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/util"
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/db"
 )
 
 // Leader obtains a Client connected to the Leader of the cluster.
-func Leader(machines []db.Machine) (Client, error) {
+func Leader(machines []db.Machine, creds connection.Credentials) (Client, error) {
 	if len(machines) == 0 {
 		return nil, errors.New("no machines to query")
 	}
@@ -25,9 +26,9 @@ func Leader(machines []db.Machine) (Client, error) {
 			continue
 		}
 
-		ip, err := getLeaderIP(machines, m.PublicIP)
+		ip, err := getLeaderIP(machines, m.PublicIP, creds)
 		if err == nil {
-			return newClient(api.RemoteAddress(ip))
+			return newClient(api.RemoteAddress(ip), creds)
 		}
 		errorStrs = append(errorStrs, fmt.Sprintf("%s - %s", m.PublicIP, err))
 	}
@@ -43,8 +44,9 @@ func Leader(machines []db.Machine) (Client, error) {
 // Get the public IP of the lead minion by querying the remote machine's etcd
 // table for the private IP, and then searching for the public IP in the local
 // daemon.
-func getLeaderIP(machines []db.Machine, daemonIP string) (string, error) {
-	remoteClient, err := newClient(api.RemoteAddress(daemonIP))
+func getLeaderIP(machines []db.Machine, daemonIP string, creds connection.Credentials) (
+	string, error) {
+	remoteClient, err := newClient(api.RemoteAddress(daemonIP), creds)
 	if err != nil {
 		return "", err
 	}

@@ -17,8 +17,8 @@ type server struct {
 	db.Conn
 }
 
-func minionServerRun(conn db.Conn) {
-	sock, s := connection.Server("tcp", ":9999")
+func minionServerRun(conn db.Conn, creds connection.Credentials) {
+	sock, s := connection.Server("tcp", ":9999", creds.ServerOpts())
 	server := server{conn}
 	pb.RegisterMinionServer(s, server)
 	s.Serve(sock)

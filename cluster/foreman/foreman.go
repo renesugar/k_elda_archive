@@ -18,6 +18,7 @@ import (
 )
 
 var minions map[string]*minion
+var creds connection.Credentials
 
 // ConnectionTrigger sends messages when a change to the connection status of a
 // minion occurs.
@@ -53,8 +54,9 @@ var c = counter.New("Foreman")
 
 // Init the first time the foreman operates on a new namespace.  It queries the currently
 // running VMs for their previously assigned roles, and writes them to the database.
-func Init(conn db.Conn) {
+func Init(conn db.Conn, _creds connection.Credentials) {
 	c.Inc("Initialize")
+	creds = _creds
 
 	for _, m := range minions {
 		m.client.Close()
@@ -217,7 +219,7 @@ func notifyConnectionChange() {
 
 func newClientImpl(ip string) (client, error) {
 	c.Inc("New Minion Client")
-	cc, err := connection.Client("tcp", ip+":9999")
+	cc, err := connection.Client("tcp", ip+":9999", creds.ClientOpts())
 	if err != nil {
 		c.Inc("New Minion Client Error")
 		return nil, err

@@ -8,6 +8,7 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/connection/credentials"
 )
 
 func TestMinionLogs(t *testing.T) {
@@ -15,7 +16,7 @@ func TestMinionLogs(t *testing.T) {
 		t.Errorf("failed to print quilt ps: %s", err.Error())
 	}
 
-	c, err := client.New(api.DefaultSocket)
+	c, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
 		t.Fatalf("couldn't get quiltctl client: %s", err.Error())
 	}

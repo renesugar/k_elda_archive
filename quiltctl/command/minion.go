@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion"
 	"github.com/quilt/quilt/util"
@@ -75,6 +76,7 @@ func (mCmd *Minion) run() error {
 		return errors.New("no or improper role specified")
 	}
 
-	minion.Run(role, mCmd.inboundPubIntf, mCmd.outboundPubIntf)
+	minion.Run(role, mCmd.inboundPubIntf, mCmd.outboundPubIntf,
+		credentials.Insecure{})
 	return nil
 }

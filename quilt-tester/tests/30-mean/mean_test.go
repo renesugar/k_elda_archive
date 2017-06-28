@@ -11,6 +11,7 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/quilt-tester/util"
 )
@@ -23,7 +24,7 @@ type Response struct {
 }
 
 func TestMean(t *testing.T) {
-	clnt, err := client.New(api.DefaultSocket)
+	clnt, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
 		t.Fatal("couldn't get quiltctl client")
 	}

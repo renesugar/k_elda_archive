@@ -9,12 +9,13 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/connection/credentials"
 )
 
 var connectionRegex = regexp.MustCompile(`Registering worker (\d+\.\d+\.\d+\.\d+:\d+)`)
 
 func TestDuplicateCluster(t *testing.T) {
-	clnt, err := client.New(api.DefaultSocket)
+	clnt, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
 		t.Fatalf("couldn't get quiltctl client: %s", err)
 	}

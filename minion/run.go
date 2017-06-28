@@ -8,6 +8,7 @@ import (
 
 	"github.com/quilt/quilt/api"
 	apiServer "github.com/quilt/quilt/api/server"
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/docker"
@@ -26,7 +27,8 @@ import (
 var c = counter.New("Minion")
 
 // Run blocks executing the minion.
-func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
+func Run(role db.Role, inboundPubIntf, outboundPubIntf string,
+	creds connection.Credentials) {
 	// XXX Uncomment the following line to run the profiler
 	//runProfiler(5 * time.Minute)
 
@@ -56,7 +58,7 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 
 	supervisor.Run(conn, dk, role)
 
-	go minionServerRun(conn)
+	go minionServerRun(conn, creds)
 	go scheduler.Run(conn, dk)
 	go network.Run(conn, inboundPubIntf, outboundPubIntf)
 	go registry.Run(conn, dk)
@@ -64,7 +66,7 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 	go syncAuthorizedKeys(conn)
 
 	go apiServer.Run(conn, fmt.Sprintf("tcp://0.0.0.0:%d", api.DefaultRemotePort),
-		false)
+		false, creds)
 
 	loopLog := util.NewEventTimer("Minion-Update")
 

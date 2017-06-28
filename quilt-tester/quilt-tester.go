@@ -16,6 +16,7 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/stitch"
@@ -306,7 +307,7 @@ func waitForContainers(blueprintPath string) error {
 		return err
 	}
 
-	c, err := client.New(api.DefaultSocket)
+	c, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
 		return err
 	}

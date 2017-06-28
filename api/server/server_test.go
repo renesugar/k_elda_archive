@@ -12,6 +12,7 @@ import (
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/api/client/mocks"
 	"github.com/quilt/quilt/api/pb"
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/stitch"
 	"github.com/stretchr/testify/assert"
@@ -32,10 +33,11 @@ func TestQueryErrors(t *testing.T) {
 	assert.EqualError(t, err, "unrecognized table: db.Hostname")
 
 	// Error getting the leader client.
-	newLeaderClient = func(_ []db.Machine) (client.Client, error) {
+	newLeaderClient = func(_ []db.Machine, _ connection.Credentials) (
+		client.Client, error) {
 		return nil, errors.New("get leader error")
 	}
-	s := server{db.New(), true}
+	s := server{db.New(), true, nil}
 	_, err = s.Query(context.Background(),
 		&pb.DBQuery{Table: string(db.ContainerTable)})
 	assert.EqualError(t, err, "get leader error")
@@ -63,7 +65,7 @@ func TestQueryMachinesDaemon(t *testing.T) {
 		`"Preemptible":false,"CloudID":"","PublicIP":"8.8.8.8",` +
 		`"PrivateIP":"9.9.9.9","Status":"connected"}]`
 
-	checkQuery(t, server{conn, true}, db.MachineTable, exp)
+	checkQuery(t, server{conn, true, nil}, db.MachineTable, exp)
 }
 
 func TestQueryContainersCluster(t *testing.T) {
@@ -85,11 +87,11 @@ func TestQueryContainersCluster(t *testing.T) {
 		`"Labels":["labelA","labelB"],"Created":"0001-01-01T00:00:00Z",` +
 		`"Image":"image"}]`
 
-	checkQuery(t, server{conn, false}, db.ContainerTable, exp)
+	checkQuery(t, server{conn, false, nil}, db.ContainerTable, exp)
 }
 
 func TestQueryContainersDaemon(t *testing.T) {
-	newClient = func(host string) (client.Client, error) {
+	newClient = func(host string, _ connection.Credentials) (client.Client, error) {
 		switch host {
 		case api.RemoteAddress("9.9.9.9"):
 			mc := new(mocks.Client)
@@ -106,7 +108,8 @@ func TestQueryContainersDaemon(t *testing.T) {
 		panic("unreached")
 	}
 
-	newLeaderClient = func(_ []db.Machine) (client.Client, error) {
+	newLeaderClient = func(_ []db.Machine, _ connection.Credentials) (
+		client.Client, error) {
 		mc := new(mocks.Client)
 		mc.On("QueryContainers").Return([]db.Container{{
 			StitchID: "notScheduled",
@@ -133,7 +136,7 @@ func TestQueryContainersDaemon(t *testing.T) {
 		`"Image":"notScheduled"},{"StitchID":"onWorker",` +
 		`"DockerID":"dockerID","Created":"0001-01-01T00:00:00Z",` +
 		`"Image":"onWorker"}]`
-	checkQuery(t, server{conn, true}, db.ContainerTable, exp)
+	checkQuery(t, server{conn, true, nil}, db.ContainerTable, exp)
 }
 
 func TestBadDeployment(t *testing.T) {
@@ -335,11 +338,12 @@ func TestQueryImagesCluster(t *testing.T) {
 	})
 
 	exp := `[{"ID":1,"Name":"foo","Dockerfile":"","DockerID":"","Status":""}]`
-	checkQuery(t, server{conn, false}, db.ImageTable, exp)
+	checkQuery(t, server{conn, false, nil}, db.ImageTable, exp)
 }
 
 func TestQueryImagesDaemon(t *testing.T) {
-	newLeaderClient = func(_ []db.Machine) (client.Client, error) {
+	newLeaderClient = func(_ []db.Machine, _ connection.Credentials) (
+		client.Client, error) {
 		mc := new(mocks.Client)
 		mc.On("QueryImages").Return([]db.Image{{
 			Name: "bar",
@@ -349,5 +353,5 @@ func TestQueryImagesDaemon(t *testing.T) {
 	}
 
 	exp := `[{"ID":0,"Name":"bar","Dockerfile":"","DockerID":"","Status":""}]`
-	checkQuery(t, server{db.New(), true}, db.ImageTable, exp)
+	checkQuery(t, server{db.New(), true, nil}, db.ImageTable, exp)
 }

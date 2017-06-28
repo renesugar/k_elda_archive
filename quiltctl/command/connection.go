@@ -5,6 +5,7 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/connection/credentials"
 )
 
 type connectionFlags struct {
@@ -30,6 +31,6 @@ func (ch *connectionHelper) AfterRun() error {
 }
 
 func (ch *connectionHelper) setupClient(getter client.Getter) (err error) {
-	ch.client, err = getter(ch.host)
+	ch.client, err = getter(ch.host, credentials.Insecure{})
 	return err
 }

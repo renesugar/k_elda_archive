@@ -5,6 +5,7 @@ import (
 
 	"github.com/quilt/quilt/api/server"
 	"github.com/quilt/quilt/cluster"
+	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/engine"
 	"github.com/quilt/quilt/util"
@@ -57,7 +58,7 @@ func (dCmd *Daemon) Run() int {
 	log.WithField("version", version.Version).Info("Starting Quilt daemon")
 	conn := db.New()
 	go engine.Run(conn)
-	go server.Run(conn, dCmd.host, true)
-	cluster.Run(conn)
+	go server.Run(conn, dCmd.host, true, credentials.Insecure{})
+	cluster.Run(conn, credentials.Insecure{})
 	return 0
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/api/client/mocks"
+	"github.com/quilt/quilt/connection"
 )
 
 func TestSetupClient(t *testing.T) {
@@ -14,7 +15,7 @@ func TestSetupClient(t *testing.T) {
 
 	// Test that we obtain a client, and properly save it.
 	expClient := &mocks.Client{}
-	newClient := func(host string) (client.Client, error) {
+	newClient := func(host string, _ connection.Credentials) (client.Client, error) {
 		assert.Equal(t, "host", host)
 		return expClient, nil
 	}
@@ -28,7 +29,7 @@ func TestSetupClient(t *testing.T) {
 	assert.Equal(t, expClient, cmd.client)
 
 	// Test that errors obtaining a client are properly propagated.
-	newClient = func(host string) (client.Client, error) {
+	newClient = func(host string, _ connection.Credentials) (client.Client, error) {
 		assert.Equal(t, "host", host)
 		return nil, assert.AnError
 	}

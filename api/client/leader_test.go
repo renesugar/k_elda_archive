@@ -7,12 +7,13 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client/mocks"
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/db"
 )
 
 func TestLeader(t *testing.T) {
 	leaderClient := new(mocks.Client)
-	newClient = func(host string) (Client, error) {
+	newClient = func(host string, _ connection.Credentials) (Client, error) {
 		mc := new(mocks.Client)
 		mc.On("Close").Return(nil)
 		on := mc.On("QueryEtcd")
@@ -44,14 +45,13 @@ func TestLeader(t *testing.T) {
 			PublicIP:  "leader",
 			PrivateIP: "leader-priv",
 		},
-	})
-
+	}, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, leaderClient, res)
 }
 
 func TestNoLeader(t *testing.T) {
-	newClient = func(host string) (Client, error) {
+	newClient = func(host string, _ connection.Credentials) (Client, error) {
 		mc := new(mocks.Client)
 		mc.On("Close").Return(nil)
 
@@ -67,13 +67,13 @@ func TestNoLeader(t *testing.T) {
 		{
 			PublicIP: "9.9.9.9",
 		},
-	})
+	}, nil)
 	expErr := "no leader found: 8.8.8.8 - no leader information on host 8.8.8.8; " +
 		"9.9.9.9 - no leader information on host 9.9.9.9"
 	assert.EqualError(t, err, expErr)
 }
 
 func TestLeaderNoMachines(t *testing.T) {
-	_, err := Leader(nil)
+	_, err := Leader(nil, nil)
 	assert.EqualError(t, err, "no machines to query")
 }

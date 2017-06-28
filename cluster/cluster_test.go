@@ -662,11 +662,11 @@ func TestACLs(t *testing.T) {
 func TestUpdateCluster(t *testing.T) {
 	conn := db.New()
 
-	clst := updateCluster(conn, nil)
+	clst := updateCluster(conn, nil, nil)
 	assert.Nil(t, clst)
 
 	setNamespace(conn, "ns1")
-	clst = updateCluster(conn, clst)
+	clst = updateCluster(conn, clst, nil)
 	assert.NotNil(t, clst)
 	assert.Equal(t, "ns1", clst.namespace)
 
@@ -688,7 +688,7 @@ func TestUpdateCluster(t *testing.T) {
 	oldClst := clst
 	oldAmzn := amzn
 
-	clst = updateCluster(conn, clst)
+	clst = updateCluster(conn, clst, nil)
 	assert.NotNil(t, clst)
 
 	// Pointers shouldn't have changed
@@ -713,7 +713,7 @@ func TestUpdateCluster(t *testing.T) {
 	oldClst = clst
 	oldAmzn = amzn
 	setNamespace(conn, "ns2")
-	clst = updateCluster(conn, clst)
+	clst = updateCluster(conn, clst, nil)
 	assert.NotNil(t, clst)
 
 	// Pointers should have changed

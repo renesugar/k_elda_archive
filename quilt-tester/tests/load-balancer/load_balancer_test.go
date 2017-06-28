@@ -9,6 +9,7 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 )
 
@@ -18,7 +19,7 @@ const (
 )
 
 func TestLoadBalancer(t *testing.T) {
-	c, err := client.New(api.DefaultSocket)
+	c, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
 		t.Fatalf("couldn't get local client: %s", err)
 	}

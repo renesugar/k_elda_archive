@@ -15,6 +15,7 @@ import (
 	"github.com/quilt/quilt/cluster/google"
 	"github.com/quilt/quilt/cluster/machine"
 	"github.com/quilt/quilt/cluster/vagrant"
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
@@ -61,12 +62,12 @@ var sleep = time.Sleep
 
 // Run continually checks 'conn' for cluster changes and recreates the cluster as
 // needed.
-func Run(conn db.Conn) {
+func Run(conn db.Conn, creds connection.Credentials) {
 	go updateMachineStatuses(conn)
 	var clst *cluster
 	for range conn.TriggerTick(30, db.ClusterTable, db.MachineTable, db.ACLTable).C {
 		c.Inc("Run")
-		clst = updateCluster(conn, clst)
+		clst = updateCluster(conn, clst, creds)
 
 		// Somewhat of a crude rate-limit of once every five seconds to avoid
 		// stressing out the cloud providers with too many API calls.
@@ -74,7 +75,7 @@ func Run(conn db.Conn) {
 	}
 }
 
-func updateCluster(conn db.Conn, clst *cluster) *cluster {
+func updateCluster(conn db.Conn, clst *cluster, creds connection.Credentials) *cluster {
 	namespace, err := conn.GetClusterNamespace()
 	if err != nil {
 		return clst
@@ -83,7 +84,7 @@ func updateCluster(conn db.Conn, clst *cluster) *cluster {
 	if clst == nil || clst.namespace != namespace {
 		clst = newCluster(conn, namespace)
 		clst.runOnce()
-		foreman.Init(clst.conn)
+		foreman.Init(clst.conn, creds)
 	}
 
 	clst.runOnce()

@@ -34,6 +34,11 @@ type server struct {
 	// proxy certain Queries to the cluster because the daemon doesn't track
 	// those tables (e.g. Container, Connection, Label).
 	runningOnDaemon bool
+
+	// The credentials to use while connecting to clients in the cluster.
+	// Currently, these are the same credentials that are used to start the
+	// server.
+	creds connection.Credentials
 }
 
 // Run starts a server that responds to `quiltctl` connections. It runs on both
@@ -41,13 +46,14 @@ type server struct {
 // methods, such as starting deployments, and querying the state of the system.
 // This is in contrast to the minion server (minion/pb/pb.proto), which facilitates
 // the actual deployment.
-func Run(conn db.Conn, listenAddr string, runningOnDaemon bool) error {
+func Run(conn db.Conn, listenAddr string, runningOnDaemon bool,
+	creds connection.Credentials) error {
 	proto, addr, err := api.ParseListenAddress(listenAddr)
 	if err != nil {
 		return err
 	}
 
-	sock, s := connection.Server(proto, addr)
+	sock, s := connection.Server(proto, addr, creds.ServerOpts())
 
 	// Cleanup the socket if we're interrupted.
 	sigc := make(chan os.Signal, 1)
@@ -59,7 +65,7 @@ func Run(conn db.Conn, listenAddr string, runningOnDaemon bool) error {
 		os.Exit(0)
 	}(sigc)
 
-	apiServer := server{conn, runningOnDaemon}
+	apiServer := server{conn, runningOnDaemon, creds}
 	pb.RegisterAPIServer(s, apiServer)
 	s.Serve(sock)
 
@@ -124,7 +130,7 @@ func (s server) queryFromDaemon(table db.TableType) (
 	}
 
 	var leaderClient client.Client
-	leaderClient, err := newLeaderClient(s.conn.SelectFromMachine(nil))
+	leaderClient, err := newLeaderClient(s.conn.SelectFromMachine(nil), s.creds)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +156,7 @@ func (s server) QueryMinionCounters(ctx context.Context, in *pb.MinionCountersRe
 		return nil, errDaemonOnlyRPC
 	}
 
-	clnt, err := newClient(api.RemoteAddress(in.Host))
+	clnt, err := newClient(api.RemoteAddress(in.Host), s.creds)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +235,7 @@ func (s server) getClusterContainers(leaderClient client.Client) (interface{}, e
 		return nil, err
 	}
 
-	workerContainers, err := queryWorkers(s.conn.SelectFromMachine(nil))
+	workerContainers, err := queryWorkers(s.conn.SelectFromMachine(nil), s.creds)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +250,9 @@ type queryContainersResponse struct {
 
 // queryWorkers gets a client for all worker machines and returns a list of
 // `db.Container`s on these machines.
-func queryWorkers(machines []db.Machine) ([]db.Container, error) {
+func queryWorkers(machines []db.Machine, creds connection.Credentials) (
+	[]db.Container, error) {
+
 	var wg sync.WaitGroup
 	queryResponses := make(chan queryContainersResponse, len(machines))
 	for _, m := range machines {
@@ -256,7 +264,7 @@ func queryWorkers(machines []db.Machine) ([]db.Container, error) {
 		go func(m db.Machine) {
 			defer wg.Done()
 			var qContainers []db.Container
-			client, err := newClient(api.RemoteAddress(m.PublicIP))
+			client, err := newClient(api.RemoteAddress(m.PublicIP), creds)
 			if err == nil {
 				defer client.Close()
 				qContainers, err = client.QueryContainers()

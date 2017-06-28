@@ -11,6 +11,7 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/util"
 )
@@ -154,7 +155,7 @@ func scp(host string, source string, target string) error {
 }
 
 func queryMachines() ([]db.Machine, error) {
-	c, err := client.New(api.DefaultSocket)
+	c, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
 		return []db.Machine{}, err
 	}
