@@ -90,9 +90,9 @@ func (s server) Query(cts context.Context, query *pb.DBQuery) (*pb.QueryReply, e
 
 	table := db.TableType(query.Table)
 	if s.runningOnDaemon {
-		rows, err = queryFromDaemon(table, s.conn)
+		rows, err = s.queryFromDaemon(table)
 	} else {
-		rows, err = queryLocal(table, s.conn)
+		rows, err = s.queryLocal(table)
 	}
 
 	if err != nil {
@@ -107,35 +107,35 @@ func (s server) Query(cts context.Context, query *pb.DBQuery) (*pb.QueryReply, e
 	return &pb.QueryReply{TableContents: string(json)}, nil
 }
 
-func queryLocal(table db.TableType, conn db.Conn) (interface{}, error) {
+func (s server) queryLocal(table db.TableType) (interface{}, error) {
 	switch table {
 	case db.MachineTable:
-		return conn.SelectFromMachine(nil), nil
+		return s.conn.SelectFromMachine(nil), nil
 	case db.ContainerTable:
-		return conn.SelectFromContainer(nil), nil
+		return s.conn.SelectFromContainer(nil), nil
 	case db.EtcdTable:
-		return conn.SelectFromEtcd(nil), nil
+		return s.conn.SelectFromEtcd(nil), nil
 	case db.ConnectionTable:
-		return conn.SelectFromConnection(nil), nil
+		return s.conn.SelectFromConnection(nil), nil
 	case db.LabelTable:
-		return conn.SelectFromLabel(nil), nil
+		return s.conn.SelectFromLabel(nil), nil
 	case db.ClusterTable:
-		return conn.SelectFromCluster(nil), nil
+		return s.conn.SelectFromCluster(nil), nil
 	default:
 		return nil, fmt.Errorf("unrecognized table: %s", table)
 	}
 }
 
-func queryFromDaemon(table db.TableType, conn db.Conn) (
+func (s server) queryFromDaemon(table db.TableType) (
 	interface{}, error) {
 
 	switch table {
 	case db.MachineTable, db.ClusterTable:
-		return queryLocal(table, conn)
+		return s.queryLocal(table)
 	}
 
 	var leaderClient client.Client
-	leaderClient, err := newLeaderClient(conn.SelectFromMachine(nil))
+	leaderClient, err := newLeaderClient(s.conn.SelectFromMachine(nil))
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func queryFromDaemon(table db.TableType, conn db.Conn) (
 
 	switch table {
 	case db.ContainerTable:
-		return getClusterContainers(conn, leaderClient)
+		return s.getClusterContainers(leaderClient)
 	case db.ConnectionTable:
 		return leaderClient.QueryConnections()
 	case db.LabelTable:
@@ -232,13 +232,13 @@ func (s server) Version(_ context.Context, _ *pb.VersionRequest) (
 	return &pb.VersionReply{Version: version.Version}, nil
 }
 
-func getClusterContainers(conn db.Conn, leaderClient client.Client) (interface{}, error) {
+func (s server) getClusterContainers(leaderClient client.Client) (interface{}, error) {
 	leaderContainers, err := leaderClient.QueryContainers()
 	if err != nil {
 		return nil, err
 	}
 
-	workerContainers, err := queryWorkers(conn.SelectFromMachine(nil))
+	workerContainers, err := queryWorkers(s.conn.SelectFromMachine(nil))
 	if err != nil {
 		return nil, err
 	}
