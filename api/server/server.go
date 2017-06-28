@@ -4,16 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/api/pb"
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/stitch"
@@ -21,7 +20,6 @@ import (
 
 	"github.com/docker/distribution/reference"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -49,18 +47,7 @@ func Run(conn db.Conn, listenAddr string, runningOnDaemon bool) error {
 		return err
 	}
 
-	var sock net.Listener
-	apiServer := server{conn, runningOnDaemon}
-	for {
-		sock, err = net.Listen(proto, addr)
-
-		if err == nil {
-			break
-		}
-		log.WithError(err).Error("Failed to open socket.")
-
-		time.Sleep(30 * time.Second)
-	}
+	sock, s := connection.Server(proto, addr)
 
 	// Cleanup the socket if we're interrupted.
 	sigc := make(chan os.Signal, 1)
@@ -72,7 +59,7 @@ func Run(conn db.Conn, listenAddr string, runningOnDaemon bool) error {
 		os.Exit(0)
 	}(sigc)
 
-	s := grpc.NewServer()
+	apiServer := server{conn, runningOnDaemon}
 	pb.RegisterAPIServer(s, apiServer)
 	s.Serve(sock)
 

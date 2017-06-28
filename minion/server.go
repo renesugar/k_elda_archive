@@ -1,16 +1,14 @@
 package minion
 
 import (
-	"net"
 	"sort"
 	"strings"
-	"time"
 
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/pb"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -20,21 +18,8 @@ type server struct {
 }
 
 func minionServerRun(conn db.Conn) {
-	var sock net.Listener
+	sock, s := connection.Server("tcp", ":9999")
 	server := server{conn}
-	for {
-		var err error
-		sock, err = net.Listen("tcp", ":9999")
-		if err != nil {
-			log.WithError(err).Error("Failed to open socket.")
-		} else {
-			break
-		}
-
-		time.Sleep(30 * time.Second)
-	}
-
-	s := grpc.NewServer()
 	pb.RegisterMinionServer(s, server)
 	s.Serve(sock)
 }

@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/pb"
@@ -216,7 +217,7 @@ func notifyConnectionChange() {
 
 func newClientImpl(ip string) (client, error) {
 	c.Inc("New Minion Client")
-	cc, err := grpc.Dial(ip+":9999", grpc.WithInsecure())
+	cc, err := connection.Client("tcp", ip+":9999")
 	if err != nil {
 		c.Inc("New Minion Client Error")
 		return nil, err

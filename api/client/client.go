@@ -5,11 +5,11 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/pb"
+	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/db"
 
 	"golang.org/x/net/context"
@@ -19,9 +19,6 @@ import (
 const (
 	// The timeout for making requests to the daemon once we've connected.
 	requestTimeout = time.Minute
-
-	// The timeout for connecting to the daemon.
-	connectTimeout = 5 * time.Second
 )
 
 // Client provides methods to interact with the Quilt daemon.
@@ -81,11 +78,7 @@ func New(lAddr string) (Client, error) {
 		return nil, err
 	}
 
-	dialer := func(dialAddr string, t time.Duration) (net.Conn, error) {
-		return net.DialTimeout(proto, dialAddr, t)
-	}
-	cc, err := grpc.Dial(addr, grpc.WithDialer(dialer), grpc.WithInsecure(),
-		grpc.WithBlock(), grpc.WithTimeout(connectTimeout))
+	cc, err := connection.Client(proto, addr)
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			err = daemonTimeoutError{
