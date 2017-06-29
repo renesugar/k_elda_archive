@@ -148,5 +148,23 @@ docker-push-quilt:
 docker-build-ovs:
 	cd -P ovs && docker build -t ${REPO}/ovs .
 
+# Make docs a prerequisite of the PHONY target, because the docs target
+# doesn't depend on the docs directory (so should be executed even when
+# the docs directory hasn't changed).
+.PHONY: docs
+# docs compiles all of the docs in docs/build.
+docs:
+	rm -rf docs/build && \
+	mkdir docs/build && \
+	cd docs/build && \
+	git clone https://github.com/quilt/slate.git && \
+	cd slate && \
+	cp ${CURDIR}/docs/*md source/ && \
+	bundle install && \
+	bundle exec middleman build --clean && \
+	mv build/* ${CURDIR}/docs/build/ && \
+	echo "docs successfully compiled to HTML. To view docs, run:" && \
+	echo "  open docs/build/index.html"
+
 # Include all .mk files so you can have your own local configurations
 include $(wildcard *.mk)
