@@ -3,6 +3,7 @@ package cloudcfg
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -67,9 +68,17 @@ func (opts MinionOptions) String() string {
 		"outbound-pub-intf": opts.OutboundPubIntf,
 	}
 
+	// Sort the option keys so that the command line arguments are consistently
+	// formatted. This is helpful for unit testing the output.
+	var optsKeys []string
+	for key := range optsMap {
+		optsKeys = append(optsKeys, key)
+	}
+	sort.Strings(optsKeys)
+
 	var optsList []string
-	for name, val := range optsMap {
-		if val != "" {
+	for _, name := range optsKeys {
+		if val := optsMap[name]; val != "" {
 			optsList = append(optsList, fmt.Sprintf("--%s %q", name, val))
 		}
 	}
