@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"errors"
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -17,27 +16,7 @@ import (
 
 var FakeAmazon db.Provider = "FakeAmazon"
 var FakeVagrant db.Provider = "FakeVagrant"
-var amazonCloudConfig = "Amazon Cloud Config"
-var vagrantCloudConfig = "Vagrant Cloud Config"
 var testRegion = "Fake region"
-
-type providerRequest struct {
-	request  machine.Machine
-	provider provider
-	boot     bool
-}
-
-type bootRequest struct {
-	size        string
-	cloudConfig string
-	role        db.Role
-}
-
-type ipRequest struct {
-	size        string
-	cloudConfig string
-	ip          string
-}
 
 type fakeProvider struct {
 	namespace   string
@@ -46,9 +25,9 @@ type fakeProvider struct {
 	idCounter   int
 	cloudConfig string
 
-	bootRequests []bootRequest
+	bootRequests []machine.Machine
 	stopRequests []string
-	updateIPs    []ipRequest
+	updatedIPs   []machine.Machine
 	aclRequests  []acl.ACL
 
 	listError error
@@ -59,10 +38,10 @@ func fakeValidRegions(p db.Provider) []string {
 }
 
 func (p *fakeProvider) clearLogs() {
-	p.bootRequests = []bootRequest{}
-	p.stopRequests = []string{}
-	p.aclRequests = []acl.ACL{}
-	p.updateIPs = []ipRequest{}
+	p.bootRequests = nil
+	p.stopRequests = nil
+	p.aclRequests = nil
+	p.updatedIPs = nil
 }
 
 func (p *fakeProvider) List() ([]machine.Machine, error) {
@@ -79,6 +58,10 @@ func (p *fakeProvider) List() ([]machine.Machine, error) {
 
 func (p *fakeProvider) Boot(bootSet []machine.Machine) error {
 	for _, toBoot := range bootSet {
+		// Record the boot request before we mutate it with implementation
+		// details of our fakeProvider.
+		p.bootRequests = append(p.bootRequests, toBoot)
+
 		p.idCounter++
 		idStr := strconv.Itoa(p.idCounter)
 		toBoot.ID = idStr
@@ -93,8 +76,6 @@ func (p *fakeProvider) Boot(bootSet []machine.Machine) error {
 		toBoot.CloudCfgOpts.MinionOpts.Role = db.None
 
 		p.machines[idStr] = toBoot
-		p.bootRequests = append(p.bootRequests, bootRequest{size: toBoot.Size,
-			cloudConfig: p.cloudConfig})
 	}
 
 	return nil
@@ -114,16 +95,12 @@ func (p *fakeProvider) SetACLs(acls []acl.ACL) error {
 }
 
 func (p *fakeProvider) UpdateFloatingIPs(machines []machine.Machine) error {
-	for _, m := range machines {
-		p.updateIPs = append(p.updateIPs, ipRequest{
-			size:        m.Size,
-			cloudConfig: p.cloudConfig,
-			ip:          m.FloatingIP,
-		})
-
-		p.machines[m.ID] = m
+	for _, desired := range machines {
+		curr := p.machines[desired.ID]
+		curr.FloatingIP = desired.FloatingIP
+		p.machines[desired.ID] = curr
 	}
-
+	p.updatedIPs = append(p.updatedIPs, machines...)
 	return nil
 }
 
@@ -417,8 +394,13 @@ func TestSyncDB(t *testing.T) {
 }
 
 func TestSync(t *testing.T) {
+	type ipRequest struct {
+		id string
+		ip string
+	}
+
 	type assertion struct {
-		boot      []bootRequest
+		boot      []machine.Machine
 		stop      []string
 		updateIPs []ipRequest
 	}
@@ -430,29 +412,30 @@ func TestSync(t *testing.T) {
 		inst := launchLoc{provider, region}
 		providerInst := clst.providers[inst].(*fakeProvider)
 
-		if !emptySlices(expected.boot, providerInst.bootRequests) {
-			assert.Equal(t, expected.boot, providerInst.bootRequests,
-				"bootRequests")
-		}
+		assert.Equal(t, expected.boot, providerInst.bootRequests, "bootRequests")
 
-		if !emptySlices(expected.stop, providerInst.stopRequests) {
-			assert.Equal(t, expected.stop, providerInst.stopRequests,
-				"stopRequests")
-		}
+		assert.Equal(t, expected.stop, providerInst.stopRequests, "stopRequests")
 
-		if !emptySlices(expected.updateIPs, providerInst.updateIPs) {
-			assert.Equal(t, expected.updateIPs, providerInst.updateIPs,
-				"updateIPs")
+		var updatedIPs []ipRequest
+		for _, m := range providerInst.updatedIPs {
+			updatedIPs = append(updatedIPs,
+				ipRequest{id: m.ID, ip: m.FloatingIP})
 		}
+		assert.Equal(t, expected.updateIPs, updatedIPs, "updateIPs")
 
 		providerInst.clearLogs()
 	}
 
-	amazonLargeBoot := bootRequest{size: "m4.large", cloudConfig: amazonCloudConfig}
-	amazonXLargeBoot := bootRequest{size: "m4.xlarge",
-		cloudConfig: amazonCloudConfig}
-	vagrantLargeBoot := bootRequest{size: "vagrant.large",
-		cloudConfig: vagrantCloudConfig}
+	masterCloudCfg := cloudcfg.Options{
+		MinionOpts: cloudcfg.MinionOptions{
+			Role: db.Master,
+		},
+	}
+	workerCloudCfg := cloudcfg.Options{
+		MinionOpts: cloudcfg.MinionOptions{
+			Role: db.Worker,
+		},
+	}
 
 	// Test initial boot
 	clst := newTestCluster("ns")
@@ -468,7 +451,9 @@ func TestSync(t *testing.T) {
 		return nil
 	})
 	checkSync(clst, FakeAmazon, testRegion,
-		assertion{boot: []bootRequest{amazonLargeBoot}})
+		assertion{boot: []machine.Machine{
+			{Size: "m4.large", CloudCfgOpts: masterCloudCfg},
+		}})
 
 	// Test adding a machine with the same provider
 	clst.conn.Txn(db.AllTables...).Run(func(view db.Database) error {
@@ -482,7 +467,9 @@ func TestSync(t *testing.T) {
 		return nil
 	})
 	checkSync(clst, FakeAmazon, testRegion,
-		assertion{boot: []bootRequest{amazonXLargeBoot}})
+		assertion{boot: []machine.Machine{
+			{Size: "m4.xlarge", CloudCfgOpts: masterCloudCfg},
+		}})
 
 	// Test adding a machine with a different provider
 	clst.conn.Txn(db.AllTables...).Run(func(view db.Database) error {
@@ -496,7 +483,9 @@ func TestSync(t *testing.T) {
 		return nil
 	})
 	checkSync(clst, FakeVagrant, testRegion,
-		assertion{boot: []bootRequest{vagrantLargeBoot}})
+		assertion{boot: []machine.Machine{
+			{Size: "vagrant.large", CloudCfgOpts: masterCloudCfg},
+		}})
 
 	// Test removing a machine
 	var toRemove db.Machine
@@ -524,17 +513,15 @@ func TestSync(t *testing.T) {
 		return nil
 	})
 	checkSync(clst, FakeAmazon, testRegion, assertion{
-		boot: []bootRequest{amazonLargeBoot},
+		boot: []machine.Machine{
+			{Size: "m4.large", CloudCfgOpts: masterCloudCfg},
+		},
 	})
 
 	// The bootRequest from the previous test is done now, and a CloudID has
 	// been assigned, so we should also receive the ipRequest from before
 	checkSync(clst, FakeAmazon, testRegion, assertion{
-		updateIPs: []ipRequest{{
-			size:        "m4.large",
-			cloudConfig: amazonCloudConfig,
-			ip:          "ip",
-		}},
+		updateIPs: []ipRequest{{id: "3", ip: "ip"}},
 	})
 
 	// Test assigning a floating IP to an existing machine
@@ -552,9 +539,8 @@ func TestSync(t *testing.T) {
 	checkSync(clst, FakeAmazon, testRegion, assertion{
 		updateIPs: []ipRequest{
 			{
-				size:        "m4.large",
-				cloudConfig: amazonCloudConfig,
-				ip:          "another.ip",
+				id: "1",
+				ip: "another.ip",
 			},
 		},
 	})
@@ -573,9 +559,8 @@ func TestSync(t *testing.T) {
 	})
 	checkSync(clst, FakeAmazon, testRegion, assertion{
 		updateIPs: []ipRequest{{
-			size:        "m4.large",
-			cloudConfig: amazonCloudConfig,
-			ip:          "",
+			id: "3",
+			ip: "",
 		}},
 	})
 
@@ -596,7 +581,9 @@ func TestSync(t *testing.T) {
 		return nil
 	})
 	checkSync(clst, FakeAmazon, testRegion, assertion{
-		boot: []bootRequest{amazonXLargeBoot},
+		boot: []machine.Machine{
+			{Size: "m4.xlarge", CloudCfgOpts: workerCloudCfg},
+		},
 		stop: []string{toRemove.CloudID},
 	})
 
@@ -613,7 +600,9 @@ func TestSync(t *testing.T) {
 	})
 
 	checkSync(clst, FakeAmazon, testRegion, assertion{
-		boot: []bootRequest{amazonXLargeBoot},
+		boot: []machine.Machine{
+			{Size: "m4.xlarge", CloudCfgOpts: masterCloudCfg},
+		},
 	})
 
 	clst.conn.Txn(db.AllTables...).Run(func(view db.Database) error {
@@ -633,7 +622,9 @@ func TestSync(t *testing.T) {
 	})
 
 	checkSync(clst, FakeAmazon, testRegion, assertion{
-		boot: []bootRequest{amazonXLargeBoot},
+		boot: []machine.Machine{
+			{Size: "m4.xlarge", CloudCfgOpts: workerCloudCfg},
+		},
 		stop: []string{toRemove.CloudID},
 	})
 }
@@ -726,9 +717,8 @@ func TestUpdateCluster(t *testing.T) {
 	assert.True(t, oldAmzn == amzn)
 
 	assert.Empty(t, amzn.stopRequests)
-	assert.Equal(t, []bootRequest{{
-		size:        "size1",
-		cloudConfig: amazonCloudConfig,
+	assert.Equal(t, []machine.Machine{{
+		Size: "size1",
 	}}, amzn.bootRequests)
 	assert.Equal(t, "ns1", amzn.namespace)
 	amzn.clearLogs()
@@ -756,9 +746,8 @@ func TestUpdateCluster(t *testing.T) {
 	assert.Empty(t, oldAmzn.stopRequests)
 
 	assert.Equal(t, "ns2", amzn.namespace)
-	assert.Equal(t, []bootRequest{{
-		size:        "size2",
-		cloudConfig: amazonCloudConfig,
+	assert.Equal(t, []machine.Machine{{
+		Size: "size2",
 	}}, amzn.bootRequests)
 	assert.Empty(t, amzn.stopRequests)
 }
@@ -872,15 +861,6 @@ func mock() {
 		}
 		ret.clearLogs()
 
-		switch p {
-		case FakeAmazon:
-			ret.cloudConfig = amazonCloudConfig
-		case FakeVagrant:
-			ret.cloudConfig = vagrantCloudConfig
-		default:
-			panic("Unreached")
-		}
-
 		instantiatedProviders = append(instantiatedProviders, ret)
 		return &ret, nil
 	}
@@ -895,8 +875,4 @@ func mock() {
 		}
 		return db.None
 	}
-}
-
-func emptySlices(slice1 interface{}, slice2 interface{}) bool {
-	return reflect.ValueOf(slice1).Len() == 0 && reflect.ValueOf(slice2).Len() == 0
 }
