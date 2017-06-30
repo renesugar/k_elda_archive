@@ -141,10 +141,7 @@ Commits authored by more than one person should have a `Co-Authored-By:` tag at
 the end of the commit message.
 
 ### Submitting Patches
-Patches are submitted for inclusion in Quilt using a Github Pull Request or
-(though not preferred), they may be sent directly to
-[Ethan](http://people.eecs.berkeley.edu/~ejj/contact.html) using
-`git-format-patch` and `git-send-email`.
+Patches are submitted for inclusion in Quilt using a Github Pull Request.
 
 A pull request is a collection of well formed commits that tie together
 in some theme, usually the larger goal they're trying to achieve.  Completely
