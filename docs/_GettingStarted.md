@@ -38,9 +38,10 @@ successful, then the `quilt` command should execute successfully in your shell.
 ## Configure A Cloud Provider
 
 Quilt currently supports Amazon EC2, Digital Ocean, and Google Compute
-Engine; support for running locally with Vagrant is coming soon. Refer to
-the relevant section below to setup the cloud provider that you would like
-to use.  Contact us if you're interested in a different cloud provider.
+Engine; support for running locally with Vagrant is currently experimental.
+Refer to the relevant section below to setup the cloud provider that you
+would like to use.  Contact us if you're interested in a different cloud
+provider.
 
 ### Amazon EC2
 
