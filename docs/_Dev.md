@@ -147,13 +147,11 @@ A pull request is a collection of well formed commits that tie together
 in some theme, usually the larger goal they're trying to achieve.  Completely
 unrelated patches should be included in separate pull requests.
 
-Pull requests go through a two stage review process.  In the first stage,
-[quilt-bot](https://github.com/quilt-bot) will randomly assign a contributor
-to review the patch.  The first stage reviewer should provide feedback, wait
-for fixes, and ultimately approve the patch using Github's code review tool.
-By doing this, the reviewer is taking responsibility for the quality of the
-patch.  In effect they are asserting that the patch is perfect and ready to be
-merged.
+Pull requests are reviewed by one person: either by a committer, if the code was
+submitted by a non-committer, or by a non-committer otherwise. You do not
+need to choose a reviewer yourself; [quilt-bot](https://github.com/quilt-bot)
+will randomly select a reviewer from the appropriate group. Once the reviewer
+has approved the pull request, a committer will merge it.
 
 Once the patch has been approved by the first reviewer, quilt-bot will assign a
 committer to do a second (sometimes cursory) review. The committer will
