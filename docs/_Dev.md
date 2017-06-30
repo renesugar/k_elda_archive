@@ -176,9 +176,9 @@ of the series as tweaks to be squashed in later -- at all stages the PRs should
 be ready to merge without reorganizing commits.
 
 ## The Quilt Daemon
-Two processes need to be running for Stitches to be enforced:  `quilt daemon` and
+Two processes need to be running for blueprints to be enforced:  `quilt daemon` and
 `quilt run`. `quilt daemon` does the heavy lifting -- it's responsible for enforcing
-Stitches.  `quilt run` is responsible for compiling Stitches and sending them to
+blueprints.  `quilt run` is responsible for compiling blueprints and sending them to
 the daemon to be enforced.
 
 ## Code Structure
@@ -210,8 +210,9 @@ in the database. For instance, to query for `Connection`s in the
 ### Quilt Global
 
 The first thing that happens when Quilt starts is that your blueprint is parsed
-by `stitch`. `stitch` then puts the connection and container specifications into a
-sensible format and forwards them to the `engine`.
+by Quilt's JavaScript library, `quilt.js`. `quilt.js` then puts the connection
+and container specifications into a sensible format and forwards them to the
+`engine`.
 
 The `engine` is responsible for keeping the `db` updated so it always reflects
 the desired state of the system. It does so by computing a diff of the config
