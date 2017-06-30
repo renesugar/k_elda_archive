@@ -19,7 +19,7 @@ search: true
 
 # Quilt
 
-Quilt is a simple way to use JavaScript to deploy and manage software
+Quilt is an approachable way to use JavaScript to deploy and manage software
 running on cloud infrastructure. Quilt can be used to deploy anything
 from website backends to complex distributed systems.
 
