@@ -42,7 +42,7 @@ func Run() {
 	go vsctlRun()
 
 	go func() {
-		err := h.ServeUnix("root", pluginSocket)
+		err := h.ServeUnix(pluginSocket, 0600)
 		if err != nil {
 			// If the driver fails to start, we can't boot any containers,
 			// so we may as well panic.

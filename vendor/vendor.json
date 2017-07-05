@@ -418,10 +418,10 @@
 			"revisionTime": "2016-10-31T11:46:40Z"
 		},
 		{
-			"checksumSHA1": "SK1epV582t6zeBtowO7cidLFgRE=",
+			"checksumSHA1": "9/gpnQVuH/eszYpzCGeG1AtOdMM=",
 			"path": "github.com/docker/go-plugins-helpers/sdk",
-			"revision": "60d242cfd0fb30e5002fbf76bf6872e81e85adba",
-			"revisionTime": "2016-10-31T11:46:40Z"
+			"revision": "abb3e589c0322ddc019c2ec5f587ea0df2024869",
+			"revisionTime": "2017-06-21T09:41:05Z"
 		},
 		{
 			"checksumSHA1": "UUsA4pt7ylj/5W8yz36YyePHPKY=",
