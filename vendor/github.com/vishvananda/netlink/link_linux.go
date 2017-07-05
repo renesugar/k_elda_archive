@@ -13,7 +13,11 @@ import (
 	"github.com/vishvananda/netns"
 )
 
-const SizeofLinkStats = 0x5c
+const (
+	SizeofLinkStats32 = 0x5c
+	SizeofLinkStats64 = 0xd8
+	IFLA_STATS64      = 0x17 // syscall pkg does not contain this one
+)
 
 const (
 	TUNTAP_MODE_TUN  TuntapMode = syscall.IFF_TUN
@@ -25,7 +29,6 @@ const (
 	TUNTAP_ONE_QUEUE TuntapFlag = syscall.IFF_ONE_QUEUE
 )
 
-var native = nl.NativeEndian()
 var lookupByDump = false
 
 var macvlanModes = [...]uint32{
@@ -53,6 +56,44 @@ func (h *Handle) ensureIndex(link *LinkAttrs) {
 			link.Index = newlink.Attrs().Index
 		}
 	}
+}
+
+func (h *Handle) LinkSetARPOff(link Link) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(syscall.RTM_SETLINK, syscall.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
+	msg.Change |= syscall.IFF_NOARP
+	msg.Flags |= syscall.IFF_NOARP
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
+	return err
+}
+
+func LinkSetARPOff(link Link) error {
+	return pkgHandle.LinkSetARPOff(link)
+}
+
+func (h *Handle) LinkSetARPOn(link Link) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(syscall.RTM_SETLINK, syscall.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
+	msg.Change |= syscall.IFF_NOARP
+	msg.Flags &= ^uint32(syscall.IFF_NOARP)
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
+	return err
+}
+
+func LinkSetARPOn(link Link) error {
+	return pkgHandle.LinkSetARPOn(link)
 }
 
 func (h *Handle) SetPromiscOn(link Link) error {
@@ -976,8 +1017,12 @@ func LinkDeserialize(hdr *syscall.NlMsghdr, m []byte) (Link, error) {
 	if msg.Flags&syscall.IFF_PROMISC != 0 {
 		base.Promisc = 1
 	}
-	var link Link
-	linkType := ""
+	var (
+		link     Link
+		stats32  []byte
+		stats64  []byte
+		linkType string
+	)
 	for _, attr := range attrs {
 		switch attr.Attr.Type {
 		case syscall.IFLA_LINKINFO:
@@ -1073,7 +1118,9 @@ func LinkDeserialize(hdr *syscall.NlMsghdr, m []byte) (Link, error) {
 		case syscall.IFLA_IFALIAS:
 			base.Alias = string(attr.Value[:len(attr.Value)-1])
 		case syscall.IFLA_STATS:
-			base.Statistics = parseLinkStats(attr.Value[:])
+			stats32 = attr.Value[:]
+		case IFLA_STATS64:
+			stats64 = attr.Value[:]
 		case nl.IFLA_XDP:
 			xdp, err := parseLinkXdp(attr.Value[:])
 			if err != nil {
@@ -1093,6 +1140,13 @@ func LinkDeserialize(hdr *syscall.NlMsghdr, m []byte) (Link, error) {
 			base.OperState = LinkOperState(uint8(attr.Value[0]))
 		}
 	}
+
+	if stats64 != nil {
+		base.Statistics = parseLinkStats64(stats64)
+	} else if stats32 != nil {
+		base.Statistics = parseLinkStats32(stats32)
+	}
+
 	// Links that don't have IFLA_INFO_KIND are hardware devices
 	if link == nil {
 		link = &Device{}
@@ -1426,26 +1480,6 @@ func linkFlags(rawFlags uint32) net.Flags {
 	return f
 }
 
-func htonl(val uint32) []byte {
-	bytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(bytes, val)
-	return bytes
-}
-
-func htons(val uint16) []byte {
-	bytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(bytes, val)
-	return bytes
-}
-
-func ntohl(buf []byte) uint32 {
-	return binary.BigEndian.Uint32(buf)
-}
-
-func ntohs(buf []byte) uint16 {
-	return binary.BigEndian.Uint16(buf)
-}
-
 func addGretapAttrs(gretap *Gretap, linkInfo *nl.RtAttr) {
 	data := nl.NewRtAttrChild(linkInfo, nl.IFLA_INFO_DATA, nil)
 
@@ -1519,8 +1553,12 @@ func parseGretapData(link Link, data []syscall.NetlinkRouteAttr) {
 	}
 }
 
-func parseLinkStats(data []byte) *LinkStatistics {
-	return (*LinkStatistics)(unsafe.Pointer(&data[0:SizeofLinkStats][0]))
+func parseLinkStats32(data []byte) *LinkStatistics {
+	return (*LinkStatistics)((*LinkStatistics32)(unsafe.Pointer(&data[0:SizeofLinkStats32][0])).to64())
+}
+
+func parseLinkStats64(data []byte) *LinkStatistics {
+	return (*LinkStatistics)((*LinkStatistics64)(unsafe.Pointer(&data[0:SizeofLinkStats64][0])))
 }
 
 func addXdpAttrs(xdp *LinkXdp, req *nl.NetlinkRequest) {
