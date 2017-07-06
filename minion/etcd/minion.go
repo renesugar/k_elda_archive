@@ -3,6 +3,7 @@ package etcd
 import (
 	"encoding/json"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/quilt/quilt/db"
@@ -87,11 +88,13 @@ func filterSelf(dbMinions, storeMinions []db.Minion) ([]db.Minion, []db.Minion) 
 func diffMinion(dbMinions, storeMinions []db.Minion) (del, add []db.Minion) {
 	key := func(iface interface{}) interface{} {
 		m := iface.(db.Minion)
-		m.ID = 0
-		m.Blueprint = ""
-		m.Self = false
-		m.AuthorizedKeys = ""
-		return m
+		return struct {
+			Role, PrivateIP, HostSubnets       string
+			Provider, Size, Region, FloatingIP string
+		}{
+			string(m.Role), m.PrivateIP, strings.Join(m.HostSubnets, " "),
+			m.Provider, m.Size, m.Region, m.FloatingIP,
+		}
 	}
 
 	_, lefts, rights := join.HashJoin(db.MinionSlice(dbMinions),

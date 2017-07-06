@@ -10,12 +10,13 @@ type Minion struct {
 	AuthorizedKeys string `json:"-" rowStringer:"omit"`
 
 	// Below fields are included in the JSON encoding.
-	Role       Role
-	PrivateIP  string
-	Provider   string
-	Size       string
-	Region     string
-	FloatingIP string
+	Role        Role
+	PrivateIP   string
+	Provider    string
+	Size        string
+	Region      string
+	FloatingIP  string
+	HostSubnets []string
 }
 
 // InsertMinion creates a new Minion and inserts it into 'db'.

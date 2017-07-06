@@ -45,6 +45,12 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 		return nil
 	})
 
+	if role == db.Worker {
+		// Start writing the machine's subnets as soon as possible so that the
+		// master can make informed IP allocations.
+		go network.WriteSubnets(conn)
+	}
+
 	// Not in a goroutine, want the plugin to start before the scheduler
 	plugin.Run()
 

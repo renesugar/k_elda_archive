@@ -26,6 +26,7 @@ func TestWriteMinion(t *testing.T) {
 		m.Provider = "Amazon"
 		m.Size = "Big"
 		m.Region = "Somewhere"
+		m.HostSubnets = []string{"foo", "bar"}
 		view.Commit(m)
 		return nil
 	})
@@ -51,7 +52,11 @@ func TestWriteMinion(t *testing.T) {
     "Provider": "Amazon",
     "Size": "Big",
     "Region": "Somewhere",
-    "FloatingIP": ""
+    "FloatingIP": "",
+    "HostSubnets": [
+        "foo",
+        "bar"
+    ]
 }`
 	assert.Equal(t, expVal, val)
 }
@@ -123,11 +128,12 @@ func TestFilter(t *testing.T) {
 
 func randMinion() db.Minion {
 	return db.Minion{
-		Role:      "Worker",
-		PrivateIP: randStr(),
-		Provider:  randStr(),
-		Size:      randStr(),
-		Region:    randStr(),
+		Role:        "Worker",
+		PrivateIP:   randStr(),
+		Provider:    randStr(),
+		Size:        randStr(),
+		Region:      randStr(),
+		HostSubnets: []string{randStr(), randStr()},
 	}
 }
 

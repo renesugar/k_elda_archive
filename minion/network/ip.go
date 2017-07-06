@@ -3,6 +3,7 @@ package network
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"sort"
@@ -14,13 +15,25 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+/* runUpdateIPs allocates IPs to containers and labels.
+
+XXX: It takes into account the subnets governed by routes on the host network
+stack of worker machines. If any worker has a route that intersects with the
+Quilt container subnet, we refuse to allocate container IPs within that subnet.
+If a container had an IP within a non-Quilt route, traffic destined to it from
+the host might get routed to the wrong interface.
+
+Note that the proper fix to this problem is to separate the Quilt networking
+stack from the host network. */
 func runUpdateIPs(conn db.Conn) {
-	for range conn.Trigger(db.ContainerTable, db.LabelTable, db.EtcdTable).C {
+	for range conn.Trigger(db.ContainerTable, db.LabelTable, db.EtcdTable,
+		db.MinionTable).C {
 		if !conn.EtcdLeader() {
 			continue
 		}
 
-		err := conn.Txn(db.ContainerTable, db.LabelTable).Run(updateIPsOnce)
+		err := conn.Txn(db.ContainerTable, db.LabelTable,
+			db.MinionTable).Run(updateIPsOnce)
 		if err != nil {
 			log.WithError(err).Warn("Failed to allocate IP addresses")
 		}
@@ -36,7 +49,7 @@ type ipContext struct {
 	unassignedLabels     []db.Label
 }
 
-func makeIPContext(view db.Database) ipContext {
+func makeIPContext(view db.Database, subnetBlacklist []net.IPNet) ipContext {
 	ctx := ipContext{
 		reserved: map[string]struct{}{
 			ipdef.GatewayIP.String():      {},
@@ -49,6 +62,10 @@ func makeIPContext(view db.Database) ipContext {
 	}
 
 	for _, dbc := range view.SelectFromContainer(nil) {
+		if dbc.IP != "" && ipBlacklisted(dbc.IP, subnetBlacklist) {
+			dbc.IP = ""
+		}
+
 		if dbc.IP != "" {
 			ctx.reserved[dbc.IP] = struct{}{}
 		} else {
@@ -57,6 +74,10 @@ func makeIPContext(view db.Database) ipContext {
 	}
 
 	for _, dbl := range view.SelectFromLabel(nil) {
+		if dbl.IP != "" && ipBlacklisted(dbl.IP, subnetBlacklist) {
+			dbl.IP = ""
+		}
+
 		if dbl.IP != "" {
 			ctx.reserved[dbl.IP] = struct{}{}
 		} else {
@@ -68,17 +89,68 @@ func makeIPContext(view db.Database) ipContext {
 }
 
 func updateIPsOnce(view db.Database) error {
-	ctx := makeIPContext(view)
-	if len(ctx.unassignedContainers) == 0 && len(ctx.unassignedLabels) == 0 {
-		return nil
+	subnetBlacklist, err := makeSubnetBlacklist(view)
+	if err != nil {
+		return fmt.Errorf("make subnet blacklist: %s", err)
 	}
 
-	err := allocateContainerIPs(view, ctx)
-	if err == nil {
-		syncLabelContainerIPs(view)
-		err = allocateLabelIPs(view, ctx)
+	// Attempt to allocate IPs up to three times in case we happen to choose
+	// an IP that falls within a blacklisted subnet.
+	for i := 0; i < 3; i++ {
+		ctx := makeIPContext(view, subnetBlacklist)
+		if len(ctx.unassignedContainers) == 0 && len(ctx.unassignedLabels) == 0 {
+			return nil
+		}
+
+		err = allocateContainerIPs(view, ctx)
+		if err == nil {
+			syncLabelContainerIPs(view)
+			err = allocateLabelIPs(view, ctx)
+		}
 	}
 	return err
+}
+
+// makeSubnetBlacklist returns all subnets that are governed by routes in a
+// worker machine's network stack, and intersect with the Quilt container
+// subnet.
+func makeSubnetBlacklist(view db.Database) ([]net.IPNet, error) {
+	isWorker := func(m db.Minion) bool {
+		return m.Role == db.Worker
+	}
+
+	subnets := map[string]struct{}{}
+	for _, m := range view.SelectFromMinion(isWorker) {
+		for _, subnet := range m.HostSubnets {
+			subnets[subnet] = struct{}{}
+		}
+	}
+
+	var subnetBlacklist []net.IPNet
+	for subnetStr := range subnets {
+		_, subnet, err := net.ParseCIDR(subnetStr)
+		if err != nil {
+			return nil, fmt.Errorf("parse subnet %s: %s", subnetStr, err)
+		}
+
+		if subnetIntersects(ipdef.QuiltSubnet, *subnet) {
+			subnetBlacklist = append(subnetBlacklist, *subnet)
+		}
+	}
+	return subnetBlacklist, nil
+}
+
+func subnetIntersects(a net.IPNet, b net.IPNet) bool {
+	return a.Contains(b.IP) || b.Contains(a.IP)
+}
+
+func ipBlacklisted(ip string, subnetBlacklist []net.IPNet) bool {
+	for _, subnet := range subnetBlacklist {
+		if subnet.Contains(net.ParseIP(ip)) {
+			return true
+		}
+	}
+	return false
 }
 
 func allocateContainerIPs(view db.Database, ctx ipContext) error {

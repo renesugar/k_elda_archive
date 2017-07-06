@@ -12,8 +12,74 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMakeSubnetBlacklistError(t *testing.T) {
+	t.Parallel()
+
+	conn := db.New()
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		m := view.InsertMinion()
+		m.Role = db.Worker
+		m.HostSubnets = []string{
+			"foo",
+		}
+		view.Commit(m)
+
+		_, err := makeSubnetBlacklist(view)
+		assert.EqualError(t, err, "parse subnet foo: invalid CIDR address: foo")
+		return nil
+	})
+}
+
+func TestMakeSubnetBlacklist(t *testing.T) {
+	t.Parallel()
+
+	conn := db.New()
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		m := view.InsertMinion()
+		m.Role = db.Worker
+		m.HostSubnets = []string{
+			"10.0.1.0/24",
+			"10.0.2.0/24",
+			"172.0.0.0/8",
+		}
+		view.Commit(m)
+
+		m = view.InsertMinion()
+		m.Role = db.Worker
+		m.HostSubnets = []string{
+			"10.0.1.0/24",
+			"10.0.3.0/24",
+		}
+		view.Commit(m)
+
+		blacklist, err := makeSubnetBlacklist(view)
+		assert.NoError(t, err)
+
+		// Convert the blacklist back into strings for comparison.
+		var blacklistStr []string
+		for _, subnet := range blacklist {
+			blacklistStr = append(blacklistStr, subnet.String())
+		}
+		sort.Strings(blacklistStr)
+		assert.Equal(t, []string{"10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"},
+			blacklistStr)
+		return nil
+	})
+}
+
 func TestMakeIPContext(t *testing.T) {
 	t.Parallel()
+
+	subnetBlacklist := []net.IPNet{
+		{
+			IP:   net.IPv4(10, 0, 1, 0),
+			Mask: net.CIDRMask(24, 32),
+		},
+		{
+			IP:   net.IPv4(10, 0, 2, 0),
+			Mask: net.CIDRMask(24, 32),
+		},
+	}
 
 	conn := db.New()
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
@@ -28,6 +94,12 @@ func TestMakeIPContext(t *testing.T) {
 		dbc.StitchID = "2"
 		view.Commit(dbc)
 
+		// A container with an IP in a blacklisted subnet.
+		dbc = view.InsertContainer()
+		dbc.IP = "10.0.2.1"
+		dbc.StitchID = "3"
+		view.Commit(dbc)
+
 		// A label with an IP address.
 		label := view.InsertLabel()
 		label.Label = "yellow"
@@ -39,12 +111,18 @@ func TestMakeIPContext(t *testing.T) {
 		label.Label = "blue"
 		view.Commit(label)
 
+		// A label with an IP in a blacklisted subnet.
+		label = view.InsertLabel()
+		label.Label = "green"
+		label.IP = "10.0.1.1"
+		view.Commit(label)
+
 		return nil
 	})
 
 	var ctx ipContext
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		ctx = makeIPContext(view)
+		ctx = makeIPContext(view, subnetBlacklist)
 		return nil
 	})
 
@@ -55,13 +133,13 @@ func TestMakeIPContext(t *testing.T) {
 		"10.0.0.3": {},
 	}, ctx.reserved)
 
-	assert.Equal(t, []db.Container{
-		{ID: 2, StitchID: "2"},
-	}, ctx.unassignedContainers)
+	assert.Len(t, ctx.unassignedContainers, 2)
+	assert.Contains(t, ctx.unassignedContainers, db.Container{ID: 2, StitchID: "2"})
+	assert.Contains(t, ctx.unassignedContainers, db.Container{ID: 3, StitchID: "3"})
 
-	assert.Equal(t, []db.Label{
-		{ID: 4, Label: "blue"},
-	}, ctx.unassignedLabels)
+	assert.Len(t, ctx.unassignedLabels, 2)
+	assert.Contains(t, ctx.unassignedLabels, db.Label{ID: 5, Label: "blue"})
+	assert.Contains(t, ctx.unassignedLabels, db.Label{ID: 6, Label: "green"})
 }
 
 func TestAllocateContainerIPs(t *testing.T) {

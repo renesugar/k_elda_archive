@@ -15,6 +15,8 @@ boot times.
 - Only allocate one Google network per namespace, rather than one network for
 each region within a namespace.
 - Implement debugging counters accessible through `quilt counters`.
+- Disallow IP allocation in subnets governed by routes in the host network. This
+fixes a bug where containers would sometimes fail to resolve DNS on DigitalOcean.
 
 Release 0.1.0
 -------------
