@@ -27,46 +27,64 @@ func runUpdateIPs(conn db.Conn) {
 	}
 }
 
-func updateIPsOnce(view db.Database) error {
-	ipSet := map[string]struct{}{
-		ipdef.GatewayIP.String():      {},
-		ipdef.LoadBalancerIP.String(): {},
+// ipContext describes what addresses have been allocated, and what entities
+// require new IP addresses.
+type ipContext struct {
+	reserved map[string]struct{}
 
-		// While not strictly required, it would be odd to allocate 10.0.0.0.
-		ipdef.QuiltSubnet.IP.String(): {},
+	unassignedContainers []db.Container
+	unassignedLabels     []db.Label
+}
+
+func makeIPContext(view db.Database) ipContext {
+	ctx := ipContext{
+		reserved: map[string]struct{}{
+			ipdef.GatewayIP.String():      {},
+			ipdef.LoadBalancerIP.String(): {},
+
+			// While not strictly required, it would be odd to allocate
+			// 10.0.0.0.
+			ipdef.QuiltSubnet.IP.String(): {},
+		},
 	}
 
 	for _, dbc := range view.SelectFromContainer(nil) {
 		if dbc.IP != "" {
-			ipSet[dbc.IP] = struct{}{}
+			ctx.reserved[dbc.IP] = struct{}{}
+		} else {
+			ctx.unassignedContainers = append(ctx.unassignedContainers, dbc)
 		}
 	}
 
 	for _, dbl := range view.SelectFromLabel(nil) {
 		if dbl.IP != "" {
-			ipSet[dbl.IP] = struct{}{}
+			ctx.reserved[dbl.IP] = struct{}{}
+		} else {
+			ctx.unassignedLabels = append(ctx.unassignedLabels, dbl)
 		}
 	}
 
-	err := allocateContainerIPs(view, ipSet)
+	return ctx
+}
+
+func updateIPsOnce(view db.Database) error {
+	ctx := makeIPContext(view)
+	if len(ctx.unassignedContainers) == 0 && len(ctx.unassignedLabels) == 0 {
+		return nil
+	}
+
+	err := allocateContainerIPs(view, ctx)
 	if err == nil {
 		syncLabelContainerIPs(view)
-		err = allocateLabelIPs(view, ipSet)
+		err = allocateLabelIPs(view, ctx)
 	}
 	return err
 }
 
-func allocateContainerIPs(view db.Database, ipSet map[string]struct{}) error {
-	var unassigned []db.Container
-	for _, dbc := range view.SelectFromContainer(nil) {
-		if dbc.IP == "" {
-			unassigned = append(unassigned, dbc)
-		}
-	}
-
-	for _, dbc := range unassigned {
+func allocateContainerIPs(view db.Database, ctx ipContext) error {
+	for _, dbc := range ctx.unassignedContainers {
 		c.Inc("Allocate Container IP")
-		ip, err := allocateIP(ipSet, ipdef.QuiltSubnet)
+		ip, err := allocateIP(ctx.reserved, ipdef.QuiltSubnet)
 		if err != nil {
 			return err
 		}
@@ -122,14 +140,10 @@ func syncLabelContainerIPs(view db.Database) {
 	}
 }
 
-func allocateLabelIPs(view db.Database, ipSet map[string]struct{}) error {
-	for _, label := range view.SelectFromLabel(nil) {
-		if label.IP != "" {
-			continue
-		}
-
+func allocateLabelIPs(view db.Database, ctx ipContext) error {
+	for _, label := range ctx.unassignedLabels {
 		c.Inc("Allocate Label IP")
-		ip, err := allocateIP(ipSet, ipdef.QuiltSubnet)
+		ip, err := allocateIP(ctx.reserved, ipdef.QuiltSubnet)
 		if err != nil {
 			return err
 		}

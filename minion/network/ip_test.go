@@ -12,6 +12,58 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMakeIPContext(t *testing.T) {
+	t.Parallel()
+
+	conn := db.New()
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		// A container with an IP address.
+		dbc := view.InsertContainer()
+		dbc.IP = "10.0.0.2"
+		dbc.StitchID = "1"
+		view.Commit(dbc)
+
+		// A container without an IP address.
+		dbc = view.InsertContainer()
+		dbc.StitchID = "2"
+		view.Commit(dbc)
+
+		// A label with an IP address.
+		label := view.InsertLabel()
+		label.Label = "yellow"
+		label.IP = "10.0.0.3"
+		view.Commit(label)
+
+		// A label without an IP address.
+		label = view.InsertLabel()
+		label.Label = "blue"
+		view.Commit(label)
+
+		return nil
+	})
+
+	var ctx ipContext
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		ctx = makeIPContext(view)
+		return nil
+	})
+
+	assert.Equal(t, map[string]struct{}{
+		"10.0.0.0": {},
+		"10.0.0.1": {},
+		"10.0.0.2": {},
+		"10.0.0.3": {},
+	}, ctx.reserved)
+
+	assert.Equal(t, []db.Container{
+		{ID: 2, StitchID: "2"},
+	}, ctx.unassignedContainers)
+
+	assert.Equal(t, []db.Label{
+		{ID: 4, Label: "blue"},
+	}, ctx.unassignedLabels)
+}
+
 func TestAllocateContainerIPs(t *testing.T) {
 	t.Parallel()
 	conn := db.New()
@@ -26,7 +78,11 @@ func TestAllocateContainerIPs(t *testing.T) {
 		dbc.StitchID = "2"
 		view.Commit(dbc)
 
-		allocateContainerIPs(view, map[string]struct{}{})
+		ctx := ipContext{
+			reserved:             map[string]struct{}{},
+			unassignedContainers: []db.Container{dbc},
+		}
+		allocateContainerIPs(view, ctx)
 		return nil
 	})
 
@@ -53,11 +109,11 @@ func TestAllocateLabelIPs(t *testing.T) {
 		label.Label = "yellow"
 		view.Commit(label)
 
-		return nil
-	})
-
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		assert.NoError(t, allocateLabelIPs(view, map[string]struct{}{}))
+		ctx := ipContext{
+			reserved:         map[string]struct{}{},
+			unassignedLabels: []db.Label{label},
+		}
+		assert.NoError(t, allocateLabelIPs(view, ctx))
 		return nil
 	})
 
