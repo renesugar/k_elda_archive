@@ -50,7 +50,8 @@ func updateIPsOnce(view db.Database) error {
 
 	err := allocateContainerIPs(view, ipSet)
 	if err == nil {
-		err = updateLabelIPs(view, ipSet)
+		syncLabelContainerIPs(view)
+		err = allocateLabelIPs(view, ipSet)
 	}
 	return err
 }
@@ -77,7 +78,7 @@ func allocateContainerIPs(view db.Database, ipSet map[string]struct{}) error {
 	return nil
 }
 
-func updateLabelIPs(view db.Database, ipSet map[string]struct{}) error {
+func syncLabelContainerIPs(view db.Database) {
 	dbcs := view.SelectFromContainer(func(dbc db.Container) bool {
 		return dbc.IP != ""
 	})
@@ -117,17 +118,24 @@ func updateLabelIPs(view db.Database, ipSet map[string]struct{}) error {
 		dbl := pair.L.(db.Label)
 		dbl.Label = pair.R.(string)
 		dbl.ContainerIPs = containerIPs[dbl.Label]
-
-		if dbl.IP == "" {
-			c.Inc("Allocate Label IP")
-			ip, err := allocateIP(ipSet, ipdef.QuiltSubnet)
-			if err != nil {
-				return err
-			}
-
-			dbl.IP = ip
-		}
 		view.Commit(dbl)
+	}
+}
+
+func allocateLabelIPs(view db.Database, ipSet map[string]struct{}) error {
+	for _, label := range view.SelectFromLabel(nil) {
+		if label.IP != "" {
+			continue
+		}
+
+		c.Inc("Allocate Label IP")
+		ip, err := allocateIP(ipSet, ipdef.QuiltSubnet)
+		if err != nil {
+			return err
+		}
+
+		label.IP = ip
+		view.Commit(label)
 	}
 
 	return nil

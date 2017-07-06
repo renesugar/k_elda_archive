@@ -3,12 +3,10 @@ package network
 import (
 	"fmt"
 	"net"
-	"reflect"
 	"sort"
 	"testing"
 
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/minion/ipdef"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,7 +44,30 @@ func TestAllocateContainerIPs(t *testing.T) {
 	assert.True(t, ipdef.QuiltSubnet.Contains(net.ParseIP(dbc.IP)))
 }
 
-func TestUpdateLabelIPs(t *testing.T) {
+func TestAllocateLabelIPs(t *testing.T) {
+	t.Parallel()
+	conn := db.New()
+
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		label := view.InsertLabel()
+		label.Label = "yellow"
+		view.Commit(label)
+
+		return nil
+	})
+
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		assert.NoError(t, allocateLabelIPs(view, map[string]struct{}{}))
+		return nil
+	})
+
+	labels := conn.SelectFromLabel(nil)
+	assert.Len(t, labels, 1)
+	labelIP := net.ParseIP(labels[0].IP)
+	assert.True(t, ipdef.QuiltSubnet.Contains(labelIP))
+}
+
+func TestSyncLabelContainerIPs(t *testing.T) {
 	t.Parallel()
 	conn := db.New()
 
@@ -71,37 +92,22 @@ func TestUpdateLabelIPs(t *testing.T) {
 	})
 
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		assert.NoError(t, updateLabelIPs(view, map[string]struct{}{}))
+		syncLabelContainerIPs(view)
 		return nil
 	})
 
-	exp := []db.Label{
-		{
-			Label:        "blue",
-			ContainerIPs: []string{"1.1.1.1"},
-		}, {
-			Label:        "red",
-			ContainerIPs: []string{"1.1.1.1", "2.2.2.2"},
-		},
-	}
-
-	// Ensure that the label name and container IPs match, and that the generated
-	// IP is within the Quilt subnet.
-	key := func(expIntf interface{}, actualIntf interface{}) int {
-		exp := expIntf.(db.Label)
-		actual := actualIntf.(db.Label)
-
-		if exp.Label == actual.Label &&
-			reflect.DeepEqual(exp.ContainerIPs, actual.ContainerIPs) &&
-			ipdef.QuiltSubnet.Contains(net.ParseIP(actual.IP)) {
-			return 0
-		}
-		return -1
-	}
-
-	_, extraExp, extraActual := join.Join(exp, conn.SelectFromLabel(nil), key)
-	assert.Len(t, extraExp, 0)
-	assert.Len(t, extraActual, 0)
+	actual := conn.SelectFromLabel(nil)
+	assert.Len(t, actual, 2)
+	assert.Contains(t, actual, db.Label{
+		ID:           5,
+		Label:        "blue",
+		ContainerIPs: []string{"1.1.1.1"},
+	})
+	assert.Contains(t, actual, db.Label{
+		ID:           4,
+		Label:        "red",
+		ContainerIPs: []string{"1.1.1.1", "2.2.2.2"},
+	})
 }
 
 func TestAllocate(t *testing.T) {
