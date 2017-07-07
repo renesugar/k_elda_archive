@@ -17,6 +17,7 @@ import (
 
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/util"
 )
 
 // Run contains the options for running Stitches.
@@ -32,6 +33,12 @@ func NewRunCommand() *Run {
 	return &Run{}
 }
 
+var runCommands = `quilt run [-H=<daemon_host>] [-f] [-blueprint=<blueprint>] <blueprint>`
+var runExplanation = "`run`" + ` compiles the provided blueprint, and sends the result to
+the Quilt daemon to be executed. Confirmation is required if deploying the
+blueprint would cause changes to an existing cluster. Confirmation can be
+skipped with the` + " `-f` " + `flag.`
+
 // InstallFlags sets up parsing for command line flags.
 func (rCmd *Run) InstallFlags(flags *flag.FlagSet) {
 	rCmd.connectionHelper.InstallFlags(flags)
@@ -40,14 +47,7 @@ func (rCmd *Run) InstallFlags(flags *flag.FlagSet) {
 	flags.BoolVar(&rCmd.force, "f", false, "deploy without confirming changes")
 
 	flags.Usage = func() {
-		fmt.Println("usage: quilt run [-H=<daemon_host>] [-f] " +
-			"[-blueprint=<blueprint>] <blueprint>")
-		fmt.Println("`run` compiles the provided blueprint, and sends the " +
-			"result to the Quilt daemon to be executed. Confirmation is " +
-			"required if deploying the blueprint would cause changes to an " +
-			"existing cluster. Confirmation can be skipped with the " +
-			"`-f` flag.")
-		flags.PrintDefaults()
+		util.PrintUsageString(runCommands, runExplanation, flags)
 	}
 }
 

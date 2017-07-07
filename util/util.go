@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -202,5 +203,15 @@ func WaitFor(pred func() bool, interval time.Duration, timeout time.Duration) er
 			return errors.New("timed out")
 		}
 		Sleep(interval)
+	}
+}
+
+// PrintUsageString formats and prints usage strings for quiltctl commands.
+func PrintUsageString(commands string, explanation string, flags *flag.FlagSet) {
+	fmt.Println("Usage: " + commands + "\n\n" + explanation + "\n")
+	if flags != nil {
+		flags.PrintDefaults()
+	} else {
+		flag.PrintDefaults()
 	}
 }

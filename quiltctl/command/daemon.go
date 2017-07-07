@@ -2,12 +2,12 @@ package command
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/quilt/quilt/api/server"
 	"github.com/quilt/quilt/cluster"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/engine"
+	"github.com/quilt/quilt/util"
 	"github.com/quilt/quilt/version"
 
 	log "github.com/Sirupsen/logrus"
@@ -25,15 +25,15 @@ func NewDaemonCommand() *Daemon {
 	}
 }
 
+var daemonCommands = "quilt daemon [-H=<daemon_host>]"
+var daemonExplanation = "`daemon` starts the quilt daemon, which listens for quilt " +
+	"API requests."
+
 // InstallFlags sets up parsing for command line flags
 func (dCmd *Daemon) InstallFlags(flags *flag.FlagSet) {
 	dCmd.connectionFlags.InstallFlags(flags)
 	flags.Usage = func() {
-		fmt.Println("usage: quilt daemon [-H=<daemon_host>]")
-		fmt.Println("`daemon` starts the quilt daemon, which listens for " +
-			"quilt API requests")
-
-		flags.PrintDefaults()
+		util.PrintUsageString(daemonCommands, daemonExplanation, flags)
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/quilt/quilt/quiltctl/ssh"
+	"github.com/quilt/quilt/util"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -30,17 +31,15 @@ func NewLogCommand() *Log {
 	return &Log{sshGetter: ssh.New}
 }
 
-var logsUsage = `usage: quilt logs [-H=<daemon_host>] [-i=<private_key>] <stitch_id>
-
-Fetch the logs of a container or machine minion.
-Either a container or machine ID can be supplied.
+var logCommands = "quilt logs [-H=<daemon_host>] [-i=<private_key>] <stitch_id>"
+var logExplanation = `Fetch the logs of a container or machine minion. Either a container
+or machine ID can be supplied.
 
 To get the logs of container 8879fd2dbcee with a specific private key:
 quilt logs -i ~/.ssh/quilt 8879fd2dbcee
 
 To follow the logs of the minion on machine 09ed35808a0b:
-quilt logs -f 09ed35808a0b
-`
+quilt logs -f 09ed35808a0b`
 
 // InstallFlags sets up parsing for command line flags.
 func (lCmd *Log) InstallFlags(flags *flag.FlagSet) {
@@ -53,8 +52,7 @@ func (lCmd *Log) InstallFlags(flags *flag.FlagSet) {
 	flags.BoolVar(&lCmd.showTimestamps, "t", false, "show timestamps")
 
 	flags.Usage = func() {
-		fmt.Println(logsUsage)
-		flags.PrintDefaults()
+		util.PrintUsageString(logCommands, logExplanation, flags)
 	}
 }
 

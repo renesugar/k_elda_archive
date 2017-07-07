@@ -2,11 +2,11 @@ package command
 
 import (
 	"flag"
-	"fmt"
 
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/util"
 )
 
 // Stop contains the options for stopping namespaces.
@@ -22,25 +22,24 @@ func NewStopCommand() *Stop {
 	return &Stop{}
 }
 
+var stopCommands = `quilt stop [-H=<daemon_host>] [-containers] [-namespace=<namespace> |
+<namespace>]`
+
+var stopExplanation = "`stop` " + `creates an empty Stitch for the given namespace, and
+sends it to the Quilt daemon to be executed. If no namespace is specified,
+` + "`stop`" + ` attempts to use the namespace currently tracked by the daemon. The
+result is that resources associated with the namespace, such as VMs, are freed.`
+
 // InstallFlags sets up parsing for command line flags.
 func (sCmd *Stop) InstallFlags(flags *flag.FlagSet) {
 	sCmd.connectionHelper.InstallFlags(flags)
 
-	flags.StringVar(&sCmd.namespace, "namespace", "",
-		"the namespace to stop")
+	flags.StringVar(&sCmd.namespace, "namespace", "", "the namespace to stop")
 	flags.BoolVar(&sCmd.onlyContainers, "containers", false,
 		"only destroy containers")
 
 	flags.Usage = func() {
-		fmt.Println("usage: quilt stop [-H=<daemon_host>] " +
-			"[-containers] [-namespace=<namespace> | <namespace>]")
-		fmt.Println("`stop` creates an empty Stitch for the given namespace, " +
-			"and sends it to the Quilt daemon to be executed. If no " +
-			"namespace is specified, `stop` attempts to use the namespace " +
-			"currently tracked by the daemon.")
-		fmt.Println("The result is that resources associated with the " +
-			"namespace, such as VMs, are freed.")
-		flags.PrintDefaults()
+		util.PrintUsageString(stopCommands, stopExplanation, flags)
 	}
 }
 

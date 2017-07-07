@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/quilt/quilt/util"
 	"github.com/quilt/quilt/version"
 
 	log "github.com/Sirupsen/logrus"
@@ -19,14 +20,14 @@ func NewVersionCommand() *Version {
 	return &Version{}
 }
 
-var versionUsage = `usage: quilt version [-H=<daemon_host>]
-Show the Quilt version information.`
+var versionCommands = "quilt version [-H=<daemon_host>]"
+var versionExplanation = "Show the Quilt version information."
 
 // InstallFlags sets up parsing for command line flags.
 func (vCmd *Version) InstallFlags(flags *flag.FlagSet) {
 	vCmd.connectionHelper.InstallFlags(flags)
 	flags.Usage = func() {
-		fmt.Println(versionUsage)
+		util.PrintUsageString(versionCommands, versionExplanation, flags)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion"
+	"github.com/quilt/quilt/util"
 	"github.com/quilt/quilt/version"
 
 	log "github.com/Sirupsen/logrus"
@@ -26,6 +27,10 @@ func NewMinionCommand() *Minion {
 	return &Minion{}
 }
 
+var minionCommands = "quilt minion [-role=<role>]"
+var minionExplanation = "`role` defines the role of the quilt minion to run, " +
+	"`Master` or `Worker`."
+
 // InstallFlags sets up parsing for command line flags.
 func (mCmd *Minion) InstallFlags(flags *flag.FlagSet) {
 	flags.StringVar(&mCmd.role, "role", "", "the role of this quilt minion")
@@ -35,10 +40,7 @@ func (mCmd *Minion) InstallFlags(flags *flag.FlagSet) {
 		"the interface on which to allow outbound traffic")
 
 	flags.Usage = func() {
-		fmt.Println("usage: quilt minion [-role=<role>]")
-		fmt.Println("`role` defines the role of the quilt minion to run, e.g. " +
-			"`Master` or `Worker`.")
-		flags.PrintDefaults()
+		util.PrintUsageString(minionCommands, minionExplanation, flags)
 	}
 }
 

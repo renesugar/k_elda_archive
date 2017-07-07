@@ -102,38 +102,32 @@ func NewDebugCommand() *Debug {
 	return &Debug{sshGetter: ssh.New}
 }
 
-var debugUsage = `usage: quilt debug-logs [-v] [-tar=<true/false>] [-i <keyfile>]` +
-	` [-o=<path>] <-all | -containers | -machines | <id> ...>
+var debugCommands = `quilt debug-logs [-v] [-tar=<true/false>] [-i <keyfile>] [-o=<path>]
+<-all | -containers | -machines | <id> ...>`
 
-Fetch logs for a set of machines or containers, placing
-the contents in appropriately named file inside a
-timestamped tarball. To store the contents in a folder
-instead, use the flag '-tar=false'.
+var debugExplanation = `Fetch logs for a set of machines or containers, placing
+the contents in appropriately named file inside a timestamped tarball. To store
+the contents in a folder instead, use the flag '-tar=false'.
 
-If the -all option is supplied, logs from all machines
-and containers will be fetched. Else if the -containers
-option is supplied, logs from all containers will be
-fetched. The -machines option is similar. Otherwise if
-none of the above options are given, a list of IDs can
-be supplied, which may be a mix of machines and
-containers in any order. Either one of these options
-or a list of IDs must be supplied.
+If the -all option is supplied, logs from all machines and containers will be
+fetched. Else if the -containers option is supplied, logs from all containers
+will be fetched. The -machines option is similar. Otherwise if none of the above
+options are given, a list of IDs can be supplied, which may be a mix of machines
+and containers in any order. Either one of these options or a list of IDs must
+be supplied.
 
-The -o option may be provided to optionally specify a
-name for the tar file (or folder) instead of using a
-timestamped name.
+The -o option may be provided to optionally specify a name for the tar file (or
+folder) instead of using a timestamped name.
 
-If -all is supplied, all other arguments are ignored. If
--containers or -machines are supplied, the list of IDs
-is ignored, but they do not override each other. It follows
-that the below commands are equivalent:
+If -all is supplied, all other arguments are ignored. If -containers or
+-machines are supplied, the list of IDs is ignored, but they do not override
+each other. It follows that the below commands are equivalent:
 quilt debug-logs -all
 quilt debug-logs -machines -containers
 quilt debug-logs <supply all machine/container IDs>
 
 To get the logs of machine 09ed35808a0b using a specific private key:
-quilt debug-logs -i ~/.ssh/quilt 09ed35808a0b
-`
+quilt debug-logs -i ~/.ssh/quilt 09ed35808a0b`
 
 // InstallFlags sets up parsing for command line flags.
 func (dCmd *Debug) InstallFlags(flags *flag.FlagSet) {
@@ -152,8 +146,7 @@ func (dCmd *Debug) InstallFlags(flags *flag.FlagSet) {
 		"if true (default), compress the logs into a tarball")
 
 	flags.Usage = func() {
-		fmt.Println(debugUsage)
-		flags.PrintDefaults()
+		util.PrintUsageString(debugCommands, debugExplanation, flags)
 	}
 }
 

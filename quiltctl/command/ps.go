@@ -31,17 +31,16 @@ func NewPsCommand() *Ps {
 	return &Ps{}
 }
 
+var psCommands = "quilt ps [-H=<daemon_host>]"
+var psExplanation = "`ps` displays the status of quilt-managed machines and containers."
+
 // InstallFlags sets up parsing for command line flags
 func (pCmd *Ps) InstallFlags(flags *flag.FlagSet) {
 	pCmd.connectionHelper.InstallFlags(flags)
 	flags.BoolVar(&pCmd.noTruncate, "no-trunc", false, "do not truncate container"+
 		" command output")
 	flags.Usage = func() {
-		fmt.Println("usage: quilt ps [-H=<daemon_host>]")
-		fmt.Println("`ps` displays the status of quilt-managed " +
-			"machines and containers.")
-
-		flags.PrintDefaults()
+		util.PrintUsageString(psCommands, psExplanation, flags)
 	}
 }
 

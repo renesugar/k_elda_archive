@@ -14,6 +14,7 @@ import (
 	"github.com/quilt/quilt/api/util"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/quiltctl/ssh"
+	quiltUtil "github.com/quilt/quilt/util"
 )
 
 // SSH contains the options for SSHing into machines.
@@ -33,18 +34,15 @@ func NewSSHCommand() *SSH {
 	return &SSH{sshGetter: ssh.New}
 }
 
-var sshUsage = `usage: quilt ssh <id> [command]
-
-Create a SSH session with the specified id.
-Either a container or machine ID can be supplied.
-If no command is supplied, a login shell is created.
+var sshCommands = "quilt ssh <id> [command]"
+var sshExplanation = `Create an SSH session with the specified id. Either a container or
+machine ID can be supplied. If no command is supplied, a login shell is created.
 
 To login to machine 09ed35808a0b with a specific private key:
 quilt ssh -i ~/.ssh/quilt 09ed35808a0b
 
 To run a command on container 8879fd2dbcee:
-quilt ssh 8879fd2dbcee echo foo
-`
+quilt ssh 8879fd2dbcee echo foo`
 
 // InstallFlags sets up parsing for command line flags.
 func (sCmd *SSH) InstallFlags(flags *flag.FlagSet) {
@@ -55,8 +53,7 @@ func (sCmd *SSH) InstallFlags(flags *flag.FlagSet) {
 		"attempt to allocate a pseudo-terminal")
 
 	flags.Usage = func() {
-		fmt.Println(sshUsage)
-		flags.PrintDefaults()
+		quiltUtil.PrintUsageString(sshCommands, sshExplanation, flags)
 	}
 }
 
