@@ -33,7 +33,7 @@ func (sCmd *Stop) InstallFlags(flags *flag.FlagSet) {
 
 	flags.Usage = func() {
 		fmt.Println("usage: quilt stop [-H=<daemon_host>] " +
-			"[-containers] [-namespace=<namespace>] <namespace>]")
+			"[-containers] [-namespace=<namespace> | <namespace>]")
 		fmt.Println("`stop` creates an empty Stitch for the given namespace, " +
 			"and sends it to the Quilt daemon to be executed. If no " +
 			"namespace is specified, `stop` attempts to use the namespace " +

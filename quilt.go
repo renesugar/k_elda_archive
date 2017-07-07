@@ -21,22 +21,21 @@ func main() {
 	flag.Usage = func() {
 		fmt.Println("Usage: quilt " +
 			"[-log-level=<level> | -l=<level>] [-H=<listen_address>] " +
-			"[log-file=<log_output_file>] " +
-			"[daemon | inspect <stitch> | run <stitch> | minion | " +
-			"stop <namespace> | ps | ssh <id> [command] | " +
-			"logs <container> | debug-logs <id...> | version]")
-		fmt.Println("\nWhen provided a stitch, quilt takes responsibility\n" +
+			"[-log-file=<log_output_file>] " +
+			"[daemon | inspect <blueprint> | run <blueprint> | minion | " +
+			"stop [<namespace> | -containers] | ps | ssh <id> [command] | " +
+			"logs <id> | debug-logs <id...> | version]")
+		fmt.Println("\nWhen provided a blueprint, quilt takes responsibility\n" +
 			"for deploying it as specified.  Alternatively, quilt may be\n" +
-			"instructed to stop all deployments in a given namespace,\n" +
-			"or the default namespace if none is provided.\n")
+			"instructed to stop all deployments or containers in a given\n" +
+			"namespace, or in the default namespace if none is provided.\n")
 		flag.PrintDefaults()
-		fmt.Println("        Valid logger levels are:\n" +
-			"            debug, info, warn, error, fatal or panic.")
 	}
+	var logLevelInfo = "logging level (debug, info, warn, error, fatal, or panic)"
 
 	var logOut = flag.String("log-file", "", "log output file (will be overwritten)")
-	var logLevel = flag.String("log-level", "info", "level to set logger to")
-	flag.StringVar(logLevel, "l", "info", "level to set logger to")
+	var logLevel = flag.String("log-level", "info", logLevelInfo)
+	flag.StringVar(logLevel, "l", "info", logLevelInfo)
 	flag.Parse()
 
 	level, err := parseLogLevel(*logLevel)

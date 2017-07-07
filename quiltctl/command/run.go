@@ -36,15 +36,15 @@ func NewRunCommand() *Run {
 func (rCmd *Run) InstallFlags(flags *flag.FlagSet) {
 	rCmd.connectionHelper.InstallFlags(flags)
 
-	flags.StringVar(&rCmd.stitch, "stitch", "", "the stitch to run")
+	flags.StringVar(&rCmd.stitch, "blueprint", "", "the blueprint to run")
 	flags.BoolVar(&rCmd.force, "f", false, "deploy without confirming changes")
 
 	flags.Usage = func() {
 		fmt.Println("usage: quilt run [-H=<daemon_host>] [-f] " +
-			"[-stitch=<stitch>] <stitch>")
-		fmt.Println("`run` compiles the provided stitch, and sends the " +
+			"[-blueprint=<blueprint>] <blueprint>")
+		fmt.Println("`run` compiles the provided blueprint, and sends the " +
 			"result to the Quilt daemon to be executed. Confirmation is " +
-			"required if deploying the stitch would cause changes to an " +
+			"required if deploying the blueprint would cause changes to an " +
 			"existing cluster. Confirmation can be skipped with the " +
 			"`-f` flag.")
 		flags.PrintDefaults()
