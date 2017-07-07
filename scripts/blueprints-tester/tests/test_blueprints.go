@@ -93,6 +93,7 @@ func TestBlueprints() error {
 		{"https://github.com/quilt/tester", ".", "./tester-runner-example.js"},
 		{"https://github.com/quilt/lobsters", ".", "./lobsters-example.js"},
 		{"https://github.com/quilt/infrastructure", ".", "./floating-ip.js"},
+		{"https://github.com/quilt/slackin", ".", "./main.js"},
 	}
 
 	for _, s := range blueprints {
