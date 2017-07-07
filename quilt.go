@@ -18,9 +18,9 @@ import (
 )
 
 var quiltCommands = `quilt [-log-level=<level> | -l=<level>] [-H=<listen_address>]
-[-log-file=<log_output_file>] [daemon | inspect <blueprint> | run <blueprint> |
-minion | stop [<namespace> | -containers] | ps | ssh <id> [command] |
-logs <id> | debug-logs <id...> | version]`
+[-verbose | -v] [-log-file=<log_output_file>] [daemon | inspect <blueprint> |
+run <blueprint> | minion | stop [<namespace> | -containers] | ps |
+ssh <id> [command] | logs <id> | debug-logs <id...> | version]`
 
 var quiltExplanation = `When provided a blueprint, quilt takes responsibility for
 deploying it as specified. Alternatively, quilt may be instructed to stop all
@@ -32,13 +32,16 @@ func main() {
 		util.PrintUsageString(quiltCommands, quiltExplanation, nil)
 	}
 	var logLevelInfo = "logging level (debug, info, warn, error, fatal, or panic)"
+	var debugInfo = "turn on debug logging"
 
 	var logOut = flag.String("log-file", "", "log output file (will be overwritten)")
 	var logLevel = flag.String("log-level", "info", logLevelInfo)
+	var debugOn = flag.Bool("verbose", false, debugInfo)
 	flag.StringVar(logLevel, "l", "info", logLevelInfo)
+	flag.BoolVar(debugOn, "v", false, debugInfo)
 	flag.Parse()
 
-	level, err := parseLogLevel(*logLevel)
+	level, err := parseLogLevel(*logLevel, *debugOn)
 	if err != nil {
 		fmt.Println(err)
 		usage()
@@ -83,7 +86,11 @@ func usage() {
 // parseLogLevel returns the log.Level type corresponding to the given string
 // (case insensitive).
 // If no such matching string is found, it returns log.InfoLevel (default) and an error.
-func parseLogLevel(logLevel string) (log.Level, error) {
+func parseLogLevel(logLevel string, debug bool) (log.Level, error) {
+	if debug {
+		return log.DebugLevel, nil
+	}
+
 	logLevel = strings.ToLower(logLevel)
 	switch logLevel {
 	case "debug":
