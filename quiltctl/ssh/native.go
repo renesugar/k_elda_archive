@@ -36,8 +36,9 @@ func New(host string, keyPath string) (Client, error) {
 		auth = ssh.PublicKeys(defaultSigners()...)
 	}
 	sshConfig := &ssh.ClientConfig{
-		User: "quilt",
-		Auth: []ssh.AuthMethod{auth},
+		User:            "quilt",
+		Auth:            []ssh.AuthMethod{auth},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", host), sshConfig)
