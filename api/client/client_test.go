@@ -35,6 +35,12 @@ func (c mockAPIClient) QueryCounters(ctx context.Context, in *pb.CountersRequest
 	return &pb.CountersReply{}, nil
 }
 
+func (c mockAPIClient) QueryMinionCounters(ctx context.Context, in *pb.
+	MinionCountersRequest, opts ...grpc.CallOption) (*pb.CountersReply, error) {
+
+	return &pb.CountersReply{}, nil
+}
+
 func (c mockAPIClient) Version(ctx context.Context, in *pb.VersionRequest,
 	opts ...grpc.CallOption) (*pb.VersionReply, error) {
 

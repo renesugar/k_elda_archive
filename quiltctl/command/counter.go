@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -8,17 +9,25 @@ import (
 	"sort"
 	"text/tabwriter"
 
+	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/api/pb"
 )
 
-var usage = `usage: quilt counters [-H=<daemon_host>]
+const daemonTarget = "daemon"
+
+var usage = fmt.Sprintf(`usage: quilt counters [-H=<daemon_host>] <target>
 quilt counters displays internal counters tracked for
 debugging purposes.  It's intended for Quilt experts.
 
-`
+<target> should be %q to retrieve the counters for the
+daemon, or a machine's ID.
+
+`, daemonTarget)
 
 // Counters implements the `quilt counters` command.
 type Counters struct {
+	target string
+
 	connectionHelper
 }
 
@@ -33,6 +42,10 @@ func (cmd *Counters) InstallFlags(flags *flag.FlagSet) {
 
 // Parse parses the command line arguments for the counters command.
 func (cmd *Counters) Parse(args []string) error {
+	if len(args) == 0 {
+		return errors.New("must specify a target")
+	}
+	cmd.target = args[0]
 	return nil
 }
 
@@ -46,13 +59,25 @@ func (cmd *Counters) Run() int {
 }
 
 func (cmd *Counters) run() error {
-	counters, err := cmd.client.QueryCounters()
+	counters, err := queryCounters(cmd.client, cmd.target)
 	if err != nil {
 		return fmt.Errorf("error querying debug counters: %s", err)
 	}
 
 	printCounters(os.Stdout, counters)
 	return nil
+}
+
+func queryCounters(c client.Client, tgt string) ([]pb.Counter, error) {
+	if tgt == daemonTarget {
+		return c.QueryCounters()
+	}
+
+	mach, err := getMachine(c, tgt)
+	if err != nil {
+		return nil, fmt.Errorf("resolve machine: %s", err)
+	}
+	return c.QueryMinionCounters(mach.PublicIP)
 }
 
 func printCounters(out io.Writer, counters []pb.Counter) {

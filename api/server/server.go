@@ -151,6 +151,25 @@ func queryFromDaemon(table db.TableType, conn db.Conn) (
 	}
 }
 
+func (s server) QueryMinionCounters(ctx context.Context, in *pb.MinionCountersRequest) (
+	*pb.CountersReply, error) {
+	clnt, err := newClient(api.RemoteAddress(in.Host))
+	if err != nil {
+		return nil, err
+	}
+
+	counters, err := clnt.QueryCounters()
+	if err != nil {
+		return nil, err
+	}
+
+	reply := &pb.CountersReply{}
+	for i := range counters {
+		reply.Counters = append(reply.Counters, &counters[i])
+	}
+	return reply, nil
+}
+
 func (s server) QueryCounters(ctx context.Context, in *pb.CountersRequest) (
 	*pb.CountersReply, error) {
 	return &pb.CountersReply{Counters: counter.Dump()}, nil

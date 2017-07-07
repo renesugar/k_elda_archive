@@ -8,6 +8,7 @@ import (
 
 	"github.com/quilt/quilt/api/client/mocks"
 	"github.com/quilt/quilt/api/pb"
+	"github.com/quilt/quilt/db"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,13 +29,16 @@ func TestParse(t *testing.T) {
 	t.Parallel()
 
 	counters := &Counters{}
-	assert.Nil(t, counters.Parse(nil))
+	assert.Error(t, counters.Parse(nil), "")
+
+	assert.NoError(t, counters.Parse([]string{"host"}))
+	assert.Equal(t, "host", counters.target)
 }
 
-func TestRun(t *testing.T) {
+func TestRunQueryDaemon(t *testing.T) {
 	t.Parallel()
 
-	counters := &Counters{}
+	counters := &Counters{target: daemonTarget}
 	mock := new(mocks.Client)
 	counters.client = mock
 
@@ -42,6 +46,28 @@ func TestRun(t *testing.T) {
 	assert.NotZero(t, counters.Run())
 
 	mock.On("QueryCounters").Once().Return(nil, nil)
+	assert.Zero(t, counters.Run())
+}
+
+func TestRunQueryMinion(t *testing.T) {
+	t.Parallel()
+
+	counters := &Counters{target: "minion"}
+	mock := new(mocks.Client)
+	counters.client = mock
+
+	// Test we error when there's no matching machine.
+	mock.On("QueryMachines").Once().Return(nil, nil)
+	assert.NotZero(t, counters.Run())
+
+	// Test we error when QueryMinionCounters fails.
+	mock.On("QueryMachines").Return(
+		[]db.Machine{{StitchID: "minion", PublicIP: "host"}}, nil)
+	mock.On("QueryMinionCounters", "host").Once().Return(nil, assert.AnError)
+	assert.NotZero(t, counters.Run())
+
+	// Test success.
+	mock.On("QueryMinionCounters", "host").Once().Return(nil, nil)
 	assert.Zero(t, counters.Run())
 }
 

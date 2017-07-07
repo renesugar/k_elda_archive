@@ -5,6 +5,7 @@ service API {
     rpc Deploy(DeployRequest) returns(DeployReply) {}
     rpc Version(VersionRequest) returns(VersionReply) {}
     rpc QueryCounters(CountersRequest) returns(CountersReply){}
+    rpc QueryMinionCounters(MinionCountersRequest) returns(CountersReply){}
 }
 
 message DBQuery {
@@ -28,6 +29,10 @@ message VersionReply {
 }
 
 message CountersRequest {}
+
+message MinionCountersRequest {
+    string Host = 1;
+}
 
 message CountersReply {
     repeated Counter counters = 1;

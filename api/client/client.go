@@ -51,6 +51,9 @@ type Client interface {
 	// QueryCounters retrieves the debugging counters tracked with the Quilt daemon.
 	QueryCounters() ([]pb.Counter, error)
 
+	// QueryCounters retrieves the debugging counters tracked by a Quilt minion.
+	QueryMinionCounters(string) ([]pb.Counter, error)
+
 	// Deploy makes a request to the Quilt daemon to deploy the given deployment.
 	Deploy(deployment string) error
 
@@ -218,12 +221,26 @@ func (c clientImpl) QueryCounters() ([]pb.Counter, error) {
 		return nil, err
 	}
 
-	var counters []pb.Counter
+	return parseCountersReply(reply), nil
+}
+
+// QueryCounters retrieves the debugging counters tracked by a Quilt minion.
+func (c clientImpl) QueryMinionCounters(host string) ([]pb.Counter, error) {
+	ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
+	reply, err := c.pbClient.QueryMinionCounters(ctx,
+		&pb.MinionCountersRequest{Host: host})
+	if err != nil {
+		return nil, err
+	}
+
+	return parseCountersReply(reply), nil
+}
+
+func parseCountersReply(reply *pb.CountersReply) (counters []pb.Counter) {
 	for _, c := range reply.Counters {
 		counters = append(counters, *c)
 	}
-
-	return counters, nil
+	return counters
 }
 
 // Deploy makes a request to the Quilt daemon to deploy the given deployment.
