@@ -17,7 +17,7 @@ type I interface {
 	LinkByName(name string) (Link, error)
 	LinkByIndex(index int) (Link, error)
 	AddrAdd(link Link, ip net.IPNet) error
-	RouteList() ([]Route, error)
+	RouteList(family int) ([]Route, error)
 }
 
 // N holds a global instance of I.
@@ -65,9 +65,9 @@ func (n n) AddrAdd(link Link, ip net.IPNet) error {
 	return netlink.AddrAdd(link, &netlink.Addr{IPNet: &ip})
 }
 
-func (n n) RouteList() ([]Route, error) {
+func (n n) RouteList(family int) ([]Route, error) {
 	c.Inc("List Routes")
-	res, err := netlink.RouteList(nil, 0)
+	res, err := netlink.RouteList(nil, family)
 
 	var routes []Route
 	for _, r := range res {

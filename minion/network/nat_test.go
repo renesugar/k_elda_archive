@@ -272,7 +272,8 @@ func TestRuleKey(t *testing.T) {
 func TestGetDefaultRouteIntf(t *testing.T) {
 	mockNetlink := new(nlmock.I)
 	nl.N = mockNetlink
-	mockNetlink.On("RouteList").Once().Return(nil, errors.New("not implemented"))
+	mockNetlink.On("RouteList", mock.Anything).Once().Return(
+		nil, errors.New("not implemented"))
 
 	link := netlink.GenericLink{}
 	link.LinkAttrs.Name = "link name"
@@ -283,22 +284,25 @@ func TestGetDefaultRouteIntf(t *testing.T) {
 	assert.Empty(t, res)
 	assert.EqualError(t, err, "route list: not implemented")
 
-	mockNetlink.On("RouteList").Once().Return(nil, nil)
+	mockNetlink.On("RouteList", mock.Anything).Once().Return(nil, nil)
 	res, err = getDefaultRouteIntfImpl()
 	assert.Empty(t, res)
 	assert.EqualError(t, err, "missing default route")
 
-	mockNetlink.On("RouteList").Once().Return([]nl.Route{{Dst: &ipdef.QuiltSubnet}}, nil)
+	mockNetlink.On("RouteList", mock.Anything).Once().Return(
+		[]nl.Route{{Dst: &ipdef.QuiltSubnet}}, nil)
 	res, err = getDefaultRouteIntfImpl()
 	assert.Empty(t, res)
 	assert.EqualError(t, err, "missing default route")
 
-	mockNetlink.On("RouteList").Once().Return([]nl.Route{{LinkIndex: 2}}, nil)
+	mockNetlink.On("RouteList", mock.Anything).Once().Return(
+		[]nl.Route{{LinkIndex: 2}}, nil)
 	res, err = getDefaultRouteIntfImpl()
 	assert.Empty(t, res)
 	assert.EqualError(t, err, "default route missing interface: unknown")
 
-	mockNetlink.On("RouteList").Once().Return([]nl.Route{{LinkIndex: 5}}, nil)
+	mockNetlink.On("RouteList", mock.Anything).Once().Return(
+		[]nl.Route{{LinkIndex: 5}}, nil)
 	res, err = getDefaultRouteIntfImpl()
 	assert.Equal(t, "link name", res)
 	assert.NoError(t, err)

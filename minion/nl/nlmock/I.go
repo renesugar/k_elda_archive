@@ -113,13 +113,13 @@ func (_m *I) LinkSetUp(link nl.Link) error {
 	return r0
 }
 
-// RouteList provides a mock function with given fields:
-func (_m *I) RouteList() ([]nl.Route, error) {
-	ret := _m.Called()
+// RouteList provides a mock function with given fields: family
+func (_m *I) RouteList(family int) ([]nl.Route, error) {
+	ret := _m.Called(family)
 
 	var r0 []nl.Route
-	if rf, ok := ret.Get(0).(func() []nl.Route); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(int) []nl.Route); ok {
+		r0 = rf(family)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]nl.Route)
@@ -127,8 +127,8 @@ func (_m *I) RouteList() ([]nl.Route, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(family)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -301,7 +301,7 @@ func setDefaultRules(ipt IPTables) error {
 // getDefaultRouteIntfImpl gets the interface with the default route.
 func getDefaultRouteIntfImpl() (string, error) {
 	c.Inc("Get Default Route")
-	routes, err := nl.N.RouteList()
+	routes, err := nl.N.RouteList(0)
 	if err != nil {
 		return "", fmt.Errorf("route list: %s", err)
 	}
