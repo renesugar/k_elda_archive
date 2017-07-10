@@ -744,6 +744,12 @@
 			"revisionTime": "2016-06-03T20:31:14Z"
 		},
 		{
+			"checksumSHA1": "TiB7Ji29q8RkhKEA7X3puN4gLeY=",
+			"path": "github.com/spf13/afero/sftpfs",
+			"revision": "9be650865eab0c12963d8753212f4f9c66cdcf12",
+			"revisionTime": "2017-02-17T16:41:46Z"
+		},
+		{
 			"checksumSHA1": "K0crHygPTP42i1nLKWphSlvOQJw=",
 			"path": "github.com/stretchr/objx",
 			"revision": "1a9d0bb9f541897e62256577b352fdbc1fb4fd94",
