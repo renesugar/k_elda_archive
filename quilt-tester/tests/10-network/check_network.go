@@ -224,7 +224,9 @@ type pingResult struct {
 // We have to limit our parallelization because each `quilt exec` creates a new SSH login
 // session. Doing this quickly in parallel breaks system-logind
 // on the remote machine: https://github.com/systemd/systemd/issues/2925.
-const concurrencyLimit = 10
+// Furthermore, the concurrency limit cannot exceed the sshd MaxStartups setting,
+// or else the SSH connections may be randomly rejected.
+const concurrencyLimit = 5
 
 func (tester networkTester) pingAll(container db.Container) []pingResult {
 	pingResultsChan := make(chan pingResult, len(tester.allIPs))
