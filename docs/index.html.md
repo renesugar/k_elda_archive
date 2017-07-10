@@ -11,6 +11,7 @@ toc_footers:
 includes:
   - GettingStarted
   - BlueprintWritersGuide
+  - Security
   - BlueprintAPI
   - CloudProviders
   - Dev
