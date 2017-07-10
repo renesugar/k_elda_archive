@@ -15,6 +15,7 @@ import (
 )
 
 func TestAllocateContainerIPs(t *testing.T) {
+	t.Parallel()
 	conn := db.New()
 
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
@@ -46,6 +47,7 @@ func TestAllocateContainerIPs(t *testing.T) {
 }
 
 func TestUpdateLabelIPs(t *testing.T) {
+	t.Parallel()
 	conn := db.New()
 
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
@@ -103,6 +105,8 @@ func TestUpdateLabelIPs(t *testing.T) {
 }
 
 func TestAllocate(t *testing.T) {
+	t.Parallel()
+
 	subnet := net.IPNet{
 		IP:   net.IPv4(0xab, 0xcd, 0xe0, 0x00),
 		Mask: net.CIDRMask(20, 32),
