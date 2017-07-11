@@ -15,7 +15,10 @@ type clients struct {
 }
 
 func TestBoot(t *testing.T) {
-	conn, clients := startTest()
+	conn, clients := startTest(t, map[string]pb.MinionConfig_Role{
+		"1.1.1.1": pb.MinionConfig_NONE,
+		"2.2.2.2": pb.MinionConfig_NONE,
+	})
 	RunOnce(conn)
 
 	assert.Zero(t, clients.newCalls)
@@ -82,7 +85,11 @@ func TestBoot(t *testing.T) {
 }
 
 func TestBootEtcd(t *testing.T) {
-	conn, clients := startTest()
+	conn, clients := startTest(t, map[string]pb.MinionConfig_Role{
+		"m1-pub": pb.MinionConfig_NONE,
+		"m2-pub": pb.MinionConfig_NONE,
+		"w1-pub": pb.MinionConfig_NONE,
+	})
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		m := view.InsertMachine()
 		m.Role = db.Master
@@ -146,7 +153,9 @@ func TestGetMachineRole(t *testing.T) {
 }
 
 func TestInitForeman(t *testing.T) {
-	conn := startTestWithRole(pb.MinionConfig_WORKER)
+	conn, _ := startTest(t, map[string]pb.MinionConfig_Role{
+		"2.2.2.2": pb.MinionConfig_WORKER,
+	})
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		m := view.InsertMachine()
 		m.PublicIP = "2.2.2.2"
@@ -161,14 +170,16 @@ func TestInitForeman(t *testing.T) {
 		assert.Equal(t, db.Role(db.Worker), m.machine.Role)
 	}
 
-	conn = startTestWithRole(pb.MinionConfig_Role(-7))
+	conn, _ = startTest(t, map[string]pb.MinionConfig_Role{
+		"2.2.2.2": pb.MinionConfig_Role(-7),
+	})
 	Init(conn)
 	for _, m := range minions {
 		assert.Equal(t, db.None, m.machine.Role)
 	}
 }
 
-func startTest() (db.Conn, *clients) {
+func startTest(t *testing.T, roles map[string]pb.MinionConfig_Role) (db.Conn, *clients) {
 	conn := db.New()
 	minions = map[string]*minion{}
 	clients := &clients{make(map[string]*fakeClient), 0}
@@ -176,7 +187,16 @@ func startTest() (db.Conn, *clients) {
 		if fc, ok := clients.clients[ip]; ok {
 			return fc, nil
 		}
-		fc := &fakeClient{clients, ip, pb.MinionConfig{}}
+
+		role, ok := roles[ip]
+		if !ok {
+			t.Errorf("no role specified for %s", ip)
+		}
+		fc := &fakeClient{
+			clients: clients,
+			ip:      ip,
+			role:    role,
+		}
 		clients.clients[ip] = fc
 		clients.newCalls++
 		return fc, nil
@@ -184,20 +204,10 @@ func startTest() (db.Conn, *clients) {
 	return conn, clients
 }
 
-func startTestWithRole(role pb.MinionConfig_Role) db.Conn {
-	clientInst := &clients{make(map[string]*fakeClient), 0}
-	newClient = func(ip string) (client, error) {
-		fc := &fakeClient{clientInst, ip, pb.MinionConfig{Role: role}}
-		clientInst.clients[ip] = fc
-		clientInst.newCalls++
-		return fc, nil
-	}
-	return db.New()
-}
-
 type fakeClient struct {
 	clients *clients
 	ip      string
+	role    pb.MinionConfig_Role
 	mc      pb.MinionConfig
 }
 
@@ -207,7 +217,9 @@ func (fc *fakeClient) setMinion(mc pb.MinionConfig) error {
 }
 
 func (fc *fakeClient) getMinion() (pb.MinionConfig, error) {
-	return fc.mc, nil
+	mc := fc.mc
+	mc.Role = fc.role
+	return mc, nil
 }
 
 func (fc *fakeClient) Close() {
