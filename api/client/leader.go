@@ -3,16 +3,18 @@ package client
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/util"
 	"github.com/quilt/quilt/db"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 // Leader obtains a Client connected to the Leader of the cluster.
 func Leader(machines []db.Machine) (Client, error) {
+	// Map the IP of minions that we failed to query to the error it returned.
+	getLeaderErrors := map[string]error{}
+
 	// Try to figure out the lead minion's IP by asking each of the machines.
 	for _, m := range machines {
 		if m.PublicIP == "" {
@@ -23,10 +25,20 @@ func Leader(machines []db.Machine) (Client, error) {
 		if err == nil {
 			return newClient(api.RemoteAddress(ip))
 		}
-		log.WithError(err).Debug("Unable to get leader IP")
+		getLeaderErrors[m.PublicIP] = err
 	}
 
-	return nil, errors.New("no leader found")
+	var errorStrs []string
+	for m, err := range getLeaderErrors {
+		errorStrs = append(errorStrs, fmt.Sprintf("%s - %s", m, err.Error()))
+	}
+
+	err := "no leader found"
+	if len(errorStrs) != 0 {
+		err += ": " + strings.Join(errorStrs, "; ")
+	}
+
+	return nil, errors.New(err)
 }
 
 // Get the public IP of the lead minion by querying the remote machine's etcd

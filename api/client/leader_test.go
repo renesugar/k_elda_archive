@@ -68,5 +68,12 @@ func TestNoLeader(t *testing.T) {
 			PublicIP: "9.9.9.9",
 		},
 	})
+	expErr := "no leader found: 8.8.8.8 - no leader information on host 8.8.8.8; " +
+		"9.9.9.9 - no leader information on host 9.9.9.9"
+	assert.EqualError(t, err, expErr)
+}
+
+func TestLeaderNoMachines(t *testing.T) {
+	_, err := Leader(nil)
 	assert.EqualError(t, err, "no leader found")
 }
