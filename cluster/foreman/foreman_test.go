@@ -90,6 +90,8 @@ func TestBootEtcd(t *testing.T) {
 		"m2-pub": pb.MinionConfig_NONE,
 		"w1-pub": pb.MinionConfig_NONE,
 	})
+
+	// Test that the worker connects to the master.
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		m := view.InsertMachine()
 		m.Role = db.Master
@@ -106,9 +108,11 @@ func TestBootEtcd(t *testing.T) {
 		view.Commit(m)
 		return nil
 	})
+
 	RunOnce(conn)
 	assert.Equal(t, []string{"m1-priv"}, clients.clients["w1-pub"].mc.EtcdMembers)
 
+	// Test that if we add another master, the worker connects to both masters.
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		m := view.InsertMachine()
 		m.Role = db.Master
@@ -124,6 +128,7 @@ func TestBootEtcd(t *testing.T) {
 	assert.Contains(t, etcdMembers, "m1-priv")
 	assert.Contains(t, etcdMembers, "m2-priv")
 
+	// Test that if we remove a master, the worker connects to the remaining master.
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		var toDelete = view.SelectFromMachine(func(m db.Machine) bool {
 			return m.PrivateIP == "m1-priv"
