@@ -31,13 +31,11 @@ func TestBoot(t *testing.T) {
 
 	RunOnce(conn)
 	assert.Equal(t, 1, clients.newCalls)
-	_, ok := clients.clients["1.1.1.1"]
-	assert.True(t, ok)
+	assert.Contains(t, clients.clients, "1.1.1.1")
 
 	RunOnce(conn)
 	assert.Equal(t, 1, clients.newCalls)
-	_, ok = clients.clients["1.1.1.1"]
-	assert.True(t, ok)
+	assert.Contains(t, clients.clients, "1.1.1.1")
 
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		m := view.InsertMachine()
@@ -50,24 +48,16 @@ func TestBoot(t *testing.T) {
 
 	RunOnce(conn)
 	assert.Equal(t, 2, clients.newCalls)
-
-	_, ok = clients.clients["2.2.2.2"]
-	assert.True(t, ok)
-
-	_, ok = clients.clients["1.1.1.1"]
-	assert.True(t, ok)
+	assert.Contains(t, clients.clients, "2.2.2.2")
+	assert.Contains(t, clients.clients, "1.1.1.1")
 
 	RunOnce(conn)
 	RunOnce(conn)
 	RunOnce(conn)
 	RunOnce(conn)
 	assert.Equal(t, 2, clients.newCalls)
-
-	_, ok = clients.clients["2.2.2.2"]
-	assert.True(t, ok)
-
-	_, ok = clients.clients["1.1.1.1"]
-	assert.True(t, ok)
+	assert.Contains(t, clients.clients, "2.2.2.2")
+	assert.Contains(t, clients.clients, "1.1.1.1")
 
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		machines := view.SelectFromMachine(func(m db.Machine) bool {
@@ -79,24 +69,16 @@ func TestBoot(t *testing.T) {
 
 	RunOnce(conn)
 	assert.Equal(t, 2, clients.newCalls)
-
-	_, ok = clients.clients["2.2.2.2"]
-	assert.True(t, ok)
-
-	_, ok = clients.clients["1.1.1.1"]
-	assert.False(t, ok)
+	assert.Contains(t, clients.clients, "2.2.2.2")
+	assert.NotContains(t, clients.clients, "1.1.1.1")
 
 	RunOnce(conn)
 	RunOnce(conn)
 	RunOnce(conn)
 	RunOnce(conn)
 	assert.Equal(t, 2, clients.newCalls)
-
-	_, ok = clients.clients["2.2.2.2"]
-	assert.True(t, ok)
-
-	_, ok = clients.clients["1.1.1.1"]
-	assert.False(t, ok)
+	assert.Contains(t, clients.clients, "2.2.2.2")
+	assert.NotContains(t, clients.clients, "1.1.1.1")
 }
 
 func TestBootEtcd(t *testing.T) {
