@@ -86,9 +86,9 @@ func TestBoot(t *testing.T) {
 
 func TestBootEtcd(t *testing.T) {
 	conn, clients := startTest(t, map[string]pb.MinionConfig_Role{
-		"m1-pub": pb.MinionConfig_NONE,
-		"m2-pub": pb.MinionConfig_NONE,
-		"w1-pub": pb.MinionConfig_NONE,
+		"m1-pub": pb.MinionConfig_MASTER,
+		"m2-pub": pb.MinionConfig_MASTER,
+		"w1-pub": pb.MinionConfig_WORKER,
 	})
 
 	// Test that the worker connects to the master.
@@ -139,6 +139,33 @@ func TestBootEtcd(t *testing.T) {
 	RunOnce(conn)
 	assert.Equal(t, []string{"m2-priv"},
 		clients.clients["w1-pub"].mc.EtcdMembers)
+}
+
+func TestBootEtcdRoleConflict(t *testing.T) {
+	conn, clients := startTest(t, map[string]pb.MinionConfig_Role{
+		"m1-pub": pb.MinionConfig_MASTER,
+		"w1-pub": pb.MinionConfig_WORKER,
+	})
+
+	// Test that the correct IP is predicted as the master even when the cluster's
+	// guess is incorrect.
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		m := view.InsertMachine()
+		m.Role = db.Worker
+		m.PublicIP = "m1-pub"
+		m.PrivateIP = "m1-priv"
+		view.Commit(m)
+
+		m = view.InsertMachine()
+		m.Role = db.Master
+		m.PublicIP = "w1-pub"
+		m.PrivateIP = "w1-priv"
+		view.Commit(m)
+		return nil
+	})
+
+	RunOnce(conn)
+	assert.Equal(t, []string{"m1-priv"}, clients.clients["w1-pub"].mc.EtcdMembers)
 }
 
 func TestGetMachineRole(t *testing.T) {

@@ -114,7 +114,7 @@ func RunOnce(conn db.Conn) {
 
 	var etcdIPs []string
 	for _, m := range minions {
-		if m.machine.Role == db.Master && m.machine.PrivateIP != "" {
+		if m.config.Role == pb.MinionConfig_MASTER && m.machine.PrivateIP != "" {
 			etcdIPs = append(etcdIPs, m.machine.PrivateIP)
 		}
 	}

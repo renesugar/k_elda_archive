@@ -17,6 +17,8 @@ each region within a namespace.
 - Implement debugging counters accessible through `quilt counters`.
 - Disallow IP allocation in subnets governed by routes in the host network. This
 fixes a bug where containers would sometimes fail to resolve DNS on DigitalOcean.
+- Fixed a bug where etcd would sometimes restart when the daemon connected to machines
+that had already been booted. This most visibly resulted in containers restarting.
 
 Release 0.1.0
 -------------
