@@ -29,10 +29,10 @@ new Container(new Image("my-image-name",
 would deploy an image called `my-image-name` built on top of the `nginx` image,
 with the `github.com/my/web_repo` repository cloned into `/web_root`.
 
-If the Dockerfile is saved as a file, it can simply be `read` in:
+If the Dockerfile is saved as a file, it can simply be read in:
 
 ```javascript
-new Container(new Image("my-image-name", read("./Dockerfile")))
+new Container(new Image("my-image-name", fs.readFileSync("./Dockerfile")))
 ```
 
 If a user runs a blueprint that uses a custom image, then runs another blueprint
@@ -112,44 +112,3 @@ Its attributes are:
 - `preemptible` *bool*: Whether the machine should be preemptible. *optional*
     - Defaults to `false`
     - Preemptible instances are only supported on the `Amazon` provider.
-
-### Files
-
-Quilt.js has some basic support for reading files from the local filesystem
-which can be used either as Dockerfiles for container images, or imported
-directly into a container at boot.  These utilities should be considered
-experimental and are likely subject to change.
-
-#### read()
-
-read() reads the contents of a file into a string.  The file path is passed in
-as an argument to the function. For example, in the below example, `contents`
-will contain a string representing the contents of the file located at
-`/path/to/file.txt`.
-
-```javascript
-var contents = read("/path/to/file.txt")
-```
-
-#### readDir()
-
-readDir() lists the contents of a directory.  It takes the file path of a
-directory as its only argument, and returns a list of objects representing
-files in that directory.  Each object contains the fields `name` (the name of
-the file), and `isDir` (true if the path is a directory instead of a file).
-For example, in the walk() function below, readDir() is used to recursively
-execute a callback on every file in a directory.
-
-```javascript
-function walk(path, fn) {
-        var files = readDir(path);
-        for (var i = 0; i < files.length; i++) {
-                var filePath = path + "/" + files[i].name;
-                if (files[i].isDir) {
-                        walk(filePath, fn);
-                } else {
-                        fn(filePath)
-                }
-        }
-}
-```
