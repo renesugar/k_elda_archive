@@ -26,6 +26,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+var errDaemonOnlyRPC = errors.New("only defined on the daemon")
+
 type server struct {
 	conn db.Conn
 
@@ -153,6 +155,10 @@ func queryFromDaemon(table db.TableType, conn db.Conn) (
 
 func (s server) QueryMinionCounters(ctx context.Context, in *pb.MinionCountersRequest) (
 	*pb.CountersReply, error) {
+	if !s.runningOnDaemon {
+		return nil, errDaemonOnlyRPC
+	}
+
 	clnt, err := newClient(api.RemoteAddress(in.Host))
 	if err != nil {
 		return nil, err
@@ -177,6 +183,10 @@ func (s server) QueryCounters(ctx context.Context, in *pb.CountersRequest) (
 
 func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 	*pb.DeployReply, error) {
+
+	if !s.runningOnDaemon {
+		return nil, errDaemonOnlyRPC
+	}
 
 	stitch, err := stitch.FromJSON(deployReq.Deployment)
 	if err != nil {

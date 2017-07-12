@@ -1,10 +1,13 @@
 syntax = "proto3";
 
 service API {
+    // Defined on both the daemon and minions.
     rpc Query(DBQuery) returns(QueryReply) {}
-    rpc Deploy(DeployRequest) returns(DeployReply) {}
     rpc Version(VersionRequest) returns(VersionReply) {}
     rpc QueryCounters(CountersRequest) returns(CountersReply){}
+
+    // Only defined on the daemon.
+    rpc Deploy(DeployRequest) returns(DeployReply) {}
     rpc QueryMinionCounters(MinionCountersRequest) returns(CountersReply){}
 }
 

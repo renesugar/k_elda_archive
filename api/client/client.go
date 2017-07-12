@@ -52,9 +52,11 @@ type Client interface {
 	QueryCounters() ([]pb.Counter, error)
 
 	// QueryCounters retrieves the debugging counters tracked by a Quilt minion.
+	// Only defined on the daemon.
 	QueryMinionCounters(string) ([]pb.Counter, error)
 
 	// Deploy makes a request to the Quilt daemon to deploy the given deployment.
+	// Only defined on the daemon.
 	Deploy(deployment string) error
 
 	// Version retrieves the Quilt version of the remote daemon.

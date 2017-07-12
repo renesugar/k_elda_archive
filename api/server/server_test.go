@@ -137,7 +137,7 @@ func TestQueryContainersDaemon(t *testing.T) {
 
 func TestBadDeployment(t *testing.T) {
 	conn := db.New()
-	s := server{conn: conn}
+	s := server{conn: conn, runningOnDaemon: true}
 
 	badDeployment := `{`
 
@@ -148,7 +148,7 @@ func TestBadDeployment(t *testing.T) {
 }
 func TestInvalidImage(t *testing.T) {
 	conn := db.New()
-	s := server{conn: conn}
+	s := server{conn: conn, runningOnDaemon: true}
 	testInvalidImage(t, s, "has:morethan:two:colons",
 		"could not parse container image has:morethan:two:colons: "+
 			"invalid reference format")
@@ -182,7 +182,7 @@ func testInvalidImage(t *testing.T, s server, img, expErr string) {
 
 func TestDeploy(t *testing.T) {
 	conn := db.New()
-	s := server{conn: conn}
+	s := server{conn: conn, runningOnDaemon: true}
 
 	createMachineDeployment := `
 	{"Machines":[
@@ -218,7 +218,7 @@ func TestDeploy(t *testing.T) {
 
 func TestVagrantDeployment(t *testing.T) {
 	conn := db.New()
-	s := server{conn: conn}
+	s := server{conn: conn, runningOnDaemon: true}
 
 	vagrantDeployment := `
 	{"Machines":[
@@ -309,4 +309,14 @@ func TestUpdateLeaderContainerAttrs(t *testing.T) {
 	expect = []db.Container{{StitchID: "1", Image: "image", Created: created}}
 	result = updateLeaderContainerAttrs(lContainers, wContainers)
 	assert.Equal(t, expect, result)
+}
+
+func TestDaemonOnlyEndpoints(t *testing.T) {
+	t.Parallel()
+
+	_, err := server{runningOnDaemon: false}.QueryMinionCounters(nil, nil)
+	assert.EqualError(t, err, errDaemonOnlyRPC.Error())
+
+	_, err = server{runningOnDaemon: false}.Deploy(nil, nil)
+	assert.EqualError(t, err, errDaemonOnlyRPC.Error())
 }
