@@ -6,7 +6,7 @@ blueprint for a new application, using the lobste.rs application as an example.
 lobste.rs is an open source project that implements a reddit-like web page,
 where users can post content and vote up or down other content.
 
-### Decomposing the application into containers
+## Decomposing the application into containers
 
 The first question you should ask yourself is "how should this application be
 decomposed into different containers?"  Be sure you've read the [How Quilt
@@ -15,7 +15,7 @@ If you've already figured out the containers that are needed for your
 application (e.g., if you're already using Docker), you can skip the rest of
 this section.
 
-#### Specifying the containers for your application
+### Specifying the containers for your application
 
 As an example of how to specify the containers for your application, let's use
 the lobste.rs example.  lobste.rs requires mysql to run, so we'll use one
@@ -101,7 +101,7 @@ This can be helpful for making sure everything was installed and is running as
 expected (although in this case, lobste.rs won't work when you start it with
 Docker, because it's not yet connected to a mysql container).
 
-### Deploying the containers with Quilt
+## Deploying the containers with Quilt
 
 So far we have a mysql container image (we're using an existing one hosted on
 Dockerhub) and a lobste.rs container image that we just made.  You should
@@ -121,7 +121,7 @@ Quilt API has more functionality than we could describe here.  See the [API
 guide](https://github.com/quilt/quilt/tree/master/stitch) for more usage
 information.
 
-##### Writing the Quilt blueprint for MySQL
+### Writing the Quilt blueprint for MySQL
 
 First, let's write the Quilt blueprint to get the MySQL container up and running.  We
 need to create a container based on the mysql image:
@@ -152,7 +152,7 @@ var sqlService = new Service("sql", [sqlContainer]);
     
 The SQL service is now initialized.  
 
-##### Writing the Quilt blueprint for lobste.rs
+### Writing the Quilt blueprint for lobste.rs
 
 Next, we can similarly initialize the lobsters service.  The lobsters service is
 a little trickier to initialize because it requires an environment variable
@@ -168,7 +168,7 @@ lobstersContainer.setEnv("DATABASE_URL", sqlDatabaseUrl); var
 lobstersService = new Service("lobsters", [lobstersContainer]);
 ```
 
-##### Allowing network connections
+### Allowing network connections
     
 At this point, we've written code to create a mysql service and a lobsters
 service.  With Quilt, by default, all network connections are blocked.  To allow
@@ -186,7 +186,7 @@ variable that can be used to connect services to any IP address:
 publicInternet.connect(3000, lobstersService);
 ```
     
-##### Deploying the application on infrastructure
+### Deploying the application on infrastructure
 
 Finally, we'll use Quilt to launch some machines, and then start our services on
 those machines.  First, we'll define a "base machine."  We'll deploy a few

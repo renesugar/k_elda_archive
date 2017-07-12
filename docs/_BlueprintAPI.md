@@ -1,18 +1,18 @@
-# Quilt.js API Documentation
+## Quilt.js API Documentation
 This section documents use of the Quilt JavaScript library, which is used
 to write blueprints.
 
-## Container
+### Container
 The Container object represents a container to be deployed.
 
-### Specifying the Image
+#### Specifying the Image
 The first argument of the `Container` constructor is the image that container
 should run.
 
-#### Repository Link
+##### Repository Link
 If a `string` is supplied, the image at that repository is used.
 
-#### Dockerfile
+##### Dockerfile
 Instead of supplying a link to a pre-built image, Quilt also support building
 images in the cluster. When specifying a `Dockerfile` to be built, an `Image`
 object must be passed to the `Container` constructor.
@@ -45,7 +45,7 @@ all containers.
 If two images with the same name but different Dockerfiles are referenced, an
 error is thrown.
 
-### Container.filepathToContent
+#### Container.filepathToContent
 
 `Container.filepathToContent` defines text files to be installed on the container
 before the container starts. Both the key and value are `string`s.
@@ -75,12 +75,12 @@ destroy the old container and boot a new one with the proper files.
 The files are installed with permissions `0644`. Parent directories are
 automatically created.
 
-### Container.hostname()
+#### Container.hostname()
 
 `Container.hostname` gets the container's hostname. If the container has no
 hostname, an error is thrown.
 
-### Container.setHostname()
+#### Container.setHostname()
 
 `Container.setHostname` gives the container a hostname at which the container
 can be reached.
@@ -88,7 +88,7 @@ can be reached.
 If multiple containers have the same hostname, an error is thrown during the
 vetting process.
 
-## Machine
+### Machine
 The Machine object represents a machine to be deployed.
 
 Its attributes are:
@@ -113,7 +113,7 @@ Its attributes are:
     - Defaults to `false`
     - Preemptible instances are only supported on the `Amazon` provider.
 
-## Files
+### Files
 
 Quilt.js has some basic support for reading files from the local filesystem
 which can be used either as Dockerfiles for container images, or imported
