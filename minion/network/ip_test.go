@@ -230,17 +230,23 @@ func TestSyncLabelContainerIPs(t *testing.T) {
 		return nil
 	})
 
+	// Ignore database ID when comparing results because the insertion order is
+	// non-deterministic.
 	actual := conn.SelectFromLabel(nil)
-	assert.Len(t, actual, 2)
-	assert.Contains(t, actual, db.Label{
-		ID:           5,
-		Label:        "blue",
-		ContainerIPs: []string{"1.1.1.1"},
-	})
-	assert.Contains(t, actual, db.Label{
-		ID:           4,
-		Label:        "red",
-		ContainerIPs: []string{"1.1.1.1", "2.2.2.2"},
+	for i := range actual {
+		actual[i].ID = 0
+	}
+	sort.Sort(db.LabelSlice(actual))
+
+	assert.Equal(t, actual, []db.Label{
+		{
+			Label:        "blue",
+			ContainerIPs: []string{"1.1.1.1"},
+		},
+		{
+			Label:        "red",
+			ContainerIPs: []string{"1.1.1.1", "2.2.2.2"},
+		},
 	})
 }
 
