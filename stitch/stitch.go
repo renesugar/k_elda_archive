@@ -1,10 +1,10 @@
 package stitch
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -117,24 +117,33 @@ func FromFile(filename string) (Stitch, error) {
 			"failed to locate Node.js. Is it installed and in your PATH?")
 	}
 
-	stderr := bytes.NewBuffer(nil)
-	cmd := exec.Command("node", "-p",
+	outFile, err := ioutil.TempFile("", "quilt-out")
+	if err != nil {
+		return Stitch{}, fmt.Errorf("failed to create deployment file: %s", err)
+	}
+	defer outFile.Close()
+	defer os.Remove(outFile.Name())
+
+	cmd := exec.Command("node", "-e",
 		fmt.Sprintf(
 			`require("%s");
-			JSON.stringify(global._quiltDeployment.toQuiltRepresentation());`,
-			filename,
+			require('fs').writeFileSync("%s",
+			  JSON.stringify(global._quiltDeployment.toQuiltRepresentation())
+		    );`,
+			filename, outFile.Name(),
 		),
 	)
-	cmd.Stderr = stderr
-	out, err := cmd.Output()
-	if err != nil {
-		return Stitch{}, errors.New(stderr.String())
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	if err := cmd.Run(); err != nil {
+		return Stitch{}, err
 	}
-	// If there wasn't an error, still print stderr, in case there were any
-	// warnings or other non-fatal errors.
-	fmt.Fprint(os.Stderr, stderr.String())
 
-	return FromJSON(string(out))
+	depl, err := ioutil.ReadAll(outFile)
+	if err != nil {
+		return Stitch{}, fmt.Errorf("failed to read deployment file: %s", err)
+	}
+	return FromJSON(string(depl))
 }
 
 // FromJSON gets a Stitch handle from the deployment representation.

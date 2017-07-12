@@ -22,6 +22,8 @@ that had already been booted. This most visibly resulted in containers restartin
 - Use an exponential backoff algorithm when waiting for cloud provider actions
 to complete. This decreases the number of cloud provider API calls done by Quilt.
 - `quilt ps` now displays the image building status of custom Dockerfiles.
+- Let blueprints write to stdout. Before, if blueprints used `console.log`, the
+text printed to stdout would break the deployment object.
 
 Release 0.1.0
 -------------
