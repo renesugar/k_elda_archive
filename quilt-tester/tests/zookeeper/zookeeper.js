@@ -1,7 +1,7 @@
-const {createDeployment} = require("@quilt/quilt");
-var zookeeper = require("@quilt/zookeeper");
-var infrastructure = require("../../config/infrastructure.js")
+const {createDeployment} = require('@quilt/quilt');
+let zookeeper = require('@quilt/zookeeper');
+let infrastructure = require('../../config/infrastructure.js');
 
-var deployment = createDeployment();
+let deployment = createDeployment();
 deployment.deploy(infrastructure);
 deployment.deploy(new zookeeper.Zookeeper(infrastructure.nWorker*2));

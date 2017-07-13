@@ -30,10 +30,10 @@ global._quiltDeployment = new Deployment({});
 // of the network connections (connections to other services are referenced by
 // the name of the service, but since the public internet is not a service,
 // we need a special label for it).
-var publicInternetLabel = 'public';
+let publicInternetLabel = 'public';
 
 // Global unique ID counter.
-var uniqueIDCounter = 0;
+let uniqueIDCounter = 0;
 
 // Overwrite the deployment object with a new one.
 function createDeployment(deploymentOpts) {
@@ -71,34 +71,34 @@ function uniqueID() {
 // key creates a string key for objects that have a _refID, namely Containers
 // and Machines.
 function key(obj) {
-    var keyObj = obj.clone();
+    let keyObj = obj.clone();
     keyObj._refID = '';
-    return stringify(keyObj, { replacer: omitSSHKey });
+    return stringify(keyObj, {replacer: omitSSHKey});
 }
 
 // setQuiltIDs deterministically sets the id field of objects based on
-// their attributes. The _refID field is required to differentiate between multiple
-// references to the same object, and multiple instantiations with the exact
-// same attributes.
+// their attributes. The _refID field is required to differentiate between
+// multiple references to the same object, and multiple instantiations with
+// the exact same attributes.
 function setQuiltIDs(objs) {
     // The refIDs for each identical instance.
-    var refIDs = {};
+    let refIDs = {};
     objs.forEach(function(obj) {
-        var k = key(obj);
+        let k = key(obj);
         if (!refIDs[k]) {
             refIDs[k] = [];
         }
         refIDs[k].push(obj._refID);
     });
 
-    // If there are multiple references to the same object, there will be duplicate
-    // refIDs.
+    // If there are multiple references to the same object, there will be
+    // duplicate refIDs.
     Object.keys(refIDs).forEach(function(k) {
         refIDs[k] = _.sortBy(_.uniq(refIDs[k]), _.identity);
     });
 
     objs.forEach(function(obj) {
-        var k = key(obj);
+        let k = key(obj);
         obj.id = hash(k + refIDs[k].indexOf(obj._refID));
     });
 }
@@ -118,7 +118,7 @@ Deployment.prototype.toQuiltRepresentation = function() {
     // List all of the containers in the deployment. This list may contain
     // duplicates; e.g., if the same container is referenced by multiple
     // services.
-    var containers = [];
+    let containers = [];
     this.services.forEach(function(serv) {
         serv.containers.forEach(function(c) {
             containers.push(c);
@@ -126,9 +126,9 @@ Deployment.prototype.toQuiltRepresentation = function() {
     });
     setQuiltIDs(containers);
 
-    var services = [];
-    var connections = [];
-    var placements = [];
+    let services = [];
+    let connections = [];
+    let placements = [];
 
     // For each service, convert the associated connections and placement rules.
     // Also, aggregate all containers referenced by services.
@@ -137,7 +137,7 @@ Deployment.prototype.toQuiltRepresentation = function() {
         placements = placements.concat(service.getQuiltPlacements());
 
         // Collect the containers IDs, and add them to the container map.
-        var ids = [];
+        let ids = [];
         service.containers.forEach(function(container) {
             ids.push(container.id);
         });
@@ -145,13 +145,13 @@ Deployment.prototype.toQuiltRepresentation = function() {
         services.push({
             name: service.name,
             ids: ids,
-            annotations: service.annotations
+            annotations: service.annotations,
         });
     });
 
     // Create a list of unique containers.
-    var addedIds = new Set();
-    var containersNoDups = [];
+    let addedIds = new Set();
+    let containersNoDups = [];
     containers.forEach(function(container) {
         if (!addedIds.has(container.id)) {
             addedIds.add(container.id);
@@ -169,35 +169,36 @@ Deployment.prototype.toQuiltRepresentation = function() {
 
         namespace: this.namespace,
         adminACL: this.adminACL,
-        maxPrice: this.maxPrice
+        maxPrice: this.maxPrice,
     };
 };
 
-// Check if all referenced services in connections and placements are really deployed.
+// Check if all referenced services in connections and placements are
+// really deployed.
 Deployment.prototype.vet = function() {
-    var labelMap = {};
+    let labelMap = {};
     this.services.forEach(function(service) {
         labelMap[service.name] = true;
     });
 
-    var dockerfiles = {};
-    var hostnames = {};
+    let dockerfiles = {};
+    let hostnames = {};
     this.services.forEach(function(service) {
         service.allowedInboundConnections.forEach(function(conn) {
-            var from = conn.from.name;
+            let from = conn.from.name;
             if (!labelMap[from]) {
                 throw new Error(`${service.name} allows connections from ` +
                     `an undeployed service: ${from}`);
             }
         });
 
-        var hasFloatingIp = false;
+        let hasFloatingIp = false;
         service.placements.forEach(function(plcm) {
             if (plcm.floatingIp) {
                 hasFloatingIp = true;
             }
 
-            var otherLabel = plcm.otherLabel;
+            let otherLabel = plcm.otherLabel;
             if (otherLabel !== undefined && !labelMap[otherLabel]) {
                 throw new Error(`${service.name} has a placement in terms ` +
                     `of an undeployed service: ${otherLabel}`);
@@ -211,8 +212,9 @@ Deployment.prototype.vet = function() {
         }
 
         service.containers.forEach(function(c) {
-            var name = c.image.name;
-            if (dockerfiles[name] != undefined && dockerfiles[name] != c.image.dockerfile) {
+            let name = c.image.name;
+            if (dockerfiles[name] != undefined &&
+                    dockerfiles[name] != c.image.dockerfile) {
                 throw new Error(`${name} has differing Dockerfiles`);
             }
             dockerfiles[name] = c.image.dockerfile;
@@ -224,7 +226,7 @@ Deployment.prototype.vet = function() {
                 }
                 hostnames[c.hostname] = true;
             }
-        })
+        });
     });
 };
 
@@ -235,7 +237,7 @@ Deployment.prototype.deploy = function(toDeployList) {
         toDeployList = [toDeployList];
     }
 
-    var that = this;
+    let that = this;
     toDeployList.forEach(function(toDeploy) {
         if (!toDeploy.deploy) {
             throw new Error(`only objects that implement ` +
@@ -267,8 +269,8 @@ Service.prototype.hostname = function() {
 
 // Get a list of Quilt hostnames that address the containers within the service.
 Service.prototype.children = function() {
-    var i;
-    var res = [];
+    let i;
+    let res = [];
     for (i = 1; i < this.containers.length + 1; i++) {
         res.push(i + '.' + this.name + '.q');
     }
@@ -313,7 +315,7 @@ Service.prototype.connect = function(range, to) {
             `Container or other object.`);
     }
     to.allowFrom(this, range);
-}
+};
 
 Service.prototype.allowFrom = function(sourceService, portRange) {
     portRange = boxRange(portRange);
@@ -330,9 +332,9 @@ Service.prototype.allowFrom = function(sourceService, portRange) {
 };
 
 // publicInternet is an object that looks like another service that can
-// allow inbound connections. However, it is actually just syntactic sugar to hide
-// the allowOutboundPublic and allowFromPublic functions.
-var publicInternet = {
+// allow inbound connections. However, it is actually just syntactic sugar
+// to hide the allowOutboundPublic and allowFromPublic functions.
+let publicInternet = {
     connect: function(range, to) {
         console.warn('Warning: connect is deprecated; switch to using ' +
             'allowFrom. Instead of publicInternet.connect(port, service), ' +
@@ -344,7 +346,7 @@ var publicInternet = {
     },
     canReach: function(to) {
         return reachable(publicInternetLabel, to.name);
-    }
+    },
 };
 
 // Allow outbound traffic from the service to public internet.
@@ -352,7 +354,7 @@ Service.prototype.connectToPublic = function(range) {
     console.warn('Warning: connectToPublic is deprecated; switch to using ' +
         'allowOutboundPublic.');
     this.allowOutboundPublic(range);
-}
+};
 
 Service.prototype.allowOutboundPublic = function(range) {
     range = boxRange(range);
@@ -368,7 +370,7 @@ Service.prototype.connectFromPublic = function(range) {
     console.warn('Warning: connectFromPublic is deprecated; switch to ' +
         'allowFromPublic');
     this.allowFromPublic(range);
-}
+};
 
 Service.prototype.allowFromPublic = function(range) {
     range = boxRange(range);
@@ -384,15 +386,15 @@ Service.prototype.place = function(rule) {
 };
 
 Service.prototype.getQuiltConnections = function() {
-    var connections = [];
-    var that = this;
+    let connections = [];
+    let that = this;
 
     this.allowedInboundConnections.forEach(function(conn) {
         connections.push({
             from: conn.from.name,
             to: that.name,
             minPort: conn.minPort,
-            maxPort: conn.maxPort
+            maxPort: conn.maxPort,
         });
     });
 
@@ -401,7 +403,7 @@ Service.prototype.getQuiltConnections = function() {
             from: that.name,
             to: publicInternetLabel,
             minPort: rng.min,
-            maxPort: rng.max
+            maxPort: rng.max,
         });
     });
 
@@ -410,7 +412,7 @@ Service.prototype.getQuiltConnections = function() {
             from: publicInternetLabel,
             to: that.name,
             minPort: rng.min,
-            maxPort: rng.max
+            maxPort: rng.max,
         });
     });
 
@@ -418,8 +420,8 @@ Service.prototype.getQuiltConnections = function() {
 };
 
 Service.prototype.getQuiltPlacements = function() {
-    var placements = [];
-    var that = this;
+    let placements = [];
+    let that = this;
     this.placements.forEach(function(placement) {
         placements.push({
             targetLabel: that.name,
@@ -429,18 +431,18 @@ Service.prototype.getQuiltPlacements = function() {
             provider: placement.provider || '',
             size: placement.size || '',
             region: placement.region || '',
-            floatingIp: placement.floatingIp || ''
+            floatingIp: placement.floatingIp || '',
         });
     });
     return placements;
 };
 
-var labelNameCount = {};
+let labelNameCount = {};
 function uniqueLabelName(name) {
     if (!(name in labelNameCount)) {
         labelNameCount[name] = 0;
     }
-    var count = ++labelNameCount[name];
+    let count = ++labelNameCount[name];
     if (count == 1) {
         return name;
     }
@@ -456,9 +458,9 @@ function boxRange(x) {
         return new Range(x, x);
     }
     if (!(x instanceof Range)) {
-        throw new Error('Input argument must be a number or a Range')
+        throw new Error('Input argument must be a number or a Range');
     }
-    return x
+    return x;
 }
 
 function Machine(optionalArgs) {
@@ -473,7 +475,9 @@ function Machine(optionalArgs) {
     this.sshKeys = optionalArgs.sshKeys || [];
     this.cpu = boxRange(optionalArgs.cpu);
     this.ram = boxRange(optionalArgs.ram);
-    this.preemptible = optionalArgs.preemptible !== undefined ? optionalArgs.preemptible : false;
+    this.preemptible = optionalArgs.preemptible !== undefined ?
+        optionalArgs.preemptible :
+        false;
 }
 
 Machine.prototype.deploy = function(deployment) {
@@ -483,14 +487,14 @@ Machine.prototype.deploy = function(deployment) {
 // Create a new machine with the same attributes.
 Machine.prototype.clone = function() {
     // _.clone only creates a shallow copy, so we must clone sshKeys ourselves.
-    var keyClone = _.clone(this.sshKeys);
-    var cloned = _.clone(this);
+    let keyClone = _.clone(this.sshKeys);
+    let cloned = _.clone(this);
     cloned.sshKeys = keyClone;
     return new Machine(cloned);
 };
 
 Machine.prototype.withRole = function(role) {
-    var copy = this.clone();
+    let copy = this.clone();
     copy.role = role;
     return copy;
 };
@@ -505,9 +509,9 @@ Machine.prototype.asMaster = function() {
 
 // Create n new machines with the same attributes.
 Machine.prototype.replicate = function(n) {
-    var i;
-    var res = [];
-    for (i = 0 ; i < n ; i++) {
+    let i;
+    let res = [];
+    for (i = 0; i < n; i++) {
         res.push(this.clone());
     }
     return res;
@@ -520,7 +524,7 @@ function Image(name, dockerfile) {
 
 Image.prototype.clone = function() {
     return new Image(this.name, this.dockerfile);
-}
+};
 
 function Container(image, command) {
     // refID is used to distinguish deployments with multiple references to the
@@ -544,7 +548,7 @@ function Container(image, command) {
 
 // Create a new Container with the same attributes.
 Container.prototype.clone = function() {
-    var cloned = new Container(this.image.clone(), _.clone(this.command));
+    let cloned = new Container(this.image.clone(), _.clone(this.command));
     cloned.env = _.clone(this.env);
     cloned.filepathToContent = _.clone(this.filepathToContent);
     return cloned;
@@ -552,9 +556,9 @@ Container.prototype.clone = function() {
 
 // Create n new Containers with the same attributes.
 Container.prototype.replicate = function(n) {
-    var i;
-    var res = [];
-    for (i = 0 ; i < n ; i++) {
+    let i;
+    let res = [];
+    for (i = 0; i < n; i++) {
         res.push(this.clone());
     }
     return res;
@@ -565,13 +569,13 @@ Container.prototype.setEnv = function(key, val) {
 };
 
 Container.prototype.withEnv = function(env) {
-    var cloned = this.clone();
+    let cloned = this.clone();
     cloned.env = env;
     return cloned;
 };
 
 Container.prototype.withFiles = function(fileMap) {
-    var cloned = this.clone();
+    let cloned = this.clone();
     cloned.filepathToContent = fileMap;
     return cloned;
 };
@@ -587,11 +591,11 @@ Container.prototype.getHostname = function() {
     return this.hostname + '.q';
 };
 
-var enough = { form: 'enough' };
-var between = invariantType('between');
-var neighbor = invariantType('reachDirect');
-var reachableACL = invariantType('reachACL');
-var reachable = invariantType('reach');
+let enough = {form: 'enough'};
+let between = invariantType('between');
+let neighbor = invariantType('reachDirect');
+let reachableACL = invariantType('reachACL');
+let reachable = invariantType('reach');
 
 function Assertion(invariant, desired) {
     this.form = invariant.form;
@@ -599,19 +603,19 @@ function Assertion(invariant, desired) {
     this.target = desired;
 }
 
-function invariantType(form) {
+function invariantType(form, ...args) {
     return function() {
         // Convert the arguments object into a real array. We can't simply use
         // Array.from because it isn't defined in Otto.
-        var nodes = [];
-        var i;
-        for (i = 0 ; i < arguments.length ; i++) {
-            nodes.push(arguments[i]);
+        let nodes = [];
+        let i;
+        for (i = 0; i < args.length; i++) {
+            nodes.push(args[i]);
         }
 
         return {
             form: form,
-            nodes: nodes
+            nodes: nodes,
         };
     };
 }
@@ -652,7 +656,7 @@ function Port(p) {
     return new PortRange(p, p);
 }
 
-var PortRange = Range;
+let PortRange = Range;
 
 function getDeployment() {
     return global._quiltDeployment;

@@ -1,22 +1,22 @@
-const {createDeployment} = require("@quilt/quilt");
-var HaProxy = require("@quilt/haproxy").Haproxy;
-var Mongo = require("@quilt/mongo");
-var Node = require("@quilt/nodejs");
-var infrastructure = require("../../config/infrastructure.js")
+const {createDeployment} = require('@quilt/quilt');
+let HaProxy = require('@quilt/haproxy').Haproxy;
+let Mongo = require('@quilt/mongo');
+let Node = require('@quilt/nodejs');
+let infrastructure = require('../../config/infrastructure.js');
 
-var deployment = createDeployment({});
+let deployment = createDeployment({});
 deployment.deploy(infrastructure);
 
-var mongo = new Mongo(3);
-var app = new Node({
+let mongo = new Mongo(3);
+let app = new Node({
   nWorker: 3,
-  repo: "https://github.com/tejasmanohar/node-todo.git",
+  repo: 'https://github.com/tejasmanohar/node-todo.git',
   env: {
-    PORT: "80",
-    MONGO_URI: mongo.uri("mean-example")
-  }
+    PORT: '80',
+    MONGO_URI: mongo.uri('mean-example'),
+  },
 });
-var haproxy = new HaProxy(3, app.services());
+let haproxy = new HaProxy(3, app.services());
 
 mongo.connect(mongo.port, app);
 app.connect(mongo.port, mongo);

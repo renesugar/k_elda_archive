@@ -1,11 +1,12 @@
-const {createDeployment} = require("@quilt/quilt");
-var nginx = require("@quilt/nginx");
-var infrastructure = require("../../config/infrastructure.js")
+const {createDeployment} = require('@quilt/quilt');
 
-var deployment = createDeployment({});
+let nginx = require('@quilt/nginx');
+let infrastructure = require('../../config/infrastructure.js');
+
+let deployment = createDeployment({});
 deployment.deploy(infrastructure);
 
-for (var i = 0 ; i < infrastructure.nWorker ; i++) {
+for (let i = 0; i < infrastructure.nWorker; i++) {
     deployment.deploy(nginx.New(80));
     deployment.deploy(nginx.New(8000));
 }

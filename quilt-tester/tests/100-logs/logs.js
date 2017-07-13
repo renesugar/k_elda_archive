@@ -1,14 +1,19 @@
-const {createDeployment, Service, Container, PortRange} = require("@quilt/quilt");
-var infrastructure = require("../../config/infrastructure.js")
+const {
+    Container,
+    PortRange,
+    Service,
+    createDeployment} = require('@quilt/quilt');
+let infrastructure = require('../../config/infrastructure.js');
 
-var deployment = createDeployment({});
+let deployment = createDeployment({});
 deployment.deploy(infrastructure);
 
-var nWorker = 1;
-var red = new Service("red", new Container("google/pause").replicate(nWorker));
-var blue = new Service("blue", new Container("google/pause").replicate(3 * nWorker));
+let nWorker = 1;
+let red = new Service('red', new Container('google/pause').replicate(nWorker));
+let blue = new Service(
+    'blue', new Container('google/pause').replicate(3 * nWorker));
 
-var ports = new PortRange(1024, 65535);
+let ports = new PortRange(1024, 65535);
 blue.allowFrom(red, ports);
 red.allowFrom(blue, ports);
 

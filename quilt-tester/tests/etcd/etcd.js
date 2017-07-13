@@ -1,7 +1,7 @@
-const {createDeployment} = require("@quilt/quilt");
-var etcd = require("@quilt/etcd");
-var infrastructure = require("../../config/infrastructure.js")
+const {createDeployment} = require('@quilt/quilt');
+let etcd = require('@quilt/etcd');
+let infrastructure = require('../../config/infrastructure.js');
 
-var deployment = createDeployment({});
+let deployment = createDeployment({});
 deployment.deploy(infrastructure);
 deployment.deploy(new etcd.Etcd(infrastructure.nWorker*2));

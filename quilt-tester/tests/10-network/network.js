@@ -1,13 +1,13 @@
-const {createDeployment, Service, Container} = require("@quilt/quilt");
-var infrastructure = require("../../config/infrastructure.js")
+const {createDeployment, Service, Container} = require('@quilt/quilt');
+let infrastructure = require('../../config/infrastructure.js');
 
-var deployment = createDeployment({});
+let deployment = createDeployment({});
 deployment.deploy(infrastructure);
 
-var c = new Container("alpine", ["tail", "-f", "/dev/null"]);
-var red = new Service("red", c.replicate(5));
-var blue = new Service("blue", c.replicate(5));
-var yellow = new Service("yellow", c.replicate(5));
+let c = new Container('alpine', ['tail', '-f', '/dev/null']);
+let red = new Service('red', c.replicate(5));
+let blue = new Service('blue', c.replicate(5));
+let yellow = new Service('yellow', c.replicate(5));
 
 blue.allowFrom(red, 80);
 red.allowFrom(blue, 80);
