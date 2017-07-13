@@ -75,5 +75,5 @@ func TestNoLeader(t *testing.T) {
 
 func TestLeaderNoMachines(t *testing.T) {
 	_, err := Leader(nil)
-	assert.EqualError(t, err, "no leader found")
+	assert.EqualError(t, err, "no machines to query")
 }

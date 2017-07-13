@@ -12,6 +12,10 @@ import (
 
 // Leader obtains a Client connected to the Leader of the cluster.
 func Leader(machines []db.Machine) (Client, error) {
+	if len(machines) == 0 {
+		return nil, errors.New("no machines to query")
+	}
+
 	// Map the IP of minions that we failed to query to the error it returned.
 	getLeaderErrors := map[string]error{}
 
