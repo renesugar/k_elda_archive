@@ -604,8 +604,8 @@ function Assertion(invariant, desired) {
     this.target = desired;
 }
 
-function invariantType(form, ...args) {
-    return function() {
+function invariantType(form) {
+    return function(...args) {
         // Convert the arguments object into a real array. We can't simply use
         // Array.from because it isn't defined in Otto.
         let nodes = [];
