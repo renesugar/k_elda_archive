@@ -46,7 +46,7 @@ func main() {
 	}
 
 	loadBalancedCounts := map[string]int{}
-	for i := 0; i < len(loadBalancedContainers)*5; i++ {
+	for i := 0; i < len(loadBalancedContainers)*15; i++ {
 		outBytes, err := exec.Command("quilt", "ssh", fetcherID,
 			"wget", "-q", "-O", "-", loadBalancedLabel+".q").
 			CombinedOutput()
