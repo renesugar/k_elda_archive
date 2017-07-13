@@ -132,7 +132,7 @@ Download and install Quilt and its dependencies using `go get`
     go get github.com/quilt/quilt
 
 Quilt is now installed! Check out the
-[Getting Started](./docs/GettingStarted.md) guide for more detailed
+[Getting Started](http://docs.quilt.io/#getting-started) guide for more detailed
 instructions on how to get your Quilt deployment up and running.
 
 ## Contact Us
