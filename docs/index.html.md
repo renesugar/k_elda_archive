@@ -1,5 +1,5 @@
 ---
-title: API Reference
+title: Quilt Documentation
 
 toc_footers:
   - <a href="https://github.com/quilt/quilt">
