@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -51,8 +52,10 @@ func main() {
 
 	if logTest && getTest && postTest {
 		fmt.Println("PASSED")
+		os.Exit(0)
 	} else {
 		fmt.Println("FAILED")
+		os.Exit(1)
 	}
 }
 

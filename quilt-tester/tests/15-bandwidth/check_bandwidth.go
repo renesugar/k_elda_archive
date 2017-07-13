@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -103,7 +104,9 @@ func main() {
 
 	if !failed {
 		fmt.Println("PASSED")
+		os.Exit(0)
 	}
+	os.Exit(1)
 }
 
 // runTests starts an iperf test from each container i to container i+1. The

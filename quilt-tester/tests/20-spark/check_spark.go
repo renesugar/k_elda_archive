@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -57,7 +58,9 @@ func main() {
 
 	if err != nil {
 		fmt.Println("FAILED, sparkPI did not execute correctly.")
+		os.Exit(1)
 	} else {
 		fmt.Println("PASSED")
+		os.Exit(0)
 	}
 }

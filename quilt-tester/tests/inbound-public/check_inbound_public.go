@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/quilt/quilt/api"
@@ -36,8 +37,10 @@ func main() {
 
 	if test(machines, containers, connections) {
 		log.Info("PASSED")
+		os.Exit(0)
 	} else {
 		log.Info("FAILED")
+		os.Exit(1)
 	}
 }
 

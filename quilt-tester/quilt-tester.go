@@ -335,7 +335,7 @@ func waitForContainers(blueprintPath string) error {
 
 func runTest(testPath string) (string, error) {
 	output, err := exec.Command(testPath).CombinedOutput()
-	if err != nil || !strings.Contains(string(output), "PASSED") {
+	if err != nil {
 		_, testName := filepath.Split(testPath)
 		err = fmt.Errorf("test failed: %s", testName)
 	}

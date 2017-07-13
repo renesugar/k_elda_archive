@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -48,9 +49,11 @@ func main() {
 
 	if extraContainers {
 		log.Fatal("FAILED, unexpected containers")
+		os.Exit(1)
 	}
 
 	fmt.Println("PASSED")
+	os.Exit(0)
 }
 
 var quiltContainers = map[string]struct{}{

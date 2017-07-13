@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -34,8 +35,10 @@ func main() {
 
 	if test(zkContainers) {
 		log.Info("PASSED")
+		os.Exit(0)
 	} else {
 		log.Info("FAILED")
+		os.Exit(1)
 	}
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/quilt/quilt/api"
@@ -31,8 +32,10 @@ func main() {
 
 	if test(containers, connections) {
 		fmt.Println("PASSED")
+		os.Exit(0)
 	} else {
 		fmt.Println("FAILED")
+		os.Exit(1)
 	}
 }
 

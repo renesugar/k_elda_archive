@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -105,7 +106,9 @@ func main() {
 
 	if !failed {
 		fmt.Println("PASSED")
+		os.Exit(0)
 	}
+	os.Exit(1)
 }
 
 // Gather test results for each container. For each minion machine, run one test

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -67,7 +68,9 @@ func main() {
 
 	if reuseErr == nil && countErr == nil {
 		fmt.Println("PASSED")
+		os.Exit(0)
 	}
+	os.Exit(1)
 }
 
 func checkReuseImage(dockerfileToImages map[string][]string) error {

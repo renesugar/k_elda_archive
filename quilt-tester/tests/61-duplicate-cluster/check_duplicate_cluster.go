@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -77,6 +78,8 @@ func main() {
 	}
 
 	if !failed {
+		os.Exit(0)
 		fmt.Println("PASSED")
 	}
+	os.Exit(1)
 }
