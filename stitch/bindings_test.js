@@ -162,6 +162,18 @@ describe('Bindings', function () {
                 filepathToContent: {},
             }]);
         });
+        it('containers are not duplicated', function() {
+            let container = new Container('image');
+            deployment.deploy(new Service('foo', [container]));
+            deployment.deploy(new Service('bar', [container]));
+            checkContainers([{
+                id: '475c40d6070969839ba0f88f7a9bd0cc7936aa30',
+                image: new Image('image'),
+                command: [],
+                env: {},
+                filepathToContent: {},
+            }]);
+        });
         it('command', function () {
             deployment.deploy(new Service('foo', [
                 new Container('image', ['arg1', 'arg2']),
