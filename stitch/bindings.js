@@ -605,15 +605,7 @@ function Assertion(invariant, desired) {
 }
 
 function invariantType(form) {
-    return function(...args) {
-        // Convert the arguments object into a real array. We can't simply use
-        // Array.from because it isn't defined in Otto.
-        let nodes = [];
-        let i;
-        for (i = 0; i < args.length; i++) {
-            nodes.push(args[i]);
-        }
-
+    return function(...nodes) {
         return {
             form: form,
             nodes: nodes,
