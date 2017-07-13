@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/quilt/quilt/api"
@@ -14,9 +14,9 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-func main() {
+func TestStopContainer(t *testing.T) {
 	if err := exec.Command("quilt", "stop", "-containers").Run(); err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't run stop command")
+		t.Fatalf("couldn't run stop command: %s", err.Error())
 	}
 
 	log.Info("Sleeping thirty seconds for `quilt stop -containers` to take effect")
@@ -24,36 +24,30 @@ func main() {
 
 	c, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatalf("couldn't get quiltctl client: %s", err.Error())
 	}
 	defer c.Close()
 
 	machines, err := c.QueryMachines()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query the machines")
+		t.Fatalf("couldn't query machines: %s", err.Error())
 	}
 
-	extraContainers := false
 	for _, m := range machines {
 		containersRaw, err := exec.Command("quilt", "ssh", m.StitchID,
 			"docker", "ps", "--format", "{{.Names}}").Output()
 		if err != nil {
-			log.WithError(err).Fatal("FAILED, couldn't run docker ps")
+			t.Errorf("couldn't run `docker ps`: %s", err.Error())
+			continue
 		}
 
 		fmt.Printf("Containers on machine %s:\n", m.StitchID)
 		fmt.Println(string(containersRaw))
 		names := strings.Split(strings.TrimSpace(string(containersRaw)), "\n")
-		extraContainers = extraContainers || len(filterQuiltContainers(names)) > 0
+		if len(filterQuiltContainers(names)) > 0 {
+			t.Errorf("machine %s has unexpected containers", m.StitchID)
+		}
 	}
-
-	if extraContainers {
-		log.Fatal("FAILED, unexpected containers")
-		os.Exit(1)
-	}
-
-	fmt.Println("PASSED")
-	os.Exit(0)
 }
 
 var quiltContainers = map[string]struct{}{

@@ -2,42 +2,37 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
-	"regexp"
 	"strings"
-
-	log "github.com/Sirupsen/logrus"
+	"testing"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 )
 
-var machineRegex = regexp.MustCompile(`Machine-(\d+){(.+?), .*, PublicIP=(.*?),`)
-
-func main() {
-	printQuiltPs()
+func TestMinionLogs(t *testing.T) {
+	if err := printQuiltPs(); err != nil {
+		t.Errorf("failed to print quilt ps: %s", err.Error())
+	}
 
 	c, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatalf("couldn't get quiltctl client: %s", err.Error())
 	}
 	defer c.Close()
 
 	machines, err := c.QueryMachines()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query the machines")
+		t.Fatalf("couldn't query the machines: %s", err.Error())
 	}
 
-	failed := false
 	for _, machine := range machines {
 		fmt.Println(machine)
 		logsOutput, err := exec.Command("quilt", "ssh", machine.StitchID,
 			"sudo", "journalctl", "-o", "cat", "-u", "minion").
 			CombinedOutput()
 		if err != nil {
-			log.WithError(err).Error("Unable to get minion logs")
-			failed = true
+			t.Errorf("unable to get minion logs: %s", err.Error())
 			continue
 		}
 		outputStr := string(logsOutput)
@@ -51,23 +46,13 @@ func main() {
 		if strings.Contains(outputStr, "goroutine 0") ||
 			strings.Contains(outputStr, "ERROR [") ||
 			strings.Contains(outputStr, "WARN [") {
-			failed = true
+			t.Fatal("minion has error logs")
 		}
-	}
-
-	if failed {
-		fmt.Println("FAILED")
-		os.Exit(1)
-	} else {
-		fmt.Println("PASSED")
-		os.Exit(0)
 	}
 }
 
-func printQuiltPs() {
+func printQuiltPs() error {
 	psout, err := exec.Command("quilt", "ps").CombinedOutput()
-	if err != nil {
-		log.WithError(err).Fatal("Failed to run `quilt ps`")
-	}
 	fmt.Println(string(psout))
+	return err
 }

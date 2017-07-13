@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"regexp"
 	"strings"
-
-	log "github.com/Sirupsen/logrus"
+	"testing"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
@@ -15,21 +13,21 @@ import (
 
 var connectionRegex = regexp.MustCompile(`Registering worker (\d+\.\d+\.\d+\.\d+:\d+)`)
 
-func main() {
+func TestDuplicateCluster(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client.")
+		t.Fatalf("couldn't get quiltctl client: %s", err)
 	}
 	defer clnt.Close()
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers.")
+		t.Fatalf("couldn't query containers: %s", err)
 	}
 
 	psPretty, err := exec.Command("quilt", "ps").Output()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, `quilt ps` failed.")
+		t.Fatalf("`quilt ps` failed: %s", err)
 	}
 	fmt.Println("`quilt ps` output:")
 	fmt.Println(string(psPretty))
@@ -45,16 +43,13 @@ func main() {
 		}
 	}
 	if len(masters) != 2 {
-		log.WithField("masters", masters).Fatal(
-			"FAILED, expected 2 Spark masters.")
+		t.Fatalf("Expected 2 masters: %+v", masters)
 	}
 
-	failed := false
 	for _, master := range masters {
 		logs, err := exec.Command("quilt", "logs", master).CombinedOutput()
 		if err != nil {
-			log.WithError(err).Fatal(
-				"FAILED, unable to get Spark master logs.")
+			t.Fatalf("unable to get Spark master logs: %s", err)
 		}
 
 		// Each cluster's workers should connect only to its own master.
@@ -65,21 +60,12 @@ func main() {
 			workerSet[wkMatch[1]] = struct{}{}
 		}
 		if workerCount := len(workerSet); workerCount != totalWorkers/2 {
-			failed = true
-			log.WithFields(log.Fields{
-				"master":                master,
-				"worker count":          workerCount,
-				"expected worker count": totalWorkers / 2,
-			}).Error("FAILED, wrong number of workers connected to master")
+			t.Fatalf("wrong number of workers connected to master %s: "+
+				"expected %d, got %d",
+				master, totalWorkers/2, workerCount)
 		}
 
 		fmt.Printf("`quilt logs %s` output:\n", master)
 		fmt.Println(logsStr)
 	}
-
-	if !failed {
-		os.Exit(0)
-		fmt.Println("PASSED")
-	}
-	os.Exit(1)
 }

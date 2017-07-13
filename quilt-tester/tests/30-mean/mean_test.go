@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
+	"testing"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/db"
-
-	log "github.com/Sirupsen/logrus"
+	"github.com/quilt/quilt/quilt-tester/util"
 )
 
 // Response represents the JSON response from the quilt/mean-service
@@ -23,58 +22,52 @@ type Response struct {
 	V    int    `json:"__v"`
 }
 
-func main() {
+func TestMean(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatal("couldn't get quiltctl client")
 	}
 	defer clnt.Close()
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers")
+		t.Fatal("couldn't query containers")
 	}
 
 	machines, err := clnt.QueryMachines()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query machines")
+		t.Fatal("couldn't query machines")
 	}
 
-	publicIPs := getPublicIPs(machines, containers)
+	connections, err := clnt.QueryConnections()
+	if err != nil {
+		t.Fatal("couldn't query connections")
+	}
+
+	publicIPs := getPublicIPs(t, machines, containers)
 	fmt.Printf("Public IPs: %s\n", publicIPs)
 	if len(publicIPs) == 0 {
-		log.Fatal("FAILED, Found no public IPs")
+		t.Fatal("no public IPs")
 	}
 
-	logTest := logContainers(containers)
-	getTest := httpGetTest(publicIPs)
-	postTest := httpPostTest(publicIPs)
-
-	if logTest && getTest && postTest {
-		fmt.Println("PASSED")
-		os.Exit(0)
-	} else {
-		fmt.Println("FAILED")
-		os.Exit(1)
-	}
+	logContainers(t, containers)
+	httpPostTest(t, publicIPs)
+	util.CheckPublicConnections(t, machines, containers, connections)
 }
 
-func logContainers(containers []db.Container) bool {
-	var failed bool
+func logContainers(t *testing.T, containers []db.Container) {
 	for _, c := range containers {
 		out, err := exec.Command("quilt", "logs", c.StitchID).CombinedOutput()
 		if err != nil {
-			log.WithError(err).Errorf("Failed to log: %s", c)
-			failed = true
+			t.Errorf("Failed to log %s: %s", c, err)
+			continue
 		}
 		fmt.Printf("Container: %s\n%s\n\n", c, string(out))
 	}
-
-	return !failed
 }
 
-func getPublicIPs(machines []db.Machine, containers []db.Container) []string {
-
+func getPublicIPs(t *testing.T, machines []db.Machine,
+	containers []db.Container) []string {
 	minionIPMap := map[string]string{}
 	for _, m := range machines {
 		minionIPMap[m.PrivateIP] = m.PublicIP
@@ -84,8 +77,7 @@ func getPublicIPs(machines []db.Machine, containers []db.Container) []string {
 		if strings.Contains(c.Image, "haproxy") {
 			ip, ok := minionIPMap[c.Minion]
 			if !ok {
-				log.WithField("container", c).Fatal(
-					"FAILED, HAProxy with no public IP")
+				t.Fatalf("HAProxy with no public IP: %s", c.StitchID)
 			}
 			publicIPs = append(publicIPs, ip)
 		}
@@ -94,82 +86,46 @@ func getPublicIPs(machines []db.Machine, containers []db.Container) []string {
 	return publicIPs
 }
 
-func httpGetTest(publicIPs []string) bool {
-
-	fmt.Println("HTTP Get Test")
-
-	var failed bool
-	for i := 0; i < 25; i++ {
-		for _, ip := range publicIPs {
-			resp, err := http.Get("http://" + ip)
-			if err != nil {
-				log.WithError(err).Error("HTTP Error")
-				failed = true
-				continue
-			}
-
-			if resp.StatusCode != 200 {
-				failed = true
-				fmt.Println(resp)
-			}
-		}
-	}
-
-	return !failed
-}
-
 // checkInstances queries the todos for each instance and makes sure that all
 // data is available from each instance.
-func checkInstances(publicIPs []string, expectedTodos int) bool {
+func checkInstances(t *testing.T, publicIPs []string, expectedTodos int) {
 	var todos []Response
-	failed := false
 	for _, ip := range publicIPs {
 		endpoint := fmt.Sprintf("http://%s/api/todos", ip)
 		resp, err := http.Get(endpoint)
 		if err != nil {
-			log.WithError(err).Error("HTTP Error")
-			failed = true
+			t.Errorf("%s - HTTP Error: %s", ip, err)
 			continue
 		}
 
 		if resp.StatusCode != 200 {
-			failed = true
+			t.Errorf("%s - Bad response code: %d", ip, resp.StatusCode)
 			fmt.Println(resp)
 		}
 
 		decoder := json.NewDecoder(resp.Body)
 		err = decoder.Decode(&todos)
 		if err != nil {
-			log.WithField("ip", ip).WithError(err).Error(
-				"JSON decoding error")
-			failed = true
+			t.Errorf("%s - JSON decoding error: %s", ip, err)
 			continue
 		}
 
 		defer resp.Body.Close()
 		if len(todos) != expectedTodos {
-			log.WithFields(log.Fields{
-				"ip":       ip,
-				"expected": expectedTodos,
-				"actual":   len(todos),
-			}).Error(
-				"POSTed data not consistent for endpoint")
-			failed = true
+			t.Errorf("%s - Expected %d todos, but got %d", ip, expectedTodos,
+				len(todos))
 			continue
 		}
 	}
-
-	return !failed
 }
 
 // httpPostTest tests that data persists across the quilt/mean-service.
 // Data is POSTed to each instance, and then we check from all instances that
 // all of the data can be recovered.
-func httpPostTest(publicIPs []string) bool {
+func httpPostTest(t *testing.T, publicIPs []string) {
 
 	fmt.Println("HTTP Post Test")
 
-	var failed bool
 	for i := 0; i < 10; i++ {
 		for _, ip := range publicIPs {
 			endpoint := fmt.Sprintf("http://%s/api/todos", ip)
@@ -179,17 +135,17 @@ func httpPostTest(publicIPs []string) bool {
 
 			resp, err := http.Post(endpoint, "application/json", jsonBytes)
 			if err != nil {
-				log.WithError(err).Error("HTTP Error")
-				failed = true
+				t.Errorf("%s - HTTP Error: %s", ip, err)
 				continue
 			}
 
 			if resp.StatusCode != 200 {
-				failed = true
+				t.Errorf("%s - Bad response code: %d",
+					ip, resp.StatusCode)
 				fmt.Println(resp)
 			}
 		}
 	}
 
-	return checkInstances(publicIPs, 10*len(publicIPs)) && !failed
+	checkInstances(t, publicIPs, 10*len(publicIPs))
 }

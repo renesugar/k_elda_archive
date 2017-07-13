@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
+	"testing"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -14,16 +14,16 @@ import (
 	"github.com/quilt/quilt/util"
 )
 
-func main() {
+func TestCalculatesPI(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client.")
+		t.Fatalf("couldn't get quiltctl client: %s", err.Error())
 	}
 	defer clnt.Close()
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers.")
+		t.Fatalf("couldn't query containers: %s", err.Error())
 	}
 
 	containersPretty, _ := exec.Command("quilt", "ps").Output()
@@ -38,7 +38,7 @@ func main() {
 		}
 	}
 	if id == "" {
-		log.Fatal("FAILED, unable to find StitchID of Spark master.")
+		t.Fatal("unable to find StitchID of Spark master")
 	}
 
 	// The Spark job takes some time to complete, so we wait for the appropriate
@@ -57,10 +57,6 @@ func main() {
 	}, 15*time.Second, time.Minute)
 
 	if err != nil {
-		fmt.Println("FAILED, sparkPI did not execute correctly.")
-		os.Exit(1)
-	} else {
-		fmt.Println("PASSED")
-		os.Exit(0)
+		t.Fatalf("unable to get Spark master logs: %s", err.Error())
 	}
 }

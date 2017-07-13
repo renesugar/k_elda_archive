@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
+	"testing"
 	"time"
-
-	log "github.com/Sirupsen/logrus"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
@@ -37,6 +35,16 @@ func (tf testFailure) String() string {
 	return tf.target
 }
 
+type testFailureSlice []testFailure
+
+func (tfs testFailureSlice) String() string {
+	var strs []string
+	for _, f := range tfs {
+		strs = append(strs, f.String())
+	}
+	return strings.Join(strs, "\n")
+}
+
 type testResult struct {
 	container        db.Container
 	pingUnauthorized []testFailure
@@ -54,61 +62,45 @@ func (ct commandTime) String() string {
 	return ct.start.Format(timeFmt) + " - " + ct.end.Format(timeFmt)
 }
 
-func main() {
+func TestNetwork(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatalf("couldn't get quiltctl client: %s", err.Error())
 	}
 	defer clnt.Close()
 
 	tester, err := newNetworkTester(clnt)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't initialize network tester")
+		t.Fatalf("couldn't initialize network tester: %s", err.Error())
 	}
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers")
+		t.Fatalf("couldn't query containers: %s", err.Error())
 	}
 
-	var failed bool
 	// Run the network test twice to see if failed tests persist.
 	for i := 0; i < 2; i++ {
 		fmt.Printf("Starting run %d:\n", i+1)
 		for _, res := range runTests(tester, containers) {
 			fmt.Println(res.container)
 			if len(res.pingUnauthorized) != 0 {
-				failed = true
-				fmt.Println(
-					".. FAILED, could ping unauthorized containers")
-				for _, unauthorized := range res.pingUnauthorized {
-					fmt.Printf(".... %s\n", unauthorized)
-				}
+				t.Errorf("could ping unauthorized "+
+					"containers from %v:\n%s", res.container,
+					testFailureSlice(res.pingUnauthorized))
 			}
 			if len(res.pingUnreachable) != 0 {
-				failed = true
-				fmt.Println(
-					".. FAILED, couldn't ping authorized containers")
-				for _, unreachable := range res.pingUnreachable {
-					fmt.Printf(".... %s\n", unreachable)
-				}
+				t.Errorf("couldn't ping authorized "+
+					"containers from %v:\n%s", res.container,
+					testFailureSlice(res.pingUnreachable))
 			}
 			if len(res.dnsIncorrect) != 0 {
-				failed = true
-				fmt.Println(".. FAILED, hostnames resolved incorrectly")
-				for _, incorrect := range res.dnsIncorrect {
-					fmt.Printf(".... %s\n", incorrect)
-				}
+				t.Errorf("hostnames resolved incorrectly from %v:\n%s",
+					res.container, testFailureSlice(res.dnsIncorrect))
 			}
 		}
 		fmt.Println()
 	}
-
-	if !failed {
-		fmt.Println("PASSED")
-		os.Exit(0)
-	}
-	os.Exit(1)
 }
 
 // Gather test results for each container. For each minion machine, run one test

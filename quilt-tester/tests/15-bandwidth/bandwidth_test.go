@@ -3,14 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-
-	log "github.com/Sirupsen/logrus"
+	"testing"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
@@ -30,16 +28,16 @@ type testResult struct {
 	err               error
 }
 
-func main() {
+func TestBandwidth(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatalf("couldn't get quiltctl client: %s", err.Error())
 	}
 	defer clnt.Close()
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers")
+		t.Fatalf("couldn't query containers: %s", err.Error())
 	}
 
 	// Group containers based on whether they share a machine with another container.
@@ -53,7 +51,7 @@ func main() {
 
 	for _, dbc := range containers {
 		if dbc.Minion == "" {
-			log.WithError(err).Fatalf("FAILED, %s has no minion IP", dbc)
+			t.Fatalf("%v has not minion IP", dbc)
 		}
 
 		minionToContainers[dbc.Minion] = append(
@@ -73,15 +71,12 @@ func main() {
 		results = append(results, runTests(group)...)
 	}
 
-	var failed bool
 	for _, res := range results {
-		fmt.Println("client:\t", res.client)
-		fmt.Println("server:\t", res.server)
+		fmt.Printf("iperf output from %v to %v:\n", res.client, res.server)
+		fmt.Println(res.iperfOutput)
+
 		if res.err != nil {
-			failed = true
-			fmt.Println("FAILED, exited with error: ", res.err)
-			fmt.Println("iperf output follows:")
-			fmt.Println(res.iperfOutput)
+			t.Errorf("%v to %v errored: %s", res.client, res.server, res.err)
 			continue
 		}
 
@@ -91,22 +86,14 @@ func main() {
 		}
 
 		if res.bandwidthMbPerSec < required {
-			failed = true
-			fmt.Printf("FAILED, expected at least %f Mb/s, got %f Mb/s\n",
-				required, res.bandwidthMbPerSec)
-			fmt.Println("iperf output follows:")
-			fmt.Println(res.iperfOutput)
+			t.Errorf("bandwidth below minimum from %v to %v:\n"+
+				"expected at least %f Mb/s, got %f Mb/s",
+				res.client, res.server, required, res.bandwidthMbPerSec)
 			continue
 		}
 
 		fmt.Printf("Average bandwidth: %f Mb/s\n\n", res.bandwidthMbPerSec)
 	}
-
-	if !failed {
-		fmt.Println("PASSED")
-		os.Exit(0)
-	}
-	os.Exit(1)
 }
 
 // runTests starts an iperf test from each container i to container i+1. The

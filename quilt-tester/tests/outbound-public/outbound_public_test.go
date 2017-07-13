@@ -2,47 +2,39 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
+	"testing"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/stitch"
-
-	log "github.com/Sirupsen/logrus"
 )
 
-func main() {
+func TestOutboundPublic(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatalf("couldn't get quiltctl client: %s", err)
 	}
 	defer clnt.Close()
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers")
+		t.Fatalf("couldn't query containers: %s", err)
 	}
 
 	connections, err := clnt.QueryConnections()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query connections")
+		t.Fatalf("couldn't query connections: %s", err)
 	}
 
-	if test(containers, connections) {
-		fmt.Println("PASSED")
-		os.Exit(0)
-	} else {
-		fmt.Println("FAILED")
-		os.Exit(1)
-	}
+	test(t, containers, connections)
 }
 
 var testPort = 80
 var testHost = fmt.Sprintf("google.com:%d", testPort)
 
-func test(containers []db.Container, connections []db.Connection) bool {
+func test(t *testing.T, containers []db.Container, connections []db.Connection) {
 	connected := map[string]struct{}{}
 	for _, conn := range connections {
 		if conn.To == stitch.PublicInternetLabel &&
@@ -51,7 +43,6 @@ func test(containers []db.Container, connections []db.Connection) bool {
 		}
 	}
 
-	passed := true
 	for _, c := range containers {
 		shouldErr := !containsAny(connected, c.Labels)
 
@@ -67,18 +58,13 @@ func test(containers []db.Container, connections []db.Connection) bool {
 
 		errored := err != nil
 		if !shouldErr && errored {
-			log.WithError(err).Error(
-				"Fetch failed when it should have succeeded")
+			t.Errorf("Fetch failed when it should have succeeded: %s", err)
 			fmt.Println(string(out))
-			passed = false
 		} else if shouldErr && !errored {
-			log.Error("Fetch succeeded when it should have failed")
+			t.Error("Fetch succeeded when it should have failed")
 			fmt.Println(string(out))
-			passed = false
 		}
 	}
-
-	return passed
 }
 
 func inRange(candidate, min, max int) bool {

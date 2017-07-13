@@ -2,33 +2,31 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+	"testing"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/db"
-
-	log "github.com/Sirupsen/logrus"
 )
 
-func main() {
+func TestCustomImages(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatalf("couldn't get quiltctl client: %s", err)
 	}
 	defer clnt.Close()
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers")
+		t.Fatalf("couldn't query containers: %s", err)
 	}
 
 	machines, err := clnt.QueryMachines()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query machines")
+		t.Fatalf("couldn't query machines: %s", err)
 	}
 
 	// The images deployed for the given Dockerfile.
@@ -44,8 +42,8 @@ func main() {
 
 		dockerfileID, imageID, err := getContainerInfo(c.StitchID)
 		if err != nil {
-			log.WithError(err).WithField("container", c).
-				Fatal("FAILED, couldn't get container info")
+			t.Fatalf("couldn't get container info for %s: %s",
+				c.StitchID, err)
 		}
 
 		dockerfileToImages[dockerfileID] = append(
@@ -58,19 +56,13 @@ func main() {
 
 	reuseErr := checkReuseImage(dockerfileToImages)
 	if reuseErr != nil {
-		log.WithError(reuseErr).Error("FAILED")
+		t.Error(reuseErr)
 	}
 
 	countErr := checkImageCounts(machines, dockerfileCount)
-	if reuseErr != nil {
-		log.WithError(countErr).Error("FAILED")
+	if countErr != nil {
+		t.Error(countErr)
 	}
-
-	if reuseErr == nil && countErr == nil {
-		fmt.Println("PASSED")
-		os.Exit(0)
-	}
-	os.Exit(1)
 }
 
 func checkReuseImage(dockerfileToImages map[string][]string) error {

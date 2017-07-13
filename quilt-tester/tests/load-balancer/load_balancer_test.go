@@ -3,6 +3,7 @@ package main
 import (
 	"os/exec"
 	"strings"
+	"testing"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -16,16 +17,16 @@ const (
 	loadBalancedLabel = "loadBalanced"
 )
 
-func main() {
+func TestLoadBalancer(t *testing.T) {
 	c, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get local client")
+		t.Fatalf("couldn't get local client: %s", err)
 	}
 	defer c.Close()
 
 	containers, err := c.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get containers")
+		t.Fatalf("couldn't get containers: %s", err)
 	}
 
 	var loadBalancedContainers []db.Container
@@ -42,7 +43,7 @@ func main() {
 		Info("Starting fetching..")
 
 	if fetcherID == "" {
-		log.Fatal("FAILED, couldn't find fetcher")
+		t.Fatal("couldn't find fetcher")
 	}
 
 	loadBalancedCounts := map[string]int{}
@@ -51,7 +52,8 @@ func main() {
 			"wget", "-q", "-O", "-", loadBalancedLabel+".q").
 			CombinedOutput()
 		if err != nil {
-			log.WithError(err).Fatal("Unable to GET")
+			t.Errorf("Unable to GET: %s", err)
+			continue
 		}
 
 		loadBalancedCounts[strings.TrimSpace(string(outBytes))]++
@@ -59,9 +61,10 @@ func main() {
 
 	log.WithField("counts", loadBalancedCounts).Info("Fetching completed")
 	if len(loadBalancedCounts) < len(loadBalancedContainers) {
-		log.Fatal("FAILED, some containers not load balanced")
+		t.Fatal("some containers not load balanced: "+
+			"expected to query %d containers, got %d",
+			len(loadBalancedContainers), len(loadBalancedCounts))
 	}
-	log.Info("PASSED")
 }
 
 func contains(lst []string, key string) bool {

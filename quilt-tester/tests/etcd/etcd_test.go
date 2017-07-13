@@ -2,40 +2,31 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
+	"testing"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/db"
-
-	log "github.com/Sirupsen/logrus"
 )
 
-func main() {
+func TestEtcd(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatalf("couldn't get quiltctl client: %s", err)
 	}
 	defer clnt.Close()
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers")
+		t.Fatalf("couldn't query containers: %s", err)
 	}
 
-	if test(containers) {
-		log.Info("PASSED")
-		os.Exit(0)
-	} else {
-		log.Info("FAILED")
-		os.Exit(1)
-	}
+	test(t, containers)
 }
 
-func test(containers []db.Container) bool {
-	passed := true
+func test(t *testing.T, containers []db.Container) {
 	for _, c := range containers {
 		if !strings.Contains(c.Image, "etcd") {
 			continue
@@ -46,9 +37,7 @@ func test(containers []db.Container) bool {
 			"etcdctl", "cluster-health").CombinedOutput()
 		fmt.Println(string(out))
 		if err != nil || !strings.Contains(string(out), "cluster is healthy") {
-			log.WithError(err).Error("FAILED, cluster is unhealthy")
-			passed = false
+			t.Errorf("cluster is unhealthy: %s", err)
 		}
 	}
-	return passed
 }

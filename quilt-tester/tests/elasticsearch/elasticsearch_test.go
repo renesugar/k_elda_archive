@@ -8,37 +8,35 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/db"
-
-	log "github.com/Sirupsen/logrus"
 )
 
-func main() {
+func TestElasticsearch(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket)
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't get quiltctl client")
+		t.Fatalf("couldn't get quiltctl client: %s", err)
 	}
 	defer clnt.Close()
 
 	containers, err := clnt.QueryContainers()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query containers")
+		t.Fatalf("couldn't query containers: %s", err)
 	}
 
 	machines, err := clnt.QueryMachines()
 	if err != nil {
-		log.WithError(err).Fatal("FAILED, couldn't query machines")
+		t.Fatalf("couldn't query machines: %s", err)
 	}
 
 	endpoints := getElasticsearchEndpoints(machines, containers)
 	if err := testElasticsearch(endpoints); err != nil {
-		log.WithError(err).Fatal("FAILED")
+		t.Fatal(err)
 	}
-	fmt.Println("PASSED")
 }
 
 func getElasticsearchEndpoints(machines []db.Machine, containers []db.Container) (
