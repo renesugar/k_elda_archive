@@ -16,8 +16,8 @@ func Leader(machines []db.Machine) (Client, error) {
 		return nil, errors.New("no machines to query")
 	}
 
-	// Map the IP of minions that we failed to query to the error it returned.
-	getLeaderErrors := map[string]error{}
+	// A list of errors from attempting to query the leader's IP.
+	var errorStrs []string
 
 	// Try to figure out the lead minion's IP by asking each of the machines.
 	for _, m := range machines {
@@ -29,12 +29,7 @@ func Leader(machines []db.Machine) (Client, error) {
 		if err == nil {
 			return newClient(api.RemoteAddress(ip))
 		}
-		getLeaderErrors[m.PublicIP] = err
-	}
-
-	var errorStrs []string
-	for m, err := range getLeaderErrors {
-		errorStrs = append(errorStrs, fmt.Sprintf("%s - %s", m, err.Error()))
+		errorStrs = append(errorStrs, fmt.Sprintf("%s - %s", m.PublicIP, err))
 	}
 
 	err := "no leader found"
