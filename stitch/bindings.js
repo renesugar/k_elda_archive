@@ -115,6 +115,9 @@ Deployment.prototype.toQuiltRepresentation = function() {
 
     setQuiltIDs(this.machines);
 
+    // List all of the containers in the deployment. This list may contain
+    // duplicates; e.g., if the same container is referenced by multiple
+    // services.
     var containers = [];
     this.services.forEach(function(serv) {
         serv.containers.forEach(function(c) {
@@ -122,9 +125,6 @@ Deployment.prototype.toQuiltRepresentation = function() {
         });
     });
     setQuiltIDs(containers);
-
-    // Map from container ID to container.
-    var containerMap = {};
 
     var services = [];
     var connections = [];
@@ -140,7 +140,6 @@ Deployment.prototype.toQuiltRepresentation = function() {
         var ids = [];
         service.containers.forEach(function(container) {
             ids.push(container.id);
-            containerMap[container.id] = container;
         });
 
         services.push({
@@ -150,15 +149,20 @@ Deployment.prototype.toQuiltRepresentation = function() {
         });
     });
 
-    var containers = [];
-    Object.keys(containerMap).forEach(function(cid) {
-        containers.push(containerMap[cid]);
+    // Create a list of unique containers.
+    var addedIds = new Set();
+    var containersNoDups = [];
+    containers.forEach(function(container) {
+        if (!addedIds.has(container.id)) {
+            addedIds.add(container.id);
+            containersNoDups.push(container);
+         }
     });
 
     return {
         machines: this.machines,
         labels: services,
-        containers: containers,
+        containers: containersNoDups,
         connections: connections,
         placements: placements,
         invariants: this.invariants,
