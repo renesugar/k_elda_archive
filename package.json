@@ -9,6 +9,8 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "chai-subset": "^1.5.0",
+    "eslint": "^4.2.0",
+    "eslint-config-google": "^0.9.1",
     "mocha": "^3.3.0",
     "sinon": "^2.1.0",
     "nyc": "^10.3.2"

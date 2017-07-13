@@ -1,3 +1,4 @@
+/* eslint require-jsdoc: [1] */
 const crypto = require('crypto');
 const request = require('sync-request');
 const stringify = require('json-stable-stringify');

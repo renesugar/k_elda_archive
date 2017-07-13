@@ -116,6 +116,7 @@ lint: format
 	find . \( -path ./vendor -or -path ./node_modules -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error || EXIT_CODE=1; \
 	ineffassign . || EXIT_CODE=1; \
 	exit $$EXIT_CODE
+	node_modules/eslint/bin/eslint.js -c stitch/eslint.conf stitch/ quilt-tester/ --fix
 
 generate:
 	govendor generate +local
