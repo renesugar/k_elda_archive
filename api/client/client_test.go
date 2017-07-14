@@ -2,7 +2,6 @@ package client
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,10 +57,7 @@ func TestUnmarshalMachine(t *testing.T) {
 	}
 	c := clientImpl{pbClient: apiClient}
 	res, err := c.QueryMachines()
-	if err != nil {
-		t.Errorf("Unexpected error: %s", err.Error())
-		return
-	}
+	assert.NoError(t, err)
 
 	exp := []db.Machine{
 		{
@@ -73,11 +69,7 @@ func TestUnmarshalMachine(t *testing.T) {
 			PrivateIP: "9.9.9.9",
 		},
 	}
-
-	if !reflect.DeepEqual(exp, res) {
-		t.Errorf("Bad unmarshalling of machines: expected %v, got %v.",
-			exp, res)
-	}
+	assert.Equal(t, exp, res)
 }
 
 func TestUnmarshalContainer(t *testing.T) {
@@ -91,10 +83,7 @@ func TestUnmarshalContainer(t *testing.T) {
 	}
 	c := clientImpl{pbClient: apiClient}
 	res, err := c.QueryContainers()
-	if err != nil {
-		t.Errorf("Unexpected error: %s", err.Error())
-		return
-	}
+	assert.NoError(t, err)
 
 	exp := []db.Container{
 		{
@@ -104,11 +93,7 @@ func TestUnmarshalContainer(t *testing.T) {
 			Labels:   []string{"labelA", "labelB"},
 		},
 	}
-
-	if !reflect.DeepEqual(exp, res) {
-		t.Errorf("Bad unmarshalling of containers: expected %v, got %v.",
-			exp, res)
-	}
+	assert.Equal(t, exp, res)
 }
 
 func TestUnmarshalImage(t *testing.T) {
@@ -135,15 +120,7 @@ func TestUnmarshalError(t *testing.T) {
 	c := clientImpl{pbClient: apiClient}
 
 	_, err := c.QueryMachines()
-	if err == nil {
-		t.Error("Bad json should throw a unmarshalling error, but got nothing")
-	}
-
-	exp := "unexpected end of JSON input"
-	if err.Error() != exp {
-		t.Errorf("Bad json should throw a unmarshalling error:"+
-			"expected %s, got %s", exp, err.Error())
-	}
+	assert.EqualError(t, err, "unexpected end of JSON input")
 }
 
 func TestGrpcError(t *testing.T) {
@@ -156,11 +133,5 @@ func TestGrpcError(t *testing.T) {
 	c := clientImpl{pbClient: apiClient}
 
 	_, err := c.QueryMachines()
-	if err == nil {
-		t.Error("`Query` should have returned grpc errors, but got nothing")
-	}
-	if err.Error() != exp.Error() {
-		t.Errorf("`Query` should returned grpc errors: expected %s, got %s",
-			exp.Error(), err.Error())
-	}
+	assert.EqualError(t, err, "timeout")
 }
