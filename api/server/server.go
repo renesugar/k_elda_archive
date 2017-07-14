@@ -121,6 +121,8 @@ func (s server) queryLocal(table db.TableType) (interface{}, error) {
 		return s.conn.SelectFromLabel(nil), nil
 	case db.ClusterTable:
 		return s.conn.SelectFromCluster(nil), nil
+	case db.ImageTable:
+		return s.conn.SelectFromImage(nil), nil
 	default:
 		return nil, fmt.Errorf("unrecognized table: %s", table)
 	}
@@ -148,6 +150,8 @@ func (s server) queryFromDaemon(table db.TableType) (
 		return leaderClient.QueryConnections()
 	case db.LabelTable:
 		return leaderClient.QueryLabels()
+	case db.ImageTable:
+		return leaderClient.QueryImages()
 	default:
 		return nil, fmt.Errorf("unrecognized table: %s", table)
 	}

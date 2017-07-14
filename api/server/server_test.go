@@ -320,3 +320,33 @@ func TestDaemonOnlyEndpoints(t *testing.T) {
 	_, err = server{runningOnDaemon: false}.Deploy(nil, nil)
 	assert.EqualError(t, err, errDaemonOnlyRPC.Error())
 }
+
+func TestQueryImagesCluster(t *testing.T) {
+	t.Parallel()
+
+	conn := db.New()
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		img := view.InsertImage()
+		img.Name = "foo"
+		view.Commit(img)
+
+		return nil
+	})
+
+	exp := `[{"ID":1,"Name":"foo","Dockerfile":"","DockerID":"","Status":""}]`
+	checkQuery(t, server{conn, false}, db.ImageTable, exp)
+}
+
+func TestQueryImagesDaemon(t *testing.T) {
+	newLeaderClient = func(_ []db.Machine) (client.Client, error) {
+		mc := new(mocks.Client)
+		mc.On("QueryImages").Return([]db.Image{{
+			Name: "bar",
+		}}, nil)
+		mc.On("Close").Return(nil)
+		return mc, nil
+	}
+
+	exp := `[{"ID":0,"Name":"bar","Dockerfile":"","DockerID":"","Status":""}]`
+	checkQuery(t, server{db.New(), true}, db.ImageTable, exp)
+}

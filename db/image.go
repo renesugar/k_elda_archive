@@ -44,6 +44,16 @@ func (db Database) SelectFromImage(check func(Image) bool) []Image {
 	return result
 }
 
+// SelectFromImage gets all images in the database connection that satisfy 'check'.
+func (conn Conn) SelectFromImage(check func(Image) bool) []Image {
+	var result []Image
+	conn.Txn(ImageTable).Run(func(view Database) error {
+		result = view.SelectFromImage(check)
+		return nil
+	})
+	return result
+}
+
 func (image Image) getID() int {
 	return image.ID
 }

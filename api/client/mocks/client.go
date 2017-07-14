@@ -154,6 +154,29 @@ func (_m *Client) QueryEtcd() ([]db.Etcd, error) {
 	return r0, r1
 }
 
+// QueryImages provides a mock function with given fields:
+func (_m *Client) QueryImages() ([]db.Image, error) {
+	ret := _m.Called()
+
+	var r0 []db.Image
+	if rf, ok := ret.Get(0).(func() []db.Image); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]db.Image)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // QueryLabels provides a mock function with given fields:
 func (_m *Client) QueryLabels() ([]db.Label, error) {
 	ret := _m.Called()

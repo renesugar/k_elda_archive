@@ -55,6 +55,9 @@ type Client interface {
 	// Only defined on the daemon.
 	QueryMinionCounters(string) ([]pb.Counter, error)
 
+	// QueryImages retrieves the image information tracked by the Quilt daemon.
+	QueryImages() ([]db.Image, error)
+
 	// Deploy makes a request to the Quilt daemon to deploy the given deployment.
 	// Only defined on the daemon.
 	Deploy(deployment string) error
@@ -145,6 +148,12 @@ func query(pbClient pb.APIClient, table db.TableType) (interface{}, error) {
 			return nil, err
 		}
 		return clusters, nil
+	case db.ImageTable:
+		var images []db.Image
+		if err := json.Unmarshal(replyBytes, &images); err != nil {
+			return nil, err
+		}
+		return images, nil
 	default:
 		panic(fmt.Sprintf("unsupported table type: %s", table))
 	}
@@ -243,6 +252,16 @@ func parseCountersReply(reply *pb.CountersReply) (counters []pb.Counter) {
 		counters = append(counters, *c)
 	}
 	return counters
+}
+
+// QueryImages retrieves the image information tracked by the Quilt daemon.
+func (c clientImpl) QueryImages() ([]db.Image, error) {
+	rows, err := query(c.pbClient, db.ImageTable)
+	if err != nil {
+		return nil, err
+	}
+
+	return rows.([]db.Image), nil
 }
 
 // Deploy makes a request to the Quilt daemon to deploy the given deployment.

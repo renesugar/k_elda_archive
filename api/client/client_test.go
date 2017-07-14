@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -108,6 +109,21 @@ func TestUnmarshalContainer(t *testing.T) {
 		t.Errorf("Bad unmarshalling of containers: expected %v, got %v.",
 			exp, res)
 	}
+}
+
+func TestUnmarshalImage(t *testing.T) {
+	t.Parallel()
+
+	apiClient := mockAPIClient{
+		mockResponse: `[{"ID":1,"Name":"foo","Dockerfile":"bar",` +
+			`"DockerID":"","Status":"building"}]`,
+	}
+	c := clientImpl{pbClient: apiClient}
+	res, err := c.QueryImages()
+	assert.NoError(t, err)
+	assert.Equal(t, []db.Image{
+		{ID: 1, Name: "foo", Dockerfile: "bar", Status: "building"},
+	}, res)
 }
 
 func TestUnmarshalError(t *testing.T) {
