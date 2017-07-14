@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
-
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/util"
@@ -46,8 +44,7 @@ func TestCalculatesPI(t *testing.T) {
 	err = util.BackoffWaitFor(func() bool {
 		logs, err := exec.Command("quilt", "logs", id).CombinedOutput()
 		if err != nil {
-			log.WithError(err).Fatal(
-				"FAILED, Unable to get Spark master logs.")
+			t.Errorf("unable to get Spark master logs: %s", err)
 			return false
 		}
 
