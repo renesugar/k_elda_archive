@@ -26,7 +26,8 @@ install:
 	cd -P . && go install .
 
 gocheck:
-	govendor test +local
+	govendor test $$(govendor list -no-status +local | \
+		grep -vE github.com/quilt/quilt/"quilt-tester|scripts")
 
 javascript-check:
 	npm test
