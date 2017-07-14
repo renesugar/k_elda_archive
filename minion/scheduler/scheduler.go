@@ -29,7 +29,7 @@ func Run(conn db.Conn, dk docker.Client) {
 
 	loopLog := util.NewEventTimer("Scheduler")
 	trig := conn.TriggerTick(60, db.MinionTable, db.ContainerTable,
-		db.PlacementTable, db.EtcdTable).C
+		db.PlacementTable, db.EtcdTable, db.ImageTable).C
 	for range trig {
 		loopLog.LogStart()
 		minion := conn.MinionSelf()
