@@ -213,7 +213,7 @@ func makeContext(minions []db.Minion, constraints []db.Placement,
 
 	builtImages := map[db.Image]db.Image{}
 	for _, img := range images {
-		if img.DockerID != "" {
+		if img.Status == db.Built {
 			builtImages[db.Image{
 				Name:       img.Name,
 				Dockerfile: img.Dockerfile,

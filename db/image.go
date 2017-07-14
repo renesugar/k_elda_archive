@@ -13,7 +13,18 @@ type Image struct {
 
 	// The ID of the built image.
 	DockerID string
+
+	// The build status of the image.
+	Status string
 }
+
+const (
+	// Building is the status string for when the image is being built.
+	Building = "building"
+
+	// Built is the status string for when the image has been built.
+	Built = "built"
+)
 
 // InsertImage creates a new image row and inserts it into the database.
 func (db Database) InsertImage() Image {

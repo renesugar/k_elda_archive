@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -45,29 +46,28 @@ func syncImages(conn db.Conn, dk docker.Client) {
 	var toBuild []db.Image
 	conn.Txn(db.ImageTable).Run(func(view db.Database) error {
 		toBuild = view.SelectFromImage(func(img db.Image) bool {
-			return img.DockerID == ""
+			return img.Status != db.Built
 		})
 		return nil
 	})
 
 	for _, img := range toBuild {
+		img.Status = db.Building
+		writeImage(conn, img)
+
 		id, err := updateRegistry(dk, img)
 		if err != nil {
+			img.Status = "" // Unset the building status.
+			writeImage(conn, img)
+
 			log.WithError(err).WithField("image", img.Name).
 				Error("Failed to update registry")
 			continue
 		}
 
-		conn.Txn(db.ImageTable).Run(func(view db.Database) error {
-			dbImgs := view.SelectFromImage(func(dbImg db.Image) bool {
-				return img == dbImg
-			})
-			if len(dbImgs) != 0 {
-				dbImgs[0].DockerID = id
-				view.Commit(dbImgs[0])
-			}
-			return nil
-		})
+		img.DockerID = id
+		img.Status = db.Built
+		writeImage(conn, img)
 	}
 }
 
@@ -78,6 +78,38 @@ func updateRegistry(dk docker.Client, img db.Image) (string, error) {
 		err = dk.Push("localhost:5000", registryImg)
 	}
 	return id, err
+}
+
+// writeImage updates the attributes of the image committed to the database that
+// has the same Name and Dockerfile.
+func writeImage(conn db.Conn, img db.Image) {
+	err := conn.Txn(db.ImageTable).Run(
+		func(view db.Database) error {
+			dbImg, err := getImageHandle(view, img)
+			if err == nil {
+				img.ID = dbImg.ID
+				view.Commit(img)
+			}
+			return err
+		},
+	)
+	if err != nil {
+		log.WithError(err).WithField("image", img).Warn("Failed to write image")
+	}
+}
+
+func getImageHandle(view db.Database, ref db.Image) (db.Image, error) {
+	matchingImages := view.SelectFromImage(func(img db.Image) bool {
+		return img.Dockerfile == ref.Dockerfile && img.Name == ref.Name
+	})
+	switch len(matchingImages) {
+	case 0:
+		return db.Image{}, errors.New("no matching images")
+	case 1:
+		return matchingImages[0], nil
+	default:
+		return db.Image{}, errors.New("multiple matching images")
+	}
 }
 
 // bootWait blocks until the registry is ready to be pushed to.

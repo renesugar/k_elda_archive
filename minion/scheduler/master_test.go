@@ -297,10 +297,12 @@ func TestMakeContext(t *testing.T) {
 			Name:       "foo",
 			Dockerfile: "bar",
 			DockerID:   "baz",
+			Status:     db.Built,
 		},
 		{
 			Name:       "qux",
 			Dockerfile: "quuz",
+			Status:     db.Building,
 		},
 	}
 	containers := []db.Container{

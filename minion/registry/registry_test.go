@@ -14,19 +14,29 @@ func TestSyncImages(t *testing.T) {
 	md, dk := docker.NewMock()
 	conn := db.New()
 
-	// Test building an image.
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		im := view.InsertImage()
 		im.Name = "image"
 		view.Commit(im)
 		return nil
 	})
-	syncImages(conn, dk)
 
+	// Test building an image that fails. The status should not be "built".
+	md.BuildError = true
+	syncImages(conn, dk)
 	images := getImages(conn)
+	assert.Len(t, images, 1)
+	assert.Empty(t, images[0].DockerID)
+	assert.Empty(t, images[0].Status)
+
+	// Test successfully building an image.
+	md.BuildError = false
+	syncImages(conn, dk)
+	images = getImages(conn)
 	assert.Len(t, images, 1)
 	builtID := images[0].DockerID
 	assert.NotEmpty(t, builtID, "should save ID of built image")
+	assert.Equal(t, db.Built, images[0].Status)
 
 	// Test ignoring already-built image.
 	md.ResetBuilt()
@@ -62,6 +72,47 @@ func TestUpdateRegistry(t *testing.T) {
 			Tag:      "tag",
 		}: {},
 	}, md.Pushed)
+}
+
+func TestGetImageHandle(t *testing.T) {
+	t.Parallel()
+
+	// The image that we'll be trying to retrieve.
+	expImg := db.Image{Name: "foo", Dockerfile: "bar"}
+
+	db.New().Txn(db.AllTables...).Run(func(view db.Database) error {
+		// Test no matching images.
+		im := view.InsertImage()
+		im.Name = "other"
+		im.Dockerfile = "ignoreme"
+		view.Commit(im)
+
+		_, err := getImageHandle(view, expImg)
+		assert.NotNil(t, err)
+
+		// Test one matching image.
+		im = view.InsertImage()
+		im.Name = expImg.Name
+		im.Dockerfile = expImg.Dockerfile
+		view.Commit(im)
+
+		dbImg, err := getImageHandle(view, expImg)
+		assert.NoError(t, err)
+		assert.Equal(t, expImg.Name, dbImg.Name)
+		assert.Equal(t, expImg.Dockerfile, dbImg.Dockerfile)
+		assert.Equal(t, 2, dbImg.ID)
+
+		// Test multiple matching images.
+		im = view.InsertImage()
+		im.Name = expImg.Name
+		im.Dockerfile = expImg.Dockerfile
+		view.Commit(im)
+
+		_, err = getImageHandle(view, expImg)
+		assert.NotNil(t, err)
+
+		return nil
+	})
 }
 
 func getImages(conn db.Conn) (images []db.Image) {
