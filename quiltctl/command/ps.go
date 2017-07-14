@@ -62,10 +62,12 @@ func (pCmd *Ps) run() (err error) {
 	var connections []db.Connection
 	var containers []db.Container
 	var machines []db.Machine
+	var images []db.Image
 
 	connectionErr := make(chan error)
 	containerErr := make(chan error)
 	machineErr := make(chan error)
+	imagesErr := make(chan error)
 
 	go func() {
 		machines, err = pCmd.client.QueryMachines()
@@ -82,6 +84,11 @@ func (pCmd *Ps) run() (err error) {
 		containerErr <- err
 	}()
 
+	go func() {
+		images, err = pCmd.client.QueryImages()
+		imagesErr <- err
+	}()
+
 	if err := <-machineErr; err != nil {
 		return fmt.Errorf("unable to query machines: %s", err)
 	}
@@ -95,8 +102,12 @@ func (pCmd *Ps) run() (err error) {
 	if err := <-containerErr; err != nil {
 		return fmt.Errorf("unable to query containers: %s", err)
 	}
+	if err := <-imagesErr; err != nil {
+		return fmt.Errorf("unable to query images: %s", err)
+	}
 
-	writeContainers(os.Stdout, containers, machines, connections, !pCmd.noTruncate)
+	writeContainers(os.Stdout, containers, machines, connections, images,
+		!pCmd.noTruncate)
 
 	return nil
 }
@@ -119,7 +130,7 @@ func writeMachines(fd io.Writer, machines []db.Machine) {
 }
 
 func writeContainers(fd io.Writer, containers []db.Container, machines []db.Machine,
-	connections []db.Connection, truncate bool) {
+	connections []db.Connection, images []db.Image, truncate bool) {
 	w := tabwriter.NewWriter(fd, 0, 0, 4, ' ', 0)
 	defer w.Flush()
 	fmt.Fprintln(w, "CONTAINER\tMACHINE\tCOMMAND\tLABELS"+
@@ -157,6 +168,11 @@ func writeContainers(fd io.Writer, containers []db.Container, machines []db.Mach
 	}
 	sort.Strings(machineIDs)
 
+	imageStatusMap := map[string]string{}
+	for _, img := range images {
+		imageStatusMap[img.Name] = img.Status
+	}
+
 	for i, machineID := range machineIDs {
 		if i > 0 {
 			// Insert a blank line between each machine.
@@ -177,9 +193,17 @@ func writeContainers(fd io.Writer, containers []db.Container, machines []db.Mach
 
 			container := containerStr(dbc.Image, dbc.Command, truncate)
 			labels := strings.Join(dbc.Labels, ", ")
-			status := dbc.Status
-			if dbc.Status == "" && dbc.Minion != "" {
+
+			var status string
+			switch {
+			case dbc.Status != "":
+				status = dbc.Status
+			case dbc.Minion != "":
 				status = "scheduled"
+			default:
+				if imgStatus, ok := imageStatusMap[dbc.Image]; ok {
+					status = imgStatus
+				}
 			}
 
 			created := ""

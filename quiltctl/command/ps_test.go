@@ -43,6 +43,7 @@ func TestPsErrors(t *testing.T) {
 	mockClient.On("QueryConnections").Return(nil, nil)
 	mockClient.On("QueryMachines").Return(nil, nil)
 	mockClient.On("QueryContainers").Return(nil, mockErr)
+	mockClient.On("QueryImages").Return(nil, nil)
 	cmd := &Ps{false, connectionHelper{client: mockClient}}
 	assert.EqualError(t, cmd.run(), "unable to query containers: error")
 
@@ -51,6 +52,7 @@ func TestPsErrors(t *testing.T) {
 	mockClient.On("QueryContainers").Return(nil, nil)
 	mockClient.On("QueryMachines").Return(nil, nil)
 	mockClient.On("QueryConnections").Return(nil, mockErr)
+	mockClient.On("QueryImages").Return(nil, nil)
 	cmd = &Ps{false, connectionHelper{client: mockClient}}
 	assert.EqualError(t, cmd.run(), "unable to query connections: error")
 }
@@ -62,6 +64,7 @@ func TestPsSuccess(t *testing.T) {
 	mockClient.On("QueryContainers").Return(nil, nil)
 	mockClient.On("QueryMachines").Return(nil, nil)
 	mockClient.On("QueryConnections").Return(nil, nil)
+	mockClient.On("QueryImages").Return(nil, nil)
 	cmd := &Ps{false, connectionHelper{client: mockClient}}
 	assert.Equal(t, 0, cmd.Run())
 }
@@ -95,10 +98,11 @@ func TestMachineOutput(t *testing.T) {
 }
 
 func checkContainerOutput(t *testing.T, containers []db.Container,
-	machines []db.Machine, connections []db.Connection, truncate bool, exp string) {
+	machines []db.Machine, connections []db.Connection, images []db.Image,
+	truncate bool, exp string) {
 
 	var b bytes.Buffer
-	writeContainers(&b, containers, machines, connections, truncate)
+	writeContainers(&b, containers, machines, connections, images, truncate)
 
 	/* By replacing space with underscore, we make the spaces explicit and whitespace
 	* errors easier to debug. */
@@ -147,7 +151,7 @@ ________________________________________________________________________________
 ____________________________________________________________________________________
 8____________7__________image1______________________________________________________
 `
-	checkContainerOutput(t, containers, machines, connections, true, expected)
+	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 
 	// Testing writeContainers with created time values.
 	mockTime := time.Now()
@@ -168,7 +172,7 @@ ________________________________________________________________________________
 3_______________________image1_cmd_1______________running____` + mockCreatedString +
 		`____
 `
-	checkContainerOutput(t, containers, machines, connections, true, expected)
+	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 
 	// Testing writeContainers with longer durations.
 	mockDuration := time.Hour
@@ -190,7 +194,7 @@ ________________________________________________________________________________
 3_______________________image1_cmd_1______________running____` + mockCreatedString +
 		`____
 `
-	checkContainerOutput(t, containers, machines, connections, true, expected)
+	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 
 	// Test that long outputs are truncated when `truncate` is true
 	containers = []db.Container{
@@ -207,7 +211,7 @@ ________________________________________________________________________________
 3_______________________image1_cmd_1_&&_cmd_9128340347...______________running____` +
 		mockCreatedString + `____
 `
-	checkContainerOutput(t, containers, machines, connections, true, expected)
+	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 
 	// Test that long outputs are not truncated when `truncate` is false
 	expected = `CONTAINER____MACHINE____COMMAND___________________________________` +
@@ -216,7 +220,7 @@ ________________________________________________________________________________
 3_______________________image1_cmd_1_&&_cmd_91283403472903847293014320984723908473248` +
 		`-23843984______________running____` + mockCreatedString + `____
 `
-	checkContainerOutput(t, containers, machines, connections, false, expected)
+	checkContainerOutput(t, containers, machines, connections, nil, false, expected)
 
 	// Test writing container that has multiple labels connected to the public
 	// internet.
@@ -237,7 +241,58 @@ ________________________________________________________________________________
 3____________5__________image1_____red_______scheduled` +
 		`_______________7.7.7.7:[80,100-101]
 `
-	checkContainerOutput(t, containers, machines, connections, true, expected)
+	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
+}
+
+func TestContainerOutputCustomImage(t *testing.T) {
+	t.Parallel()
+
+	// Building.
+	containers := []db.Container{
+		{StitchID: "3", Image: "custom-dockerfile"},
+	}
+	images := []db.Image{
+		{Name: "custom-dockerfile", Status: db.Building},
+	}
+
+	exp := `CONTAINER____MACHINE____COMMAND_______________LABELS____` +
+		`STATUS______CREATED____PUBLIC_IP
+3_______________________custom-dockerfile_______________building_______________
+`
+	checkContainerOutput(t, containers, nil, nil, images, true, exp)
+
+	// Built, but not scheduled.
+	images = []db.Image{
+		{Name: "custom-dockerfile", Status: db.Built},
+	}
+	exp = `CONTAINER____MACHINE____COMMAND_______________LABELS____` +
+		`STATUS____CREATED____PUBLIC_IP
+3_______________________custom-dockerfile_______________built________________
+`
+	checkContainerOutput(t, containers, nil, nil, images, true, exp)
+
+	// We only have image data on a different image, so we can't update the status.
+	images = []db.Image{
+		{Name: "ignoreme", Status: db.Built},
+	}
+	exp = `CONTAINER____MACHINE____COMMAND_______________LABELS____` +
+		`STATUS____CREATED____PUBLIC_IP
+3_______________________custom-dockerfile____________________________________
+`
+	checkContainerOutput(t, containers, nil, nil, images, true, exp)
+
+	// Built and scheduled.
+	images = []db.Image{
+		{Name: "custom-dockerfile", Status: db.Built},
+	}
+	containers = []db.Container{
+		{StitchID: "3", Image: "custom-dockerfile", Minion: "foo"},
+	}
+	exp = `CONTAINER____MACHINE____COMMAND_______________LABELS` +
+		`____STATUS_______CREATED____PUBLIC_IP
+3_______________________custom-dockerfile_______________scheduled_______________
+`
+	checkContainerOutput(t, containers, nil, nil, images, true, exp)
 }
 
 func TestContainerStr(t *testing.T) {

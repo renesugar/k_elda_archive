@@ -21,6 +21,7 @@ fixes a bug where containers would sometimes fail to resolve DNS on DigitalOcean
 that had already been booted. This most visibly resulted in containers restarting.
 - Use an exponential backoff algorithm when waiting for cloud provider actions
 to complete. This decreases the number of cloud provider API calls done by Quilt.
+- `quilt ps` now displays the image building status of custom Dockerfiles.
 
 Release 0.1.0
 -------------
