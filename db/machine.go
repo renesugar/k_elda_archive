@@ -27,9 +27,26 @@ type Machine struct {
 	PublicIP  string
 	PrivateIP string
 
-	/* Populated by the foreman. */
-	Connected bool // Whether the minion on this machine has connected back.
+	/* Populated by the cluster. */
+	Status string
 }
+
+const (
+	// Booting represents that the machine is being booted by a cloud provider.
+	Booting = "booting"
+
+	// Connecting represents that the machine is booted, but we have not yet
+	// successfully connected.
+	Connecting = "connecting"
+
+	// Reconnecting represents that we connected at one point, but are
+	// currently disconnected.
+	Reconnecting = "reconnecting"
+
+	// Connected represents that we are currently connected to the machine's
+	// minion.
+	Connected = "connected"
+)
 
 // InsertMachine creates a new Machine and inserts it into 'db'.
 func (db Database) InsertMachine() Machine {
@@ -100,8 +117,8 @@ func (m Machine) String() string {
 		tags = append(tags, fmt.Sprintf("Disk=%dGB", m.DiskSize))
 	}
 
-	if m.Connected {
-		tags = append(tags, "Connected")
+	if m.Status != "" {
+		tags = append(tags, m.Status)
 	}
 
 	return fmt.Sprintf("Machine-%d{%s}", m.ID, strings.Join(tags, ", "))

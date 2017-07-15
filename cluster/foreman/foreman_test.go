@@ -223,6 +223,17 @@ func fired(c chan struct{}) bool {
 	}
 }
 
+func TestIsConnected(t *testing.T) {
+	minions = map[string]*minion{}
+	assert.False(t, IsConnected("host"))
+
+	minions["host"] = &minion{connected: false}
+	assert.False(t, IsConnected("host"))
+
+	minions["host"].connected = true
+	assert.True(t, IsConnected("host"))
+}
+
 func startTest(t *testing.T, roles map[string]pb.MinionConfig_Role) (db.Conn, *clients) {
 	conn := db.New()
 	minions = map[string]*minion{}

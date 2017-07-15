@@ -52,6 +52,7 @@ func TestQueryMachinesDaemon(t *testing.T) {
 		m.Size = "size"
 		m.PublicIP = "8.8.8.8"
 		m.PrivateIP = "9.9.9.9"
+		m.Status = db.Connected
 		view.Commit(m)
 
 		return nil
@@ -60,7 +61,7 @@ func TestQueryMachinesDaemon(t *testing.T) {
 	exp := `[{"ID":1,"StitchID":"","Role":"Master","Provider":"Amazon","Region":"",` +
 		`"Size":"size","DiskSize":0,"SSHKeys":null,"FloatingIP":"",` +
 		`"Preemptible":false,"CloudID":"","PublicIP":"8.8.8.8",` +
-		`"PrivateIP":"9.9.9.9","Connected":false}]`
+		`"PrivateIP":"9.9.9.9","Status":"connected"}]`
 
 	checkQuery(t, server{conn, true}, db.MachineTable, exp)
 }

@@ -62,6 +62,7 @@ var sleep = time.Sleep
 // Run continually checks 'conn' for cluster changes and recreates the cluster as
 // needed.
 func Run(conn db.Conn) {
+	go updateMachineStatuses(conn)
 	var clst *cluster
 	for range conn.TriggerTick(30, db.ClusterTable, db.MachineTable, db.ACLTable).C {
 		c.Inc("Run")
@@ -166,6 +167,9 @@ func (clst cluster) boot(machines []db.Machine) {
 			region:   m.Region,
 		})
 	}
+
+	setStatuses(clst.conn, machines, db.Booting)
+	defer setStatuses(clst.conn, machines, "")
 	clst.updateCloud(cloudMachines, provider.Boot, "boot")
 }
 
@@ -273,13 +277,14 @@ func (clst cluster) join() (joinResult, error) {
 				dbm.CloudID = m.ID
 			}
 
+			if dbm.PublicIP != m.PublicIP {
+				// We're changing the association between a database
+				// machine and a cloud machine, so the status is not
+				// applicable.
+				dbm.Status = ""
+			}
 			dbm.PublicIP = m.PublicIP
 			dbm.PrivateIP = m.PrivateIP
-
-			// We just booted the machine, can't possibly be connected.
-			if dbm.PublicIP == "" {
-				dbm.Connected = false
-			}
 
 			view.Commit(dbm)
 		}

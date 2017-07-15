@@ -24,6 +24,8 @@ to complete. This decreases the number of cloud provider API calls done by Quilt
 - `quilt ps` now displays the image building status of custom Dockerfiles.
 - Let blueprints write to stdout. Before, if blueprints used `console.log`, the
 text printed to stdout would break the deployment object.
+- `quilt ps` now has more status options for machines (booting, connecting,
+connected, and reconnecting).
 
 Release 0.1.0
 -------------

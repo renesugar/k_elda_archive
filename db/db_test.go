@@ -116,11 +116,11 @@ func TestMachineString(t *testing.T) {
 		PublicIP:  "1.2.3.4",
 		PrivateIP: "5.6.7.8",
 		DiskSize:  56,
-		Connected: true,
+		Status:    Connected,
 	}
 	got = m.String()
 	exp = "Machine-1{Amazon us-west-1 m4.large, CloudID1234, PublicIP=1.2.3.4," +
-		" PrivateIP=5.6.7.8, Disk=56GB, Connected}"
+		" PrivateIP=5.6.7.8, Disk=56GB, connected}"
 	if got != exp {
 		t.Errorf("\nGot: %s\nExp: %s", got, exp)
 	}

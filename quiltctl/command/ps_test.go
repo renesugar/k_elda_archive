@@ -79,6 +79,7 @@ func TestMachineOutput(t *testing.T) {
 		Region:   "us-west-1",
 		Size:     "m4.large",
 		PublicIP: "8.8.8.8",
+		Status:   db.Connected,
 	}}
 
 	var b bytes.Buffer
@@ -91,7 +92,7 @@ func TestMachineOutput(t *testing.T) {
 
 	exp := `MACHINE____ROLE______PROVIDER____REGION_______SIZE` +
 		`________PUBLIC_IP____STATUS
-1__________Master____Amazon______us-west-1____m4.large____8.8.8.8______disconnected
+1__________Master____Amazon______us-west-1____m4.large____8.8.8.8______connected
 `
 
 	assert.Equal(t, exp, result)

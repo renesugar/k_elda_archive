@@ -31,7 +31,7 @@ func runBlueprintUntilConnected(blueprint string) (string, string, error) {
 		}
 
 		for _, m := range machines {
-			if !m.Connected {
+			if m.Status != db.Connected {
 				return false
 			}
 		}

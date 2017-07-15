@@ -67,13 +67,6 @@ func Init(conn db.Conn) {
 
 		updateMinionMap(machines)
 		forEachMinion(updateConfig)
-		for _, m := range minions {
-			if m.connected {
-				m.machine.Connected = m.connected
-				view.Commit(m.machine)
-			}
-		}
-
 		return nil
 	})
 }
@@ -98,26 +91,7 @@ func RunOnce(conn db.Conn) {
 	})
 
 	updateMinionMap(machines)
-
 	forEachMinion(updateConfig)
-	forEachMinion(func(m *minion) {
-		if m.connected == m.machine.Connected {
-			return
-		}
-
-		if m.connected {
-			c.Inc("Minion Connected")
-		} else {
-			c.Inc("Minion Disconnected")
-		}
-
-		tr := conn.Txn(db.MachineTable)
-		tr.Run(func(view db.Database) error {
-			m.machine.Connected = m.connected
-			view.Commit(m.machine)
-			return nil
-		})
-	})
 
 	var etcdIPs []string
 	for _, m := range minions {
@@ -161,6 +135,12 @@ func GetMachineRole(pubIP string) db.Role {
 		return db.PBToRole(min.config.Role)
 	}
 	return db.None
+}
+
+// IsConnected returns whether the foreman is connected to the minion at pubIP.
+func IsConnected(pubIP string) bool {
+	min, ok := minions[pubIP]
+	return ok && min.connected
 }
 
 func updateMinionMap(machines []db.Machine) {
@@ -220,7 +200,10 @@ func updateConfig(m *minion) {
 	m.connected = connected
 	notifyConnectionChange()
 	if m.connected {
+		c.Inc("Minion Connected")
 		log.WithField("machine", m.machine).Debug("New connection")
+	} else {
+		c.Inc("Minion Disconnected")
 	}
 }
 
