@@ -146,26 +146,8 @@ func TestSyncDB(t *testing.T) {
 
 	dbMaster := db.Machine{Provider: FakeAmazon, Role: db.Master}
 	cmMasterList := joinMachine{provider: FakeAmazon, role: db.Master}
-	cmMasterBoot := joinMachine{provider: FakeAmazon,
-		Machine: machine.Machine{
-			CloudCfgOpts: cloudcfg.Options{
-				MinionOpts: cloudcfg.MinionOptions{
-					Role: db.Master,
-				},
-			},
-		},
-	}
 	dbWorker := db.Machine{Provider: FakeAmazon, Role: db.Worker}
 	cmWorkerList := joinMachine{provider: FakeAmazon, role: db.Worker}
-	cmWorkerBoot := joinMachine{provider: FakeAmazon,
-		Machine: machine.Machine{
-			CloudCfgOpts: cloudcfg.Options{
-				MinionOpts: cloudcfg.MinionOptions{
-					Role: db.Worker,
-				},
-			},
-		},
-	}
 
 	cmNoIP := joinMachine{provider: FakeAmazon, Machine: machine.Machine{ID: "id"}}
 	cmWithIP := joinMachine{
@@ -177,23 +159,23 @@ func TestSyncDB(t *testing.T) {
 
 	// Test boot with no size
 	checkSyncDB(noMachines, []db.Machine{dbNoSize, dbNoSize}, syncDBResult{
-		boot: []joinMachine{cmNoSize, cmNoSize},
+		boot: []db.Machine{dbNoSize, dbNoSize},
 	})
 
 	// Test boot with size
 	checkSyncDB(noMachines, []db.Machine{dbLarge, dbLarge}, syncDBResult{
-		boot: []joinMachine{cmLarge, cmLarge},
+		boot: []db.Machine{dbLarge, dbLarge},
 	})
 
 	// Test mixed boot
 	checkSyncDB(noMachines, []db.Machine{dbNoSize, dbLarge}, syncDBResult{
-		boot: []joinMachine{cmNoSize, cmLarge},
+		boot: []db.Machine{dbNoSize, dbLarge},
 	})
 
 	// Test partial boot
 	checkSyncDB([]joinMachine{cmNoSize}, []db.Machine{dbNoSize, dbLarge},
 		syncDBResult{
-			boot: []joinMachine{cmLarge},
+			boot: []db.Machine{dbLarge},
 		},
 	)
 
@@ -231,17 +213,17 @@ func TestSyncDB(t *testing.T) {
 		[]db.Machine{{DiskSize: 4}},
 		syncDBResult{
 			stop: []joinMachine{{Machine: machine.Machine{DiskSize: 3}}},
-			boot: []joinMachine{{Machine: machine.Machine{DiskSize: 4}}},
+			boot: []db.Machine{{DiskSize: 4}},
 		})
 
 	// Test different roles
 	checkSyncDB([]joinMachine{cmWorkerList}, []db.Machine{dbMaster}, syncDBResult{
-		boot: []joinMachine{cmMasterBoot},
+		boot: []db.Machine{dbMaster},
 		stop: []joinMachine{cmWorkerList},
 	})
 
 	checkSyncDB([]joinMachine{cmMasterList}, []db.Machine{dbWorker}, syncDBResult{
-		boot: []joinMachine{cmWorkerBoot},
+		boot: []db.Machine{dbWorker},
 		stop: []joinMachine{cmMasterList},
 	})
 
@@ -249,9 +231,7 @@ func TestSyncDB(t *testing.T) {
 	checkSyncDB([]joinMachine{{Machine: machine.Machine{Preemptible: true}}},
 		[]db.Machine{{Preemptible: false}},
 		syncDBResult{
-			boot: []joinMachine{
-				{Machine: machine.Machine{Preemptible: false}},
-			},
+			boot: []db.Machine{{Preemptible: false}},
 			stop: []joinMachine{
 				{Machine: machine.Machine{Preemptible: true}},
 			},

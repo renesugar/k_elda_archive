@@ -140,11 +140,33 @@ func (clst cluster) runOnce() {
 			return
 		}
 
-		clst.updateCloud(jr.boot, provider.Boot, "boot")
+		clst.boot(jr.boot)
 		clst.updateCloud(jr.terminate, provider.Stop, "stop")
 		clst.updateCloud(jr.updateIPs, provider.UpdateFloatingIPs,
 			"update floating IPs")
 	}
+}
+
+func (clst cluster) boot(machines []db.Machine) {
+	var cloudMachines []joinMachine
+	for _, m := range machines {
+		cloudMachines = append(cloudMachines, joinMachine{
+			Machine: machine.Machine{
+				Size:        m.Size,
+				DiskSize:    m.DiskSize,
+				Preemptible: m.Preemptible,
+				CloudCfgOpts: cloudcfg.Options{
+					SSHKeys: m.SSHKeys,
+					MinionOpts: cloudcfg.MinionOptions{
+						Role: m.Role,
+					},
+				},
+			},
+			provider: m.Provider,
+			region:   m.Region,
+		})
+	}
+	clst.updateCloud(cloudMachines, provider.Boot, "boot")
 }
 
 type machineAction func(provider, []machine.Machine) error
@@ -202,7 +224,7 @@ type joinResult struct {
 	machines []db.Machine
 	acl      db.ACL
 
-	boot      []joinMachine
+	boot      []db.Machine
 	terminate []joinMachine
 	updateIPs []joinMachine
 }
@@ -325,7 +347,7 @@ func (clst cluster) syncACLs(adminACLs []string, appACLs []db.PortRange,
 
 type syncDBResult struct {
 	pairs     []join.Pair
-	boot      []joinMachine
+	boot      []db.Machine
 	stop      []joinMachine
 	updateIPs []joinMachine
 }
@@ -380,21 +402,7 @@ func syncDB(cms []joinMachine, dbms []db.Machine) syncDBResult {
 
 	for _, dbm := range dbmis {
 		m := dbm.(db.Machine)
-		ret.boot = append(ret.boot, joinMachine{
-			Machine: machine.Machine{
-				Size:        m.Size,
-				DiskSize:    m.DiskSize,
-				Preemptible: m.Preemptible,
-				CloudCfgOpts: cloudcfg.Options{
-					SSHKeys: m.SSHKeys,
-					MinionOpts: cloudcfg.MinionOptions{
-						Role: m.Role,
-					},
-				},
-			},
-			provider: m.Provider,
-			region:   m.Region,
-		})
+		ret.boot = append(ret.boot, m)
 	}
 
 	for _, pair := range append(pair1, pair2...) {
