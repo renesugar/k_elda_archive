@@ -59,15 +59,6 @@ type cluster struct {
 var myIP = util.MyIP
 var sleep = time.Sleep
 
-// action is an enum for provider actions.
-type action int
-
-const (
-	boot action = iota
-	stop
-	updateIPs
-)
-
 // Run continually checks 'conn' for cluster changes and recreates the cluster as
 // needed.
 func Run(conn db.Conn) {
@@ -149,29 +140,24 @@ func (clst cluster) runOnce() {
 			return
 		}
 
-		clst.updateCloud(jr.boot, boot)
-		clst.updateCloud(jr.terminate, stop)
-		clst.updateCloud(jr.updateIPs, updateIPs)
+		clst.updateCloud(jr.boot, provider.Boot, "boot")
+		clst.updateCloud(jr.terminate, provider.Stop, "stop")
+		clst.updateCloud(jr.updateIPs, provider.UpdateFloatingIPs,
+			"update floating IPs")
 	}
 }
 
-func (clst cluster) updateCloud(machines []joinMachine, act action) {
+type machineAction func(provider, []machine.Machine) error
+
+func (clst cluster) updateCloud(machines []joinMachine, fn machineAction, action string) {
 	if len(machines) == 0 {
 		return
 	}
 
-	actionString := ""
-	switch act {
-	case boot:
-		actionString = "boot"
-	case stop:
-		actionString = "stop"
-	case updateIPs:
-		actionString = "update floating IPs of"
-	}
-
-	log.WithField("count", len(machines)).
-		Infof("Attempt to %s machines.", actionString)
+	log.WithFields(log.Fields{
+		"count":  len(machines),
+		"action": action,
+	}).Info("Updating cloud")
 
 	noFailures := true
 	groupedMachines := groupByLoc(machines)
@@ -184,44 +170,20 @@ func (clst cluster) updateCloud(machines []joinMachine, act action) {
 			continue
 		}
 
-		switch act {
-		case boot:
-			c.Inc("Boot")
-			err = providerInst.Boot(providerMachines)
-		case stop:
-			c.Inc("Stop")
-			err = providerInst.Stop(providerMachines)
-		case updateIPs:
-			c.Inc("Update Floating IP")
-			err = providerInst.UpdateFloatingIPs(providerMachines)
-		}
-
-		if err != nil {
+		c.Inc(action)
+		if err := fn(providerInst, providerMachines); err != nil {
 			noFailures = false
-			switch act {
-			case boot:
-				log.WithError(err).Warnf(
-					"Unable to boot machines on %s.", loc)
-			case stop:
-				log.WithError(err).Warnf(
-					"Unable to stop machines on %s", loc)
-			case updateIPs:
-				log.WithError(err).Warnf(
-					"Unable to update floating IPs on %s",
-					loc)
-			}
+			log.WithFields(log.Fields{
+				"count":    len(machines),
+				"action":   action,
+				"provider": loc,
+				"error":    err,
+			}).Warn("Failed to update cloud")
 		}
 	}
 
 	if noFailures {
-		switch act {
-		case boot:
-			log.Info("Successfully booted machines.")
-		case stop:
-			log.Info("Successfully stopped machines")
-		case updateIPs:
-			log.Info("Successfully updated floating IPs")
-		}
+		log.WithField("action", action).Info("Successfully updated cloud")
 	} else {
 		log.Infof("Due to failures, sleeping for 1 minute")
 		sleep(60 * time.Second)
