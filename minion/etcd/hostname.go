@@ -7,6 +7,7 @@ import (
 
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
+	"github.com/quilt/quilt/util"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -16,7 +17,7 @@ const hostnamePath = "/hostnames"
 func runHostname(conn db.Conn, store Store) {
 	etcdWatch := store.Watch(hostnamePath, 1*time.Second)
 	trigg := conn.TriggerTick(60, db.HostnameTable)
-	for range joinNotifiers(trigg.C, etcdWatch) {
+	for range util.JoinNotifiers(trigg.C, etcdWatch) {
 		if err := runHostnameOnce(conn, store); err != nil {
 			log.WithError(err).Warn("Failed to sync hostnames with Etcd")
 		}

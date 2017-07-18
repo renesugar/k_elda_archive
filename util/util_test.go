@@ -78,3 +78,42 @@ func TestMapAsString(t *testing.T) {
 		assert.Equal(t, "[]", MapAsString(map[string]string{}))
 	}
 }
+
+func TestJoinNotifiers(t *testing.T) {
+	t.Parallel()
+
+	a := make(chan struct{})
+	b := make(chan struct{})
+
+	c := JoinNotifiers(a, b)
+
+	timeout := time.Tick(30 * time.Second)
+
+	select {
+	case <-c:
+	case <-timeout:
+		t.FailNow()
+	}
+
+	a <- struct{}{}
+	select {
+	case <-c:
+	case <-timeout:
+		t.FailNow()
+	}
+
+	b <- struct{}{}
+	select {
+	case <-c:
+	case <-timeout:
+		t.FailNow()
+	}
+
+	a <- struct{}{}
+	b <- struct{}{}
+	select {
+	case <-c:
+	case <-timeout:
+		t.FailNow()
+	}
+}
