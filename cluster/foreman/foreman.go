@@ -68,9 +68,7 @@ func Init(conn db.Conn) {
 		updateMinionMap(machines)
 		forEachMinion(updateConfig)
 		for _, m := range minions {
-			role := db.PBToRole(m.config.Role)
-			if m.connected && role != db.None {
-				m.machine.Role = role
+			if m.connected {
 				m.machine.Connected = m.connected
 				view.Commit(m.machine)
 			}

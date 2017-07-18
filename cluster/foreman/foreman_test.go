@@ -185,33 +185,6 @@ func TestGetMachineRole(t *testing.T) {
 	minions = map[string]*minion{}
 }
 
-func TestInitForeman(t *testing.T) {
-	conn, _ := startTest(t, map[string]pb.MinionConfig_Role{
-		"2.2.2.2": pb.MinionConfig_WORKER,
-	})
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		m := view.InsertMachine()
-		m.PublicIP = "2.2.2.2"
-		m.PrivateIP = "2.2.2.2"
-		m.CloudID = "ID2"
-		view.Commit(m)
-		return nil
-	})
-
-	Init(conn)
-	for _, m := range minions {
-		assert.Equal(t, db.Role(db.Worker), m.machine.Role)
-	}
-
-	conn, _ = startTest(t, map[string]pb.MinionConfig_Role{
-		"2.2.2.2": pb.MinionConfig_Role(-7),
-	})
-	Init(conn)
-	for _, m := range minions {
-		assert.Equal(t, db.None, m.machine.Role)
-	}
-}
-
 func TestConnectionTrigger(t *testing.T) {
 	t.Parallel()
 
