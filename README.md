@@ -4,138 +4,99 @@
 
 # Quilt
 
-<img src="https://github.com/quilt/mean/blob/master/images/mean.gif">
+Deploying applications to the cloud can be painful. Booting virtual machines, configuring
+networks, and setting up databases, requires massive amounts of specialized knowledge —
+knowledge that’s scattered across documentation, blog posts, tutorials, and source code.
 
-Quilt is a simple way to use JavaScript to build and manage anything from
-website backends to complex distributed systems. As shown above, a few simple
-commands will get your system up and running.
+Quilt aims to make sharing this knowledge simple by encoding it in JavaScript.  Just as
+developers package, share, and reuse application code, Quilt’s JavaScript framework makes
+it possible to package, share, and reuse the knowledge necessary to run applications in
+the cloud.
 
-Building infrastructure and running applications with Quilt is simple,
-intuitive, and flexible. With Quilt.js, you specify your infrastructure
-declaratively in JavaScript, and Quilt then takes care of deploying it on one
-or more cloud providers. Subsequently scaling and modifying the infrastructure
-then becomes a matter of simply changing a few lines of JavaScript code.
+To take this knowledge into production, simply `quilt run` the JavaScript blueprint of
+your application. Quilt will set up virtual machines, configure a secure network, install
+containers, and whatever else is needed to get up and running smoothly on your favorite
+cloud provider.
 
-The Quilt.js JavaScript framework allows for development, versioning, and
-testing of infrastructure in the same way we do for application code.
-Additionally, Quilt.js code is shareable, reusable and composable, making it
-easy to set up and manage systems without being an expert in system
-administration.
+## Deploy Quickly on...
 
-Quilt is a research project out of UC Berkeley. It is currently under heavy
-development, but please try it out - we are eager for feedback!
-
-## Example: Deploying a MEAN Stack App with Quilt
-The MEAN stack (MongoDB, Express, AngularJS, and Node.js) is a popular
-fullstack JavaScript framework used for web development. Deploying a flexible,
-multi-node MEAN stack app can be both time consuming and costly, but Quilt
-simplifies this process.
-
-With Quilt, it takes fewer than 20 lines of JavaScript code to set up a
-replicated Node.js application, connect it to MongoDB, and hook it up with a
-web proxy:
-
-[//]: # (b1)
-```javascript
-var {Machine, createDeployment, Range, githubKeys} = require("@quilt/quilt");
-var Node = require("@quilt/nodejs");
-var HaProxy = require("@quilt/haproxy");
-var Mongo = require("@quilt/mongo");
-
-// Create 3 replicated instances of each service.
-var mongo = new Mongo(3);
-// `app` is a Node.js application using Express, AngluarJS, and MongoDB.
-var app = new Node({
-  nWorker: 3,
-  repo: "https://github.com/tejasmanohar/node-todo.git",
-  env: {
-    PORT: "80",
-    MONGO_URI: mongo.uri("mean-example")
-  }
-});
-var haproxy = new HaProxy(3, app.services());
-
-// Connect the app and database.
-mongo.connect(27017, app);
-app.connect(27017, mongo);
-// Make the proxy accessible from the public internet on port 80.
-haproxy.public();
-```
-
-The application is infrastructure agnostic, so it can be deployed on any - and
-possibly many - of the Quilt supported cloud providers. Here, we specify a
-possible multi-node setup on AWS:
-
-[//]: # (b1)
-```javascript
-var namespace = createDeployment({});
-
-// An AWS VM with 1-2 CPUs and 1-2 GiB RAM.
-// The Github user `ejj` can ssh into the VMs.
-var baseMachine = new Machine({
-    provider: "Amazon",
-    cpu: new Range(2),
-    ram: new Range(8),
-    sshKeys: githubKeys("ejj"),
-});
-
-// Boot VMs with the properties of `baseMachine`.
-namespace.deploy(baseMachine.asMaster());
-namespace.deploy(baseMachine.asWorker().replicate(3));
-```
-All that is left is to deploy the application on the specified infrastructure:
-
-[//]: # (b1)
-```javascript
-namespace.deploy(app);
-namespace.deploy(mongo);
-namespace.deploy(haproxy);
-```
-
-This blueprint can be found in
-[`github.com/quilt/mean/example.js`](https://github.com/quilt/mean/blob/master/example.js)
-and used to deploy your app. Check out [this
-guide](https://github.com/quilt/mean/blob/master/README.md)
-for step by step instructions on how to deploy your own application using
-Quilt.
-
-As shown in the very beginning, deploying a MEAN app with Quilt is now as simple
-as running the command `quilt run github.com/quilt/mean/example.js`.
-
-## Features
-Quilt offers a lot of great features. These are some of them:
-
-* Build infrastructure in JavaScript
-* Simple deployment and management of applications
-* Easy cross-cloud deployment
-* Low cost
-* Shareable and composable infrastructure code
-* Intuitive networking
-* Flexible and scalable infrastructure
-
-There are more to come in the near future!
+![providers](./docs/source/images/providers.png)
 
 ## Install
-#### Install and Set Up Go
-Install Go with your package manager or by following the directions on
-[Go's website](https://golang.org/doc/install).
 
-Setup your `GOPATH` and `PATH` environment variables in your `~/.bashrc` file.
-E.g.:
+Install Quilt with npm:
 
-    export GOPATH="$HOME/gowork"
-    export PATH="$PATH:$GOPATH/bin"
+```bash
+$ npm install -g @quilt/install
+```
+Check out more in our [Getting Started Guide](http://docs.quilt.io/#getting-started).
 
-#### Download Quilt
-Download and install Quilt and its dependencies using `go get`
+## API
 
-    go get github.com/quilt/quilt
+Run any container.
 
-Quilt is now installed! Check out the
-[Getting Started](http://docs.quilt.io/#getting-started) guide for more detailed
-instructions on how to get your Quilt deployment up and running.
+[//]: # (b1)
+<!-- const {Container, Service, Machine, publicInternet} = require('@quilt/quilt'); -->
+```javascript
+let webContainer = new Container("someNodejsImage");
+```
 
-## Contact Us
+Load balance traffic with Services.
 
-Questions? Comments? Feedback?  Please feel free to reach out to us
-[here](http://quilt.io/#contact)!
+[//]: # (b1)
+```javascript
+let webApp = new Service("web", webContainer.replicate(3)); // A load balancer over 3 containers.
+```
+
+Share and import blueprints via npm.
+
+[//]: # (b1)
+```javascript
+const Redis = require("@quilt/redis");
+let redis = new Redis(2, "AUTH_PASSWORD"); // 2 Redis database replicas.
+```
+
+Set up a secure network.
+
+[//]: # (b1)
+```javascript
+webApp.allowFrom(publicInternet, 80); // Open the webservers' port 80 to the public internet.
+redis.allowFrom(webApp, redis.port); // Let the web app communicate with Redis.
+```
+
+Deploy VMs on any [supported cloud provider](#deploy-quickly-on).
+
+[//]: # (b1)
+```javascript
+let vm = new Machine({
+  provider: "Amazon",
+  size: "t2.micro"
+});
+```
+
+See [full example blueprints](https://github.com/quilt/) and [check out our docs](http://docs.quilt.io).
+
+## Quilt CLI
+
+```bash
+# Deploy your application.
+$ quilt run ./someBlueprint.js
+
+# SSH into VMs and containers.
+$ quilt ssh <ID>
+
+# Check the status of your deployment.
+$ quilt show
+```
+
+This is just a small sample of the Quilt CLI. [Check out more handy commands](http://docs.quilt.io/#quilt-cli) for managing your deployment.
+
+## Get Started
+
+* Get started with [our **tutorial**](http://docs.quilt.io/#getting-started)
+* Check out [our **docs**](http://docs.quilt.io/)
+* [**Contribute** to the project](http://docs.quilt.io/#developing-quilt)
+* Learn more on our [**website**](http://quilt.io)
+* [**Get in touch!**](http://quilt.io/#contact)
+
+We would love to hear if you have any questions, suggestions, or other comments!
