@@ -1,6 +1,7 @@
 package foreman
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -211,6 +212,44 @@ func TestInitForeman(t *testing.T) {
 	}
 }
 
+func TestConnectionTrigger(t *testing.T) {
+	t.Parallel()
+
+	fc := &fakeClient{getMinionError: false}
+	min := &minion{client: fc}
+
+	updateConfig(min)
+	assert.True(t, fired(ConnectionTrigger),
+		"first successful connect should fire ConnectionTrigger")
+
+	for i := 0; i < 5; i++ {
+		updateConfig(min)
+		assert.False(t, fired(ConnectionTrigger),
+			"subsequent successful connects should not fire "+
+				"ConnectionTrigger")
+	}
+
+	fc.getMinionError = true
+	updateConfig(min)
+	assert.True(t, fired(ConnectionTrigger),
+		"first disconnect should fire ConnectionTrigger")
+
+	for i := 0; i < 5; i++ {
+		updateConfig(min)
+		assert.False(t, fired(ConnectionTrigger),
+			"subsequent disconnects should not fire ConnectionTrigger")
+	}
+}
+
+func fired(c chan struct{}) bool {
+	select {
+	case <-c:
+		return true
+	default:
+		return false
+	}
+}
+
 func startTest(t *testing.T, roles map[string]pb.MinionConfig_Role) (db.Conn, *clients) {
 	conn := db.New()
 	minions = map[string]*minion{}
@@ -241,6 +280,8 @@ type fakeClient struct {
 	ip      string
 	role    pb.MinionConfig_Role
 	mc      pb.MinionConfig
+
+	getMinionError bool
 }
 
 func (fc *fakeClient) setMinion(mc pb.MinionConfig) error {
@@ -249,6 +290,10 @@ func (fc *fakeClient) setMinion(mc pb.MinionConfig) error {
 }
 
 func (fc *fakeClient) getMinion() (pb.MinionConfig, error) {
+	if fc.getMinionError {
+		return pb.MinionConfig{}, errors.New("mock error")
+	}
+
 	mc := fc.mc
 	mc.Role = fc.role
 	return mc, nil
