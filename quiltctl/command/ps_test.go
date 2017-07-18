@@ -41,7 +41,7 @@ func TestPsErrors(t *testing.T) {
 	// Error querying containers
 	mockClient := new(mocks.Client)
 	mockClient.On("QueryConnections").Return(nil, nil)
-	mockClient.On("QueryMachines").Return(nil, nil)
+	mockClient.On("QueryMachines").Return([]db.Machine{{Status: db.Connected}}, nil)
 	mockClient.On("QueryContainers").Return(nil, mockErr)
 	mockClient.On("QueryImages").Return(nil, nil)
 	cmd := &Ps{false, connectionHelper{client: mockClient}}
@@ -50,11 +50,35 @@ func TestPsErrors(t *testing.T) {
 	// Error querying connections from LeaderClient
 	mockClient = new(mocks.Client)
 	mockClient.On("QueryContainers").Return(nil, nil)
-	mockClient.On("QueryMachines").Return(nil, nil)
+	mockClient.On("QueryMachines").Return([]db.Machine{{Status: db.Connected}}, nil)
 	mockClient.On("QueryConnections").Return(nil, mockErr)
 	mockClient.On("QueryImages").Return(nil, nil)
 	cmd = &Ps{false, connectionHelper{client: mockClient}}
 	assert.EqualError(t, cmd.run(), "unable to query connections: error")
+}
+
+// Test that we don't query the cluster if it's not up.
+func TestMachineOnly(t *testing.T) {
+	t.Parallel()
+
+	mockClient := new(mocks.Client)
+	cmd := &Ps{false, connectionHelper{client: mockClient}}
+
+	// Test failing to query machines.
+	mockClient.On("QueryMachines").Once().Return(nil, assert.AnError)
+	cmd.run()
+	mockClient.AssertNotCalled(t, "QueryContainers")
+
+	// Test no machines in database.
+	mockClient.On("QueryMachines").Once().Return(nil, nil)
+	cmd.run()
+	mockClient.AssertNotCalled(t, "QueryContainers")
+
+	// Test no connected machines.
+	mockClient.On("QueryMachines").Once().Return(
+		[]db.Machine{{Status: db.Booting}}, nil)
+	cmd.run()
+	mockClient.AssertNotCalled(t, "QueryContainers")
 }
 
 func TestPsSuccess(t *testing.T) {

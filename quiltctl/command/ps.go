@@ -59,20 +59,35 @@ func (pCmd *Ps) Run() int {
 }
 
 func (pCmd *Ps) run() (err error) {
+	machines, err := pCmd.client.QueryMachines()
+	if err != nil {
+		return fmt.Errorf("unable to query machines: %s", err)
+	}
+
+	writeMachines(os.Stdout, machines)
+	fmt.Println()
+
+	clusterUp := false
+	for _, m := range machines {
+		if m.Status == db.Connected || m.Status == db.Reconnecting {
+			clusterUp = true
+		}
+	}
+
+	// Only attempt to query container information if the foreman has connected
+	// to a machine. If the foreman hasn't connected to any machines, then there's
+	// no way any containers could be running because the deployment hasn't been
+	// sent to the cluster yet.
+	if !clusterUp {
+		return nil
+	}
+
 	var connections []db.Connection
 	var containers []db.Container
-	var machines []db.Machine
 	var images []db.Image
-
 	connectionErr := make(chan error)
 	containerErr := make(chan error)
-	machineErr := make(chan error)
 	imagesErr := make(chan error)
-
-	go func() {
-		machines, err = pCmd.client.QueryMachines()
-		machineErr <- err
-	}()
 
 	go func() {
 		connections, err = pCmd.client.QueryConnections()
@@ -88,13 +103,6 @@ func (pCmd *Ps) run() (err error) {
 		images, err = pCmd.client.QueryImages()
 		imagesErr <- err
 	}()
-
-	if err := <-machineErr; err != nil {
-		return fmt.Errorf("unable to query machines: %s", err)
-	}
-
-	writeMachines(os.Stdout, machines)
-	fmt.Println()
 
 	if err := <-connectionErr; err != nil {
 		return fmt.Errorf("unable to query connections: %s", err)
