@@ -139,9 +139,11 @@ The coding style is as defined by the `gofmt` tool: whatever transformations it
 makes on a piece of code are considered, by definition, the correct style.  In
 addition, `golint`, `go vet`, and `go test` should pass without warning on all
 changes.  An easy way to check these requirements is to run `make lint check`
-on each patch before submitting a pull request.
+on each patch before submitting a pull request. Running `make format` will fix
+many (but not all) formatting errors.
 
 Unlike official go style, in Quilt lines should be wrapped to 89 characters.
+This requirement is checked by `make lint`.
 
 The fundamental unit of work in the Quilt project is the git commit.  Each
 commit should be a coherent whole that implements one idea completely and

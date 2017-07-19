@@ -16,6 +16,8 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 		    ./quilt-tester/tests/zookeeper/vendor/% \
 		    ./stitch/bindings.js.go
 
+JS_LINT_COMMAND = node_modules/eslint/bin/eslint.js -c stitch/eslint.conf \
+                  stitch/ quilt-tester/
 REPO = quilt
 DOCKER = docker
 SHELL := /bin/bash
@@ -87,19 +89,12 @@ js-coverage:
 
 coverage: go-coverage js-coverage
 
-format: scripts/format/format
+format:
 	gofmt -w -s $(NOVENDOR)
-	scripts/format/format $(filter-out $(LINE_LENGTH_EXCLUDE),$(NOVENDOR))
+	$(JS_LINT_COMMAND) --fix
 
 scripts/format/format: scripts/format/format.go
 	cd scripts/format && go build format.go
-
-format-check:
-	RESULT=`gofmt -s -l $(NOVENDOR)` && \
-	if [[ -n "$$RESULT"  ]] ; then \
-	    echo $$RESULT && \
-	    exit 1 ; \
-	fi
 
 build-blueprints-tester: scripts/blueprints-tester/*
 	cd scripts/blueprints-tester && go build .
@@ -107,8 +102,12 @@ build-blueprints-tester: scripts/blueprints-tester/*
 check-blueprints: build-blueprints-tester
 	scripts/blueprints-tester/blueprints-tester
 
-lint: format
+# lint checks the format of all of our code. This command should not make any
+# changes to fix incorrect format; it should only check it. Code to update the
+# format should go under the format target.
+lint: scripts/format/format
 	cd -P . && govendor vet +local
+	# Run golint
 	EXIT_CODE=0; \
 	for package in $(PACKAGES) ; do \
 		if [[ $$package != *minion/pb* && $$package != *api/pb* ]] ; then \
@@ -118,7 +117,16 @@ lint: format
 	find . \( -path ./vendor -or -path ./node_modules -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error || EXIT_CODE=1; \
 	ineffassign . || EXIT_CODE=1; \
 	exit $$EXIT_CODE
-	node_modules/eslint/bin/eslint.js -c stitch/eslint.conf stitch/ quilt-tester/ --fix
+	# Run gofmt
+	RESULT=`gofmt -s -l $(NOVENDOR)` && \
+	if [[ -n "$$RESULT"  ]] ; then \
+	    echo $$RESULT && \
+	    exit 1 ; \
+	fi
+	# Do some additional checks of the go code (e.g., for line length)
+	scripts/format/format $(filter-out $(LINE_LENGTH_EXCLUDE),$(NOVENDOR))
+	# Lint the Javascript code
+	$(JS_LINT_COMMAND)
 
 generate:
 	govendor generate +local
