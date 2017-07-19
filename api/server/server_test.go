@@ -148,7 +148,8 @@ func TestBadDeployment(t *testing.T) {
 	_, err := s.Deploy(context.Background(),
 		&pb.DeployRequest{Deployment: badDeployment})
 
-	assert.EqualError(t, err, "unexpected end of JSON input")
+	assert.EqualError(t, err,
+		"unable to parse blueprint: unexpected end of JSON input")
 }
 func TestInvalidImage(t *testing.T) {
 	conn := db.New()

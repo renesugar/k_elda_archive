@@ -150,7 +150,9 @@ func FromFile(filename string) (Stitch, error) {
 func FromJSON(jsonStr string) (stc Stitch, err error) {
 	err = json.Unmarshal([]byte(jsonStr), &stc)
 	if err != nil {
-		return Stitch{}, err
+		wrappedError := errors.New("unable to parse blueprint: " +
+			err.Error())
+		return Stitch{}, wrappedError
 	}
 
 	if len(stc.Invariants) == 0 {
