@@ -1,4 +1,4 @@
-/* eslint require-jsdoc: [1] */
+/* eslint require-jsdoc: [1] valid-jsdoc: [1] */
 const crypto = require('crypto');
 const request = require('sync-request');
 const stringify = require('json-stable-stringify');
@@ -45,9 +45,9 @@ function createDeployment(deploymentOpts) {
 function Deployment(deploymentOpts) {
     deploymentOpts = deploymentOpts || {};
 
-    this.maxPrice = deploymentOpts.maxPrice || 0;
+    this.maxPrice = getNumber('maxPrice', deploymentOpts.maxPrice);
     this.namespace = deploymentOpts.namespace || 'default-namespace';
-    this.adminACL = deploymentOpts.adminACL || [];
+    this.adminACL = getStringArray('adminACL', deploymentOpts.adminACL);
 
     this.machines = [];
     this.containers = {};
@@ -253,6 +253,20 @@ Deployment.prototype.assert = function(rule, desired) {
 };
 
 function Service(name, containers) {
+    if (typeof name !== 'string') {
+        throw new Error(`name must be a string; was ${stringify(name)}`);
+    }
+    if (!Array.isArray(containers)) {
+        throw new Error(`containers must be an array of Containers (was ` +
+            `${stringify(containers)})`);
+    }
+    for (let i = 0; i < containers.length; i++) {
+        if (!(containers[i] instanceof Container)) {
+            throw new Error(`containers must be an array of Containers; item ` +
+                `at index ${i} (${stringify(containers[i])}) is not a ` +
+                `Container`);
+        }
+    }
     this.name = uniqueLabelName(name);
     this.containers = containers;
     this.annotations = [];
@@ -464,21 +478,83 @@ function boxRange(x) {
     return x;
 }
 
+/**
+ * Returns 0 if `arg` is not defined, and otherwise ensures that `arg`
+ * is a number and then returns it.
+ */
+function getNumber(argName, arg) {
+    if (arg === undefined) {
+        return 0;
+    }
+    if (typeof arg === 'number') {
+        return arg;
+    }
+    throw new Error(`${argName} must be a number (was: ${stringify(arg)})`);
+}
+
+/**
+ * Returns an empty string if `arg` is not defined, and otherwise
+ * ensures that `arg` is a string and then returns it.
+ */
+function getString(argName, arg) {
+    if (arg === undefined) {
+        return '';
+    }
+    if (typeof arg === 'string') {
+        return arg;
+    }
+    throw new Error(`${argName} must be a string (was: ${stringify(arg)})`);
+}
+
+/**
+ * Returns an empty array if `arg` is not defined, and otherwise
+ * ensures that `arg` is an array of strings and then returns it.
+ */
+function getStringArray(argName, arg) {
+    if (arg === undefined) {
+        return [];
+    }
+    if (!Array.isArray(arg)) {
+        throw new Error(`${argName} must be an array of strings ` +
+            `(was: ${stringify(arg)})`);
+    }
+    for (let i = 0; i < arg.length; i++) {
+        if (typeof arg[i] !== 'string') {
+            throw new Error(`${argName} must be an array of strings. ` +
+                `Item at index ${i} (${stringify(arg[i])}) is not a ` +
+                `string.`);
+        }
+    }
+    return arg;
+}
+
+/**
+ * Returns false if `arg` is not defined, and otherwise ensures
+ * that `arg` is a boolean and then returns it.
+ */
+function getBoolean(argName, arg) {
+    if (arg === undefined) {
+        return false;
+    }
+    if (typeof arg === 'boolean') {
+        return arg;
+    }
+    throw new Error(`${argName} must be a boolean (was: ${stringify(arg)})`);
+}
+
 function Machine(optionalArgs) {
     this._refID = uniqueID();
 
-    this.provider = optionalArgs.provider || '';
-    this.role = optionalArgs.role || '';
-    this.region = optionalArgs.region || '';
-    this.size = optionalArgs.size || '';
-    this.floatingIp = optionalArgs.floatingIp || '';
-    this.diskSize = optionalArgs.diskSize || 0;
-    this.sshKeys = optionalArgs.sshKeys || [];
+    this.provider = getString('provider', optionalArgs.provider);
+    this.role = getString('role', optionalArgs.role);
+    this.region = getString('region', optionalArgs.region);
+    this.size = getString('size', optionalArgs.size);
+    this.floatingIp = getString('floatingIp', optionalArgs.floatingIp);
+    this.diskSize = getNumber('diskSize', optionalArgs.diskSize);
+    this.sshKeys = getStringArray('sshKeys', optionalArgs.sshKeys);
     this.cpu = boxRange(optionalArgs.cpu);
     this.ram = boxRange(optionalArgs.ram);
-    this.preemptible = optionalArgs.preemptible !== undefined ?
-        optionalArgs.preemptible :
-        false;
+    this.preemptible = getBoolean('preemptible', optionalArgs.preemptible);
 }
 
 Machine.prototype.deploy = function(deployment) {
@@ -542,7 +618,7 @@ function Container(image, command) {
         throw new Error('bad image type');
     }
 
-    this.command = command || [];
+    this.command = getStringArray('command', command);
     this.env = {};
     this.filepathToContent = {};
 }
