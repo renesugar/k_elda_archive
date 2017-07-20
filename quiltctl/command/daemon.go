@@ -1,6 +1,8 @@
 package command
 
 import (
+	"crypto/rand"
+	goRSA "crypto/rsa"
 	"encoding/base64"
 	"flag"
 	"fmt"
@@ -79,6 +81,18 @@ func (dCmd *Daemon) Run() int {
 		}
 	}
 
+	if sshKey == nil && dCmd.tlsDir != "" {
+		log.Info("No admin key supplied, but TLS is enabled, which requires an " +
+			"admin SSH key to copy TLS credentials to the cluster. " +
+			"Auto-generating an in-memory key.")
+		var err error
+		sshKey, err = newSSHPrivateKey()
+		if err != nil {
+			log.WithError(err).Error("Failed to generate SSH key")
+			return 1
+		}
+	}
+
 	creds, err := credentials.Read(dCmd.tlsDir)
 	if err != nil {
 		log.WithError(err).Error("Failed to parse credentials. " +
@@ -93,11 +107,6 @@ func (dCmd *Daemon) Run() int {
 	var minionTLSDir string
 	if _, isTLS := creds.(tls.TLS); isTLS {
 		minionTLSDir = "/home/quilt/.quilt/tls"
-		if sshKey == nil {
-			log.Error("A SSH private key must be supplied to " +
-				"distribute TLS certificates")
-			return 1
-		}
 
 		ca, err := tlsIO.ReadCA(dCmd.tlsDir)
 		if err != nil {
@@ -110,6 +119,15 @@ func (dCmd *Daemon) Run() int {
 
 	cluster.Run(conn, creds, minionTLSDir)
 	return 0
+}
+
+func newSSHPrivateKey() (ssh.Signer, error) {
+	key, err := goRSA.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
+
+	return ssh.NewSignerFromKey(key)
 }
 
 func parseSSHPrivateKey(path string) (ssh.Signer, error) {
