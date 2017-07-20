@@ -1,6 +1,7 @@
 package digitalocean
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -144,6 +145,10 @@ func (clst Cluster) List() (machines []machine.Machine, err error) {
 func (clst Cluster) Boot(bootSet []machine.Machine) error {
 	errChan := make(chan error, len(bootSet))
 	for _, m := range bootSet {
+		if m.Preemptible {
+			return errors.New("preemptible instances are not yet implemented")
+		}
+
 		go func(m machine.Machine) {
 			errChan <- clst.createAndAttach(m)
 		}(m)

@@ -237,6 +237,13 @@ func TestBoot(t *testing.T) {
 	assert.EqualError(t, err, errMsg)
 }
 
+func TestBootPreemptible(t *testing.T) {
+	t.Parallel()
+
+	err := Cluster{}.Boot([]machine.Machine{{Preemptible: true}})
+	assert.EqualError(t, err, "preemptible instances are not yet implemented")
+}
+
 func TestStop(t *testing.T) {
 	mc := new(mocks.Client)
 	doClust, err := newDigitalOcean(testNamespace, DefaultRegion)
