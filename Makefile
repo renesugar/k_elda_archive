@@ -41,6 +41,7 @@ clean:
 	govendor clean -x +local
 	rm -f *.cov.coverprofile cluster/*.cov.coverprofile minion/*.cov.coverprofile
 	rm -f *.cov.html cluster/*.cov.html minion/*.cov.html
+	rm quilt_linux quilt_darwin
 
 linux:
 	cd -P . && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o quilt_linux .
