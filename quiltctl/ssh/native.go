@@ -70,8 +70,13 @@ func defaultSigners() []ssh.Signer {
 		identityPath := filepath.Join(sshDir, keyName)
 		key, err := signerFromFile(identityPath)
 		if err != nil {
-			log.WithError(err).WithField("path", identityPath).
-				Debug("Unable to load default identity file")
+			if os.IsNotExist(err) {
+				log.WithField("path", identityPath).
+					Debug("Key does not exist")
+			} else {
+				log.WithError(err).WithField("path", identityPath).
+					Warn("Unable to load default identity file")
+			}
 			continue
 		}
 		signers = append(signers, key)
