@@ -35,7 +35,7 @@ gocheck:
 javascript-check:
 	npm test
 
-check: format-check gocheck javascript-check
+check: gocheck javascript-check
 
 clean:
 	govendor clean -x +local
