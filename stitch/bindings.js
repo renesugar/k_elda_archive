@@ -613,9 +613,9 @@ function Container(image, command) {
     if (typeof image === 'string') {
         this.image = new Image(image);
     }
-
-    if (this.image.constructor !== Image) {
-        throw new Error('bad image type');
+    if (!(this.image instanceof Image)) {
+        throw new Error(`image must be an Image or string (was ` +
+            `${stringify(image)})`);
     }
 
     this.command = getStringArray('command', command);
