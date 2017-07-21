@@ -8,6 +8,7 @@ Dockerfiles. This is necessary to fetch updates when Dockerfiles are
 non-deterministic and rely on pulling data from the network.
 - Use the latest stable release of Docker Engine.
 - Fixed a bug where `quilt inspect` would panic when given a relative path.
+- Use the latest release of OVS (2.7.2).
 
 Release 0.2.0
 -------------
