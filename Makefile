@@ -106,7 +106,12 @@ check-blueprints: build-blueprints-tester
 # lint checks the format of all of our code. This command should not make any
 # changes to fix incorrect format; it should only check it. Code to update the
 # format should go under the format target.
-lint: scripts/format/format
+lint: golint jslint
+
+jslint:
+	$(JS_LINT_COMMAND)
+
+golint: scripts/format/format
 	cd -P . && govendor vet +local
 	# Run golint
 	EXIT_CODE=0; \
@@ -126,8 +131,6 @@ lint: scripts/format/format
 	fi
 	# Do some additional checks of the go code (e.g., for line length)
 	scripts/format/format $(filter-out $(LINE_LENGTH_EXCLUDE),$(NOVENDOR))
-	# Lint the Javascript code
-	$(JS_LINT_COMMAND)
 
 generate:
 	govendor generate +local
