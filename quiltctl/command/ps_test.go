@@ -96,15 +96,26 @@ func TestPsSuccess(t *testing.T) {
 func TestMachineOutput(t *testing.T) {
 	t.Parallel()
 
-	machines := []db.Machine{{
-		StitchID: "1",
-		Role:     db.Master,
-		Provider: "Amazon",
-		Region:   "us-west-1",
-		Size:     "m4.large",
-		PublicIP: "8.8.8.8",
-		Status:   db.Connected,
-	}}
+	machines := []db.Machine{
+		{
+			StitchID: "1",
+			Role:     db.Master,
+			Provider: "Amazon",
+			Region:   "us-west-1",
+			Size:     "m4.large",
+			PublicIP: "8.8.8.8",
+			Status:   db.Connected,
+		}, {
+			StitchID:   "2",
+			Role:       db.Worker,
+			Provider:   "DigitalOcean",
+			Region:     "sfo1",
+			Size:       "2gb",
+			PublicIP:   "9.9.9.9",
+			FloatingIP: "10.10.10.10",
+			Status:     db.Connected,
+		},
+	}
 
 	var b bytes.Buffer
 	writeMachines(&b, machines)
@@ -114,9 +125,10 @@ func TestMachineOutput(t *testing.T) {
 	* errors easier to debug. */
 	result = strings.Replace(result, " ", "_", -1)
 
-	exp := `MACHINE____ROLE______PROVIDER____REGION_______SIZE` +
-		`________PUBLIC_IP____STATUS
-1__________Master____Amazon______us-west-1____m4.large____8.8.8.8______connected
+	exp := `MACHINE____ROLE______PROVIDER________REGION_______SIZE` +
+		`________PUBLIC_IP______STATUS
+1__________Master____Amazon__________us-west-1____m4.large____8.8.8.8________connected
+2__________Worker____DigitalOcean____sfo1_________2gb_________10.10.10.10____connected
 `
 
 	assert.Equal(t, exp, result)
@@ -330,10 +342,14 @@ func TestContainerStr(t *testing.T) {
 
 func TestPublicIPStr(t *testing.T) {
 	t.Parallel()
-	assert.Equal(t, "", publicIPStr("", nil))
-	assert.Equal(t, "", publicIPStr("", []string{"80-88"}))
-	assert.Equal(t, "", publicIPStr("1.2.3.4", nil))
-	assert.Equal(t, "1.2.3.4:80-88", publicIPStr("1.2.3.4", []string{"80-88"}))
+	assert.Equal(t, "", publicIPStr(db.Machine{}, nil))
+	assert.Equal(t, "", publicIPStr(db.Machine{}, []string{"80-88"}))
+	assert.Equal(t, "", publicIPStr(db.Machine{PublicIP: "1.2.3.4"}, nil))
+	assert.Equal(t, "1.2.3.4:80-88",
+		publicIPStr(db.Machine{PublicIP: "1.2.3.4"}, []string{"80-88"}))
 	assert.Equal(t, "1.2.3.4:[70,80-88]",
-		publicIPStr("1.2.3.4", []string{"70", "80-88"}))
+		publicIPStr(db.Machine{PublicIP: "1.2.3.4"}, []string{"70", "80-88"}))
+	assert.Equal(t, "8.8.8.8:[70,80-88]",
+		publicIPStr(db.Machine{PublicIP: "1.2.3.4", FloatingIP: "8.8.8.8"},
+			[]string{"70", "80-88"}))
 }

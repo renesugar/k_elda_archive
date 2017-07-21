@@ -126,9 +126,15 @@ func writeMachines(fd io.Writer, machines []db.Machine) {
 	fmt.Fprintln(w, "MACHINE\tROLE\tPROVIDER\tREGION\tSIZE\tPUBLIC IP\tSTATUS")
 
 	for _, m := range db.SortMachines(machines) {
+		// Prefer the floating IP over the public IP if it's defined.
+		pubIP := m.PublicIP
+		if m.FloatingIP != "" {
+			pubIP = m.FloatingIP
+		}
+
 		fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\t%v\n",
 			util.ShortUUID(m.StitchID), m.Role, m.Provider, m.Region, m.Size,
-			m.PublicIP, m.Status)
+			pubIP, m.Status)
 	}
 }
 
@@ -216,8 +222,7 @@ func writeContainers(fd io.Writer, containers []db.Container, machines []db.Mach
 				created = fmt.Sprintf("%s ago", duration)
 			}
 
-			publicIP := publicIPStr(idMachineMap[machineID].PublicIP,
-				publicPorts)
+			publicIP := publicIPStr(idMachineMap[machineID], publicPorts)
 
 			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\t%v\n",
 				util.ShortUUID(dbc.StitchID), util.ShortUUID(machineID),
@@ -239,7 +244,13 @@ func containerStr(image string, args []string, truncate bool) string {
 	return container
 }
 
-func publicIPStr(hostPublicIP string, publicPorts []string) string {
+func publicIPStr(m db.Machine, publicPorts []string) string {
+	// Prefer the floating IP over the public IP if it's defined.
+	hostPublicIP := m.PublicIP
+	if m.FloatingIP != "" {
+		hostPublicIP = m.FloatingIP
+	}
+
 	if hostPublicIP == "" || len(publicPorts) == 0 {
 		return ""
 	}
