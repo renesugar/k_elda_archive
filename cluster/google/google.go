@@ -86,32 +86,32 @@ func New(namespace, zone string) (*Cluster, error) {
 
 // List the current machines in the cluster.
 func (clst *Cluster) List() ([]machine.Machine, error) {
-	var mList []machine.Machine
-	list, err := clst.gce.ListInstances(clst.zone,
+	var machines []machine.Machine
+	instances, err := clst.gce.ListInstances(clst.zone,
 		fmt.Sprintf("description eq %s", clst.ns))
 	if err != nil {
 		return nil, err
 	}
-	for _, item := range list.Items {
+	for _, instance := range instances.Items {
 		// XXX: This make some iffy assumptions about NetworkInterfaces
-		machineSplitURL := strings.Split(item.MachineType, "/")
+		machineSplitURL := strings.Split(instance.MachineType, "/")
 		mtype := machineSplitURL[len(machineSplitURL)-1]
 
-		accessConfig := item.NetworkInterfaces[0].AccessConfigs[0]
+		accessConfig := instance.NetworkInterfaces[0].AccessConfigs[0]
 		floatingIP := ""
 		if accessConfig.Name == floatingIPName {
 			floatingIP = accessConfig.NatIP
 		}
 
-		mList = append(mList, machine.Machine{
-			ID:         item.Name,
+		machines = append(machines, machine.Machine{
+			ID:         instance.Name,
 			PublicIP:   accessConfig.NatIP,
 			FloatingIP: floatingIP,
-			PrivateIP:  item.NetworkInterfaces[0].NetworkIP,
+			PrivateIP:  instance.NetworkInterfaces[0].NetworkIP,
 			Size:       mtype,
 		})
 	}
-	return mList, nil
+	return machines, nil
 }
 
 // Boot blocks while creating instances.
