@@ -254,7 +254,7 @@ func (ts *testSuite) run() error {
 	}()
 	defer func() {
 		logsPath := filepath.Join(os.Getenv("WORKSPACE"), ts.name+"_debug_logs")
-		cmd := exec.Command("quilt", "debug-logs", "-tar=false",
+		cmd := exec.Command("quilt", "-v", "debug-logs", "-tar=false",
 			"-o="+logsPath, "-all")
 		stdout, stderr, err := execCmd(cmd, "DEBUG LOGS")
 		if err != nil {
