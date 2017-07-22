@@ -18,6 +18,8 @@ const (
 	blockEnd   = "```\n"
 	// Matches lines like `[//]: # (b1)`.
 	blockIDPattern = "^\\[//\\]: # \\((b\\d+)\\)\\W*$"
+	// Matches lines like `<!-- (<code>) -->`
+	hiddenCodePattern = "<!--\\s*(.*)\\s*-->\\W*$"
 )
 
 var errUnbalanced = errors.New("unbalanced code blocks")
@@ -35,9 +37,8 @@ func (parser *readmeParser) parse(line string) error {
 	isEnd := line == blockEnd
 	isBash := line == bashStart
 
-	reBlockID := regexp.MustCompile(blockIDPattern)
-	matchID := reBlockID.FindStringSubmatch(line)
-	isBlockID := len(matchID) > 0
+	hiddenCodeMatch, isHidden := getMatch(hiddenCodePattern, line)
+	blockIDMatch, isBlockID := getMatch(blockIDPattern, line)
 
 	if (isStart && parser.recording) ||
 		(isEnd && !parser.ignoring && !parser.recording) {
@@ -46,7 +47,10 @@ func (parser *readmeParser) parse(line string) error {
 
 	switch {
 	case isBlockID:
-		parser.currentBlock = matchID[1]
+		parser.currentBlock = blockIDMatch
+	case isHidden:
+		line = hiddenCodeMatch + "\n"
+		break
 	case isStart:
 		parser.recording = true
 
@@ -65,7 +69,7 @@ func (parser *readmeParser) parse(line string) error {
 		parser.currentBlock = ""
 	}
 
-	if parser.recording && !isStart {
+	if (parser.recording && !isStart) || isHidden {
 		parser.codeBlocks[parser.currentBlock] += line
 	}
 
@@ -133,4 +137,13 @@ func TestReadme() error {
 		}
 	}
 	return nil
+}
+
+func getMatch(pattern, line string) (string, bool) {
+	re := regexp.MustCompile(pattern)
+	match := re.FindStringSubmatch(line)
+	if len(match) > 0 {
+		return match[1], true
+	}
+	return "", false
 }
