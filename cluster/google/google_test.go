@@ -99,6 +99,25 @@ func (s *GoogleTestSuite) TestListFirewalls() {
 	s.EqualError(err, "list firewalls: err")
 }
 
+func (s *GoogleTestSuite) TestListBadNetworkInterface() {
+	// Tests that List returns an error when no network interfaces are
+	// configured.
+	s.gce.On("ListInstances", "zone-1",
+		"description eq namespace").Return(&compute.InstanceList{
+		Items: []*compute.Instance{
+			{
+				MachineType:       "machine/split/type-1",
+				Name:              "name-1",
+				NetworkInterfaces: []*compute.NetworkInterface{},
+			},
+		},
+	}, nil)
+
+	_, err := s.clst.List()
+	s.EqualError(err, "Google instances are expected to have exactly 1 "+
+		"interface; for instance name-1, found 0")
+}
+
 func (s *GoogleTestSuite) TestParseACLs() {
 	parsed, err := s.clst.parseACLs([]compute.Firewall{
 		{

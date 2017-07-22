@@ -84,6 +84,29 @@ func New(namespace, zone string) (*Cluster, error) {
 	return &clst, nil
 }
 
+// getNetworkConfig extracts the NetworkInterface and AccessConfig from a
+// Google instance, and handles checking that these are properly
+// defined in the instance.
+func getNetworkConfig(inst *compute.Instance) (
+	*compute.NetworkInterface, *compute.AccessConfig, error) {
+	if len(inst.NetworkInterfaces) != 1 {
+		return nil, nil, fmt.Errorf("Google instances are expected to "+
+			"have exactly 1 interface; for instance %s, "+
+			"found %d", inst.Name, len(inst.NetworkInterfaces))
+	}
+	iface := inst.NetworkInterfaces[0]
+	if len(iface.AccessConfigs) != 1 {
+		return nil, nil, fmt.Errorf("Google instances expected to "+
+			"have exactly 1 access config (instances "+
+			"without a config will not be accessible "+
+			"via the public internet, and Google "+
+			"does not support more than one config); "+
+			"for instance %s, found %d access configs",
+			inst.Name, len(iface.AccessConfigs))
+	}
+	return iface, iface.AccessConfigs[0], nil
+}
+
 // List the current machines in the cluster.
 func (clst *Cluster) List() ([]machine.Machine, error) {
 	var machines []machine.Machine
@@ -93,11 +116,14 @@ func (clst *Cluster) List() ([]machine.Machine, error) {
 		return nil, err
 	}
 	for _, instance := range instances.Items {
-		// XXX: This make some iffy assumptions about NetworkInterfaces
 		machineSplitURL := strings.Split(instance.MachineType, "/")
 		mtype := machineSplitURL[len(machineSplitURL)-1]
 
-		accessConfig := instance.NetworkInterfaces[0].AccessConfigs[0]
+		iface, accessConfig, err := getNetworkConfig(instance)
+		if err != nil {
+			return nil, err
+		}
+
 		floatingIP := ""
 		if accessConfig.Name == floatingIPName {
 			floatingIP = accessConfig.NatIP
@@ -107,7 +133,7 @@ func (clst *Cluster) List() ([]machine.Machine, error) {
 			ID:         instance.Name,
 			PublicIP:   accessConfig.NatIP,
 			FloatingIP: floatingIP,
-			PrivateIP:  instance.NetworkInterfaces[0].NetworkIP,
+			PrivateIP:  iface.NetworkIP,
 			Size:       mtype,
 		})
 	}
@@ -428,8 +454,10 @@ func (clst *Cluster) UpdateFloatingIPs(machines []machine.Machine) error {
 		// Delete existing network interface. It is only possible to assign
 		// one access config per instance. Thus, updating GCE Floating IPs
 		// is not a seamless, zero-downtime procedure.
-		networkInterface := instance.NetworkInterfaces[0]
-		accessConfig := instance.NetworkInterfaces[0].AccessConfigs[0]
+		networkInterface, accessConfig, err := getNetworkConfig(instance)
+		if err != nil {
+			return err
+		}
 		_, err = clst.gce.DeleteAccessConfig(clst.zone, m.ID,
 			accessConfig.Name, networkInterface.Name)
 		if err != nil {
