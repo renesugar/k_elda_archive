@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	blockStart     = "```javascript\n"
-	bashStart      = "```bash\n"
-	blockEnd       = "```\n"
-	commentPattern = "^\\[//\\]: # \\((.*)\\)\\W*$"
+	blockStart = "```javascript\n"
+	bashStart  = "```bash\n"
+	blockEnd   = "```\n"
+	// Matches lines like `[//]: # (b1)`.
+	blockIDPattern = "^\\[//\\]: # \\((b\\d+)\\)\\W*$"
 )
 
 var errUnbalanced = errors.New("unbalanced code blocks")
@@ -33,9 +34,10 @@ func (parser *readmeParser) parse(line string) error {
 	isStart := line == blockStart
 	isEnd := line == blockEnd
 	isBash := line == bashStart
-	reComment := regexp.MustCompile(commentPattern)
-	match := reComment.FindStringSubmatch(line)
-	isComment := len(match) > 0
+
+	reBlockID := regexp.MustCompile(blockIDPattern)
+	matchID := reBlockID.FindStringSubmatch(line)
+	isBlockID := len(matchID) > 0
 
 	if (isStart && parser.recording) ||
 		(isEnd && !parser.ignoring && !parser.recording) {
@@ -43,8 +45,8 @@ func (parser *readmeParser) parse(line string) error {
 	}
 
 	switch {
-	case isComment:
-		parser.currentBlock = match[1]
+	case isBlockID:
+		parser.currentBlock = matchID[1]
 	case isStart:
 		parser.recording = true
 
