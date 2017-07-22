@@ -14,6 +14,7 @@ import (
 
 const (
 	blockStart     = "```javascript\n"
+	bashStart      = "```bash\n"
 	blockEnd       = "```\n"
 	commentPattern = "^\\[//\\]: # \\((.*)\\)\\W*$"
 )
@@ -25,16 +26,19 @@ type readmeParser struct {
 	// Map block ID to code block.
 	codeBlocks map[string]string
 	recording  bool
+	ignoring   bool
 }
 
 func (parser *readmeParser) parse(line string) error {
 	isStart := line == blockStart
 	isEnd := line == blockEnd
+	isBash := line == bashStart
 	reComment := regexp.MustCompile(commentPattern)
 	match := reComment.FindStringSubmatch(line)
 	isComment := len(match) > 0
 
-	if (isStart && parser.recording) || (isEnd && !parser.recording) {
+	if (isStart && parser.recording) ||
+		(isEnd && !parser.ignoring && !parser.recording) {
 		return errUnbalanced
 	}
 
@@ -51,8 +55,11 @@ func (parser *readmeParser) parse(line string) error {
 		if _, ok := parser.codeBlocks[parser.currentBlock]; !ok {
 			parser.codeBlocks[parser.currentBlock] = ""
 		}
+	case isBash:
+		parser.ignoring = true
 	case isEnd:
 		parser.recording = false
+		parser.ignoring = false
 		parser.currentBlock = ""
 	}
 
