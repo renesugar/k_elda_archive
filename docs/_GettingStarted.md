@@ -78,8 +78,8 @@ Services](https://aws.amazon.com/ec2/) and then find your access credentials
 from the
 [Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential)
 page in the AWS Management Console.
-Once you've done that, populate the file `~/.aws/credentials` with your Amazon
-credentials:
+Once you've done that, put your Amazon credentials in a file called
+`~/.aws/credentials`:
 
 ```conf
 [default]

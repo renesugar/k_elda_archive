@@ -1,19 +1,49 @@
 # Cloud Provider Configuration
 
-The [Getting Started Guide](#getting-started) described how the basics of
-setting up Amazon EC2.  This section describes the basic configuration of the
-other cloud providers, and gives some details about how to enable extra features
-(e.g., floating IP addresses) on each cloud provider.
+This section describes the basic configuration of the cloud providers supported
+by Quilt, and gives some details about how to enable extra features (e.g.,
+floating IP addresses) on each cloud provider.
+
+### Amazon EC2
+
+For Amazon EC2, you'll first need to create an account with [Amazon Web
+Services](https://aws.amazon.com/ec2/) and then find your access credentials
+from the [Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential)
+page in the AWS Management Console. Once you've done that, put your Amazon
+credentials in a file called `~/.aws/credentials`:
+
+```conf
+[default]
+aws_access_key_id = <YOUR_ID>
+aws_secret_access_key = <YOUR_SECRET_KEY>
+```
+
+The file needs to appear exactly as above (including the `[default]` at the
+top), except with `<YOUR_ID>` and `<YOUR_SECRET_KEY>` filled in appropriately.
+
+To deploy an `m3.medium` instance on Amazon EC2's `us-west-2` region as a
+`Worker`:
+
+```javascript
+deployment.deploy(new Machine({
+    provider: "Amazon",
+    region: "us-west-2",
+    size: "m3.medium",
+    role: "Worker" }));
+```
 
 ## DigitalOcean
 
 ### Basic Setup
 
-1. Create a new key [here](https://cloud.digitalocean.com/settings/api/tokens).
-   Both read and write permissions are required.
+Quilt needs access to a DigitalOcean account token in order to make the API
+calls needed to boot your deployment. To get and set up this token:
 
-2. Save the key in `~/.digitalocean/key` on the machine that will be running the
-   Quilt daemon.
+1. Create a new token [here](https://cloud.digitalocean.com/settings/api/tokens).
+   The token must have both read and write permissions.
+
+2. Save the token in `~/.digitalocean/key` on the machine that will be running
+   the Quilt daemon.
 
 Now, to deploy a DigitalOcean droplet in the `sfo1` zone of size `512mb` as a
 `Worker`:
@@ -28,17 +58,10 @@ deployment.deploy(new Machine({
 
 ### Floating IPs
 
-Creating a floating IP is slightly unintuitive. Unless there are already
-droplets running, the floating IP tab under "Networking" doesn't allow users to
-create floating IPs. However, [this
+Unless there are already droplets running, DigitalOcean doesn't allow users to
+create floating IPs under the "Networking" tab on their website. Instead, [this
 link](https://cloud.digitalocean.com/networking/floating_ips/datacenter) can be
-used to reserve IPs for a specific datacenter. If that link breaks, floating IPs
-can always be created by creating a droplet, _then_ assigning it a new floating
-IP. The floating IP will still be reserved for use after the associated droplet
-is removed.
-
-Note that DigitalOcean charges a small hourly fee for floating IPs that have
-been reserved, but are not associated with a droplet.
+used to reserve IPs that Quilt can then assign to droplets.
 
 ## Google Compute Engine
 
