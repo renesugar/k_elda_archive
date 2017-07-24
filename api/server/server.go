@@ -37,9 +37,7 @@ type server struct {
 	runningOnDaemon bool
 
 	// The credentials to use while connecting to clients in the cluster.
-	// Currently, these are the same credentials that are used to start the
-	// server.
-	creds connection.Credentials
+	clientCreds connection.Credentials
 }
 
 // Run starts a server that responds to `quiltctl` connections. It runs on both
@@ -54,13 +52,17 @@ func Run(conn db.Conn, listenAddr string, runningOnDaemon bool,
 		return err
 	}
 
-	// Don't enforce TLS on local connections. This way, local connections to the
-	// daemon (e.g. when running a spec), don't need to provide credentials.
+	// Don't enforce TLS on inbound local connections. This way, users don't
+	// need to supply credentials when making local connections to the daemon
+	// (e.g. when running a spec). Instead, local connections should be secured
+	// using Unix permissions. Connections to the cluster (i.e. proxied
+	// connections) still need to use the proper credentials.
+	serverCreds := creds
 	if proto == "unix" {
-		creds = credentials.Insecure{}
+		serverCreds = credentials.Insecure{}
 	}
 
-	sock, s := connection.Server(proto, addr, creds.ServerOpts())
+	sock, s := connection.Server(proto, addr, serverCreds.ServerOpts())
 
 	// Cleanup the socket if we're interrupted.
 	sigc := make(chan os.Signal, 1)
@@ -137,7 +139,7 @@ func (s server) queryFromDaemon(table db.TableType) (
 	}
 
 	var leaderClient client.Client
-	leaderClient, err := newLeaderClient(s.conn.SelectFromMachine(nil), s.creds)
+	leaderClient, err := newLeaderClient(s.conn.SelectFromMachine(nil), s.clientCreds)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +165,7 @@ func (s server) QueryMinionCounters(ctx context.Context, in *pb.MinionCountersRe
 		return nil, errDaemonOnlyRPC
 	}
 
-	clnt, err := newClient(api.RemoteAddress(in.Host), s.creds)
+	clnt, err := newClient(api.RemoteAddress(in.Host), s.clientCreds)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +244,8 @@ func (s server) getClusterContainers(leaderClient client.Client) (interface{}, e
 		return nil, err
 	}
 
-	workerContainers, err := queryWorkers(s.conn.SelectFromMachine(nil), s.creds)
+	workerContainers, err := queryWorkers(s.conn.SelectFromMachine(nil),
+		s.clientCreds)
 	if err != nil {
 		return nil, err
 	}
