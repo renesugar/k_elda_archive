@@ -264,15 +264,10 @@ func (dCmd Debug) downloadLogs(targets []logTarget) int {
 
 			result, err := conn.CombinedOutput(cmd.cmd)
 			if err != nil {
-				// Since workers and masters have different containers,
-				// some downloads will fail and this is normal. Because
-				// of this (and to keep the code simpler), errors while
-				// fetching logs are at the debug level and errno is not
-				// incremented. Connection problems will be caught by the
-				// attempt to establish an ssh connection to the host
-				// machine.
-				log.WithError(err).Debugf("Failed to get log '%s'"+
-					" from target %s", cmd.name, t.stitchID)
+				log.WithError(err).WithField("output", string(result)).
+					Errorf("Failed to get log '%s' from target %s",
+						cmd.name, t.stitchID)
+				errno++
 				continue
 			}
 
