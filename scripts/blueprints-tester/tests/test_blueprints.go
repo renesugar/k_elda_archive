@@ -77,6 +77,8 @@ func TestBlueprints() error {
 			"./quilt-tester/tests/etcd/etcd.js"},
 		{"https://github.com/quilt/quilt", "./quilt-tester",
 			"./quilt-tester/tests/zookeeper/zookeeper.js"},
+		{"https://github.com/quilt/quilt", "./quilt-tester",
+			"./quilt-tester/tests/connection-credentials/connection-credentials.js"},
 
 		{"https://github.com/quilt/nginx", ".", "./main.js"},
 		{"https://github.com/quilt/spark", ".", "./sparkPI.js"},
