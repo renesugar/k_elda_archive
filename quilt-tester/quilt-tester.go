@@ -43,7 +43,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	tester, err := newTester(namespace)
+	tlsDir := os.Getenv("TLS_DIR")
+	tester, err := newTester(namespace, tlsDir)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to create tester instance.")
 		os.Exit(1)
@@ -62,11 +63,13 @@ type tester struct {
 	testSuites  []*testSuite
 	initialized bool
 	namespace   string
+	tlsDir      string
 }
 
-func newTester(namespace string) (tester, error) {
+func newTester(namespace, tlsDir string) (tester, error) {
 	t := tester{
 		namespace: namespace,
+		tlsDir:    tlsDir,
 	}
 
 	testRoot := flag.String("testRoot", "",
@@ -178,7 +181,7 @@ func (t *tester) setup() error {
 	l := log.testerLogger
 
 	l.infoln("Starting the Quilt daemon.")
-	go runQuiltDaemon()
+	go runQuiltDaemon(t.tlsDir)
 
 	// Get blueprint dependencies.
 	l.infoln("Installing blueprint dependencies")

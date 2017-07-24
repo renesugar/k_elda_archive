@@ -72,9 +72,14 @@ func runBlueprint(blueprint string) (string, string, error) {
 }
 
 // runQuiltDaemon starts the daemon.
-func runQuiltDaemon() {
+func runQuiltDaemon(tlsDir string) {
 	os.Remove(api.DefaultSocket[len("unix://"):])
-	cmd := exec.Command("quilt", "-l", "debug", "daemon")
+
+	args := []string{"-l", "debug", "daemon"}
+	if tlsDir != "" {
+		args = append(args, "-tls-dir", tlsDir)
+	}
+	cmd := exec.Command("quilt", args...)
 	execCmd(cmd, "QUILT")
 }
 
