@@ -28,7 +28,7 @@ time you open a new shell.
 Clone the Quilt repository into your Go workspace using `go get`:
 
 ```console
-go get github.com/quilt/quilt
+$ go get github.com/quilt/quilt
 ```
 
 This will install Quilt in your Go workspace at
@@ -64,7 +64,7 @@ code. We currently use protoc v3. On a Mac with homebrew, you can install protoc
 using:
 
 ```console
-brew install --devel protobuf
+$ brew install --devel protobuf
 ```
 
 On other operating systems you can directly download the protoc binary
@@ -73,13 +73,13 @@ On other operating systems you can directly download the protoc binary
 You'll also need to install protobuf go bindings:
 
 ```console
-go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+$ go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
 ```
 
 To generate the protobufs simply call:
 
 ```console
-make generate
+$ make generate
 ```
 
 ### Dependencies
@@ -95,7 +95,7 @@ To add a new dependency:
 To update a dependency:
 
 ```console
-govendor update +vendor
+$ govendor update +vendor
 ```
 
 ### Developing the Minion

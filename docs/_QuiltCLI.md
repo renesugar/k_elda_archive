@@ -4,13 +4,13 @@ Quilt's CLI, `quilt`, is a handy command line tool for starting, stopping, and
 managing deployments. Quilt CLI commands have the following format:
 
 ```console
-quilt [OPTIONS] COMMAND
+$ quilt [OPTIONS] COMMAND
 ```
 
 To see the help text for a specific command, run:
 
 ```console
-quilt COMMAND --help
+$ quilt COMMAND --help
 ```
 
 

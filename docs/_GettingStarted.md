@@ -122,7 +122,7 @@ Use `npm`, the Node.js package manager, to install all dependencies in the
 `nginx` folder:
 
 ```console
-npm install .
+$ npm install .
 ```
 
 To run a blueprint, you first need to have a Quilt daemon running.  If you

@@ -222,7 +222,7 @@ We're done!  Running the blueprint is now trivial.  With a quilt daemon running,
 your new blueprint (which, in this case, is called lobsters.js):
 
 ```console
-quilt run lobsters.js
+$ quilt run lobsters.js
 ```
     
 Now users of lobsters, for example, can deploy it without needing to worry about
