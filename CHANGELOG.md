@@ -4,6 +4,27 @@ Quilt Change Log
 Up Next
 -------------
 
+Release 0.2.0
+-------------
+
+Release 0.2.0 introduces two big features: load balancing, and TLS-encrypted
+communication for Quilt control traffic.
+
+To use load balancing, simply create and deploy a `Service` -- the hostname
+associated with that `Service` will now automatically load balance traffic
+across its containers.
+
+TLS is currently optional. If the `tls-dir` flag is omitted, Quilt control
+traffic will remain insecure as before.
+
+To enable TLS, run `quilt setup-tls ~/.quilt/tls`, and then start the daemon
+with `quilt daemon -tls-dir ~/.quilt/tls` (you can place the TLS certificates
+in a different directory if you'd like -- just make sure that the same
+directory is use for `setup-tls` and `daemon`). After the daemon starts, all
+the subcommands will work as before.
+
+What's new:
+
 - Package the OVS kernel module for the latest DigitalOcean image to speed up
 boot times.
 - Renamed specs to blueprints.
