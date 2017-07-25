@@ -11,8 +11,8 @@ toc_footers:
 includes:
   - GettingStarted
   - BlueprintWritersGuide
-  - Security
   - BlueprintAPI
+  - Security
   - QuiltCLI
   - CloudProviders
   - Dev
