@@ -7,7 +7,7 @@ Stitches and querying deployment information. Thus, TLS should be enabled for
 all non-experimental deployments. It is currently disabled by default.
 
 ### Quickstart
-```
+```console
 # Generate the necessary TLS files.
 $ quilt setup-tls ~/.quilt/tls
 
@@ -47,7 +47,7 @@ b92d625c6847    Worker    Amazon      us-west-1    m3.medium    54.153.11.92    
 The certificate hierarchy can be easily created using the `setup-tls` subcommand.
 For example,
 
-```
+```console
 $ quilt setup-tls ~/.quilt/tls
 ```
 
@@ -59,7 +59,7 @@ directory.
 TLS is enabled with the `-tls-dir` option. The TLS directory should have the
 following structure when passed to `quilt daemon`:
 
-```
+```console
 $ tree ~/.quilt/tls
 ├── certificate_authority.crt
 ├── certificate_authority.key
@@ -85,6 +85,6 @@ keys. A key can be specified from the filesystem using the
 
 For example,
 
-```
+```console
 $ quilt daemon -admin-ssh-private-key ~/.quilt/id_rsa -tls-dir ~/.quilt/tls
 ```
