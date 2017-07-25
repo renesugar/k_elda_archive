@@ -13,6 +13,7 @@ includes:
   - BlueprintWritersGuide
   - Security
   - BlueprintAPI
+  - QuiltCLI
   - CloudProviders
   - Dev
 
