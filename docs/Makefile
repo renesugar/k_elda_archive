@@ -9,6 +9,7 @@ all: build/slate
 	echo "  open build/index.html"
 
 build/slate:
+	mkdir -p build && \
 	cd build && \
 	git clone https://github.com/quilt/slate.git && \
 	cd slate && \
