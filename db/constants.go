@@ -3,6 +3,7 @@ package db
 //The Role within the cluster each machine assumes.
 import (
 	"errors"
+	"fmt"
 
 	"github.com/quilt/quilt/minion/pb"
 )
@@ -66,14 +67,22 @@ const (
 	Vagrant = "Vagrant"
 )
 
+var allProviders = []Provider{
+	Amazon,
+	Google,
+	DigitalOcean,
+	Vagrant,
+}
+
 // ParseProvider returns the Provider represented by 'name' or an error.
 func ParseProvider(name string) (Provider, error) {
-	switch name {
-	case "Amazon", "DigitalOcean", "Google", "Vagrant":
-		return Provider(name), nil
-	default:
-		return "", errors.New("unknown provider")
+	for _, provider := range allProviders {
+		if string(provider) == name {
+			return provider, nil
+		}
 	}
+	return "", fmt.Errorf("provider %s not supported (supported "+
+		"providers: %v)", name, allProviders)
 }
 
 // ParseRole returns the Role represented by the string 'role', or an error.
