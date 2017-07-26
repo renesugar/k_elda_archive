@@ -87,7 +87,7 @@ func TestBlueprints() error {
 		{"https://github.com/quilt/etcd", ".", "./etcd-example.js"},
 		{"https://github.com/quilt/zookeeper", ".", "./zookeeper-example.js"},
 		{"https://github.com/quilt/redis", ".", "./redis-example.js"},
-		{"https://github.com/quilt/mean", ".", "./example.js"},
+		{"https://github.com/quilt/mean", ".", "./mean.js"},
 		{"https://github.com/quilt/elasticsearch", ".", "./main.js"},
 		{"https://github.com/quilt/kibana", ".", "./main.js"},
 		{"https://github.com/quilt/django", ".", "./django-example.js"},
