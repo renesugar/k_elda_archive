@@ -4,33 +4,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 )
 
-func getSlug(configPath string) (string, error) {
-	var slug string
-	for i, ch := range configPath {
-		if ch == '.' {
-			slug = configPath[:i]
-			break
-		}
-	}
-	if len(slug) == 0 {
-		return "", fmt.Errorf("could not find proper output file name")
-	}
-
-	return slug, nil
+func stripExtension(configPath string) string {
+	ext := filepath.Ext(configPath)
+	return strings.TrimSuffix(configPath, ext)
 }
 
 func viz(configPath string, blueprint stitch.Stitch, graph stitch.Graph,
 	outputFormat string) {
-	slug, err := getSlug(configPath)
-	if err != nil {
-		panic(err)
-	}
+	slug := stripExtension(configPath)
 	dot := makeGraphviz(graph)
 	graphviz(outputFormat, slug, dot)
 }

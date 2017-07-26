@@ -9,21 +9,16 @@ import (
 	"github.com/quilt/quilt/stitch"
 )
 
-func TestSlug(t *testing.T) {
+func TestStripExtension(t *testing.T) {
 	test := map[string]string{
 		"slug.blueprint":       "slug",
 		"a/b/c/slug.blueprint": "a/b/c/slug",
-		"foo": "err",
+		"foo":          "foo",
+		"./foo/bar.js": "./foo/bar",
 	}
 
 	for inp, expect := range test {
-		if sl, err := getSlug(inp); err != nil {
-			if expect != "err" {
-				t.Error(err)
-			}
-		} else if sl != expect {
-			t.Error(sl)
-		}
+		assert.Equal(t, expect, stripExtension(inp))
 	}
 }
 
