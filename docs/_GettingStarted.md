@@ -97,7 +97,7 @@ open-source HTTP server that.  In the example, we'll use Nginx to serve a
 simple webpage. Start by downloading the blueprint using git:
 
 ```console
-$ git clone https://github.com/kayousterhout/nginx.git -b website
+$ git clone https://github.com/quilt/nginx.git
 ```
 
 The blueprint is the `main.js` file in the nginx directory; take a look at this
