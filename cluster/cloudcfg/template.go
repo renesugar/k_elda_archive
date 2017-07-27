@@ -76,9 +76,9 @@ initialize_minion() {
 }
 
 install_docker() {
-	echo "deb https://apt.dockerproject.org/repo ubuntu-{{.UbuntuVersion}} main" > /etc/apt/sources.list.d/docker.list
+	add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 	apt-get update
-	apt-get install docker-engine=17.05.0~ce-0~ubuntu-{{.UbuntuVersion}} -y --force-yes
+	apt-get install docker-ce=17.06.0~ce-0~ubuntu -y --force-yes
 	systemctl stop docker.service
 }
 
