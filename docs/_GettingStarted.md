@@ -51,6 +51,12 @@ Next, use Node.js's package manager, `npm`, to install Quilt:
 $ npm install -g @quilt/install
 ```
 
+Note that if installing as root, the `--unsafe-perm` flag is required:
+
+```console
+$ sudo npm install -g @quilt/install --unsafe-perm
+```
+
 To check that this worked, try launching the Quilt daemon.  This is a
 long-running process, so it will not return (you'll need to use a new shell
 window to edit and run blueprints).
