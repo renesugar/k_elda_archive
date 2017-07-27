@@ -62,6 +62,7 @@ func TestUpdateRegistry(t *testing.T) {
 		{
 			Name:       "localhost:5000/mean:tag",
 			Dockerfile: "dockerfile",
+			NoCache:    true,
 		}: {},
 	}, md.Built)
 

@@ -324,21 +324,22 @@ func TestBuild(t *testing.T) {
 	t.Parallel()
 	md, dk := NewMock()
 
-	_, err := dk.Build("foo", "bar")
+	_, err := dk.Build("foo", "bar", false)
 	assert.NoError(t, err)
 	assert.Equal(t, map[BuildImageOptions]struct{}{
 		{
 			Name:       "foo",
 			Dockerfile: "bar",
+			NoCache:    true,
 		}: {},
 	}, md.Built)
 
 	md.InspectImageError = true
-	_, err = dk.Build("foo", "bar")
+	_, err = dk.Build("foo", "bar", false)
 	assert.NotNil(t, err)
 
 	md.BuildError = true
-	_, err = dk.Build("foo", "bar")
+	_, err = dk.Build("foo", "bar", false)
 	assert.NotNil(t, err)
 }
 

@@ -204,7 +204,7 @@ func (dk Client) RemoveID(id string) error {
 
 // Build builds an image with the given name and Dockerfile, and returns the
 // ID of the resulting image.
-func (dk Client) Build(name, dockerfile string) (id string, err error) {
+func (dk Client) Build(name, dockerfile string, useCache bool) (id string, err error) {
 	c.Inc("Build")
 	tarBuf, err := util.ToTar("Dockerfile", 0644, dockerfile)
 	if err != nil {
@@ -216,6 +216,7 @@ func (dk Client) Build(name, dockerfile string) (id string, err error) {
 		Name:         name,
 		InputStream:  tarBuf,
 		OutputStream: ioutil.Discard,
+		NoCache:      !useCache,
 	})
 	if err != nil {
 		return "", err

@@ -3,6 +3,9 @@ Quilt Change Log
 
 Up Next
 -------------
+- Don't use the image cache on the Quilt master when building custom
+Dockerfiles. This is necessary to fetch updates when Dockerfiles are
+non-deterministic and rely on pulling data from the network.
 
 Release 0.2.0
 -------------

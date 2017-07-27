@@ -73,7 +73,7 @@ func syncImages(conn db.Conn, dk docker.Client) {
 
 func updateRegistry(dk docker.Client, img db.Image) (string, error) {
 	registryImg := "localhost:5000/" + img.Name
-	id, err := dk.Build(registryImg, img.Dockerfile)
+	id, err := dk.Build(registryImg, img.Dockerfile, false)
 	if err == nil {
 		err = dk.Push("localhost:5000", registryImg)
 	}

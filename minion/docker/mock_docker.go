@@ -21,6 +21,7 @@ type mockContainer struct {
 // BuildImageOptions represents the parameters in a call to BuildImage.
 type BuildImageOptions struct {
 	Name, Dockerfile string
+	NoCache          bool
 }
 
 // UploadToContainerOptions represents the parameters in a call to UploadToContainer.
@@ -141,6 +142,7 @@ func (dk MockClient) BuildImage(opts dkc.BuildImageOptions) error {
 	dk.Built[BuildImageOptions{
 		Name:       opts.Name,
 		Dockerfile: string(dockerfile),
+		NoCache:    opts.NoCache,
 	}] = struct{}{}
 	dk.Images[opts.Name] = &dkc.Image{ID: uuid.NewV4().String()}
 	return err
