@@ -37,19 +37,17 @@ func Ubuntu(opts Options) string {
 
 	var cloudConfigBytes bytes.Buffer
 	err := t.Execute(&cloudConfigBytes, struct {
-		QuiltImage    string
-		UbuntuVersion string
-		SSHKeys       string
-		LogLevel      string
-		MinionOpts    string
-		DockerOpts    string
+		QuiltImage string
+		SSHKeys    string
+		LogLevel   string
+		MinionOpts string
+		DockerOpts string
 	}{
-		QuiltImage:    img,
-		UbuntuVersion: "xenial",
-		SSHKeys:       strings.Join(opts.SSHKeys, "\n"),
-		LogLevel:      log.GetLevel().String(),
-		MinionOpts:    opts.MinionOpts.String(),
-		DockerOpts:    dockerOpts,
+		QuiltImage: img,
+		SSHKeys:    strings.Join(opts.SSHKeys, "\n"),
+		LogLevel:   log.GetLevel().String(),
+		MinionOpts: opts.MinionOpts.String(),
+		DockerOpts: dockerOpts,
 	})
 	if err != nil {
 		panic(err)

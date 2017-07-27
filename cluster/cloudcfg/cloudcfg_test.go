@@ -9,7 +9,7 @@ import (
 )
 
 func TestCloudConfig(t *testing.T) {
-	cfgTemplate = "({{.QuiltImage}}) ({{.SSHKeys}}) ({{.UbuntuVersion}}) " +
+	cfgTemplate = "({{.QuiltImage}}) ({{.SSHKeys}}) " +
 		"({{.MinionOpts}}) ({{.LogLevel}}) ({{.DockerOpts}})"
 
 	log.SetLevel(log.InfoLevel)
@@ -18,7 +18,7 @@ func TestCloudConfig(t *testing.T) {
 		SSHKeys:    []string{"a", "b"},
 		MinionOpts: MinionOptions{Role: db.Master},
 	})
-	exp := "(quilt/quilt:master) (a\nb) (xenial) (--role \"Master\") (info) ()"
+	exp := "(quilt/quilt:master) (a\nb) (--role \"Master\") (info) ()"
 	if res != exp {
 		t.Errorf("res: %s\nexp: %s", res, exp)
 	}
@@ -29,7 +29,7 @@ func TestCloudConfig(t *testing.T) {
 		SSHKeys:    []string{"a", "b"},
 		MinionOpts: MinionOptions{Role: db.Worker, TLSDir: "dir"},
 	})
-	exp = "(quilt/quilt:1.2.3) (a\nb) (xenial) (--role \"Worker\" " +
+	exp = "(quilt/quilt:1.2.3) (a\nb) (--role \"Worker\" " +
 		"--tls-dir \"dir\") (debug) (-v dir:dir:ro)"
 	if res != exp {
 		t.Errorf("res: %s\nexp: %s", res, exp)
