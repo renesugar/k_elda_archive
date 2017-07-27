@@ -76,9 +76,20 @@ initialize_minion() {
 }
 
 install_docker() {
+	# The expected key is documented by Docker here:
+	# https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+	expKey="9DC858229FC7DD38854AE2D88D81803C0EBFCD88"
+	actualKey=$(apt-key adv --with-colons --fingerprint 0EBFCD88 | grep ^fpr: | cut -d ':' -f 10)
+	if [ $actualKey != $expKey ] ; then
+	    echo "ERROR Failed to verify Docker's GPG key."
+	    echo "This could mean that an attacker is injecting a malicious version of docker-engine. Bailing."
+	    exit 1
+	fi
+
 	add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 	apt-get update
-	apt-get install docker-ce=17.06.0~ce-0~ubuntu -y --force-yes
+	apt-get install docker-ce=17.06.0~ce-0~ubuntu -y
 	systemctl stop docker.service
 }
 
