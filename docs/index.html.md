@@ -16,6 +16,7 @@ includes:
   - QuiltCLI
   - CloudProviders
   - Dev
+  - FAQ
 
 search: true
 ---
