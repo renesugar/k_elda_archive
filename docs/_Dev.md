@@ -35,6 +35,13 @@ This will install Quilt in your Go workspace at
 `$GOPATH/src/github.com/quilt/quilt`, and compile Quilt. After running
 installing Quilt, the `quilt` command should execute successfully in your shell.
 
+<aside class="notice">If you use git to clone the Quilt repository, make sure
+that you clone it to the directory
+<code class="prettyprint">$GOPATH/src/github.com/quilt/quilt</code>.
+The Go language is opinionated about the directory structure of code, and if
+you don't put Quilt in the expected location, you'll run into errors when you
+use Go to compile Quilt.</aside>
+
 Note that if you've previously installed Quilt with npm, there will be
 another Quilt binary installed on your machine (that was downloaded during the
 npm installation).  If you want to develop Quilt,
