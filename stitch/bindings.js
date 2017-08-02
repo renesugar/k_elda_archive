@@ -251,7 +251,7 @@ function Service(name, containers) {
                 `Container`);
         }
     }
-    this.name = uniqueLabelName(name);
+    this.name = uniqueHostname(name);
     this.containers = containers;
     this.placements = [];
 
@@ -397,16 +397,16 @@ Service.prototype.getQuiltConnections = function() {
     return connections;
 };
 
-let labelNameCount = {};
-function uniqueLabelName(name) {
-    if (!(name in labelNameCount)) {
-        labelNameCount[name] = 0;
+let hostnameCount = {};
+function uniqueHostname(name) {
+    if (!(name in hostnameCount)) {
+        hostnameCount[name] = 0;
     }
-    let count = ++labelNameCount[name];
+    let count = ++hostnameCount[name];
     if (count == 1) {
         return name;
     }
-    return name + labelNameCount[name];
+    return name + hostnameCount[name];
 }
 
 // Box raw integers into range.
@@ -603,7 +603,7 @@ Container.prototype.withFiles = function(fileMap) {
 };
 
 Container.prototype.setHostname = function(h) {
-    this.hostname = h;
+    this.hostname = uniqueHostname(h);
 };
 
 Container.prototype.getHostname = function() {
@@ -637,7 +637,7 @@ function getDeployment() {
 // Reset global unique counters. Used only for unit testing.
 function resetGlobals() {
     uniqueIDCounter = 0;
-    labelNameCount = {};
+    hostnameCount = {};
 }
 
 module.exports = {

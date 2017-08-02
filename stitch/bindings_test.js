@@ -279,12 +279,41 @@ describe('Bindings', function() {
         });
         it('duplicate hostname', function() {
             const a = new Container('image');
+            a.hostname = 'host';
+            const b = new Container('image');
+            b.hostname = 'host';
+            deployment.deploy(new Service('foo', [a, b]));
+            expect(() => deployment.toQuiltRepresentation()).to
+                .throw('hostname "host" used for multiple containers');
+        });
+        it('setHostname generates unique hostnames', function() {
+            const a = new Container('image');
             a.setHostname('host');
             const b = new Container('image');
             b.setHostname('host');
             deployment.deploy(new Service('foo', [a, b]));
-            expect(() => deployment.toQuiltRepresentation()).to
-                .throw('hostname "host" used for multiple containers');
+            checkContainers([{
+                id: '475c40d6070969839ba0f88f7a9bd0cc7936aa30',
+                image: new Image('image'),
+                command: [],
+                env: {},
+                filepathToContent: {},
+                hostname: 'host',
+            }, {
+                id: '3047630375a1621cb400811b795757a07de8e268',
+                image: new Image('image'),
+                command: [],
+                env: {},
+                filepathToContent: {},
+                hostname: 'host2',
+            }]);
+        });
+        it('Container.hostname and Service.hostname don\'t conflict', () => {
+            const container = new Container('image');
+            container.setHostname('foo');
+            const serv = new Service('foo', []);
+            expect(container.getHostname()).to.equal('foo.q');
+            expect(serv.hostname()).to.equal('foo2.q');
         });
     });
 
