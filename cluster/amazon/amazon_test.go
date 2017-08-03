@@ -100,10 +100,10 @@ func TestList(t *testing.T) {
 		InstanceId: aws.String("inst3"),
 		PublicIp:   aws.String("8.8.8.8")}}, nil)
 
-	amazonCluster := newAmazon(testNamespace, DefaultRegion)
-	amazonCluster.client = mc
+	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider.Client = mc
 
-	machines, err := amazonCluster.List()
+	machines, err := amazonProvider.List()
 
 	assert.Nil(t, err)
 	assert.Equal(t, []machine.Machine{
@@ -177,7 +177,7 @@ func TestNewACLs(t *testing.T) {
 	)
 
 	cluster := newAmazon(testNamespace, DefaultRegion)
-	cluster.client = mc
+	cluster.Client = mc
 
 	err := cluster.SetACLs([]acl.ACL{
 		{
@@ -346,13 +346,13 @@ func TestBoot(t *testing.T) {
 			SpotInstanceRequestId: aws.String("spot2"),
 			State: aws.String(ec2.SpotInstanceStateActive)}}, nil)
 
-	amazonCluster := newAmazon(testNamespace, DefaultRegion)
-	amazonCluster.client = mc
+	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider.Client = mc
 
 	cloudCfgOpts := cloudcfg.Options{
 		MinionOpts: cloudcfg.MinionOptions{Role: db.Master},
 	}
-	err := amazonCluster.Boot([]machine.Machine{
+	err := amazonProvider.Boot([]machine.Machine{
 		{
 			Size:         "m4.large",
 			DiskSize:     32,
@@ -444,12 +444,12 @@ func TestBootUnsuccessful(t *testing.T) {
 	mc.On("TerminateInstances", []string{"reserved1"}).Return(nil)
 	mc.On("CancelSpotInstanceRequests", []string{"spot1"}).Return(nil)
 
-	amazonCluster := newAmazon(testNamespace, DefaultRegion)
-	amazonCluster.client = mc
-	err := amazonCluster.Boot([]machine.Machine{{Preemptible: false}})
+	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider.Client = mc
+	err := amazonProvider.Boot([]machine.Machine{{Preemptible: false}})
 	assert.Error(t, err)
 
-	err = amazonCluster.Boot([]machine.Machine{{Preemptible: true}})
+	err = amazonProvider.Boot([]machine.Machine{{Preemptible: true}})
 	assert.Error(t, err)
 
 	mc.AssertExpectations(t)
@@ -484,10 +484,10 @@ func TestStop(t *testing.T) {
 	)
 	mc.On("DescribeAddresses").Return(nil, nil)
 
-	amazonCluster := newAmazon(testNamespace, DefaultRegion)
-	amazonCluster.client = mc
+	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider.Client = mc
 
-	err := amazonCluster.Stop([]machine.Machine{
+	err := amazonProvider.Stop([]machine.Machine{
 		{
 			ID:          spotIDs[0],
 			Preemptible: true,
@@ -564,11 +564,11 @@ func TestWaitBoot(t *testing.T) {
 			SpotInstanceRequestId: aws.String("spot2"),
 			State: aws.String(ec2.SpotInstanceStateActive)}}, nil)
 
-	amazonCluster := newAmazon(testNamespace, DefaultRegion)
-	amazonCluster.client = mc
+	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider.Client = mc
 
 	exp := []string{"spot1", "spot2"}
-	err := amazonCluster.wait(exp, true)
+	err := amazonProvider.wait(exp, true)
 	assert.Error(t, err, "timed out")
 
 	describeInstances.Return(
@@ -581,7 +581,7 @@ func TestWaitBoot(t *testing.T) {
 		}, nil,
 	)
 
-	err = amazonCluster.wait(exp, true)
+	err = amazonProvider.wait(exp, true)
 	assert.NoError(t, err)
 }
 
@@ -646,11 +646,11 @@ func TestWaitStop(t *testing.T) {
 		SpotInstanceRequestId: aws.String("spot2"),
 		State: aws.String(ec2.SpotInstanceStateActive)}}, nil)
 
-	amazonCluster := newAmazon(testNamespace, DefaultRegion)
-	amazonCluster.client = mc
+	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider.Client = mc
 
 	exp := []string{"spot1", "spot2"}
-	err := amazonCluster.wait(exp, false)
+	err := amazonProvider.wait(exp, false)
 	assert.Error(t, err, "timed out")
 
 	describeInstances.Return(
@@ -664,7 +664,7 @@ func TestWaitStop(t *testing.T) {
 	)
 	describeRequests.Return([]*ec2.SpotInstanceRequest{}, nil)
 
-	err = amazonCluster.wait(exp, false)
+	err = amazonProvider.wait(exp, false)
 	assert.NoError(t, err)
 }
 
@@ -672,8 +672,8 @@ func TestUpdateFloatingIPs(t *testing.T) {
 	t.Parallel()
 
 	mockClient := new(mocks.Client)
-	amazonCluster := newAmazon(testNamespace, DefaultRegion)
-	amazonCluster.client = mockClient
+	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider.Client = mockClient
 
 	mockMachines := []machine.Machine{
 		// Quilt should assign "x.x.x.x" to sir-1.
@@ -788,6 +788,6 @@ func TestUpdateFloatingIPs(t *testing.T) {
 
 	mockClient.On("DisassociateAddress", "assoc-reservedRemove").Return(nil)
 
-	err := amazonCluster.UpdateFloatingIPs(mockMachines)
+	err := amazonProvider.UpdateFloatingIPs(mockMachines)
 	assert.Nil(t, err)
 }

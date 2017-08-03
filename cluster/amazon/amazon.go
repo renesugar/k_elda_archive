@@ -21,11 +21,12 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-// The Cluster object represents a connection to Amazon EC2.
-type Cluster struct {
+// The Provider wraps a client to Amazon EC2.
+type Provider struct {
+	client.Client
+
 	namespace string
 	region    string
-	client    client.Client
 }
 
 type awsMachine struct {
@@ -58,9 +59,9 @@ var sleep = time.Sleep
 var timeout = 5 * time.Minute
 
 // New creates a new Amazon EC2 cluster.
-func New(namespace, region string) (*Cluster, error) {
-	clst := newAmazon(namespace, region)
-	if _, err := clst.List(); err != nil {
+func New(namespace, region string) (*Provider, error) {
+	prvdr := newAmazon(namespace, region)
+	if _, err := prvdr.List(); err != nil {
 		// Attempt to add information about the AWS access key to the error
 		// message.
 		awsConfig := defaults.Config().WithCredentialsChainVerboseErrors(true)
@@ -80,18 +81,18 @@ func New(namespace, region string) (*Cluster, error) {
 			"credentials must succeed, but they all failed: %s)",
 			credErr.Error())
 	}
-	return clst, nil
+	return prvdr, nil
 }
 
-// creates a new client, and connects its client to AWS
-func newAmazon(namespace, region string) *Cluster {
-	clst := &Cluster{
+// Creates a new provider, and connects its client to AWS
+func newAmazon(namespace, region string) *Provider {
+	prvdr := &Provider{
 		namespace: strings.ToLower(namespace),
 		region:    region,
-		client:    client.New(region),
+		Client:    client.New(region),
 	}
 
-	return clst
+	return prvdr
 }
 
 type bootReq struct {
@@ -102,13 +103,13 @@ type bootReq struct {
 	preemptible bool
 }
 
-// Boot creates instances in the `clst` configured according to the `bootSet`.
-func (clst *Cluster) Boot(bootSet []machine.Machine) error {
+// Boot creates instances in the `prvdr` configured according to the `bootSet`.
+func (prvdr *Provider) Boot(bootSet []machine.Machine) error {
 	if len(bootSet) <= 0 {
 		return nil
 	}
 
-	groupID, _, err := clst.getCreateSecurityGroup()
+	groupID, _, err := prvdr.getCreateSecurityGroup()
 	if err != nil {
 		return err
 	}
@@ -127,9 +128,9 @@ func (clst *Cluster) Boot(bootSet []machine.Machine) error {
 
 	for br, count := range bootReqMap {
 		if br.preemptible {
-			err = clst.bootSpot(br, count)
+			err = prvdr.bootSpot(br, count)
 		} else {
-			err = clst.bootReserved(br, count)
+			err = prvdr.bootReserved(br, count)
 		}
 
 		if err != nil {
@@ -140,10 +141,10 @@ func (clst *Cluster) Boot(bootSet []machine.Machine) error {
 	return nil
 }
 
-func (clst *Cluster) bootReserved(br bootReq, count int64) error {
+func (prvdr *Provider) bootReserved(br bootReq, count int64) error {
 	cloudConfig64 := base64.StdEncoding.EncodeToString([]byte(br.cfg))
-	resp, err := clst.client.RunInstances(&ec2.RunInstancesInput{
-		ImageId:          aws.String(amis[clst.region]),
+	resp, err := prvdr.RunInstances(&ec2.RunInstancesInput{
+		ImageId:          aws.String(amis[prvdr.region]),
 		InstanceType:     aws.String(br.size),
 		UserData:         &cloudConfig64,
 		SecurityGroupIds: []*string{aws.String(br.groupID)},
@@ -161,9 +162,9 @@ func (clst *Cluster) bootReserved(br bootReq, count int64) error {
 		ids = append(ids, *inst.InstanceId)
 	}
 
-	err = clst.wait(ids, true)
+	err = prvdr.wait(ids, true)
 	if err != nil {
-		if stopErr := clst.stopInstances(ids); stopErr != nil {
+		if stopErr := prvdr.stopInstances(ids); stopErr != nil {
 			log.WithError(stopErr).WithField("ids", ids).
 				Error("Failed to cleanup failed boots")
 		}
@@ -172,11 +173,11 @@ func (clst *Cluster) bootReserved(br bootReq, count int64) error {
 	return err
 }
 
-func (clst *Cluster) bootSpot(br bootReq, count int64) error {
+func (prvdr *Provider) bootSpot(br bootReq, count int64) error {
 	cloudConfig64 := base64.StdEncoding.EncodeToString([]byte(br.cfg))
-	spots, err := clst.client.RequestSpotInstances(spotPrice, count,
+	spots, err := prvdr.RequestSpotInstances(spotPrice, count,
 		&ec2.RequestSpotLaunchSpecification{
-			ImageId:          aws.String(amis[clst.region]),
+			ImageId:          aws.String(amis[prvdr.region]),
 			InstanceType:     aws.String(br.size),
 			UserData:         &cloudConfig64,
 			SecurityGroupIds: []*string{aws.String(br.groupID)},
@@ -191,9 +192,9 @@ func (clst *Cluster) bootSpot(br bootReq, count int64) error {
 		ids = append(ids, *request.SpotInstanceRequestId)
 	}
 
-	err = clst.wait(ids, true)
+	err = prvdr.wait(ids, true)
 	if err != nil {
-		if stopErr := clst.stopSpots(ids); stopErr != nil {
+		if stopErr := prvdr.stopSpots(ids); stopErr != nil {
 			log.WithError(stopErr).WithField("ids", ids).
 				Error("Failed to cleanup failed boots")
 		}
@@ -201,8 +202,8 @@ func (clst *Cluster) bootSpot(br bootReq, count int64) error {
 	return err
 }
 
-// Stop shuts down `machines` in `clst.
-func (clst *Cluster) Stop(machines []machine.Machine) error {
+// Stop shuts down `machines` in `prvdr`.
+func (prvdr *Provider) Stop(machines []machine.Machine) error {
 	var spotIDs, instIDs []string
 	for _, m := range machines {
 		if m.Preemptible {
@@ -214,11 +215,11 @@ func (clst *Cluster) Stop(machines []machine.Machine) error {
 
 	var spotErr, instErr error
 	if len(spotIDs) != 0 {
-		spotErr = clst.stopSpots(spotIDs)
+		spotErr = prvdr.stopSpots(spotIDs)
 	}
 
 	if len(instIDs) > 0 {
-		instErr = clst.stopInstances(instIDs)
+		instErr = prvdr.stopInstances(instIDs)
 	}
 
 	switch {
@@ -231,8 +232,8 @@ func (clst *Cluster) Stop(machines []machine.Machine) error {
 	}
 }
 
-func (clst *Cluster) stopSpots(ids []string) error {
-	spots, err := clst.client.DescribeSpotInstanceRequests(ids, nil)
+func (prvdr *Provider) stopSpots(ids []string) error {
+	spots, err := prvdr.DescribeSpotInstanceRequests(ids, nil)
 	if err != nil {
 		return err
 	}
@@ -246,13 +247,13 @@ func (clst *Cluster) stopSpots(ids []string) error {
 
 	var stopInstsErr, cancelSpotsErr error
 	if len(instIDs) != 0 {
-		stopInstsErr = clst.stopInstances(instIDs)
+		stopInstsErr = prvdr.stopInstances(instIDs)
 	}
 
-	cancelSpotsErr = clst.client.CancelSpotInstanceRequests(ids)
+	cancelSpotsErr = prvdr.CancelSpotInstanceRequests(ids)
 	switch {
 	case stopInstsErr == nil && cancelSpotsErr == nil:
-		return clst.wait(ids, false)
+		return prvdr.wait(ids, false)
 	case stopInstsErr == nil:
 		return cancelSpotsErr
 	case cancelSpotsErr == nil:
@@ -262,24 +263,24 @@ func (clst *Cluster) stopSpots(ids []string) error {
 	}
 }
 
-func (clst *Cluster) stopInstances(ids []string) error {
-	err := clst.client.TerminateInstances(ids)
+func (prvdr *Provider) stopInstances(ids []string) error {
+	err := prvdr.TerminateInstances(ids)
 	if err != nil {
 		return err
 	}
-	return clst.wait(ids, false)
+	return prvdr.wait(ids, false)
 }
 
 var trackedSpotStates = aws.StringSlice(
 	[]string{ec2.SpotInstanceStateActive, ec2.SpotInstanceStateOpen})
 
-func (clst *Cluster) listSpots() (machines []awsMachine, err error) {
-	spots, err := clst.client.DescribeSpotInstanceRequests(nil, []*ec2.Filter{{
+func (prvdr *Provider) listSpots() (machines []awsMachine, err error) {
+	spots, err := prvdr.DescribeSpotInstanceRequests(nil, []*ec2.Filter{{
 		Name:   aws.String("state"),
 		Values: trackedSpotStates,
 	}, {
 		Name:   aws.String("launch.group-name"),
-		Values: []*string{aws.String(clst.namespace)}}})
+		Values: []*string{aws.String(prvdr.namespace)}}})
 	if err != nil {
 		return nil, err
 	}
@@ -292,13 +293,13 @@ func (clst *Cluster) listSpots() (machines []awsMachine, err error) {
 	return machines, nil
 }
 
-func (clst *Cluster) parseDiskSize(inst ec2.Instance) (int, error) {
+func (prvdr *Provider) parseDiskSize(inst ec2.Instance) (int, error) {
 	if len(inst.BlockDeviceMappings) == 0 {
 		return 0, nil
 	}
 
 	volumeID := *inst.BlockDeviceMappings[0].Ebs.VolumeId
-	volumes, err := clst.client.DescribeVolumes(volumeID)
+	volumes, err := prvdr.DescribeVolumes(volumeID)
 	if err != nil || len(volumes) == 0 {
 		return 0, err
 	}
@@ -307,10 +308,10 @@ func (clst *Cluster) parseDiskSize(inst ec2.Instance) (int, error) {
 
 // `listInstances` fetches and parses all machines in the namespace into a list
 // of `awsMachine`s
-func (clst *Cluster) listInstances() (instances []awsMachine, err error) {
-	insts, err := clst.client.DescribeInstances([]*ec2.Filter{{
+func (prvdr *Provider) listInstances() (instances []awsMachine, err error) {
+	insts, err := prvdr.DescribeInstances([]*ec2.Filter{{
 		Name:   aws.String("instance.group-name"),
-		Values: []*string{aws.String(clst.namespace)},
+		Values: []*string{aws.String(prvdr.namespace)},
 	}, {
 		Name:   aws.String("instance-state-name"),
 		Values: []*string{aws.String(ec2.InstanceStateNameRunning)}}})
@@ -318,7 +319,7 @@ func (clst *Cluster) listInstances() (instances []awsMachine, err error) {
 		return nil, err
 	}
 
-	addrs, err := clst.client.DescribeAddresses()
+	addrs, err := prvdr.DescribeAddresses()
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +332,7 @@ func (clst *Cluster) listInstances() (instances []awsMachine, err error) {
 
 	for _, res := range insts.Reservations {
 		for _, inst := range res.Instances {
-			diskSize, err := clst.parseDiskSize(*inst)
+			diskSize, err := prvdr.parseDiskSize(*inst)
 			if err != nil {
 				log.WithError(err).
 					Warn("Error retrieving Amazon machine " +
@@ -360,13 +361,13 @@ func (clst *Cluster) listInstances() (instances []awsMachine, err error) {
 	return instances, nil
 }
 
-// List queries `clst` for the list of booted machines.
-func (clst *Cluster) List() (machines []machine.Machine, err error) {
-	allSpots, err := clst.listSpots()
+// List queries `prvdr` for the list of booted machines.
+func (prvdr *Provider) List() (machines []machine.Machine, err error) {
+	allSpots, err := prvdr.listSpots()
 	if err != nil {
 		return nil, err
 	}
-	ourInsts, err := clst.listInstances()
+	ourInsts, err := prvdr.listInstances()
 	if err != nil {
 		return nil, err
 	}
@@ -402,8 +403,8 @@ func (clst *Cluster) List() (machines []machine.Machine, err error) {
 }
 
 // UpdateFloatingIPs updates Elastic IPs <> EC2 instance associations.
-func (clst *Cluster) UpdateFloatingIPs(machines []machine.Machine) error {
-	addrs, err := clst.client.DescribeAddresses()
+func (prvdr *Provider) UpdateFloatingIPs(machines []machine.Machine) error {
+	addrs, err := prvdr.DescribeAddresses()
 	if err != nil {
 		return err
 	}
@@ -425,7 +426,7 @@ func (clst *Cluster) UpdateFloatingIPs(machines []machine.Machine) error {
 	for _, machine := range machines {
 		id := machine.ID
 		if machine.Preemptible {
-			id, err = clst.getInstanceID(id)
+			id, err = prvdr.getInstanceID(id)
 			if err != nil {
 				return err
 			}
@@ -437,13 +438,13 @@ func (clst *Cluster) UpdateFloatingIPs(machines []machine.Machine) error {
 				continue
 			}
 
-			err := clst.client.DisassociateAddress(associationID)
+			err := prvdr.DisassociateAddress(associationID)
 			if err != nil {
 				return err
 			}
 		} else {
 			allocationID := addresses[machine.FloatingIP]
-			err := clst.client.AssociateAddress(id, allocationID)
+			err := prvdr.AssociateAddress(id, allocationID)
 			if err != nil {
 				return err
 			}
@@ -453,8 +454,8 @@ func (clst *Cluster) UpdateFloatingIPs(machines []machine.Machine) error {
 	return nil
 }
 
-func (clst Cluster) getInstanceID(spotID string) (string, error) {
-	spots, err := clst.client.DescribeSpotInstanceRequests([]string{spotID}, nil)
+func (prvdr Provider) getInstanceID(spotID string) (string, error) {
+	spots, err := prvdr.DescribeSpotInstanceRequests([]string{spotID}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -468,9 +469,9 @@ func (clst Cluster) getInstanceID(spotID string) (string, error) {
 
 /* Wait for the 'ids' to have booted or terminated depending on the value
  * of 'boot' */
-func (clst *Cluster) wait(ids []string, boot bool) error {
+func (prvdr *Provider) wait(ids []string, boot bool) error {
 	return wait.Wait(func() bool {
-		machines, err := clst.List()
+		machines, err := prvdr.List()
 		if err != nil {
 			log.WithError(err).Warn("Failed to list machines in the cluster.")
 			return false
@@ -500,9 +501,9 @@ func (clst *Cluster) wait(ids []string, boot bool) error {
 	})
 }
 
-// SetACLs adds and removes acls in `clst` so that it conforms to `acls`.
-func (clst *Cluster) SetACLs(acls []acl.ACL) error {
-	groupID, ingress, err := clst.getCreateSecurityGroup()
+// SetACLs adds and removes acls in `prvdr` so that it conforms to `acls`.
+func (prvdr *Provider) SetACLs(acls []acl.ACL) error {
+	groupID, ingress, err := prvdr.getCreateSecurityGroup()
 	if err != nil {
 		return err
 	}
@@ -511,17 +512,17 @@ func (clst *Cluster) SetACLs(acls []acl.ACL) error {
 
 	if len(rangesToAdd) != 0 {
 		logACLs(true, rangesToAdd)
-		err = clst.client.AuthorizeSecurityGroup(
-			clst.namespace, "", rangesToAdd)
+		err = prvdr.AuthorizeSecurityGroup(
+			prvdr.namespace, "", rangesToAdd)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !foundGroup {
-		log.WithField("Group", clst.namespace).Debug("Amazon: Add group")
-		err = clst.client.AuthorizeSecurityGroup(
-			clst.namespace, clst.namespace, nil)
+		log.WithField("Group", prvdr.namespace).Debug("Amazon: Add group")
+		err = prvdr.AuthorizeSecurityGroup(
+			prvdr.namespace, prvdr.namespace, nil)
 		if err != nil {
 			return err
 		}
@@ -529,7 +530,7 @@ func (clst *Cluster) SetACLs(acls []acl.ACL) error {
 
 	if len(rulesToRemove) != 0 {
 		logACLs(false, rulesToRemove)
-		err = clst.client.RevokeSecurityGroup(clst.namespace, rulesToRemove)
+		err = prvdr.RevokeSecurityGroup(prvdr.namespace, rulesToRemove)
 		if err != nil {
 			return err
 		}
@@ -538,21 +539,21 @@ func (clst *Cluster) SetACLs(acls []acl.ACL) error {
 	return nil
 }
 
-func (clst *Cluster) getCreateSecurityGroup() (
+func (prvdr *Provider) getCreateSecurityGroup() (
 	string, []*ec2.IpPermission, error) {
 
-	groups, err := clst.client.DescribeSecurityGroup(clst.namespace)
+	groups, err := prvdr.DescribeSecurityGroup(prvdr.namespace)
 	if err != nil {
 		return "", nil, err
 	} else if len(groups) > 1 {
 		err := errors.New("Multiple Security Groups with the same name: " +
-			clst.namespace)
+			prvdr.namespace)
 		return "", nil, err
 	} else if len(groups) == 1 {
 		return *groups[0].GroupId, groups[0].IpPermissions, nil
 	}
 
-	id, err := clst.client.CreateSecurityGroup(clst.namespace, "Quilt Group")
+	id, err := prvdr.CreateSecurityGroup(prvdr.namespace, "Quilt Group")
 	return id, nil, err
 }
 
