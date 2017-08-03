@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"github.com/quilt/quilt/cluster"
+	"github.com/quilt/quilt/cloud"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
@@ -103,7 +103,7 @@ func toDBMachine(machines []stitch.Machine, maxPrice float64,
 		m.Preemptible = stitchm.Preemptible
 
 		if m.Size == "" {
-			m.Size = cluster.ChooseSize(p, stitchm.RAM, stitchm.CPU,
+			m.Size = cloud.ChooseSize(p, stitchm.RAM, stitchm.CPU,
 				maxPrice)
 			if m.Size == "" {
 				log.Errorf("No valid size for %v, skipping.", m)
@@ -124,7 +124,7 @@ func toDBMachine(machines []stitch.Machine, maxPrice float64,
 		m.StitchID = stitchm.ID
 		m.Region = stitchm.Region
 		m.FloatingIP = stitchm.FloatingIP
-		dbMachines = append(dbMachines, cluster.DefaultRegion(m))
+		dbMachines = append(dbMachines, cloud.DefaultRegion(m))
 	}
 
 	if hasMaster && !hasWorker {

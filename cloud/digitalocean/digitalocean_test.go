@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/quilt/quilt/cluster/acl"
-	"github.com/quilt/quilt/cluster/digitalocean/client/mocks"
-	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cloud/acl"
+	"github.com/quilt/quilt/cloud/digitalocean/client/mocks"
+	"github.com/quilt/quilt/cloud/machine"
 	"github.com/quilt/quilt/util"
 )
 

@@ -2,12 +2,12 @@ export GO15VENDOREXPERIMENT=1
 PACKAGES=$(shell govendor list -no-status +local)
 NOVENDOR=$(shell find . -path -prune -o -path ./vendor -prune -o -name '*.go' -print)
 LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
-		    ./cluster/amazon/client/mocks/% \
-		    ./cluster/cloudcfg/template.go \
-		    ./cluster/digitalocean/client/mocks/% \
-		    ./cluster/google/client/mocks/% \
-		    ./cluster/machine/amazon.go \
-		    ./cluster/machine/google.go \
+		    ./cloud/amazon/client/mocks/% \
+		    ./cloud/cloudcfg/template.go \
+		    ./cloud/digitalocean/client/mocks/% \
+		    ./cloud/google/client/mocks/% \
+		    ./cloud/machine/amazon.go \
+		    ./cloud/machine/google.go \
 		    ./minion/network/link_test.go \
 		    ./minion/ovsdb/mock_transact_test.go \
 		    ./minion/ovsdb/mocks/Client.go \
@@ -39,8 +39,8 @@ check: gocheck jscheck
 
 clean:
 	govendor clean -x +local
-	rm -f *.cov.coverprofile cluster/*.cov.coverprofile minion/*.cov.coverprofile
-	rm -f *.cov.html cluster/*.cov.html minion/*.cov.html
+	rm -f *.cov.coverprofile cloud/*.cov.coverprofile minion/*.cov.coverprofile
+	rm -f *.cov.html cloud/*.cov.html minion/*.cov.html
 	rm quilt_linux quilt_darwin
 
 linux:
@@ -53,10 +53,10 @@ release: linux darwin
 
 COV_SKIP= /api/client/mocks \
 	  /api/pb \
-	  /cluster/amazon/client/mocks \
-	  /cluster/digitalocean/client/mocks \
-	  /cluster/google/client/mocks \
-	  /cluster/provider/mocks \
+	  /cloud/amazon/client/mocks \
+	  /cloud/digitalocean/client/mocks \
+	  /cloud/google/client/mocks \
+	  /cloud/provider/mocks \
 	  /constants \
 	  /minion/network/mocks \
 	  /minion/nl \
@@ -133,7 +133,7 @@ generate:
 	govendor generate +local
 
 providers:
-	python3 scripts/gce-descriptions > cluster/machine/google.go
+	python3 scripts/gce-descriptions > cloud/machine/google.go
 
 # This is what's strictly required for `make check lint` to run.
 get-build-tools:

@@ -10,11 +10,11 @@ import (
 
 	"github.com/digitalocean/godo"
 
-	"github.com/quilt/quilt/cluster/acl"
-	"github.com/quilt/quilt/cluster/cloudcfg"
-	"github.com/quilt/quilt/cluster/digitalocean/client"
-	"github.com/quilt/quilt/cluster/machine"
-	"github.com/quilt/quilt/cluster/wait"
+	"github.com/quilt/quilt/cloud/acl"
+	"github.com/quilt/quilt/cloud/cloudcfg"
+	"github.com/quilt/quilt/cloud/digitalocean/client"
+	"github.com/quilt/quilt/cloud/machine"
+	"github.com/quilt/quilt/cloud/wait"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/util"
@@ -40,6 +40,7 @@ var imageID = 22601368
 // The Provider object represents a connection to DigitalOcean.
 type Provider struct {
 	client.Client
+
 	namespace string
 	region    string
 }

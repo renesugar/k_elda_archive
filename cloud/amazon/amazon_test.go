@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/quilt/quilt/cluster/acl"
-	"github.com/quilt/quilt/cluster/amazon/client/mocks"
-	"github.com/quilt/quilt/cluster/cloudcfg"
-	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cloud/acl"
+	"github.com/quilt/quilt/cloud/amazon/client/mocks"
+	"github.com/quilt/quilt/cloud/cloudcfg"
+	"github.com/quilt/quilt/cloud/machine"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/util"
 )

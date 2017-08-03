@@ -1,11 +1,11 @@
-package cluster
+package cloud
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cloud/machine"
 	"github.com/quilt/quilt/db"
 )
 

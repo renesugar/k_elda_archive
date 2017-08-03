@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/quilt/quilt/cluster/acl"
-	"github.com/quilt/quilt/cluster/cloudcfg"
-	"github.com/quilt/quilt/cluster/google/client"
-	"github.com/quilt/quilt/cluster/machine"
-	"github.com/quilt/quilt/cluster/wait"
+	"github.com/quilt/quilt/cloud/acl"
+	"github.com/quilt/quilt/cloud/cloudcfg"
+	"github.com/quilt/quilt/cloud/google/client"
+	"github.com/quilt/quilt/cloud/machine"
+	"github.com/quilt/quilt/cloud/wait"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/util"
 
@@ -52,10 +52,10 @@ type Provider struct {
 	intFW       string // gce internal firewall name
 	zone        string // gce boot region
 
-	ns string // cluster namespace
+	ns string // client namespace
 }
 
-// New creates a GCE cluster.
+// New creates a GCE client.
 //
 // Providers are differentiated (namespace) by setting the description and
 // filtering off of that.

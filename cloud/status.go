@@ -1,9 +1,9 @@
-package cluster
+package cloud
 
 import (
 	"errors"
 
-	"github.com/quilt/quilt/cluster/foreman"
+	"github.com/quilt/quilt/cloud/foreman"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/util"
 

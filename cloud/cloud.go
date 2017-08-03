@@ -1,4 +1,4 @@
-package cluster
+package cloud
 
 import (
 	"errors"
@@ -7,14 +7,14 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/quilt/quilt/cluster/acl"
-	"github.com/quilt/quilt/cluster/amazon"
-	"github.com/quilt/quilt/cluster/cloudcfg"
-	"github.com/quilt/quilt/cluster/digitalocean"
-	"github.com/quilt/quilt/cluster/foreman"
-	"github.com/quilt/quilt/cluster/google"
-	"github.com/quilt/quilt/cluster/machine"
-	"github.com/quilt/quilt/cluster/vagrant"
+	"github.com/quilt/quilt/cloud/acl"
+	"github.com/quilt/quilt/cloud/amazon"
+	"github.com/quilt/quilt/cloud/cloudcfg"
+	"github.com/quilt/quilt/cloud/digitalocean"
+	"github.com/quilt/quilt/cloud/foreman"
+	"github.com/quilt/quilt/cloud/google"
+	"github.com/quilt/quilt/cloud/machine"
+	"github.com/quilt/quilt/cloud/vagrant"
 	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
@@ -37,7 +37,7 @@ type provider interface {
 // Store the providers in a variable so we can change it in the tests
 var allProviders = []db.Provider{db.Amazon, db.DigitalOcean, db.Google, db.Vagrant}
 
-var c = counter.New("Cluster")
+var c = counter.New("Cloud")
 
 type launchLoc struct {
 	provider db.Provider
@@ -51,7 +51,7 @@ func (loc launchLoc) String() string {
 	return fmt.Sprintf("%s-%s", loc.provider, loc.region)
 }
 
-type cluster struct {
+type cloud struct {
 	namespace string
 	conn      db.Conn
 	providers map[launchLoc]provider
@@ -65,15 +65,15 @@ type cluster struct {
 var myIP = util.MyIP
 var sleep = time.Sleep
 
-// Run continually checks 'conn' for cluster changes and recreates the cluster as
+// Run continually checks 'conn' for cloud changes and recreates the cloud as
 // needed.
 func Run(conn db.Conn, creds connection.Credentials, minionTLSDir string) {
 	go updateMachineStatuses(conn)
-	var clst *cluster
+	var cld *cloud
 	for range conn.TriggerTick(30, db.BlueprintTable, db.MachineTable,
 		db.ACLTable).C {
 		c.Inc("Run")
-		clst = updateCluster(conn, clst, creds, minionTLSDir)
+		cld = updateCloud(conn, cld, creds, minionTLSDir)
 
 		// Somewhat of a crude rate-limit of once every five seconds to avoid
 		// stressing out the cloud providers with too many API calls.
@@ -81,27 +81,27 @@ func Run(conn db.Conn, creds connection.Credentials, minionTLSDir string) {
 	}
 }
 
-func updateCluster(conn db.Conn, clst *cluster, creds connection.Credentials,
-	minionTLSDir string) *cluster {
+func updateCloud(conn db.Conn, cld *cloud, creds connection.Credentials,
+	minionTLSDir string) *cloud {
 	namespace, err := conn.GetBlueprintNamespace()
 	if err != nil {
-		return clst
+		return cld
 	}
 
-	if clst == nil || clst.namespace != namespace {
-		clst = newCluster(conn, namespace, minionTLSDir)
-		clst.runOnce()
-		foreman.Init(clst.conn, creds)
+	if cld == nil || cld.namespace != namespace {
+		cld = newCloud(conn, namespace, minionTLSDir)
+		cld.runOnce()
+		foreman.Init(cld.conn, creds)
 	}
 
-	clst.runOnce()
-	foreman.RunOnce(clst.conn)
+	cld.runOnce()
+	foreman.RunOnce(cld.conn)
 
-	return clst
+	return cld
 }
 
-func newCluster(conn db.Conn, namespace string, minionTLSDir string) *cluster {
-	clst := &cluster{
+func newCloud(conn db.Conn, namespace string, minionTLSDir string) *cloud {
+	cld := &cloud{
 		namespace:    namespace,
 		conn:         conn,
 		providers:    make(map[launchLoc]provider),
@@ -110,17 +110,17 @@ func newCluster(conn db.Conn, namespace string, minionTLSDir string) *cluster {
 
 	for _, p := range allProviders {
 		for _, r := range validRegions(p) {
-			if _, err := clst.getProvider(launchLoc{p, r}); err != nil {
+			if _, err := cld.getProvider(launchLoc{p, r}); err != nil {
 				log.Debugf("Failed to connect to provider %s in %s: %s",
 					p, r, err)
 			}
 		}
 	}
 
-	return clst
+	return cld
 }
 
-func (clst cluster) runOnce() {
+func (cld cloud) runOnce() {
 	/* Each iteration of this loop does the following:
 	 *
 	 * - Get the current set of machines and ACLs from the cloud provider.
@@ -134,7 +134,7 @@ func (clst cluster) runOnce() {
 	 * updated before the next runOnce() call.
 	 */
 	for i := 0; i < 2; i++ {
-		jr, err := clst.join()
+		jr, err := cld.join()
 		if err != nil {
 			return
 		}
@@ -146,18 +146,18 @@ func (clst cluster) runOnce() {
 			// are in the cloud.  If we didn't, inter-machine ACLs could get
 			// removed when the Quilt controller restarts, even if there are
 			// running cloud machines that still need to communicate.
-			clst.syncACLs(jr.acl.Admin, jr.acl.ApplicationPorts, jr.machines)
+			cld.syncACLs(jr.acl.Admin, jr.acl.ApplicationPorts, jr.machines)
 			return
 		}
 
-		clst.boot(jr.boot)
-		clst.updateCloud(jr.terminate, provider.Stop, "stop")
-		clst.updateCloud(jr.updateIPs, provider.UpdateFloatingIPs,
+		cld.boot(jr.boot)
+		cld.updateCloud(jr.terminate, provider.Stop, "stop")
+		cld.updateCloud(jr.updateIPs, provider.UpdateFloatingIPs,
 			"update floating IPs")
 	}
 }
 
-func (clst cluster) boot(machines []db.Machine) {
+func (cld cloud) boot(machines []db.Machine) {
 	var cloudMachines []joinMachine
 	for _, m := range machines {
 		cloudMachines = append(cloudMachines, joinMachine{
@@ -169,7 +169,7 @@ func (clst cluster) boot(machines []db.Machine) {
 					SSHKeys: m.SSHKeys,
 					MinionOpts: cloudcfg.MinionOptions{
 						Role:   m.Role,
-						TLSDir: clst.minionTLSDir,
+						TLSDir: cld.minionTLSDir,
 					},
 				},
 			},
@@ -178,14 +178,14 @@ func (clst cluster) boot(machines []db.Machine) {
 		})
 	}
 
-	setStatuses(clst.conn, machines, db.Booting)
-	defer setStatuses(clst.conn, machines, "")
-	clst.updateCloud(cloudMachines, provider.Boot, "boot")
+	setStatuses(cld.conn, machines, db.Booting)
+	defer setStatuses(cld.conn, machines, "")
+	cld.updateCloud(cloudMachines, provider.Boot, "boot")
 }
 
 type machineAction func(provider, []machine.Machine) error
 
-func (clst cluster) updateCloud(machines []joinMachine, fn machineAction, action string) {
+func (cld cloud) updateCloud(machines []joinMachine, fn machineAction, action string) {
 	if len(machines) == 0 {
 		return
 	}
@@ -198,7 +198,7 @@ func (clst cluster) updateCloud(machines []joinMachine, fn machineAction, action
 	noFailures := true
 	groupedMachines := groupByLoc(machines)
 	for loc, providerMachines := range groupedMachines {
-		providerInst, err := clst.getProvider(loc)
+		providerInst, err := cld.getProvider(loc)
 		if err != nil {
 			noFailures = false
 			log.Warnf("Provider %s is unavailable in %s: %s",
@@ -243,16 +243,16 @@ type joinResult struct {
 	updateIPs []joinMachine
 }
 
-func (clst cluster) join() (joinResult, error) {
+func (cld cloud) join() (joinResult, error) {
 	res := joinResult{}
 
-	cloudMachines, err := clst.get()
+	cloudMachines, err := cld.get()
 	if err != nil {
 		log.WithError(err).Error("Failed to list machines")
 		return res, err
 	}
 
-	err = clst.conn.Txn(db.ACLTable, db.BlueprintTable,
+	err = cld.conn.Txn(db.ACLTable, db.BlueprintTable,
 		db.MachineTable).Run(func(view db.Database) error {
 		namespace, err := view.GetBlueprintNamespace()
 		if err != nil {
@@ -260,9 +260,9 @@ func (clst cluster) join() (joinResult, error) {
 			return err
 		}
 
-		if clst.namespace != namespace {
-			err := errors.New("namespace change during a cluster run")
-			log.WithError(err).Debug("Cluster run abort")
+		if cld.namespace != namespace {
+			err := errors.New("namespace change during a cloud run")
+			log.WithError(err).Debug("Cloud run abort")
 			return err
 		}
 
@@ -303,7 +303,7 @@ func (clst cluster) join() (joinResult, error) {
 	return res, err
 }
 
-func (clst cluster) syncACLs(adminACLs []string, appACLs []db.PortRange,
+func (cld cloud) syncACLs(adminACLs []string, appACLs []db.PortRange,
 	machines []db.Machine) {
 
 	// Always allow traffic from the Quilt controller.
@@ -344,7 +344,7 @@ func (clst cluster) syncACLs(adminACLs []string, appACLs []db.PortRange,
 		prvdrSet[launchLoc{m.Provider, m.Region}] = struct{}{}
 	}
 
-	for loc, prvdr := range clst.providers {
+	for loc, prvdr := range cld.providers {
 		// For providers with no specified machines, we remove all ACLs.
 		// Otherwise we set acls to what's specified.
 		var setACLs []acl.ACL
@@ -441,10 +441,10 @@ type listResponse struct {
 	err      error
 }
 
-func (clst cluster) get() ([]joinMachine, error) {
+func (cld cloud) get() ([]joinMachine, error) {
 	var wg sync.WaitGroup
-	cloudMachinesChan := make(chan listResponse, len(clst.providers))
-	for loc, p := range clst.providers {
+	cloudMachinesChan := make(chan listResponse, len(cld.providers))
+	for loc, p := range cld.providers {
 		wg.Add(1)
 		go func(loc launchLoc, p provider) {
 			defer wg.Done()
@@ -472,15 +472,15 @@ func (clst cluster) get() ([]joinMachine, error) {
 	return cloudMachines, nil
 }
 
-func (clst cluster) getProvider(loc launchLoc) (provider, error) {
-	p, ok := clst.providers[loc]
+func (cld cloud) getProvider(loc launchLoc) (provider, error) {
+	p, ok := cld.providers[loc]
 	if ok {
 		return p, nil
 	}
 
-	p, err := newProvider(loc.provider, clst.namespace, loc.region)
+	p, err := newProvider(loc.provider, cld.namespace, loc.region)
 	if err == nil {
-		clst.providers[loc] = p
+		cld.providers[loc] = p
 	}
 	return p, err
 }

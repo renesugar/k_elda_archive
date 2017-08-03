@@ -3,7 +3,7 @@ package machine
 import (
 	"fmt"
 
-	"github.com/quilt/quilt/cluster/cloudcfg"
+	"github.com/quilt/quilt/cloud/cloudcfg"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/stitch"
 )

@@ -1,4 +1,4 @@
-package cluster
+package cloud
 
 import (
 	"errors"
@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/quilt/quilt/cluster/acl"
-	"github.com/quilt/quilt/cluster/cloudcfg"
-	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cloud/acl"
+	"github.com/quilt/quilt/cloud/cloudcfg"
+	"github.com/quilt/quilt/cloud/machine"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
 	"github.com/stretchr/testify/assert"
@@ -104,10 +104,10 @@ func (p *fakeProvider) UpdateFloatingIPs(machines []machine.Machine) error {
 	return nil
 }
 
-func newTestCluster(namespace string) *cluster {
+func newTestCloud(namespace string) *cloud {
 	sleep = func(t time.Duration) {}
 	mock()
-	return newCluster(db.New(), namespace, "")
+	return newCloud(db.New(), namespace, "")
 }
 
 func TestPanicBadProvider(t *testing.T) {
@@ -119,7 +119,7 @@ func TestPanicBadProvider(t *testing.T) {
 	}()
 	allProviders = []db.Provider{FakeAmazon}
 	conn := db.New()
-	newCluster(conn, "test", "")
+	newCloud(conn, "test", "")
 }
 
 func TestSyncDB(t *testing.T) {
@@ -385,7 +385,7 @@ func TestSync(t *testing.T) {
 		updateIPs []ipRequest
 	}
 
-	checkSync := func(clst *cluster, provider db.Provider, region string,
+	checkSync := func(clst *cloud, provider db.Provider, region string,
 		expected assertion) {
 
 		clst.runOnce()
@@ -418,7 +418,7 @@ func TestSync(t *testing.T) {
 	}
 
 	// Test initial boot
-	clst := newTestCluster("ns")
+	clst := newTestCloud("ns")
 	setNamespace(clst.conn, "ns")
 	clst.conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		m := view.InsertMachine()
@@ -618,7 +618,7 @@ func TestBootTLSDir(t *testing.T) {
 	}
 
 	testTLSDir := "tlsdir"
-	clst := cluster{
+	clst := cloud{
 		conn:         db.New(),
 		minionTLSDir: testTLSDir,
 		providers: map[launchLoc]provider{
@@ -648,7 +648,7 @@ func TestACLs(t *testing.T) {
 		return "5.6.7.8", nil
 	}
 
-	clst := newTestCluster("ns")
+	clst := newTestCloud("ns")
 	clst.syncACLs([]string{"admin"},
 		[]db.PortRange{
 			{
@@ -693,14 +693,14 @@ func TestACLs(t *testing.T) {
 	assert.Equal(t, exp, actual)
 }
 
-func TestUpdateCluster(t *testing.T) {
+func TestUpdateCloud(t *testing.T) {
 	conn := db.New()
 
-	clst := updateCluster(conn, nil, nil, "")
+	clst := updateCloud(conn, nil, nil, "")
 	assert.Nil(t, clst)
 
 	setNamespace(conn, "ns1")
-	clst = updateCluster(conn, clst, nil, "")
+	clst = updateCloud(conn, clst, nil, "")
 	assert.NotNil(t, clst)
 	assert.Equal(t, "ns1", clst.namespace)
 
@@ -722,7 +722,7 @@ func TestUpdateCluster(t *testing.T) {
 	oldClst := clst
 	oldAmzn := amzn
 
-	clst = updateCluster(conn, clst, nil, "")
+	clst = updateCloud(conn, clst, nil, "")
 	assert.NotNil(t, clst)
 
 	// Pointers shouldn't have changed
@@ -747,7 +747,7 @@ func TestUpdateCluster(t *testing.T) {
 	oldClst = clst
 	oldAmzn = amzn
 	setNamespace(conn, "ns2")
-	clst = updateCluster(conn, clst, nil, "")
+	clst = updateCloud(conn, clst, nil, "")
 	assert.NotNil(t, clst)
 
 	// Pointers should have changed
@@ -767,7 +767,7 @@ func TestUpdateCluster(t *testing.T) {
 }
 
 func TestMultiRegionDeploy(t *testing.T) {
-	clst := newTestCluster("ns")
+	clst := newTestCloud("ns")
 	clst.conn.Txn(db.MachineTable,
 		db.BlueprintTable).Run(func(view db.Database) error {
 
@@ -833,7 +833,7 @@ func TestMultiRegionDeploy(t *testing.T) {
 func TestGetError(t *testing.T) {
 	t.Parallel()
 
-	_, err := cluster{
+	_, err := cloud{
 		providers: map[launchLoc]provider{
 			{db.Amazon, "us-west-1"}: &fakeProvider{
 				listError: errors.New("err"),
@@ -842,7 +842,7 @@ func TestGetError(t *testing.T) {
 	}.get()
 	assert.EqualError(t, err, "list Amazon-us-west-1: err")
 
-	_, err = cluster{
+	_, err = cloud{
 		providers: map[launchLoc]provider{
 			{provider: db.Vagrant}: &fakeProvider{
 				listError: errors.New("err"),

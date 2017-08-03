@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/quilt/quilt/api/server"
-	"github.com/quilt/quilt/cluster"
+	"github.com/quilt/quilt/cloud"
 	"github.com/quilt/quilt/connection/credentials/tls"
 	tlsIO "github.com/quilt/quilt/connection/credentials/tls/io"
 	"github.com/quilt/quilt/db"
@@ -113,10 +113,10 @@ func (dCmd *Daemon) Run() int {
 			return 1
 		}
 
-		go cluster.SyncCredentials(conn, minionTLSDir, sshKey, ca)
+		go cloud.SyncCredentials(conn, minionTLSDir, sshKey, ca)
 	}
 
-	cluster.Run(conn, creds, minionTLSDir)
+	cloud.Run(conn, creds, minionTLSDir)
 	return 0
 }
 

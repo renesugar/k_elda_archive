@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/quilt/quilt/cluster/acl"
-	"github.com/quilt/quilt/cluster/cloudcfg"
-	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cloud/acl"
+	"github.com/quilt/quilt/cloud/cloudcfg"
+	"github.com/quilt/quilt/cloud/machine"
 	"github.com/quilt/quilt/counter"
 	"github.com/satori/go.uuid"
 )
@@ -19,7 +19,7 @@ type Provider struct {
 
 var c = counter.New("Vagrant")
 
-// New creates a new vagrant cluster.
+// New creates a new vagrant provider.
 func New(namespace string) (*Provider, error) {
 	prvdr := Provider{namespace}
 	err := addBox(box, "virtualbox")

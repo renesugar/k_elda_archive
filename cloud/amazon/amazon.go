@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/quilt/quilt/cluster/acl"
-	"github.com/quilt/quilt/cluster/amazon/client"
-	"github.com/quilt/quilt/cluster/cloudcfg"
-	"github.com/quilt/quilt/cluster/machine"
-	"github.com/quilt/quilt/cluster/wait"
+	"github.com/quilt/quilt/cloud/acl"
+	"github.com/quilt/quilt/cloud/amazon/client"
+	"github.com/quilt/quilt/cloud/cloudcfg"
+	"github.com/quilt/quilt/cloud/machine"
+	"github.com/quilt/quilt/cloud/wait"
 	"github.com/quilt/quilt/join"
 
 	"github.com/aws/aws-sdk-go/aws"

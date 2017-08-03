@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cloud/machine"
 )
 
 func TestSetACLs(t *testing.T) {

@@ -1,4 +1,4 @@
-package cluster
+package cloud
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ import (
 	"github.com/quilt/quilt/db"
 )
 
-var credentialsCounter = counter.New("Cluster Credentials")
+var credentialsCounter = counter.New("Cloud Credentials")
 
 // SyncCredentials installs TLS certificates on all machines. It generates
 // the certificates using the given certificate authority, and copies them

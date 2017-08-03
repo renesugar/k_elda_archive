@@ -1,12 +1,12 @@
-package cluster
+package cloud
 
 import (
 	"fmt"
 
-	"github.com/quilt/quilt/cluster/amazon"
-	"github.com/quilt/quilt/cluster/digitalocean"
-	"github.com/quilt/quilt/cluster/google"
-	"github.com/quilt/quilt/cluster/machine"
+	"github.com/quilt/quilt/cloud/amazon"
+	"github.com/quilt/quilt/cloud/digitalocean"
+	"github.com/quilt/quilt/cloud/google"
+	"github.com/quilt/quilt/cloud/machine"
 	"github.com/quilt/quilt/db"
 )
 
