@@ -91,7 +91,6 @@ func TestBlueprints() error {
 		{"https://github.com/quilt/elasticsearch", ".", "./main.js"},
 		{"https://github.com/quilt/kibana", ".", "./main.js"},
 		{"https://github.com/quilt/django", ".", "./django-example.js"},
-		{"https://github.com/quilt/php-apache", ".", "./main.js"},
 		{"https://github.com/quilt/mongo", ".", "./example.js"},
 		{"https://github.com/quilt/tester", ".", "./tester-runner-example.js"},
 		{"https://github.com/quilt/lobsters", ".", "./lobsters-example.js"},
