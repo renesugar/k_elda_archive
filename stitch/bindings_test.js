@@ -3,7 +3,6 @@ const chaiSubset = require('chai-subset');
 const {
     Container,
     Image,
-    LabelRule,
     Machine,
     MachineRule,
     Port,
@@ -292,25 +291,14 @@ describe('Bindings', function() {
 
     describe('Placement', function() {
         let target;
-        let other;
         const checkPlacements = function(expected) {
             deployment.deploy(target);
-            deployment.deploy(other);
             const {placements} = deployment.toQuiltRepresentation();
             expect(placements).to.have.lengthOf(expected.length)
                 .and.containSubset(expected);
         };
         beforeEach(function() {
             target = new Service('target', []);
-            other = new Service('other', []);
-        });
-        it('LabelRule', function() {
-            target.place(new LabelRule(true, other));
-            checkPlacements([{
-                targetLabel: 'target',
-                otherLabel: 'other',
-                exclusive: true,
-            }]);
         });
         it('MachineRule size, region, provider', function() {
             target.place(new MachineRule(true, {
@@ -577,12 +565,6 @@ describe('Bindings', function() {
             foo.allowFrom(new Service('baz', []), 80);
             expect(deploy).to.throw(
                 'foo allows connections from an undeployed service: baz');
-        });
-        it('placement in terms of undeployed label', function() {
-            foo.place(new MachineRule(false, {provider: 'Amazon'}));
-            foo.place(new LabelRule(true, new Service('baz', [])));
-            expect(deploy).to.throw(
-                'foo has a placement in terms of an undeployed service: baz');
         });
         it('floating IP and multiple containers', function() {
             foo = new Service('foo', new Container('image').replicate(2));

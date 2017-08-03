@@ -419,53 +419,7 @@ func TestPlacementTxn(t *testing.T) {
 				},
 			},
 		},
-		Placements: []stitch.Placement{
-			{
-				TargetLabel: "bar",
-				Exclusive:   true,
-				OtherLabel:  "foo",
-			},
-		},
 	}
-
-	// Create an exclusive placement.
-	checkPlacement(stc,
-		db.Placement{
-			TargetLabel: "bar",
-			Exclusive:   true,
-			OtherLabel:  "foo",
-		},
-	)
-
-	// Change the placement from "exclusive" to "on".
-	stc.Placements = []stitch.Placement{
-		{TargetLabel: "bar", Exclusive: false, OtherLabel: "foo"},
-	}
-	checkPlacement(stc,
-		db.Placement{
-			TargetLabel: "bar",
-			Exclusive:   false,
-			OtherLabel:  "foo",
-		},
-	)
-
-	// Add another placement constraint.
-	stc.Placements = []stitch.Placement{
-		{TargetLabel: "bar", Exclusive: false, OtherLabel: "foo"},
-		{TargetLabel: "bar", Exclusive: true, OtherLabel: "bar"},
-	}
-	checkPlacement(stc,
-		db.Placement{
-			TargetLabel: "bar",
-			Exclusive:   false,
-			OtherLabel:  "foo",
-		},
-		db.Placement{
-			TargetLabel: "bar",
-			Exclusive:   true,
-			OtherLabel:  "bar",
-		},
-	)
 
 	// Machine placement
 	stc.Placements = []stitch.Placement{

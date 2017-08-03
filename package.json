@@ -1,6 +1,6 @@
 {
   "name": "@quilt/quilt",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "stitch/bindings.js",
   "files": [
     "stitch/bindings.js"

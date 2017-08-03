@@ -22,15 +22,12 @@ type Stitch struct {
 	Namespace string   `json:",omitempty"`
 }
 
-// A Placement constraint guides where containers may be scheduled, either relative to
-// the labels of other containers, or the machine the container will run on.
+// A Placement constraint guides on what type of machine a container can be
+// scheduled.
 type Placement struct {
 	TargetLabel string `json:",omitempty"`
 
 	Exclusive bool `json:",omitempty"`
-
-	// Label Constraint
-	OtherLabel string `json:",omitempty"`
 
 	// Machine Constraints
 	Provider   string `json:",omitempty"`

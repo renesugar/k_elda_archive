@@ -192,12 +192,6 @@ Deployment.prototype.vet = function() {
             if (plcm.floatingIp) {
                 hasFloatingIp = true;
             }
-
-            let otherLabel = plcm.otherLabel;
-            if (otherLabel !== undefined && !labelMap[otherLabel]) {
-                throw new Error(`${service.name} has a placement in terms ` +
-                    `of an undeployed service: ${otherLabel}`);
-            }
         });
 
         if (hasFloatingIp && service.incomingPublic.length
@@ -404,7 +398,6 @@ Service.prototype.getQuiltPlacements = function() {
             targetLabel: that.name,
             exclusive: placement.exclusive,
 
-            otherLabel: placement.otherLabel || '',
             provider: placement.provider || '',
             size: placement.size || '',
             region: placement.region || '',
@@ -630,11 +623,6 @@ Container.prototype.getHostname = function() {
     return this.hostname + '.q';
 };
 
-function LabelRule(exclusive, otherService) {
-    this.exclusive = exclusive;
-    this.otherLabel = otherService.name;
-}
-
 function MachineRule(exclusive, optionalArgs) {
     this.exclusive = exclusive;
     if (optionalArgs.provider) {
@@ -682,7 +670,6 @@ module.exports = {
     Container,
     Deployment,
     Image,
-    LabelRule,
     Machine,
     MachineRule,
     Port,

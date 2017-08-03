@@ -61,7 +61,6 @@ func updatePlacements(view db.Database, blueprint stitch.Stitch) {
 		placements = append(placements, db.Placement{
 			TargetLabel: sp.TargetLabel,
 			Exclusive:   sp.Exclusive,
-			OtherLabel:  sp.OtherLabel,
 			Provider:    sp.Provider,
 			Size:        sp.Size,
 			Region:      sp.Region,
