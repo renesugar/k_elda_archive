@@ -50,10 +50,7 @@ function Deployment(deploymentOpts) {
     this.adminACL = getStringArray('adminACL', deploymentOpts.adminACL);
 
     this.machines = [];
-    this.containers = {};
     this.services = [];
-    this.allowedInboundConnections = [];
-    this.placements = [];
     this.invariants = [];
 }
 
