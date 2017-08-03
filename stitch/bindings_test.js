@@ -361,7 +361,6 @@ describe('Bindings', function() {
             checkLabels([{
                 name: 'web_tier',
                 ids: ['c47b5770b59a4459519ba2b3ae3cd7a1598fbd8d'],
-                annotations: [],
             }]);
         });
         it('multiple containers', function() {
@@ -375,7 +374,6 @@ describe('Bindings', function() {
                     'c47b5770b59a4459519ba2b3ae3cd7a1598fbd8d',
                     '6044e40ba6e4d97be45ca290b993ef2f368c7bb1',
                 ],
-                annotations: [],
             }]);
         });
         it('duplicate services', function() {
@@ -394,12 +392,10 @@ describe('Bindings', function() {
                 {
                     name: 'foo',
                     ids: ['475c40d6070969839ba0f88f7a9bd0cc7936aa30'],
-                    annotations: [],
                 },
                 {
                     name: 'foo2',
                     ids: ['3047630375a1621cb400811b795757a07de8e268'],
-                    annotations: [],
                 },
             ]);
         });
@@ -630,12 +626,10 @@ describe('Bindings', function() {
                     {
                         name: 'web_tier',
                         ids: ['c47b5770b59a4459519ba2b3ae3cd7a1598fbd8d'],
-                        annotations: [],
                     },
                     {
                         name: 'web_tier2',
                         ids: ['6044e40ba6e4d97be45ca290b993ef2f368c7bb1'],
-                        annotations: [],
                     },
                 ]);
         });

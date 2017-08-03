@@ -20,8 +20,6 @@ type Stitch struct {
 	AdminACL  []string `json:",omitempty"`
 	MaxPrice  float64  `json:",omitempty"`
 	Namespace string   `json:",omitempty"`
-
-	Invariants []invariant `json:",omitempty"`
 }
 
 // A Placement constraint guides where containers may be scheduled, either relative to
@@ -60,9 +58,8 @@ type Container struct {
 
 // A Label represents a logical group of containers.
 type Label struct {
-	Name        string   `json:",omitempty"`
-	IDs         []string `json:",omitempty"`
-	Annotations []string `json:",omitempty"`
+	Name string   `json:",omitempty"`
+	IDs  []string `json:",omitempty"`
 }
 
 // A Connection allows containers implementing the From label to speak to containers
@@ -150,25 +147,9 @@ func FromFile(filename string) (Stitch, error) {
 func FromJSON(jsonStr string) (stc Stitch, err error) {
 	err = json.Unmarshal([]byte(jsonStr), &stc)
 	if err != nil {
-		wrappedError := errors.New("unable to parse blueprint: " +
-			err.Error())
-		return Stitch{}, wrappedError
+		err = fmt.Errorf("unable to parse blueprint: %s", err)
 	}
-
-	if len(stc.Invariants) == 0 {
-		return stc, nil
-	}
-
-	graph, err := InitializeGraph(stc)
-	if err != nil {
-		return Stitch{}, err
-	}
-
-	if err := checkInvariants(graph, stc.Invariants); err != nil {
-		return Stitch{}, err
-	}
-
-	return stc, nil
+	return stc, err
 }
 
 // String returns the Stitch in its deployment representation.

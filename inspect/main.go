@@ -39,7 +39,7 @@ func Main(opts []string) int {
 		return 1
 	}
 
-	graph, err := stitch.InitializeGraph(blueprint)
+	graph, err := New(blueprint)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
@@ -47,7 +47,7 @@ func Main(opts []string) int {
 
 	switch opts[1] {
 	case "pdf", "ascii", "graphviz":
-		viz(configPath, blueprint, graph, opts[1])
+		viz(configPath, graph, opts[1])
 	default:
 		Usage()
 		return 1

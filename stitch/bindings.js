@@ -51,7 +51,6 @@ function Deployment(deploymentOpts) {
 
     this.machines = [];
     this.services = [];
-    this.invariants = [];
 }
 
 function omitSSHKey(key, value) {
@@ -143,7 +142,6 @@ Deployment.prototype.toQuiltRepresentation = function() {
         services.push({
             name: service.name,
             ids: ids,
-            annotations: service.annotations,
         });
     });
 
@@ -163,7 +161,6 @@ Deployment.prototype.toQuiltRepresentation = function() {
         containers: containersNoDups,
         connections: connections,
         placements: placements,
-        invariants: this.invariants,
 
         namespace: this.namespace,
         adminACL: this.adminACL,
@@ -245,10 +242,6 @@ Deployment.prototype.deploy = function(toDeployList) {
     });
 };
 
-Deployment.prototype.assert = function(rule, desired) {
-    this.invariants.push(new Assertion(rule, desired));
-};
-
 function Service(name, containers) {
     if (typeof name !== 'string') {
         throw new Error(`name must be a string; was ${stringify(name)}`);
@@ -266,7 +259,6 @@ function Service(name, containers) {
     }
     this.name = uniqueLabelName(name);
     this.containers = containers;
-    this.annotations = [];
     this.placements = [];
 
     this.allowedInboundConnections = [];
@@ -288,30 +280,6 @@ Service.prototype.children = function() {
     }
     return res;
 };
-
-Service.prototype.annotate = function(annotation) {
-    this.annotations.push(annotation);
-};
-
-Service.prototype.canReach = function(target) {
-    if (target === publicInternet) {
-        return reachable(this.name, publicInternetLabel);
-    }
-    return reachable(this.name, target.name);
-};
-
-Service.prototype.canReachACL = function(target) {
-    return reachableACL(this.name, target.name);
-};
-
-Service.prototype.between = function(src, dst) {
-    return between(src.name, this.name, dst.name);
-};
-
-Service.prototype.neighborOf = function(target) {
-    return neighbor(this.name, target.name);
-};
-
 
 Service.prototype.deploy = function(deployment) {
     deployment.services.push(this);
@@ -355,9 +323,6 @@ let publicInternet = {
     },
     allowFrom: function(sourceService, portRange) {
         sourceService.allowOutboundPublic(portRange);
-    },
-    canReach: function(to) {
-        return reachable(publicInternetLabel, to.name);
     },
 };
 
@@ -665,27 +630,6 @@ Container.prototype.getHostname = function() {
     return this.hostname + '.q';
 };
 
-let enough = {form: 'enough'};
-let between = invariantType('between');
-let neighbor = invariantType('reachDirect');
-let reachableACL = invariantType('reachACL');
-let reachable = invariantType('reach');
-
-function Assertion(invariant, desired) {
-    this.form = invariant.form;
-    this.nodes = invariant.nodes;
-    this.target = desired;
-}
-
-function invariantType(form) {
-    return function(...nodes) {
-        return {
-            form: form,
-            nodes: nodes,
-        };
-    };
-}
-
 function LabelRule(exclusive, otherService) {
     this.exclusive = exclusive;
     this.otherLabel = otherService.name;
@@ -735,7 +679,6 @@ function resetGlobals() {
 }
 
 module.exports = {
-    Assertion,
     Container,
     Deployment,
     Image,
@@ -750,6 +693,5 @@ module.exports = {
     getDeployment,
     githubKeys,
     publicInternet,
-    enough,
     resetGlobals,
 };

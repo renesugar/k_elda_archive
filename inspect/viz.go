@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 )
 
@@ -17,19 +16,14 @@ func stripExtension(configPath string) string {
 	return strings.TrimSuffix(configPath, ext)
 }
 
-func viz(configPath string, blueprint stitch.Stitch, graph stitch.Graph,
-	outputFormat string) {
+func viz(configPath string, graph Graph, outputFormat string) {
 	slug := stripExtension(configPath)
 	dot := makeGraphviz(graph)
 	graphviz(outputFormat, slug, dot)
 }
 
-func makeGraphviz(graph stitch.Graph) string {
+func makeGraphviz(graph Graph) string {
 	dotfile := "strict digraph {\n"
-
-	for i, av := range graph.Availability {
-		dotfile += subGraph(i, av.Nodes()...)
-	}
 
 	var lines []string
 	for _, edge := range graph.GetConnections() {
@@ -50,17 +44,6 @@ func makeGraphviz(graph stitch.Graph) string {
 	dotfile += "}\n"
 
 	return dotfile
-}
-
-func subGraph(i int, labels ...string) string {
-	subgraph := fmt.Sprintf("    subgraph cluster_%d {\n", i)
-	str := ""
-	sort.Strings(labels)
-	for _, l := range labels {
-		str += l + "; "
-	}
-	subgraph += "        " + str + "\n    }\n"
-	return subgraph
 }
 
 // Graphviz generates a specification for the graphviz program that visualizes the
