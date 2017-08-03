@@ -11,6 +11,8 @@ non-deterministic and rely on pulling data from the network.
 - Use the latest release of OVS (2.7.2).
 - Remove support for invariants.
 - Remove support for placement based on service groups.
+- Simplify machine-service placement. For example, deploying a service to a
+floating IP is now expressed as `myService.placeOn({floatingIp: '8.8.8.8'})`.
 
 Release 0.2.0
 -------------

@@ -4,7 +4,6 @@ const {
     Container,
     Image,
     Machine,
-    MachineRule,
     Port,
     PortRange,
     Range,
@@ -301,35 +300,35 @@ describe('Bindings', function() {
             target = new Service('target', []);
         });
         it('MachineRule size, region, provider', function() {
-            target.place(new MachineRule(true, {
+            target.placeOn({
                 size: 'm4.large',
                 region: 'us-west-2',
                 provider: 'Amazon',
-            }));
+            });
             checkPlacements([{
                 targetLabel: 'target',
-                exclusive: true,
+                exclusive: false,
                 region: 'us-west-2',
                 provider: 'Amazon',
                 size: 'm4.large',
             }]);
         });
         it('MachineRule size, provider', function() {
-            target.place(new MachineRule(true, {
+            target.placeOn({
                 size: 'm4.large',
                 provider: 'Amazon',
-            }));
+            });
             checkPlacements([{
                 targetLabel: 'target',
-                exclusive: true,
+                exclusive: false,
                 provider: 'Amazon',
                 size: 'm4.large',
             }]);
         });
         it('MachineRule floatingIp', function() {
-            target.place(new MachineRule(false, {
+            target.placeOn({
                 floatingIp: 'xxx.xxx.xxx.xxx',
-            }));
+            });
             checkPlacements([{
                 targetLabel: 'target',
                 exclusive: false,
@@ -568,9 +567,9 @@ describe('Bindings', function() {
         });
         it('floating IP and multiple containers', function() {
             foo = new Service('foo', new Container('image').replicate(2));
-            foo.place(new MachineRule(false, {
+            foo.placeOn({
                 floatingIp: '123',
-            }));
+            });
             foo.connectFromPublic(80);
             deployment.deploy([foo]);
             expect(deploy).to.throw(

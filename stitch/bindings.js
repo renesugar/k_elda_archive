@@ -131,7 +131,7 @@ Deployment.prototype.toQuiltRepresentation = function() {
     // Also, aggregate all containers referenced by services.
     this.services.forEach(function(service) {
         connections = connections.concat(service.getQuiltConnections());
-        placements = placements.concat(service.getQuiltPlacements());
+        placements = placements.concat(service.placements);
 
         // Collect the containers IDs, and add them to the container map.
         let ids = [];
@@ -352,8 +352,15 @@ Service.prototype.allowFromPublic = function(range) {
     this.incomingPublic.push(range);
 };
 
-Service.prototype.place = function(rule) {
-    this.placements.push(rule);
+Service.prototype.placeOn = function(machineAttrs) {
+    this.placements.push({
+        targetLabel: this.name,
+        exclusive: false,
+        provider: getString('provider', machineAttrs.provider),
+        size: getString('size', machineAttrs.size),
+        region: getString('region', machineAttrs.region),
+        floatingIp: getString('floatingIp', machineAttrs.floatingIp),
+    });
 };
 
 Service.prototype.getQuiltConnections = function() {
@@ -388,23 +395,6 @@ Service.prototype.getQuiltConnections = function() {
     });
 
     return connections;
-};
-
-Service.prototype.getQuiltPlacements = function() {
-    let placements = [];
-    let that = this;
-    this.placements.forEach(function(placement) {
-        placements.push({
-            targetLabel: that.name,
-            exclusive: placement.exclusive,
-
-            provider: placement.provider || '',
-            size: placement.size || '',
-            region: placement.region || '',
-            floatingIp: placement.floatingIp || '',
-        });
-    });
-    return placements;
 };
 
 let labelNameCount = {};
@@ -623,22 +613,6 @@ Container.prototype.getHostname = function() {
     return this.hostname + '.q';
 };
 
-function MachineRule(exclusive, optionalArgs) {
-    this.exclusive = exclusive;
-    if (optionalArgs.provider) {
-        this.provider = optionalArgs.provider;
-    }
-    if (optionalArgs.size) {
-        this.size = optionalArgs.size;
-    }
-    if (optionalArgs.region) {
-        this.region = optionalArgs.region;
-    }
-    if (optionalArgs.floatingIp) {
-      this.floatingIp = optionalArgs.floatingIp;
-    }
-}
-
 function Connection(from, ports) {
     this.minPort = ports.min;
     this.maxPort = ports.max;
@@ -671,7 +645,6 @@ module.exports = {
     Deployment,
     Image,
     Machine,
-    MachineRule,
     Port,
     PortRange,
     Range,
