@@ -37,26 +37,26 @@ var apiKeyPath = ".digitalocean/key"
 // 16.04.1 x64 created at 2017-02-03.
 var imageID = 22601368
 
-// The Cluster object represents a connection to DigitalOcean.
-type Cluster struct {
-	client    client.Client
+// The Provider object represents a connection to DigitalOcean.
+type Provider struct {
+	client.Client
 	namespace string
 	region    string
 }
 
 // New starts a new client session with the API key provided in ~/.digitalocean/key.
-func New(namespace, region string) (*Cluster, error) {
-	clst, err := newDigitalOcean(namespace, region)
+func New(namespace, region string) (*Provider, error) {
+	prvdr, err := newDigitalOcean(namespace, region)
 	if err != nil {
-		return clst, err
+		return prvdr, err
 	}
 
-	_, _, err = clst.client.ListDroplets(&godo.ListOptions{})
-	return clst, err
+	_, _, err = prvdr.ListDroplets(&godo.ListOptions{})
+	return prvdr, err
 }
 
 // Creation is broken out for unit testing.
-var newDigitalOcean = func(namespace, region string) (*Cluster, error) {
+var newDigitalOcean = func(namespace, region string) (*Provider, error) {
 	namespace = strings.ToLower(strings.Replace(namespace, "_", "-", -1))
 	keyFile := filepath.Join(os.Getenv("HOME"), apiKeyPath)
 	key, err := util.ReadFile(keyFile)
@@ -68,20 +68,20 @@ var newDigitalOcean = func(namespace, region string) (*Cluster, error) {
 	tc := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: key})
 	oauthClient := oauth2.NewClient(oauth2.NoContext, tc)
 
-	clst := &Cluster{
+	prvdr := &Provider{
 		namespace: namespace,
 		region:    region,
-		client:    client.New(oauthClient),
+		Client:    client.New(oauthClient),
 	}
-	return clst, nil
+	return prvdr, nil
 }
 
 // List will fetch all droplets that have the same name as the cluster namespace.
-func (clst Cluster) List() (machines []machine.Machine, err error) {
+func (prvdr Provider) List() (machines []machine.Machine, err error) {
 	floatingIPListOpt := &godo.ListOptions{}
 	floatingIPs := map[int]string{}
 	for {
-		ips, resp, err := clst.client.ListFloatingIPs(floatingIPListOpt)
+		ips, resp, err := prvdr.ListFloatingIPs(floatingIPListOpt)
 		if err != nil {
 			return nil, fmt.Errorf("list floating IPs: %s", err)
 		}
@@ -102,13 +102,13 @@ func (clst Cluster) List() (machines []machine.Machine, err error) {
 	dropletListOpt := &godo.ListOptions{} // Keep track of the page we're on.
 	// DigitalOcean's API has a paginated list of droplets.
 	for {
-		droplets, resp, err := clst.client.ListDroplets(dropletListOpt)
+		droplets, resp, err := prvdr.ListDroplets(dropletListOpt)
 		if err != nil {
 			return nil, fmt.Errorf("list droplets: %s", err)
 		}
 
 		for _, d := range droplets {
-			if d.Name != clst.namespace || d.Region.Slug != clst.region {
+			if d.Name != prvdr.namespace || d.Region.Slug != prvdr.region {
 				continue
 			}
 
@@ -143,7 +143,7 @@ func (clst Cluster) List() (machines []machine.Machine, err error) {
 }
 
 // Boot will boot every machine in a goroutine, and wait for the machines to come up.
-func (clst Cluster) Boot(bootSet []machine.Machine) error {
+func (prvdr Provider) Boot(bootSet []machine.Machine) error {
 	errChan := make(chan error, len(bootSet))
 	for _, m := range bootSet {
 		if m.Preemptible {
@@ -151,7 +151,7 @@ func (clst Cluster) Boot(bootSet []machine.Machine) error {
 		}
 
 		go func(m machine.Machine) {
-			errChan <- clst.createAndAttach(m)
+			errChan <- prvdr.createAndAttach(m)
 		}(m)
 	}
 
@@ -165,40 +165,40 @@ func (clst Cluster) Boot(bootSet []machine.Machine) error {
 }
 
 // Creates a new machine, and waits for the machine to become active.
-func (clst Cluster) createAndAttach(m machine.Machine) error {
+func (prvdr Provider) createAndAttach(m machine.Machine) error {
 	cloudConfig := cloudcfg.Ubuntu(m.CloudCfgOpts)
 	createReq := &godo.DropletCreateRequest{
-		Name:              clst.namespace,
-		Region:            clst.region,
+		Name:              prvdr.namespace,
+		Region:            prvdr.region,
 		Size:              m.Size,
 		Image:             godo.DropletCreateImage{ID: imageID},
 		PrivateNetworking: true,
 		UserData:          cloudConfig,
 	}
 
-	d, _, err := clst.client.CreateDroplet(createReq)
+	d, _, err := prvdr.CreateDroplet(createReq)
 	if err != nil {
 		return err
 	}
 
 	pred := func() bool {
-		d, _, err := clst.client.GetDroplet(d.ID)
+		d, _, err := prvdr.GetDroplet(d.ID)
 		return err == nil && d.Status == "active"
 	}
 	return wait.Wait(pred)
 }
 
 // UpdateFloatingIPs updates Droplet to Floating IP associations.
-func (clst Cluster) UpdateFloatingIPs(desired []machine.Machine) error {
-	curr, err := clst.List()
+func (prvdr Provider) UpdateFloatingIPs(desired []machine.Machine) error {
+	curr, err := prvdr.List()
 	if err != nil {
 		return fmt.Errorf("list machines: %s", err)
 	}
 
-	return clst.syncFloatingIPs(curr, desired)
+	return prvdr.syncFloatingIPs(curr, desired)
 }
 
-func (clst Cluster) syncFloatingIPs(curr, targets []machine.Machine) error {
+func (prvdr Provider) syncFloatingIPs(curr, targets []machine.Machine) error {
 	idKey := func(intf interface{}) interface{} {
 		return intf.(machine.Machine).ID
 	}
@@ -222,7 +222,7 @@ func (clst Cluster) syncFloatingIPs(curr, targets []machine.Machine) error {
 		}
 
 		if curr.FloatingIP != "" {
-			_, _, err := clst.client.UnassignFloatingIP(curr.FloatingIP)
+			_, _, err := prvdr.UnassignFloatingIP(curr.FloatingIP)
 			if err != nil {
 				return fmt.Errorf("unassign IP (%s): %s",
 					curr.FloatingIP, err)
@@ -235,7 +235,7 @@ func (clst Cluster) syncFloatingIPs(curr, targets []machine.Machine) error {
 				return fmt.Errorf("malformed id (%s): %s", curr.ID, err)
 			}
 
-			_, _, err = clst.client.AssignFloatingIP(desired.FloatingIP, id)
+			_, _, err = prvdr.AssignFloatingIP(desired.FloatingIP, id)
 			if err != nil {
 				return fmt.Errorf("assign IP (%s to %d): %s",
 					desired.FloatingIP, id, err)
@@ -247,11 +247,11 @@ func (clst Cluster) syncFloatingIPs(curr, targets []machine.Machine) error {
 }
 
 // Stop stops each machine and deletes their attached volumes.
-func (clst Cluster) Stop(machines []machine.Machine) error {
+func (prvdr Provider) Stop(machines []machine.Machine) error {
 	errChan := make(chan error, len(machines))
 	for _, m := range machines {
 		go func(m machine.Machine) {
-			errChan <- clst.deleteAndWait(m.ID)
+			errChan <- prvdr.deleteAndWait(m.ID)
 		}(m)
 	}
 
@@ -264,26 +264,26 @@ func (clst Cluster) Stop(machines []machine.Machine) error {
 	return err
 }
 
-func (clst Cluster) deleteAndWait(ids string) error {
+func (prvdr Provider) deleteAndWait(ids string) error {
 	id, err := strconv.Atoi(ids)
 	if err != nil {
 		return err
 	}
 
-	_, err = clst.client.DeleteDroplet(id)
+	_, err = prvdr.DeleteDroplet(id)
 	if err != nil {
 		return err
 	}
 
 	pred := func() bool {
-		d, _, err := clst.client.GetDroplet(id)
+		d, _, err := prvdr.GetDroplet(id)
 		return err != nil || d == nil
 	}
 	return wait.Wait(pred)
 }
 
 // SetACLs is not supported in DigitalOcean.
-func (clst Cluster) SetACLs(acls []acl.ACL) error {
+func (prvdr Provider) SetACLs(acls []acl.ACL) error {
 	log.Debug("DigitalOcean does not support ACLs")
 	return nil
 }

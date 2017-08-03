@@ -126,11 +126,11 @@ func TestList(t *testing.T) {
 		}, nil, nil,
 	).Twice()
 
-	doClust, err := newDigitalOcean(testNamespace, DefaultRegion)
+	doPrvdr, err := newDigitalOcean(testNamespace, DefaultRegion)
 	assert.Nil(t, err)
-	doClust.client = mc
+	doPrvdr.Client = mc
 
-	machines, err := doClust.List()
+	machines, err := doPrvdr.List()
 	assert.Nil(t, err)
 	assert.Equal(t, machines, []machine.Machine{
 		{
@@ -153,13 +153,13 @@ func TestList(t *testing.T) {
 	// Error ListDroplets.
 	mc.On("ListFloatingIPs", mock.Anything).Return(nil, &godo.Response{}, nil).Once()
 	mc.On("ListDroplets", mock.Anything).Return(nil, nil, errMock).Once()
-	machines, err = doClust.List()
+	machines, err = doPrvdr.List()
 	assert.Nil(t, machines)
 	assert.EqualError(t, err, fmt.Sprintf("list droplets: %s", errMsg))
 
 	// Error ListFloatingIPs.
 	mc.On("ListFloatingIPs", mock.Anything).Return(nil, nil, errMock).Once()
-	_, err = doClust.List()
+	_, err = doPrvdr.List()
 	assert.EqualError(t, err, fmt.Sprintf("list floating IPs: %s", errMsg))
 
 	// Error PublicIPv4. We can't error PrivateIPv4 because of the two functions'
@@ -176,21 +176,21 @@ func TestList(t *testing.T) {
 	}
 	mc.On("ListDroplets", mock.Anything).Return(droplets, respLast, nil).Once()
 	mc.On("ListFloatingIPs", mock.Anything).Return(nil, &godo.Response{}, nil).Once()
-	machines, err = doClust.List()
+	machines, err = doPrvdr.List()
 	assert.Nil(t, machines)
 	assert.EqualError(t, err, "get public IP: no networks have been defined")
 }
 
 func TestBoot(t *testing.T) {
 	mc := new(mocks.Client)
-	doClust, err := newDigitalOcean(testNamespace, DefaultRegion)
+	doPrvdr, err := newDigitalOcean(testNamespace, DefaultRegion)
 	assert.Nil(t, err)
-	doClust.client = mc
+	doPrvdr.Client = mc
 
 	util.Sleep = func(t time.Duration) {}
 
 	bootSet := []machine.Machine{}
-	err = doClust.Boot(bootSet)
+	err = doPrvdr.Boot(bootSet)
 	assert.Nil(t, err)
 
 	// Create a list of machines to boot.
@@ -219,7 +219,7 @@ func TestBoot(t *testing.T) {
 
 	mc.On("AttachVolume", mock.Anything, mock.Anything).Return(nil, nil, nil).Once()
 
-	err = doClust.Boot(bootSet)
+	err = doPrvdr.Boot(bootSet)
 	// Make sure machines are booted.
 	mc.AssertNumberOfCalls(t, "CreateDroplet", 1)
 	assert.Nil(t, err)
@@ -233,28 +233,28 @@ func TestBoot(t *testing.T) {
 		DiskSize:  0,
 	})
 	mc.On("CreateDroplet", mock.Anything).Return(nil, nil, errMock).Twice()
-	err = doClust.Boot(doubleBootSet)
+	err = doPrvdr.Boot(doubleBootSet)
 	assert.EqualError(t, err, errMsg)
 }
 
 func TestBootPreemptible(t *testing.T) {
 	t.Parallel()
 
-	err := Cluster{}.Boot([]machine.Machine{{Preemptible: true}})
+	err := Provider{}.Boot([]machine.Machine{{Preemptible: true}})
 	assert.EqualError(t, err, "preemptible instances are not yet implemented")
 }
 
 func TestStop(t *testing.T) {
 	mc := new(mocks.Client)
-	doClust, err := newDigitalOcean(testNamespace, DefaultRegion)
+	doPrvdr, err := newDigitalOcean(testNamespace, DefaultRegion)
 	assert.Nil(t, err)
-	doClust.client = mc
+	doPrvdr.Client = mc
 
 	util.Sleep = func(t time.Duration) {}
 
 	// Test empty stop set
 	stopSet := []machine.Machine{}
-	err = doClust.Stop(stopSet)
+	err = doPrvdr.Stop(stopSet)
 	assert.Nil(t, err)
 
 	// Test non-empty stop set
@@ -279,7 +279,7 @@ func TestStop(t *testing.T) {
 
 	mc.On("DeleteVolume", "abc").Return(nil, nil).Once()
 
-	err = doClust.Stop(stopSet)
+	err = doPrvdr.Stop(stopSet)
 
 	// Make sure machines are stopped.
 	mc.AssertNumberOfCalls(t, "GetDroplet", 2)
@@ -302,7 +302,7 @@ func TestStop(t *testing.T) {
 			DiskSize:  0,
 		},
 	}
-	err = doClust.Stop(badDoubleStopSet)
+	err = doPrvdr.Stop(badDoubleStopSet)
 	assert.Error(t, err)
 
 	// Error DeleteDroplet.
@@ -312,14 +312,14 @@ func TestStop(t *testing.T) {
 	}, nil, nil).Once()
 
 	mc.On("DeleteDroplet", 123).Return(nil, errMock).Once()
-	err = doClust.Stop(stopSet)
+	err = doPrvdr.Stop(stopSet)
 	assert.EqualError(t, err, errMsg)
 }
 
 func TestSetACLs(t *testing.T) {
-	doClust, err := newDigitalOcean(testNamespace, DefaultRegion)
+	doPrvdr, err := newDigitalOcean(testNamespace, DefaultRegion)
 	assert.Nil(t, err)
-	err = doClust.SetACLs([]acl.ACL{
+	err = doPrvdr.SetACLs([]acl.ACL{
 		{
 			CidrIP:  "digital",
 			MinPort: 1,
@@ -336,17 +336,17 @@ func TestSetACLs(t *testing.T) {
 
 func TestUpdateFloatingIPs(t *testing.T) {
 	mc := new(mocks.Client)
-	clst := &Cluster{client: mc}
+	client := &Provider{Client: mc}
 
 	mc.On("ListFloatingIPs", mock.Anything).Return(nil, nil, errMock).Once()
-	err := clst.UpdateFloatingIPs(nil)
+	err := client.UpdateFloatingIPs(nil)
 	assert.EqualError(t, err,
 		fmt.Sprintf("list machines: list floating IPs: %s", errMsg))
 	mc.AssertExpectations(t)
 
 	// Test assigning a floating IP.
 	mc.On("AssignFloatingIP", "ip", 1).Return(nil, nil, nil).Once()
-	err = clst.syncFloatingIPs(
+	err = client.syncFloatingIPs(
 		[]machine.Machine{
 			{ID: "1"},
 			{ID: "2"},
@@ -360,7 +360,7 @@ func TestUpdateFloatingIPs(t *testing.T) {
 
 	// Test error when assigning a floating IP.
 	mc.On("AssignFloatingIP", "ip", 1).Return(nil, nil, errMock).Once()
-	err = clst.syncFloatingIPs(
+	err = client.syncFloatingIPs(
 		[]machine.Machine{
 			{ID: "1"},
 		},
@@ -374,7 +374,7 @@ func TestUpdateFloatingIPs(t *testing.T) {
 	// Test assigning one floating IP, and unassigning another.
 	mc.On("AssignFloatingIP", "ip", 1).Return(nil, nil, nil).Once()
 	mc.On("UnassignFloatingIP", "remove").Return(nil, nil, nil).Once()
-	err = clst.syncFloatingIPs(
+	err = client.syncFloatingIPs(
 		[]machine.Machine{
 			{ID: "1"},
 			{ID: "2", FloatingIP: "remove"},
@@ -389,7 +389,7 @@ func TestUpdateFloatingIPs(t *testing.T) {
 
 	// Test error when unassigning a floating IP.
 	mc.On("UnassignFloatingIP", "remove").Return(nil, nil, errMock).Once()
-	err = clst.syncFloatingIPs(
+	err = client.syncFloatingIPs(
 		[]machine.Machine{
 			{ID: "2", FloatingIP: "remove"},
 		},
@@ -404,7 +404,7 @@ func TestUpdateFloatingIPs(t *testing.T) {
 	// assigning the new.
 	mc.On("UnassignFloatingIP", "changeme").Return(nil, nil, nil).Once()
 	mc.On("AssignFloatingIP", "ip", 1).Return(nil, nil, nil).Once()
-	err = clst.syncFloatingIPs(
+	err = client.syncFloatingIPs(
 		[]machine.Machine{
 			{ID: "1", FloatingIP: "changeme"},
 		},
@@ -416,7 +416,7 @@ func TestUpdateFloatingIPs(t *testing.T) {
 	mc.AssertExpectations(t)
 
 	// Test machines that need no changes.
-	err = clst.syncFloatingIPs(
+	err = client.syncFloatingIPs(
 		[]machine.Machine{
 			{ID: "1", FloatingIP: "ip"},
 		},
@@ -427,7 +427,7 @@ func TestUpdateFloatingIPs(t *testing.T) {
 	assert.NoError(t, err)
 	mc.AssertExpectations(t)
 
-	err = clst.syncFloatingIPs(
+	err = client.syncFloatingIPs(
 		[]machine.Machine{},
 		[]machine.Machine{
 			{ID: "1", FloatingIP: "ip"},
@@ -436,7 +436,7 @@ func TestUpdateFloatingIPs(t *testing.T) {
 	)
 	assert.EqualError(t, err, "no matching IDs: 1, 2")
 
-	err = clst.syncFloatingIPs(
+	err = client.syncFloatingIPs(
 		[]machine.Machine{{ID: "NAN"}},
 		[]machine.Machine{
 			{ID: "NAN", FloatingIP: "ip"},
@@ -448,34 +448,34 @@ func TestUpdateFloatingIPs(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	mc := new(mocks.Client)
-	clust := &Cluster{
+	client := &Provider{
 		namespace: testNamespace,
-		client:    mc,
+		Client:    mc,
 	}
 
 	// Log a bad namespace.
 	newDigitalOcean("___ILLEGAL---", DefaultRegion)
 
 	// newDigitalOcean throws an error.
-	newDigitalOcean = func(namespace, region string) (*Cluster, error) {
+	newDigitalOcean = func(namespace, region string) (*Provider, error) {
 		return nil, errMock
 	}
-	outClust, err := New(testNamespace, DefaultRegion)
-	assert.Nil(t, outClust)
+	outClient, err := New(testNamespace, DefaultRegion)
+	assert.Nil(t, outClient)
 	assert.EqualError(t, err, "error")
 
 	// Normal operation.
-	newDigitalOcean = func(namespace, region string) (*Cluster, error) {
-		return clust, nil
+	newDigitalOcean = func(namespace, region string) (*Provider, error) {
+		return client, nil
 	}
 	mc.On("ListDroplets", mock.Anything).Return(nil, nil, nil).Once()
-	outClust, err = New(testNamespace, DefaultRegion)
+	outClient, err = New(testNamespace, DefaultRegion)
 	assert.Nil(t, err)
-	assert.Equal(t, clust, outClust)
+	assert.Equal(t, client, outClient)
 
 	// ListDroplets throws an error.
 	mc.On("ListDroplets", mock.Anything).Return(nil, nil, errMock)
-	outClust, err = New(testNamespace, DefaultRegion)
-	assert.Equal(t, clust, outClust)
+	outClient, err = New(testNamespace, DefaultRegion)
+	assert.Equal(t, client, outClient)
 	assert.EqualError(t, err, errMsg)
 }
