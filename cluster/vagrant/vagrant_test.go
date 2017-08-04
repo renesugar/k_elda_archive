@@ -9,11 +9,11 @@ import (
 )
 
 func TestSetACLs(t *testing.T) {
-	clst := Cluster{}
-	assert.Nil(t, clst.SetACLs(nil))
+	prvdr := Provider{}
+	assert.Nil(t, prvdr.SetACLs(nil))
 }
 
 func TestPreemptibleError(t *testing.T) {
-	err := Cluster{}.Boot([]machine.Machine{{Preemptible: true}})
+	err := Provider{}.Boot([]machine.Machine{{Preemptible: true}})
 	assert.EqualError(t, err, "vagrant does not support preemptible instances")
 }

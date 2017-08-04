@@ -12,22 +12,22 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-// The Cluster object represents a connection to Amazon EC2.
-type Cluster struct {
+// The Provider object represents a connection to Vagrant.
+type Provider struct {
 	namespace string
 }
 
 var c = counter.New("Vagrant")
 
 // New creates a new vagrant cluster.
-func New(namespace string) (*Cluster, error) {
-	clst := Cluster{namespace}
+func New(namespace string) (*Provider, error) {
+	prvdr := Provider{namespace}
 	err := addBox(box, "virtualbox")
-	return &clst, err
+	return &prvdr, err
 }
 
-// Boot creates instances in the `clst` configured according to the `bootSet`.
-func (clst Cluster) Boot(bootSet []machine.Machine) error {
+// Boot creates instances in the `prvdr` configured according to the `bootSet`.
+func (prvdr Provider) Boot(bootSet []machine.Machine) error {
 	for _, m := range bootSet {
 		if m.Preemptible {
 			return errors.New(
@@ -79,8 +79,8 @@ func bootMachine(m machine.Machine) error {
 	return err
 }
 
-// List queries `clst` for the list of booted machines.
-func (clst Cluster) List() ([]machine.Machine, error) {
+// List queries `prvdr` for the list of booted machines.
+func (prvdr Provider) List() ([]machine.Machine, error) {
 	machines := []machine.Machine{}
 	instanceIDs, err := list()
 
@@ -108,8 +108,8 @@ func (clst Cluster) List() ([]machine.Machine, error) {
 	return machines, nil
 }
 
-// Stop shuts down `machines` in `clst.
-func (clst Cluster) Stop(machines []machine.Machine) error {
+// Stop shuts down `machines` in `prvdr.
+func (prvdr Provider) Stop(machines []machine.Machine) error {
 	if machines == nil {
 		return nil
 	}
@@ -123,11 +123,11 @@ func (clst Cluster) Stop(machines []machine.Machine) error {
 }
 
 // SetACLs is a noop for vagrant.
-func (clst Cluster) SetACLs(acls []acl.ACL) error {
+func (prvdr Provider) SetACLs(acls []acl.ACL) error {
 	return nil
 }
 
 // UpdateFloatingIPs is not supported.
-func (clst *Cluster) UpdateFloatingIPs([]machine.Machine) error {
+func (prvdr *Provider) UpdateFloatingIPs([]machine.Machine) error {
 	return errors.New("vagrant provider does not support floating IPs")
 }
