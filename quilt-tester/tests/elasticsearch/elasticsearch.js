@@ -4,4 +4,4 @@ let infrastructure = require('../../config/infrastructure.js');
 
 let deployment = createDeployment({});
 deployment.deploy(infrastructure);
-deployment.deploy(new Elasticsearch(infrastructure.nWorker).public());
+deployment.deploy(new Elasticsearch(infrastructure.nWorker).allowFromPublic());
