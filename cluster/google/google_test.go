@@ -15,16 +15,16 @@ import (
 type GoogleTestSuite struct {
 	suite.Suite
 
-	gce  *mocks.Client
-	clst *Cluster
+	gce *mocks.Client
+	*Provider
 }
 
 func (s *GoogleTestSuite) SetupTest() {
 	s.gce = new(mocks.Client)
-	s.clst = &Cluster{
-		gce:  s.gce,
-		ns:   "namespace",
-		zone: "zone-1",
+	s.Provider = &Provider{
+		Client: s.gce,
+		ns:     "namespace",
+		zone:   "zone-1",
 	}
 }
 
@@ -49,7 +49,7 @@ func (s *GoogleTestSuite) TestList() {
 		},
 	}, nil)
 
-	machines, err := s.clst.List()
+	machines, err := s.List()
 	s.NoError(err)
 	s.Len(machines, 1)
 	s.Equal(machines[0], machine.Machine{
@@ -61,18 +61,18 @@ func (s *GoogleTestSuite) TestList() {
 }
 
 func (s *GoogleTestSuite) TestListFirewalls() {
-	s.clst.networkName = "network"
-	s.clst.intFW = "intFW"
+	s.networkName = "network"
+	s.intFW = "intFW"
 
 	s.gce.On("ListFirewalls").Return(&compute.FirewallList{
 		Items: []*compute.Firewall{
 			{
-				Network:    networkURL(s.clst.networkName),
+				Network:    networkURL(s.networkName),
 				Name:       "badZone",
 				TargetTags: []string{"zone-2"},
 			},
 			{
-				Network:    networkURL(s.clst.networkName),
+				Network:    networkURL(s.networkName),
 				Name:       "intFW",
 				TargetTags: []string{"zone-1"},
 			},
@@ -82,20 +82,20 @@ func (s *GoogleTestSuite) TestListFirewalls() {
 				TargetTags: []string{"zone-1"},
 			},
 			{
-				Network:    networkURL(s.clst.networkName),
+				Network:    networkURL(s.networkName),
 				Name:       "shouldReturn",
 				TargetTags: []string{"zone-1"},
 			},
 		},
 	}, nil).Once()
 
-	fws, err := s.clst.listFirewalls()
+	fws, err := s.listFirewalls()
 	s.NoError(err)
 	s.Len(fws, 1)
 	s.Equal(fws[0].Name, "shouldReturn")
 
 	s.gce.On("ListFirewalls").Return(nil, errors.New("err")).Once()
-	_, err = s.clst.listFirewalls()
+	_, err = s.listFirewalls()
 	s.EqualError(err, "list firewalls: err")
 }
 
@@ -113,13 +113,13 @@ func (s *GoogleTestSuite) TestListBadNetworkInterface() {
 		},
 	}, nil)
 
-	_, err := s.clst.List()
+	_, err := s.List()
 	s.EqualError(err, "Google instances are expected to have exactly 1 "+
 		"interface; for instance name-1, found 0")
 }
 
 func (s *GoogleTestSuite) TestParseACLs() {
-	parsed, err := s.clst.parseACLs([]compute.Firewall{
+	parsed, err := s.parseACLs([]compute.Firewall{
 		{
 			Name: "firewall",
 			Allowed: []*compute.FirewallAllowed{
@@ -144,7 +144,7 @@ func (s *GoogleTestSuite) TestParseACLs() {
 		{MinPort: 1, MaxPort: 65535, CidrIP: "foo"},
 	}, parsed)
 
-	_, err = s.clst.parseACLs([]compute.Firewall{
+	_, err = s.parseACLs([]compute.Firewall{
 		{
 			Name: "firewall",
 			Allowed: []*compute.FirewallAllowed{
@@ -156,7 +156,7 @@ func (s *GoogleTestSuite) TestParseACLs() {
 	s.EqualError(err, `parse ports of firewall: parse ints: strconv.Atoi: `+
 		`parsing "NaN": invalid syntax`)
 
-	_, err = s.clst.parseACLs([]compute.Firewall{
+	_, err = s.parseACLs([]compute.Firewall{
 		{
 			Name: "firewall",
 			Allowed: []*compute.FirewallAllowed{

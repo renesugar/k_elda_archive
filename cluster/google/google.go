@@ -42,9 +42,9 @@ const (
 	global
 )
 
-// The Cluster objects represents a connection to GCE.
-type Cluster struct {
-	gce client.Client
+// The Provider objects represents a connection to GCE.
+type Provider struct {
+	client.Client
 
 	imgURL      string // gce url to the VM image
 	networkName string // gce identifier for the network
@@ -57,31 +57,31 @@ type Cluster struct {
 
 // New creates a GCE cluster.
 //
-// Clusters are differentiated (namespace) by setting the description and
+// Providers are differentiated (namespace) by setting the description and
 // filtering off of that.
-func New(namespace, zone string) (*Cluster, error) {
+func New(namespace, zone string) (*Provider, error) {
 	gce, err := client.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize GCE client: %s", err.Error())
 	}
 
-	clst := Cluster{
-		gce:       gce,
+	prvdr := Provider{
+		Client:    gce,
 		ns:        namespace,
 		ipv4Range: "192.168.0.0/16",
 		zone:      zone,
 	}
-	clst.intFW = fmt.Sprintf("%s-internal", clst.ns)
-	clst.imgURL = fmt.Sprintf("%s/%s", computeBaseURL,
+	prvdr.intFW = fmt.Sprintf("%s-internal", prvdr.ns)
+	prvdr.imgURL = fmt.Sprintf("%s/%s", computeBaseURL,
 		"ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170202")
-	clst.networkName = clst.ns
+	prvdr.networkName = prvdr.ns
 
-	if err := clst.createNetwork(); err != nil {
+	if err := prvdr.createNetwork(); err != nil {
 		log.WithError(err).Debug("failed to start up gce network")
 		return nil, err
 	}
 
-	return &clst, nil
+	return &prvdr, nil
 }
 
 // getNetworkConfig extracts the NetworkInterface and AccessConfig from a
@@ -108,10 +108,10 @@ func getNetworkConfig(inst *compute.Instance) (
 }
 
 // List the current machines in the cluster.
-func (clst *Cluster) List() ([]machine.Machine, error) {
+func (prvdr *Provider) List() ([]machine.Machine, error) {
 	var machines []machine.Machine
-	instances, err := clst.gce.ListInstances(clst.zone,
-		fmt.Sprintf("description eq %s", clst.ns))
+	instances, err := prvdr.ListInstances(prvdr.zone,
+		fmt.Sprintf("description eq %s", prvdr.ns))
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (clst *Cluster) List() ([]machine.Machine, error) {
 }
 
 // Boot blocks while creating instances.
-func (clst *Cluster) Boot(bootSet []machine.Machine) error {
+func (prvdr *Provider) Boot(bootSet []machine.Machine) error {
 	// XXX: should probably have a better clean up routine if an error is encountered
 	var names []string
 	for _, m := range bootSet {
@@ -150,7 +150,7 @@ func (clst *Cluster) Boot(bootSet []machine.Machine) error {
 		}
 
 		name := "quilt-" + uuid.NewV4().String()
-		_, err := clst.instanceNew(name, m.Size,
+		_, err := prvdr.instanceNew(name, m.Size,
 			cloudcfg.Ubuntu(m.CloudCfgOpts))
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -161,7 +161,7 @@ func (clst *Cluster) Boot(bootSet []machine.Machine) error {
 		}
 		names = append(names, name)
 	}
-	if err := clst.wait(names, true); err != nil {
+	if err := prvdr.wait(names, true); err != nil {
 		return err
 	}
 	return nil
@@ -171,11 +171,11 @@ func (clst *Cluster) Boot(bootSet []machine.Machine) error {
 //
 // If an error occurs while deleting, it will finish the ones that have
 // successfully started before returning.
-func (clst *Cluster) Stop(machines []machine.Machine) error {
+func (prvdr *Provider) Stop(machines []machine.Machine) error {
 	// XXX: should probably have a better clean up routine if an error is encountered
 	var names []string
 	for _, m := range machines {
-		_, err := clst.gce.DeleteInstance(clst.zone, m.ID)
+		_, err := prvdr.DeleteInstance(prvdr.zone, m.ID)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"error": err,
@@ -185,7 +185,7 @@ func (clst *Cluster) Stop(machines []machine.Machine) error {
 		}
 		names = append(names, m.ID)
 	}
-	if err := clst.wait(names, false); err != nil {
+	if err := prvdr.wait(names, false); err != nil {
 		return err
 	}
 	return nil
@@ -193,9 +193,9 @@ func (clst *Cluster) Stop(machines []machine.Machine) error {
 
 // Get() and operationWait() don't always present the same results, so
 // Boot() and Stop() must have a special wait to stay in sync with Get().
-func (clst *Cluster) wait(ids []string, shouldLive bool) error {
+func (prvdr *Provider) wait(ids []string, shouldLive bool) error {
 	return wait.Wait(func() bool {
-		machines, err := clst.List()
+		machines, err := prvdr.List()
 		if err != nil {
 			return false
 		}
@@ -218,7 +218,7 @@ func (clst *Cluster) wait(ids []string, shouldLive bool) error {
 //
 // Waits on operations, the type of which is indicated by 'domain'. All
 // operations must be of the same 'domain'
-func (clst *Cluster) operationWait(ops []*compute.Operation, domain int) (err error) {
+func (prvdr *Provider) operationWait(ops []*compute.Operation, domain int) (err error) {
 	if domain != local && domain != global {
 		return fmt.Errorf("domain not recognized: %d", domain)
 	}
@@ -228,10 +228,10 @@ func (clst *Cluster) operationWait(ops []*compute.Operation, domain int) (err er
 			var res *compute.Operation
 			switch domain {
 			case local:
-				res, err = clst.gce.GetZoneOperation(
+				res, err = prvdr.GetZoneOperation(
 					op.Zone, op.Name)
 			case global:
-				res, err = clst.gce.GetGlobalOperation(op.Name)
+				res, err = prvdr.GetGlobalOperation(op.Name)
 			}
 
 			if err != nil || res.Status != "DONE" {
@@ -245,20 +245,20 @@ func (clst *Cluster) operationWait(ops []*compute.Operation, domain int) (err er
 // Create new GCE instance.
 //
 // Does not check if the operation succeeds.
-func (clst *Cluster) instanceNew(name string, size string,
+func (prvdr *Provider) instanceNew(name string, size string,
 	cloudConfig string) (*compute.Operation, error) {
 	instance := &compute.Instance{
 		Name:        name,
-		Description: clst.ns,
+		Description: prvdr.ns,
 		MachineType: fmt.Sprintf("zones/%s/machineTypes/%s",
-			clst.zone,
+			prvdr.zone,
 			size),
 		Disks: []*compute.AttachedDisk{
 			{
 				Boot:       true,
 				AutoDelete: true,
 				InitializeParams: &compute.AttachedDiskInitializeParams{
-					SourceImage: clst.imgURL,
+					SourceImage: prvdr.imgURL,
 				},
 			},
 		},
@@ -270,7 +270,7 @@ func (clst *Cluster) instanceNew(name string, size string,
 						Name: ephemeralIPName,
 					},
 				},
-				Network: networkURL(clst.networkName),
+				Network: networkURL(prvdr.networkName),
 			},
 		},
 		Metadata: &compute.Metadata{
@@ -284,18 +284,18 @@ func (clst *Cluster) instanceNew(name string, size string,
 		Tags: &compute.Tags{
 			// Tag the machine with its zone so that we can create zone-scoped
 			// firewall rules.
-			Items: []string{clst.zone},
+			Items: []string{prvdr.zone},
 		},
 	}
 
-	return clst.gce.InsertInstance(clst.zone, instance)
+	return prvdr.InsertInstance(prvdr.zone, instance)
 }
 
 // listFirewalls returns the firewalls managed by the cluster. Specifically,
 // it returns all firewalls that are attached to the cluster's network, and
 // apply to the managed zone.
-func (clst Cluster) listFirewalls() ([]compute.Firewall, error) {
-	firewalls, err := clst.gce.ListFirewalls()
+func (prvdr Provider) listFirewalls() ([]compute.Firewall, error) {
+	firewalls, err := prvdr.ListFirewalls()
 	if err != nil {
 		return nil, fmt.Errorf("list firewalls: %s", err)
 	}
@@ -303,12 +303,12 @@ func (clst Cluster) listFirewalls() ([]compute.Firewall, error) {
 	var fws []compute.Firewall
 	for _, fw := range firewalls.Items {
 		_, nwName := path.Split(fw.Network)
-		if nwName != clst.networkName || fw.Name == clst.intFW {
+		if nwName != prvdr.networkName || fw.Name == prvdr.intFW {
 			continue
 		}
 
 		for _, tag := range fw.TargetTags {
-			if tag == clst.zone {
+			if tag == prvdr.zone {
 				fws = append(fws, *fw)
 				break
 			}
@@ -322,7 +322,7 @@ func (clst Cluster) listFirewalls() ([]compute.Firewall, error) {
 // `acl.ACL`s.
 // parseACLs only handles rules specified in the format that Quilt generates: it
 // does not handle all the possible rule strings supported by the Google API.
-func (clst *Cluster) parseACLs(fws []compute.Firewall) (acls []acl.ACL, err error) {
+func (prvdr *Provider) parseACLs(fws []compute.Firewall) (acls []acl.ACL, err error) {
 	for _, fw := range fws {
 		portACLs, err := parsePorts(fw.Allowed)
 		if err != nil {
@@ -375,14 +375,14 @@ func parseInts(intStrings []string) (parsed []int, err error) {
 	return parsed, nil
 }
 
-// SetACLs adds and removes acls in `clst` so that it conforms to `acls`.
-func (clst *Cluster) SetACLs(acls []acl.ACL) error {
-	fws, err := clst.listFirewalls()
+// SetACLs adds and removes acls in `prvdr` so that it conforms to `acls`.
+func (prvdr *Provider) SetACLs(acls []acl.ACL) error {
+	fws, err := prvdr.listFirewalls()
 	if err != nil {
 		return err
 	}
 
-	currACLs, err := clst.parseACLs(fws)
+	currACLs, err := prvdr.parseACLs(fws)
 	if err != nil {
 		return fmt.Errorf("parse ACLs: %s", err)
 	}
@@ -406,7 +406,7 @@ func (clst *Cluster) SetACLs(acls []acl.ACL) error {
 	}
 
 	for acl, cidrIPs := range groupACLsByPorts(toSet) {
-		fw, err := clst.getCreateFirewall(acl.MinPort, acl.MaxPort)
+		fw, err := prvdr.getCreateFirewall(acl.MinPort, acl.MaxPort)
 		if err != nil {
 			return err
 		}
@@ -420,7 +420,7 @@ func (clst *Cluster) SetACLs(acls []acl.ACL) error {
 			log.WithField("ports", fmt.Sprintf(
 				"%d-%d", acl.MinPort, acl.MaxPort)).
 				Debug("Google: Deleting firewall")
-			op, err = clst.gce.DeleteFirewall(fw.Name)
+			op, err = prvdr.DeleteFirewall(fw.Name)
 			if err != nil {
 				return err
 			}
@@ -429,12 +429,12 @@ func (clst *Cluster) SetACLs(acls []acl.ACL) error {
 				"%d-%d", acl.MinPort, acl.MaxPort)).
 				WithField("CidrIPs", cidrIPs).
 				Debug("Google: Setting ACLs")
-			op, err = clst.firewallPatch(fw.Name, cidrIPs)
+			op, err = prvdr.firewallPatch(fw.Name, cidrIPs)
 			if err != nil {
 				return err
 			}
 		}
-		if err := clst.operationWait(
+		if err := prvdr.operationWait(
 			[]*compute.Operation{op}, global); err != nil {
 			return err
 		}
@@ -444,9 +444,9 @@ func (clst *Cluster) SetACLs(acls []acl.ACL) error {
 }
 
 // UpdateFloatingIPs updates IPs of machines by recreating their network interfaces.
-func (clst *Cluster) UpdateFloatingIPs(machines []machine.Machine) error {
+func (prvdr *Provider) UpdateFloatingIPs(machines []machine.Machine) error {
 	for _, m := range machines {
-		instance, err := clst.gce.GetInstance(clst.zone, m.ID)
+		instance, err := prvdr.GetInstance(prvdr.zone, m.ID)
 		if err != nil {
 			return err
 		}
@@ -458,14 +458,14 @@ func (clst *Cluster) UpdateFloatingIPs(machines []machine.Machine) error {
 		if err != nil {
 			return err
 		}
-		_, err = clst.gce.DeleteAccessConfig(clst.zone, m.ID,
+		_, err = prvdr.DeleteAccessConfig(prvdr.zone, m.ID,
 			accessConfig.Name, networkInterface.Name)
 		if err != nil {
 			return err
 		}
 
 		// Add new network interface.
-		_, err = clst.gce.AddAccessConfig(clst.zone, m.ID,
+		_, err = prvdr.AddAccessConfig(prvdr.zone, m.ID,
 			networkInterface.Name, &compute.AccessConfig{
 				Type: "ONE_TO_ONE_NAT",
 				Name: floatingIPName,
@@ -481,8 +481,8 @@ func (clst *Cluster) UpdateFloatingIPs(machines []machine.Machine) error {
 	return nil
 }
 
-func (clst *Cluster) getFirewall(name string) (*compute.Firewall, error) {
-	list, err := clst.gce.ListFirewalls()
+func (prvdr *Provider) getFirewall(name string) (*compute.Firewall, error) {
+	list, err := prvdr.ListFirewalls()
 	if err != nil {
 		return nil, err
 	}
@@ -495,31 +495,31 @@ func (clst *Cluster) getFirewall(name string) (*compute.Firewall, error) {
 	return nil, nil
 }
 
-func (clst *Cluster) getCreateFirewall(minPort int, maxPort int) (
+func (prvdr *Provider) getCreateFirewall(minPort int, maxPort int) (
 	*compute.Firewall, error) {
 
 	ports := fmt.Sprintf("%d-%d", minPort, maxPort)
-	fwName := fmt.Sprintf("%s-%s-%s", clst.ns, clst.zone, ports)
+	fwName := fmt.Sprintf("%s-%s-%s", prvdr.ns, prvdr.zone, ports)
 
-	if fw, _ := clst.getFirewall(fwName); fw != nil {
+	if fw, _ := prvdr.getFirewall(fwName); fw != nil {
 		return fw, nil
 	}
 
 	log.WithField("name", fwName).Debug("Creating firewall")
-	op, err := clst.insertFirewall(fwName, ports, []string{"127.0.0.1/32"}, true)
+	op, err := prvdr.insertFirewall(fwName, ports, []string{"127.0.0.1/32"}, true)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := clst.operationWait([]*compute.Operation{op}, global); err != nil {
+	if err := prvdr.operationWait([]*compute.Operation{op}, global); err != nil {
 		return nil, err
 	}
 
-	return clst.getFirewall(fwName)
+	return prvdr.getFirewall(fwName)
 }
 
-func (clst *Cluster) networkExists(name string) (bool, error) {
-	list, err := clst.gce.ListNetworks()
+func (prvdr *Provider) networkExists(name string) (bool, error) {
+	list, err := prvdr.ListNetworks()
 	if err != nil {
 		return false, err
 	}
@@ -532,17 +532,17 @@ func (clst *Cluster) networkExists(name string) (bool, error) {
 }
 
 // This creates a firewall but does nothing else
-func (clst *Cluster) insertFirewall(name, ports string, sourceRanges []string,
+func (prvdr *Provider) insertFirewall(name, ports string, sourceRanges []string,
 	restrictToZone bool) (*compute.Operation, error) {
 
 	var targetTags []string
 	if restrictToZone {
-		targetTags = []string{clst.zone}
+		targetTags = []string{prvdr.zone}
 	}
 
 	firewall := &compute.Firewall{
 		Name:    name,
-		Network: networkURL(clst.networkName),
+		Network: networkURL(prvdr.networkName),
 		Allowed: []*compute.FirewallAllowed{
 			{
 				IPProtocol: "tcp",
@@ -560,31 +560,31 @@ func (clst *Cluster) insertFirewall(name, ports string, sourceRanges []string,
 		TargetTags:   targetTags,
 	}
 
-	return clst.gce.InsertFirewall(firewall)
+	return prvdr.InsertFirewall(firewall)
 }
 
-func (clst *Cluster) firewallExists(name string) (bool, error) {
-	fw, err := clst.getFirewall(name)
+func (prvdr *Provider) firewallExists(name string) (bool, error) {
+	fw, err := prvdr.getFirewall(name)
 	return fw != nil, err
 }
 
 // Updates the firewall using PATCH semantics.
 //
 // The IP addresses must be in CIDR notation.
-func (clst *Cluster) firewallPatch(name string,
+func (prvdr *Provider) firewallPatch(name string,
 	ips []string) (*compute.Operation, error) {
 	firewall := &compute.Firewall{
 		Name:         name,
-		Network:      networkURL(clst.networkName),
+		Network:      networkURL(prvdr.networkName),
 		SourceRanges: ips,
 	}
 
-	return clst.gce.PatchFirewall(name, firewall)
+	return prvdr.PatchFirewall(name, firewall)
 }
 
 // Initializes the network for the cluster
-func (clst *Cluster) createNetwork() error {
-	exists, err := clst.networkExists(clst.networkName)
+func (prvdr *Provider) createNetwork() error {
+	exists, err := prvdr.networkExists(prvdr.networkName)
 	if err != nil {
 		return err
 	}
@@ -595,41 +595,41 @@ func (clst *Cluster) createNetwork() error {
 	}
 
 	log.Debug("Creating network")
-	op, err := clst.gce.InsertNetwork(&compute.Network{
-		Name:      clst.networkName,
-		IPv4Range: clst.ipv4Range,
+	op, err := prvdr.InsertNetwork(&compute.Network{
+		Name:      prvdr.networkName,
+		IPv4Range: prvdr.ipv4Range,
 	})
 	if err != nil {
 		return err
 	}
 
-	err = clst.operationWait([]*compute.Operation{op}, global)
+	err = prvdr.operationWait([]*compute.Operation{op}, global)
 	if err != nil {
 		return err
 	}
-	return clst.createInternalFirewall()
+	return prvdr.createInternalFirewall()
 }
 
 // Initializes the internal firewall for the cluster to allow machines to talk
 // on the private network.
-func (clst *Cluster) createInternalFirewall() error {
+func (prvdr *Provider) createInternalFirewall() error {
 	var ops []*compute.Operation
 
-	if exists, err := clst.firewallExists(clst.intFW); err != nil {
+	if exists, err := prvdr.firewallExists(prvdr.intFW); err != nil {
 		return err
 	} else if exists {
 		log.Debug("internal firewall already exists")
 	} else {
 		log.Debug("creating internal firewall")
-		op, err := clst.insertFirewall(
-			clst.intFW, "1-65535", []string{clst.ipv4Range}, false)
+		op, err := prvdr.insertFirewall(
+			prvdr.intFW, "1-65535", []string{prvdr.ipv4Range}, false)
 		if err != nil {
 			return err
 		}
 		ops = append(ops, op)
 	}
 
-	if err := clst.operationWait(ops, global); err != nil {
+	if err := prvdr.operationWait(ops, global); err != nil {
 		return err
 	}
 	return nil
