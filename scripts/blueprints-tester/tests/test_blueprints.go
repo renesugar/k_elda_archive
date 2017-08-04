@@ -83,7 +83,6 @@ func TestBlueprints() error {
 
 		{"https://github.com/quilt/nginx", ".", "./main.js"},
 		{"https://github.com/quilt/spark", ".", "./sparkPI.js"},
-		{"https://github.com/quilt/wordpress", ".", "./wordpress-example.js"},
 		{"https://github.com/quilt/etcd", ".", "./etcd-example.js"},
 		{"https://github.com/quilt/zookeeper", ".", "./zookeeper-example.js"},
 		{"https://github.com/quilt/redis", ".", "./redis-example.js"},
