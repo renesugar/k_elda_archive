@@ -1,4 +1,4 @@
-const {createDeployment, publicInternet, enough} = require('@quilt/quilt');
+const {createDeployment} = require('@quilt/quilt');
 let spark = require('@quilt/spark');
 let infrastructure = require('../../config/infrastructure.js');
 
@@ -13,6 +13,3 @@ const sprk = new spark.Spark(1, infrastructure.nWorker-1)
 let deployment = createDeployment({});
 deployment.deploy(infrastructure);
 deployment.deploy(sprk);
-
-deployment.assert(publicInternet.canReach(sprk.masters), true);
-deployment.assert(enough, true);
