@@ -126,22 +126,13 @@ func (m Machine) String() string {
 
 func (m Machine) less(arg row) bool {
 	l, r := m, arg.(Machine)
-	upl := l.PublicIP != "" && l.PrivateIP != ""
-	upr := r.PublicIP != "" && r.PrivateIP != ""
-	downl := l.PublicIP == "" && l.PrivateIP == ""
-	downr := r.PublicIP == "" && r.PrivateIP == ""
-
 	switch {
 	case l.Role != r.Role:
 		return l.Role == Master || r.Role == ""
-	case upl != upr:
-		return upl
-	case downl != downr:
-		return !downl
-	case l.ID != r.ID:
-		return l.ID < r.ID
+	case l.CloudID != r.CloudID:
+		return l.CloudID > r.CloudID // Prefer non-zero IDs.
 	default:
-		return l.CloudID < r.CloudID
+		return l.ID < r.ID
 	}
 }
 
