@@ -26,6 +26,7 @@ func TestContainerString(t *testing.T) {
 		StitchID:   "1",
 		DockerID:   "DockerID",
 		Image:      "test/test",
+		ImageID:    "imageid",
 		Status:     "testing",
 		Hostname:   "hostname",
 		Command:    []string{"run", "/bin/sh"},
@@ -34,10 +35,26 @@ func TestContainerString(t *testing.T) {
 		Created:    fakeTime,
 	}
 
-	exp = "Container-1{run test/test run /bin/sh, DockerID: DockerID, " +
-		"Minion: Test, StitchID: 1, IP: 1.2.3.4, Hostname: hostname, " +
-		"Labels: [label1], Env: map[test:tester], Status: testing, " +
-		"Created: " + fakeTimeString + "}"
+	exp = "Container-1{run test/test run /bin/sh, ImageID: imageid, " +
+		"DockerID: DockerID, Minion: Test, StitchID: 1, IP: 1.2.3.4, " +
+		"Hostname: hostname, Labels: [label1], Env: map[test:tester], " +
+		"Status: testing, Created: " + fakeTimeString + "}"
 
 	assert.Equal(t, exp, c.String())
+}
+
+func TestContainerHelpers(t *testing.T) {
+	conn := New()
+	conn.Txn(AllTables...).Run(func(view Database) error {
+		c := view.InsertContainer()
+		c.IP = "foo"
+		view.Commit(c)
+		return nil
+	})
+
+	dbcs := conn.SelectFromContainer(func(c Container) bool {
+		return true
+	})
+	assert.Len(t, dbcs, 1)
+	assert.Equal(t, "foo", dbcs[0].IP)
 }

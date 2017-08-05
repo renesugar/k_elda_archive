@@ -68,7 +68,7 @@ func (c Connection) less(r row) bool {
 		return c.To < o.To
 	case c.MaxPort != o.MaxPort:
 		return c.MaxPort < o.MaxPort
-	case c.MinPort != o.MaxPort:
+	case c.MinPort != o.MinPort:
 		return c.MinPort < o.MinPort
 	default:
 		return c.ID < o.ID

@@ -69,7 +69,7 @@ func (conn Conn) SelectFromEtcd(check func(Etcd) bool) []Etcd {
 }
 
 func (e Etcd) less(r row) bool {
-	return e.ID < r.(Minion).ID
+	return e.ID < r.(Etcd).ID
 }
 
 // GetEtcd gets the Etcd row from the database. There should only ever be a single

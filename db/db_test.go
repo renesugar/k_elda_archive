@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quilt/quilt/minion/pb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -428,4 +429,56 @@ func TestSliceHelpers(t *testing.T) {
 	sort.Sort(ConnectionSlice(conns))
 	assert.Equal(t, expConns, conns)
 	assert.Equal(t, conns[0], ConnectionSlice(conns).Get(0))
+}
+
+func TestRole(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, pb.MinionConfig_NONE, RoleToPB(None))
+	assert.Equal(t, pb.MinionConfig_WORKER, RoleToPB(Worker))
+	assert.Equal(t, pb.MinionConfig_MASTER, RoleToPB(Master))
+
+	assert.Equal(t, Role(None), PBToRole(pb.MinionConfig_NONE))
+	assert.Equal(t, Role(Worker), PBToRole(pb.MinionConfig_WORKER))
+	assert.Equal(t, Role(Master), PBToRole(pb.MinionConfig_MASTER))
+
+	r, err := ParseRole("")
+	assert.NoError(t, err)
+	assert.Equal(t, Role(None), r)
+
+	r, err = ParseRole("Worker")
+	assert.NoError(t, err)
+	assert.Equal(t, Role(Worker), r)
+
+	r, err = ParseRole("Master")
+	assert.NoError(t, err)
+	assert.Equal(t, Role(Master), r)
+
+	r, err = ParseRole("err")
+	assert.Error(t, err)
+	assert.Equal(t, Role(None), r)
+}
+
+func TestProvider(t *testing.T) {
+	t.Parallel()
+
+	p, err := ParseProvider("Amazon")
+	assert.NoError(t, err)
+	assert.Equal(t, p, Amazon)
+
+	_, err = ParseProvider("error")
+	assert.Error(t, err)
+
+	assert.Equal(t, Amazon, ProviderSlice([]Provider{Amazon}).Get(0))
+	assert.Equal(t, 1, ProviderSlice([]Provider{Amazon}).Len())
+}
+
+func TestRowSlice(t *testing.T) {
+	t.Parallel()
+
+	rows := rowSlice([]row{Machine{ID: 1}, Machine{ID: 2}})
+	assert.Equal(t, 2, rows.Len())
+	assert.Equal(t, true, rows.Less(0, 1))
+	rows.Swap(0, 1)
+	assert.Equal(t, false, rows.Less(0, 1))
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetBlueprintNamespace(t *testing.T) {
+func TestBlueprint(t *testing.T) {
 	conn := New()
 
 	ns, err := conn.GetBlueprintNamespace()
@@ -23,4 +23,12 @@ func TestGetBlueprintNamespace(t *testing.T) {
 	ns, err = conn.GetBlueprintNamespace()
 	assert.NoError(t, err)
 	assert.Exactly(t, ns, "test")
+
+	bps := conn.SelectFromBlueprint(nil)
+	assert.Len(t, bps, 1)
+
+	assert.Equal(t, BlueprintTable, bps[0].tt())
+	assert.True(t, bps[0].less(Blueprint{ID: bps[0].ID + 1}))
+
+	assert.Equal(t, "Blueprint-1{Namespace=test}", bps[0].String())
 }
