@@ -30,8 +30,10 @@ const expGraph = `strict digraph {
         cb129f8a27df770b1dac70955c227a57bc5c4af6;
         public;
     }
-    3c1a5738512a43c3122608ab32dbf9f84a14e5f9 -> cb129f8a27df770b1dac70955c227a57bc5c4af6
-    54be1283e837c6e40ac79709aca8cdb8ec5f31f5 -> 3c1a5738512a43c3122608ab32dbf9f84a14e5f9
+    "3c1a5738512a43c3122608ab32dbf9f84a14e5f9" ->
+        "cb129f8a27df770b1dac70955c227a57bc5c4af6";
+    "54be1283e837c6e40ac79709aca8cdb8ec5f31f5" ->
+        "3c1a5738512a43c3122608ab32dbf9f84a14e5f9";
 }`
 
 func isGraphEqual(a, b string) bool {

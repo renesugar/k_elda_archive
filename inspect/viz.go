@@ -35,7 +35,7 @@ func makeGraphviz(graph stitch.Graph) string {
 	for _, edge := range graph.GetConnections() {
 		lines = append(lines,
 			fmt.Sprintf(
-				"    %s -> %s\n",
+				"    %q -> %q;\n",
 				edge.From,
 				edge.To,
 			),
