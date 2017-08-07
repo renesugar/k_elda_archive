@@ -12,6 +12,7 @@ import (
 	"github.com/quilt/quilt/db"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 const cookieName string = "SERVERID"
@@ -129,6 +130,7 @@ func badDomainTest(t *testing.T, domain string, HAProxyIPs []string) {
 func checkResponses(t *testing.T, domain string, HAProxyIPs []string,
 	expected map[string]struct{}, cookie string, client *http.Client) {
 
+	actualResponses := map[string]struct{}{}
 	for i := 0; i < 15; i++ {
 		for _, ip := range HAProxyIPs {
 			resp, err := makeRequest(domain, ip, client, cookie)
@@ -148,11 +150,10 @@ func checkResponses(t *testing.T, domain string, HAProxyIPs []string,
 				continue
 			}
 
-			if _, ok := expected[body]; !ok {
-				t.Errorf("wrong HTTP response: %s", body)
-			}
+			actualResponses[body] = struct{}{}
 		}
 	}
+	assert.Equal(t, expected, actualResponses, "responses did not match expected")
 }
 
 func getHAproxyIPs(t *testing.T, machines []db.Machine,
