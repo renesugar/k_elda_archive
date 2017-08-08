@@ -433,7 +433,6 @@ func TestPlacementTxn(t *testing.T) {
 		},
 	)
 
-	// XXX: Port placement belongs in Stitch unit tests.
 	// Port placement
 	stc.Placements = nil
 	stc.Connections = []stitch.Connection{
