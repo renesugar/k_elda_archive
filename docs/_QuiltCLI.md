@@ -29,6 +29,7 @@ $ quilt COMMAND --help
 | `counters`   | Display internal counters tracked for debugging purposes. Most users will not need this command. |
 | `daemon`     | Start the quilt daemon, which listens for quilt API requests.                                    |
 | `debug-logs` | Fetch logs for a set of machines or containers.                                                  |
+| `init`       | Create an infrastructure that can be accessed in blueprints using baseInfrastructure().          |
 | `inspect`    | Visualize a blueprint.                                                                           |
 | `logs`       | Fetch the logs of a container or machine minion.                                                 |
 | `minion`     | Run the quilt minion.                                                                            |
@@ -38,4 +39,3 @@ $ quilt COMMAND --help
 | `stop`       | Stop a deployment.                                                                               |
 | `version`    | Show the Quilt version information.                                                              |
 | `setup-tls`  | Create the files necessary for TLS-encrypted communication with Quilt.                           |
-
