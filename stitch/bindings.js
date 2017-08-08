@@ -279,18 +279,6 @@ Service.prototype.deploy = function(deployment) {
     deployment.services.push(this);
 };
 
-Service.prototype.connect = function(range, to) {
-    console.warn('Warning: connect is deprecated; switch to using ' +
-        'allowFrom. If you previously used a.connect(5, b), you should ' +
-        'now use b.allowFrom(a, 5).');
-    if (!(to === publicInternet || to instanceof Service)) {
-        throw new Error(`Services can only connect to other services. ` +
-            `Check that you're connecting to a service, and not to a ` +
-            `Container or other object.`);
-    }
-    to.allowFrom(this, range);
-};
-
 Service.prototype.allowFrom = function(sourceService, portRange) {
     portRange = boxRange(portRange);
     if (sourceService === publicInternet) {
@@ -309,22 +297,9 @@ Service.prototype.allowFrom = function(sourceService, portRange) {
 // allow inbound connections. However, it is actually just syntactic sugar
 // to hide the allowOutboundPublic and allowFromPublic functions.
 let publicInternet = {
-    connect: function(range, to) {
-        console.warn('Warning: connect is deprecated; switch to using ' +
-            'allowFrom. Instead of publicInternet.connect(port, service), ' +
-            'use service.allowFrom(publicInternet, port).');
-        to.allowFromPublic(range);
-    },
     allowFrom: function(sourceService, portRange) {
         sourceService.allowOutboundPublic(portRange);
     },
-};
-
-// Allow outbound traffic from the service to public internet.
-Service.prototype.connectToPublic = function(range) {
-    console.warn('Warning: connectToPublic is deprecated; switch to using ' +
-        'allowOutboundPublic.');
-    this.allowOutboundPublic(range);
 };
 
 Service.prototype.allowOutboundPublic = function(range) {
@@ -334,13 +309,6 @@ Service.prototype.allowOutboundPublic = function(range) {
             `and not to port ranges`);
     }
     this.outgoingPublic.push(range);
-};
-
-// Allow inbound traffic from public internet to the service.
-Service.prototype.connectFromPublic = function(range) {
-    console.warn('Warning: connectFromPublic is deprecated; switch to ' +
-        'allowFromPublic');
-    this.allowFromPublic(range);
 };
 
 Service.prototype.allowFromPublic = function(range) {

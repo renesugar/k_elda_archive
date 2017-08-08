@@ -13,6 +13,7 @@ non-deterministic and rely on pulling data from the network.
 - Remove support for placement based on service groups.
 - Simplify machine-service placement. For example, deploying a service to a
 floating IP is now expressed as `myService.placeOn({floatingIp: '8.8.8.8'})`.
+- Remove `Service.connect`. Only `Service.allowFrom` can be used from now on.
 
 Release 0.2.0
 -------------
