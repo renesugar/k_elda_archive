@@ -45,7 +45,7 @@ func New(host string, keyPath string) (Client, error) {
 	return NativeClient{client}, err
 }
 
-var defaultKeys = []string{"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519"}
+var defaultKeys = []string{"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "quilt"}
 
 // Gets the signers for the default private key locations if possible
 func defaultSigners() []ssh.Signer {
