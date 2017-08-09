@@ -32,10 +32,10 @@ gocheck:
 	govendor test $$(govendor list -no-status +local | \
 		grep -vE github.com/quilt/quilt/"quilt-tester|scripts")
 
-javascript-check:
+jscheck:
 	npm test
 
-check: gocheck javascript-check
+check: gocheck jscheck
 
 clean:
 	govendor clean -x +local
