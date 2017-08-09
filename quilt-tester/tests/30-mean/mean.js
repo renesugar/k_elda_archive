@@ -1,10 +1,10 @@
-const {createDeployment, publicInternet} = require('@quilt/quilt');
+const quilt = require('@quilt/quilt');
 let haproxy = require('@quilt/haproxy');
 let Mongo = require('@quilt/mongo');
 let Node = require('@quilt/nodejs');
 let infrastructure = require('../../config/infrastructure.js');
 
-let deployment = createDeployment();
+let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
 let mongo = new Mongo(3);
@@ -22,6 +22,6 @@ let app = new Node({
 let proxy = haproxy.singleServiceLoadBalancer(3, app._app);
 
 mongo.allowFrom(app, mongo.port);
-proxy.allowFrom(publicInternet, haproxy.exposedPort);
+proxy.allowFrom(quilt.publicInternet, haproxy.exposedPort);
 
 deployment.deploy([app, mongo, proxy]);

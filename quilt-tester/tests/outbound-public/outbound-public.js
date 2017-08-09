@@ -1,21 +1,17 @@
-const {
-    Container,
-    Service,
-    createDeployment,
-    publicInternet} = require('@quilt/quilt');
+const quilt = require('@quilt/quilt');
 let infrastructure = require('../../config/infrastructure.js');
 
-let deployment = createDeployment();
+let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
-let connected = new Service('connected',
-    new Container('alpine', ['tail', '-f', '/dev/null'])
+let connected = new quilt.Service('connected',
+    new quilt.Container('alpine', ['tail', '-f', '/dev/null'])
         .replicate(infrastructure.nWorker*2)
 );
-publicInternet.allowFrom(connected, 80);
+quilt.publicInternet.allowFrom(connected, 80);
 
-let notConnected = new Service('not-connected',
-    new Container('alpine', ['tail', '-f', '/dev/null'])
+let notConnected = new quilt.Service('not-connected',
+    new quilt.Container('alpine', ['tail', '-f', '/dev/null'])
         .replicate(infrastructure.nWorker*2)
 );
 

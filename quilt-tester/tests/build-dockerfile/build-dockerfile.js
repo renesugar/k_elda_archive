@@ -1,13 +1,13 @@
-const {createDeployment, Service, Container, Image} = require('@quilt/quilt');
+const quilt = require('@quilt/quilt');
 let infrastructure = require('../../config/infrastructure.js');
 
-let deployment = createDeployment();
+let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
 for (let i = 0; i < infrastructure.nWorker; i++) {
-    deployment.deploy(new Service('foo',
-        new Container(
-            new Image('test-custom-image' + i,
+    deployment.deploy(new quilt.Service('foo',
+        new quilt.Container(
+            new quilt.Image('test-custom-image' + i,
                 'FROM alpine\n' +
                 'RUN echo ' + i + ' > /dockerfile-id\n' +
                 'RUN echo $(cat /dev/urandom | tr -dc \'a-zA-Z0-9\' | ' +

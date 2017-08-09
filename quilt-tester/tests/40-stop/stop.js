@@ -1,12 +1,9 @@
-const {
-    Container,
-    Service,
-    createDeployment} = require('@quilt/quilt');
+const quilt = require('@quilt/quilt');
 let infrastructure = require('../../config/infrastructure.js');
 
-let deployment = createDeployment({});
+let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
-let containers = new Service('containers',
-    new Container('google/pause').replicate(infrastructure.nWorker));
+let containers = new quilt.Service('containers',
+    new quilt.Container('google/pause').replicate(infrastructure.nWorker));
 deployment.deploy(containers);

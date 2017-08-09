@@ -1,4 +1,4 @@
-const {createDeployment} = require('@quilt/quilt');
+const quilt = require('@quilt/quilt');
 let spark = require('@quilt/spark');
 let infrastructure = require('../../config/infrastructure.js');
 
@@ -10,6 +10,6 @@ const sprk = new spark.Spark(1, infrastructure.nWorker-1)
   .exposeUIToPublic()
   .job('run-example SparkPi');
 
-let deployment = createDeployment({});
+let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 deployment.deploy(sprk);
