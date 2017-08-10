@@ -400,12 +400,10 @@ Service.prototype.getQuiltConnections = function() {
 let hostnameCount = {};
 function uniqueHostname(name) {
     if (!(name in hostnameCount)) {
-        hostnameCount[name] = 0;
-    }
-    let count = ++hostnameCount[name];
-    if (count == 1) {
+        hostnameCount[name] = 1;
         return name;
     }
+    hostnameCount[name]++;
     return name + hostnameCount[name];
 }
 
