@@ -34,7 +34,8 @@ var c = counter.New("Digital Ocean")
 
 var apiKeyPath = ".digitalocean/key"
 
-var image = "ubuntu-16-04-x64"
+// 16.04.1 x64 created at 2017-02-03.
+var imageID = 22601368
 
 // The Cluster object represents a connection to DigitalOcean.
 type Cluster struct {
@@ -170,7 +171,7 @@ func (clst Cluster) createAndAttach(m machine.Machine) error {
 		Name:              clst.namespace,
 		Region:            clst.region,
 		Size:              m.Size,
-		Image:             godo.DropletCreateImage{Slug: image},
+		Image:             godo.DropletCreateImage{ID: imageID},
 		PrivateNetworking: true,
 		UserData:          cloudConfig,
 	}
