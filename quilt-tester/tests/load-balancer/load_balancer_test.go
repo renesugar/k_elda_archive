@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	fetcherLabel      = "fetcher"
+	fetcherImage      = "alpine"
 	loadBalancedLabel = "loadBalanced"
 )
 
@@ -33,7 +33,7 @@ func TestLoadBalancer(t *testing.T) {
 	var loadBalancedContainers []db.Container
 	var fetcherID string
 	for _, c := range containers {
-		if contains(c.Labels, fetcherLabel) {
+		if c.Image == fetcherImage {
 			fetcherID = c.StitchID
 		}
 		if contains(c.Labels, loadBalancedLabel) {
