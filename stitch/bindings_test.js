@@ -433,7 +433,7 @@ describe('Bindings', function() {
                 new Service('web_tier', [new Container('host', 'nginx')]));
             checkLabels([{
                 name: 'web_tier',
-                ids: ['6199c16b509ee4229bff81e73906ae9e33543db4'],
+                hostnames: ['host'],
             }]);
         });
         it('multiple containers', function() {
@@ -443,9 +443,9 @@ describe('Bindings', function() {
             ]));
             checkLabels([{
                 name: 'web_tier',
-                ids: [
-                    '6199c16b509ee4229bff81e73906ae9e33543db4',
-                    'ccbfb4955a7202235cb82e142f2b648e6791997d',
+                hostnames: [
+                    'host',
+                    'host2',
                 ],
             }]);
         });
@@ -466,11 +466,11 @@ describe('Bindings', function() {
             checkLabels([
                 {
                     name: 'foo',
-                    ids: ['4a21221322b00f0eafb611542bc74aa19a6855ae'],
+                    hostnames: ['host3'],
                 },
                 {
                     name: 'foo2',
-                    ids: ['f3b69c6a34de4ef2858bb51e443941d768f03fb1'],
+                    hostnames: ['host11'],
                 },
             ]);
         });
@@ -685,11 +685,11 @@ describe('Bindings', function() {
                 .and.containSubset([
                     {
                         name: 'web_tier',
-                        ids: ['6199c16b509ee4229bff81e73906ae9e33543db4'],
+                        hostnames: ['host'],
                     },
                     {
                         name: 'web_tier2',
-                        ids: ['ccbfb4955a7202235cb82e142f2b648e6791997d'],
+                        hostnames: ['host2'],
                     },
                 ]);
         });

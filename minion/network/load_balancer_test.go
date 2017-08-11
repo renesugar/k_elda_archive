@@ -17,7 +17,7 @@ func TestUpdateLoadBalancerIPs(t *testing.T) {
 
 	// Test error handling.
 	client.On("ListLoadBalancers").Return(nil, assert.AnError).Once()
-	updateLoadBalancerIPs(client, nil)
+	updateLoadBalancerIPs(client, nil, nil)
 	client.AssertNotCalled(t, "CreateLoadBalancer",
 		mock.Anything, mock.Anything, mock.Anything)
 	client.AssertNotCalled(t, "DeleteLoadBalancer", mock.Anything, mock.Anything)
@@ -38,15 +38,19 @@ func TestUpdateLoadBalancerIPs(t *testing.T) {
 		map[string]string{"10.0.0.10": "10.0.0.11"}).Return(nil)
 	updateLoadBalancerIPs(client, []db.Label{
 		{
-			Label:        "red",
-			IP:           "10.0.0.2",
-			ContainerIPs: []string{"10.0.0.4", "10.0.0.3"},
+			Label:     "red",
+			IP:        "10.0.0.2",
+			Hostnames: []string{"red", "blue"},
 		},
 		{
-			Label:        "new",
-			IP:           "10.0.0.10",
-			ContainerIPs: []string{"10.0.0.11"},
+			Label:     "new",
+			IP:        "10.0.0.10",
+			Hostnames: []string{"yellow"},
 		},
+	}, map[string]string{
+		"red":    "10.0.0.4",
+		"blue":   "10.0.0.3",
+		"yellow": "10.0.0.11",
 	})
 	client.AssertExpectations(t)
 }

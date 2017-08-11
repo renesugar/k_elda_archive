@@ -21,7 +21,6 @@ type Container struct {
 	DockerID          string            `json:",omitempty"`
 	Status            string            `json:",omitempty"`
 	Command           []string          `json:",omitempty"`
-	Labels            []string          `json:",omitempty"`
 	Env               map[string]string `json:",omitempty"`
 	FilepathToContent map[string]string `json:",omitempty"`
 	Hostname          string            `json:",omitempty"`
@@ -96,10 +95,6 @@ func (c Container) String() string {
 
 	if c.Hostname != "" {
 		tags = append(tags, fmt.Sprintf("Hostname: %s", c.Hostname))
-	}
-
-	if len(c.Labels) > 0 {
-		tags = append(tags, fmt.Sprintf("Labels: %s", c.Labels))
 	}
 
 	if len(c.Env) > 0 {

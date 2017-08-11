@@ -10,7 +10,6 @@ import (
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/connection/credentials"
-	"github.com/quilt/quilt/db"
 )
 
 const (
@@ -30,16 +29,27 @@ func TestLoadBalancer(t *testing.T) {
 		t.Fatalf("couldn't get containers: %s", err)
 	}
 
-	var loadBalancedContainers []db.Container
+	loadBalancers, err := c.QueryLabels()
+	if err != nil {
+		t.Fatalf("couldn't get labels: %s", err)
+	}
+
 	var fetcherID string
 	for _, c := range containers {
 		if c.Image == fetcherImage {
 			fetcherID = c.StitchID
-		}
-		if contains(c.Labels, loadBalancedLabel) {
-			loadBalancedContainers = append(loadBalancedContainers, c)
+			break
 		}
 	}
+
+	var loadBalancedContainers []string
+	for _, label := range loadBalancers {
+		if label.Label == loadBalancedLabel {
+			loadBalancedContainers = label.Hostnames
+			break
+		}
+	}
+
 	log.WithField("expected unique responses", len(loadBalancedContainers)).
 		Info("Starting fetching..")
 

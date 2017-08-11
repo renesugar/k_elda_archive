@@ -4,9 +4,9 @@ package db
 type Label struct {
 	ID int
 
-	Label        string
-	IP           string
-	ContainerIPs []string
+	Label     string
+	IP        string
+	Hostnames []string
 }
 
 // LabelSlice is an alias for []Label to allow for joins

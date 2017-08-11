@@ -77,15 +77,13 @@ func TestQueryContainersCluster(t *testing.T) {
 		c.DockerID = "docker-id"
 		c.Image = "image"
 		c.Command = []string{"cmd", "arg"}
-		c.Labels = []string{"labelA", "labelB"}
 		view.Commit(c)
 
 		return nil
 	})
 
 	exp := `[{"DockerID":"docker-id","Command":["cmd","arg"],` +
-		`"Labels":["labelA","labelB"],"Created":"0001-01-01T00:00:00Z",` +
-		`"Image":"image"}]`
+		`"Created":"0001-01-01T00:00:00Z","Image":"image"}]`
 
 	checkQuery(t, server{conn, false, nil}, db.ContainerTable, exp)
 }

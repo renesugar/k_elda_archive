@@ -160,16 +160,13 @@ Deployment.prototype.toQuiltRepresentation = function() {
     this.services.forEach(function(service) {
         connections = connections.concat(service.getQuiltConnections());
 
-        // Collect the containers IDs.
-        let ids = [];
         service.containers.forEach(function(container) {
-            ids.push(container.id);
             placements = placements.concat(container.getPlacementsWithID());
         });
 
         services.push({
             name: service.name,
-            ids: ids,
+            hostnames: service.containers.map((c) => c.hostname),
         });
     });
 

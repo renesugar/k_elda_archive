@@ -55,8 +55,8 @@ type Container struct {
 
 // A Label represents a logical group of containers.
 type Label struct {
-	Name string   `json:",omitempty"`
-	IDs  []string `json:",omitempty"`
+	Name      string   `json:",omitempty"`
+	Hostnames []string `json:",omitempty"`
 }
 
 // A Connection allows the container with the `From` hostname to speak to the container

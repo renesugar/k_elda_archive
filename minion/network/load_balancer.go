@@ -45,12 +45,14 @@ unchanged.
 
 8. 10.2.0.1 receives the packet from the router.
 */
-func updateLoadBalancers(client ovsdb.Client, labels []db.Label) {
-	updateLoadBalancerIPs(client, labels)
+func updateLoadBalancers(client ovsdb.Client, labels []db.Label,
+	hostnameToIP map[string]string) {
+	updateLoadBalancerIPs(client, labels, hostnameToIP)
 	updateLoadBalancerARP(client, labels)
 }
 
-func updateLoadBalancerIPs(client ovsdb.Client, labels []db.Label) {
+func updateLoadBalancerIPs(client ovsdb.Client, labels []db.Label,
+	hostnameToIP map[string]string) {
 	curr, err := client.ListLoadBalancers()
 	if err != nil {
 		log.WithError(err).Error("Failed to get load balancers")
@@ -59,10 +61,14 @@ func updateLoadBalancerIPs(client ovsdb.Client, labels []db.Label) {
 
 	var target []ovsdb.LoadBalancer
 	for _, label := range labels {
-		// Ignore the ContainerIPs order. We must copy the ContainerIPs slice
-		// before sorting it to avoid mutating the value within the Database.
-		ips := make([]string, len(label.ContainerIPs))
-		copy(ips, label.ContainerIPs)
+		var ips []string
+		for _, hostname := range label.Hostnames {
+			ip := hostnameToIP[hostname]
+			if ip != "" {
+				ips = append(ips, ip)
+			}
+		}
+		// Ignore the ip order.
 		sort.Strings(ips)
 
 		target = append(target, ovsdb.LoadBalancer{

@@ -1,6 +1,7 @@
 package minion
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -23,16 +24,17 @@ func TestContainerTxn(t *testing.T) {
 	stc := stitch.Stitch{
 		Containers: []stitch.Container{
 			{
-				ID:      "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				Image:   stitch.Image{Name: "alpine"},
-				Command: []string{"tail"},
+				Hostname: "foo",
+				ID:       "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
+				Image:    stitch.Image{Name: "alpine"},
+				Command:  []string{"tail"},
 			},
 		},
 		Labels: []stitch.Label{
 			{
 				Name: "a",
-				IDs: []string{
-					"f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
+				Hostnames: []string{
+					"foo",
 				},
 			},
 		},
@@ -46,59 +48,30 @@ func TestContainerTxn(t *testing.T) {
 	testContainerTxn(t, conn, stitch.Stitch{
 		Containers: []stitch.Container{
 			{
-				ID:      "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				Image:   stitch.Image{Name: "alpine"},
-				Command: []string{"tail"},
+				Hostname: "foo",
+				ID:       "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
+				Image:    stitch.Image{Name: "alpine"},
+				Command:  []string{"tail"},
 			},
 			{
-				ID:      "6e24c8cbeb63dbffcc82730d01b439e2f5085f59",
-				Image:   stitch.Image{Name: "alpine"},
-				Command: []string{"tail"},
-			},
-		},
-		Labels: []stitch.Label{
-			{
-				Name: "b",
-				IDs: []string{
-					"f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				},
-			},
-			{
-				Name: "a",
-				IDs: []string{
-					"f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-					"6e24c8cbeb63dbffcc82730d01b439e2f5085f59",
-				},
-			},
-		},
-	})
-	assert.True(t, fired(trigg))
-
-	testContainerTxn(t, conn, stitch.Stitch{
-		Containers: []stitch.Container{
-			{
-				ID:      "0b8a2ed7d14d78a388375025223b05d072bbaec3",
-				Image:   stitch.Image{Name: "alpine"},
-				Command: []string{"cat"},
-			},
-			{
-				ID:      "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				Image:   stitch.Image{Name: "alpine"},
-				Command: []string{"tail"},
+				Hostname: "bar",
+				ID:       "6e24c8cbeb63dbffcc82730d01b439e2f5085f59",
+				Image:    stitch.Image{Name: "alpine"},
+				Command:  []string{"tail"},
 			},
 		},
 		Labels: []stitch.Label{
 			{
 				Name: "b",
-				IDs: []string{
-					"0b8a2ed7d14d78a388375025223b05d072bbaec3",
+				Hostnames: []string{
+					"foo",
 				},
 			},
 			{
 				Name: "a",
-				IDs: []string{
-					"0b8a2ed7d14d78a388375025223b05d072bbaec3",
-					"f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
+				Hostnames: []string{
+					"foo",
+					"bar",
 				},
 			},
 		},
@@ -108,53 +81,30 @@ func TestContainerTxn(t *testing.T) {
 	testContainerTxn(t, conn, stitch.Stitch{
 		Containers: []stitch.Container{
 			{
-				ID:      "7a6244b8d2bfa10ee2fcbe6836a0519e116aee31",
-				Image:   stitch.Image{Name: "ubuntu"},
-				Command: []string{"cat"},
+				Hostname: "foo",
+				ID:       "0b8a2ed7d14d78a388375025223b05d072bbaec3",
+				Image:    stitch.Image{Name: "alpine"},
+				Command:  []string{"cat"},
 			},
 			{
-				ID:      "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				Image:   stitch.Image{Name: "alpine"},
-				Command: []string{"tail"},
+				Hostname: "bar",
+				ID:       "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
+				Image:    stitch.Image{Name: "alpine"},
+				Command:  []string{"tail"},
 			},
 		},
 		Labels: []stitch.Label{
 			{
 				Name: "b",
-				IDs: []string{
-					"7a6244b8d2bfa10ee2fcbe6836a0519e116aee31",
+				Hostnames: []string{
+					"foo",
 				},
 			},
 			{
 				Name: "a",
-				IDs: []string{
-					"7a6244b8d2bfa10ee2fcbe6836a0519e116aee31",
-					"f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				},
-			},
-		},
-	})
-	assert.True(t, fired(trigg))
-
-	testContainerTxn(t, conn, stitch.Stitch{
-		Containers: []stitch.Container{
-			{
-				ID:      "0b8a2ed7d14d78a388375025223b05d072bbaec3",
-				Image:   stitch.Image{Name: "alpine"},
-				Command: []string{"cat"},
-			},
-			{
-				ID:      "d1c9f501efd7a348e54388358c5fe29690fb147d",
-				Image:   stitch.Image{Name: "alpine"},
-				Command: []string{"cat"},
-			},
-		},
-		Labels: []stitch.Label{
-			{
-				Name: "a",
-				IDs: []string{
-					"0b8a2ed7d14d78a388375025223b05d072bbaec3",
-					"d1c9f501efd7a348e54388358c5fe29690fb147d",
+				Hostnames: []string{
+					"foo",
+					"bar",
 				},
 			},
 		},
@@ -164,15 +114,76 @@ func TestContainerTxn(t *testing.T) {
 	testContainerTxn(t, conn, stitch.Stitch{
 		Containers: []stitch.Container{
 			{
-				ID:    "018e4ee517d85640d9bf0adb4579d2ac9bd358af",
-				Image: stitch.Image{Name: "alpine"},
+				Hostname: "foo",
+				ID:       "7a6244b8d2bfa10ee2fcbe6836a0519e116aee31",
+				Image:    stitch.Image{Name: "ubuntu"},
+				Command:  []string{"cat"},
+			},
+			{
+				Hostname: "bar",
+				ID:       "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
+				Image:    stitch.Image{Name: "alpine"},
+				Command:  []string{"tail"},
+			},
+		},
+		Labels: []stitch.Label{
+			{
+				Name: "b",
+				Hostnames: []string{
+					"foo",
+				},
+			},
+			{
+				Name: "a",
+				Hostnames: []string{
+					"foo",
+					"bar",
+				},
+			},
+		},
+	})
+	assert.True(t, fired(trigg))
+
+	testContainerTxn(t, conn, stitch.Stitch{
+		Containers: []stitch.Container{
+			{
+				Hostname: "foo",
+				ID:       "0b8a2ed7d14d78a388375025223b05d072bbaec3",
+				Image:    stitch.Image{Name: "alpine"},
+				Command:  []string{"cat"},
+			},
+			{
+				Hostname: "bar",
+				ID:       "d1c9f501efd7a348e54388358c5fe29690fb147d",
+				Image:    stitch.Image{Name: "alpine"},
+				Command:  []string{"cat"},
 			},
 		},
 		Labels: []stitch.Label{
 			{
 				Name: "a",
-				IDs: []string{
-					"018e4ee517d85640d9bf0adb4579d2ac9bd358af",
+				Hostnames: []string{
+					"foo",
+					"bar",
+				},
+			},
+		},
+	})
+	assert.True(t, fired(trigg))
+
+	testContainerTxn(t, conn, stitch.Stitch{
+		Containers: []stitch.Container{
+			{
+				Hostname: "foo",
+				ID:       "018e4ee517d85640d9bf0adb4579d2ac9bd358af",
+				Image:    stitch.Image{Name: "alpine"},
+			},
+		},
+		Labels: []stitch.Label{
+			{
+				Name: "a",
+				Hostnames: []string{
+					"foo",
 				},
 			},
 		},
@@ -182,32 +193,34 @@ func TestContainerTxn(t *testing.T) {
 	stc = stitch.Stitch{
 		Containers: []stitch.Container{
 			{
-				ID:    "018e4ee517d85640d9bf0adb4579d2ac9bd358af",
-				Image: stitch.Image{Name: "alpine"},
+				Hostname: "foo",
+				ID:       "018e4ee517d85640d9bf0adb4579d2ac9bd358af",
+				Image:    stitch.Image{Name: "alpine"},
 			},
 			{
-				ID:    "ac4693f0b7fc17aa0e885aa03dc8f7cd6017f496",
-				Image: stitch.Image{Name: "alpine"},
+				Hostname: "bar",
+				ID:       "ac4693f0b7fc17aa0e885aa03dc8f7cd6017f496",
+				Image:    stitch.Image{Name: "alpine"},
 			},
 		},
 		Labels: []stitch.Label{
 			{
 				Name: "b",
-				IDs: []string{
-					"018e4ee517d85640d9bf0adb4579d2ac9bd358af",
+				Hostnames: []string{
+					"foo",
 				},
 			},
 			{
 				Name: "c",
-				IDs: []string{
-					"ac4693f0b7fc17aa0e885aa03dc8f7cd6017f496",
+				Hostnames: []string{
+					"bar",
 				},
 			},
 			{
 				Name: "a",
-				IDs: []string{
-					"018e4ee517d85640d9bf0adb4579d2ac9bd358af",
-					"ac4693f0b7fc17aa0e885aa03dc8f7cd6017f496",
+				Hostnames: []string{
+					"foo",
+					"bar",
 				},
 			},
 		},
@@ -524,4 +537,89 @@ func TestImageTxn(t *testing.T) {
 			Dockerfile: "2",
 		},
 	)
+}
+
+func checkLabel(t *testing.T, conn db.Conn, stc stitch.Stitch, exp ...db.Label) {
+	var labels []db.Label
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		updatePolicy(view, stc.String())
+		labels = view.SelectFromLabel(nil)
+		return nil
+	})
+
+	key := func(intf interface{}) interface{} {
+		label := intf.(db.Label)
+		return struct {
+			Label, IP, Hostnames string
+		}{
+			label.Label, label.IP, fmt.Sprintf("%+v", label.Hostnames),
+		}
+	}
+	_, lonelyLeft, lonelyRight := join.HashJoin(
+		db.LabelSlice(labels), db.LabelSlice(exp), key, key)
+	assert.Empty(t, lonelyLeft, "unexpected labels")
+	assert.Empty(t, lonelyRight, "missing labels")
+}
+
+func TestLabelTxn(t *testing.T) {
+	t.Parallel()
+	conn := db.New()
+
+	labelA := "labelA"
+	labelAIP := "8.8.8.8"
+	hostnamesA := []string{"a", "aa"}
+
+	// Insert a label into an empty db.
+	checkLabel(t, conn, stitch.Stitch{
+		Labels: []stitch.Label{
+			{
+				Name:      labelA,
+				Hostnames: hostnamesA,
+			},
+		},
+	}, db.Label{
+		Label:     labelA,
+		Hostnames: hostnamesA,
+	})
+
+	// Simulate allocating an IP to the label. Ensure it doesn't get overwritten
+	// in the join.
+	conn.Txn(db.LabelTable).Run(func(view db.Database) error {
+		label := view.SelectFromLabel(func(label db.Label) bool {
+			return label.Label == labelA
+		})[0]
+		label.IP = labelAIP
+		view.Commit(label)
+		return nil
+	})
+
+	hostnamesANew := []string{"a", "aa", "aaa"}
+	checkLabel(t, conn, stitch.Stitch{
+		Labels: []stitch.Label{
+			{
+				Name:      labelA,
+				Hostnames: hostnamesANew,
+			},
+		},
+	}, db.Label{
+		Label:     labelA,
+		Hostnames: hostnamesANew,
+		IP:        labelAIP,
+	})
+
+	// Change the deployment so that the current label is removed, and a
+	// different one is inserted.
+	labelB := "labelB"
+	hostnamesB := []string{"b", "bb"}
+	checkLabel(t, conn, stitch.Stitch{
+		Labels: []stitch.Label{
+			{
+				Name:      labelB,
+				Hostnames: hostnamesB,
+			},
+		},
+	}, db.Label{
+		Label:     labelB,
+		Hostnames: hostnamesB,
+	})
 }

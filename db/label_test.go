@@ -28,7 +28,7 @@ func TestLabel(t *testing.T) {
 	assert.Equal(t, "foo", label.Label)
 	assert.Equal(t, id, label.getID())
 
-	assert.Equal(t, "Label-1{Label=foo, ContainerIPs=[]}", label.String())
+	assert.Equal(t, "Label-1{Label=foo, Hostnames=[]}", label.String())
 
 	assert.Equal(t, label, labels.Get(0))
 

@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"sort"
 
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/minion/ipdef"
 
 	log "github.com/Sirupsen/logrus"
@@ -104,7 +102,6 @@ func updateIPsOnce(view db.Database) error {
 
 		err = allocateContainerIPs(view, ctx)
 		if err == nil {
-			syncLabelContainerIPs(view)
 			err = allocateLabelIPs(view, ctx)
 		}
 	}
@@ -166,50 +163,6 @@ func allocateContainerIPs(view db.Database, ctx ipContext) error {
 	}
 
 	return nil
-}
-
-func syncLabelContainerIPs(view db.Database) {
-	dbcs := view.SelectFromContainer(func(dbc db.Container) bool {
-		return dbc.IP != ""
-	})
-
-	// XXX:  We sort the containers by StitchID to guarantee that the sub-label
-	// ordering is consistent between function calls.  This is pretty darn fragile.
-	sort.Sort(db.ContainerSlice(dbcs))
-
-	containerIPs := map[string][]string{}
-	for _, dbc := range dbcs {
-		for _, l := range dbc.Labels {
-			containerIPs[l] = append(containerIPs[l], dbc.IP)
-		}
-	}
-
-	labelKeyFunc := func(val interface{}) interface{} {
-		return val.(db.Label).Label
-	}
-
-	labelKeySlice := join.StringSlice{}
-	for l := range containerIPs {
-		labelKeySlice = append(labelKeySlice, l)
-	}
-
-	labels := db.LabelSlice(view.SelectFromLabel(nil))
-	pairs, dbls, dbcLabels := join.HashJoin(labels, labelKeySlice, labelKeyFunc, nil)
-
-	for _, dbl := range dbls {
-		view.Remove(dbl.(db.Label))
-	}
-
-	for _, label := range dbcLabels {
-		pairs = append(pairs, join.Pair{L: view.InsertLabel(), R: label})
-	}
-
-	for _, pair := range pairs {
-		dbl := pair.L.(db.Label)
-		dbl.Label = pair.R.(string)
-		dbl.ContainerIPs = containerIPs[dbl.Label]
-		view.Commit(dbl)
-	}
 }
 
 func allocateLabelIPs(view db.Database, ctx ipContext) error {

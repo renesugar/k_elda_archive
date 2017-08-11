@@ -78,8 +78,7 @@ func TestUnmarshalContainer(t *testing.T) {
 	apiClient := mockAPIClient{
 		mockResponse: `[{"ID":1,"Pid":0,"IP":"","Mac":"","Minion":"",` +
 			`"DockerID":"docker-id","StitchID":"","Image":"image",` +
-			`"Command":["cmd","arg"],"Labels":["labelA","labelB"],` +
-			`"Env":null}]`,
+			`"Command":["cmd","arg"],"Env":null}]`,
 	}
 	c := clientImpl{pbClient: apiClient}
 	res, err := c.QueryContainers()
@@ -90,7 +89,6 @@ func TestUnmarshalContainer(t *testing.T) {
 			DockerID: "docker-id",
 			Image:    "image",
 			Command:  []string{"cmd", "arg"},
-			Labels:   []string{"labelA", "labelB"},
 		},
 	}
 	assert.Equal(t, exp, res)

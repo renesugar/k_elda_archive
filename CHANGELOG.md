@@ -39,6 +39,7 @@ API Breaking Changes:
 all connections to occur by connecting services).
 - Change Service.allowFrom so that it allows connections to the load balancer,
 and not directly to the containers that get load balanced over.
+- Describe services in terms of hostnames rather than container IDs.
 
 Release 0.2.0
 -------------

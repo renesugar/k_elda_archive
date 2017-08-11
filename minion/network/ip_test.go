@@ -201,55 +201,6 @@ func TestAllocateLabelIPs(t *testing.T) {
 	assert.True(t, ipdef.QuiltSubnet.Contains(labelIP))
 }
 
-func TestSyncLabelContainerIPs(t *testing.T) {
-	t.Parallel()
-	conn := db.New()
-
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		dbc := view.InsertContainer()
-		dbc.Labels = []string{"red", "blue"}
-		dbc.StitchID = "1"
-		dbc.IP = "1.1.1.1"
-		view.Commit(dbc)
-
-		dbc = view.InsertContainer()
-		dbc.Labels = []string{"red"}
-		dbc.StitchID = "2"
-		dbc.IP = "2.2.2.2"
-		view.Commit(dbc)
-
-		label := view.InsertLabel()
-		label.Label = "yellow"
-		view.Commit(label)
-
-		return nil
-	})
-
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		syncLabelContainerIPs(view)
-		return nil
-	})
-
-	// Ignore database ID when comparing results because the insertion order is
-	// non-deterministic.
-	actual := conn.SelectFromLabel(nil)
-	for i := range actual {
-		actual[i].ID = 0
-	}
-	sort.Sort(db.LabelSlice(actual))
-
-	assert.Equal(t, actual, []db.Label{
-		{
-			Label:        "blue",
-			ContainerIPs: []string{"1.1.1.1"},
-		},
-		{
-			Label:        "red",
-			ContainerIPs: []string{"1.1.1.1", "2.2.2.2"},
-		},
-	})
-}
-
 func TestAllocate(t *testing.T) {
 	t.Parallel()
 

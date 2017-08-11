@@ -1,8 +1,6 @@
 package minion
 
 import (
-	"sort"
-
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/stitch"
@@ -20,6 +18,7 @@ func updatePolicy(view db.Database, blueprint string) {
 	c.Inc("Update Policy")
 	updateImages(view, compiled)
 	updateContainers(view, compiled)
+	updateLabels(view, compiled)
 	updateConnections(view, compiled)
 	updatePlacements(view, compiled)
 }
@@ -116,9 +115,71 @@ func updatePlacements(view db.Database, blueprint stitch.Stitch) {
 	}
 }
 
+func updateLabels(view db.Database, blueprint stitch.Stitch) {
+	var stitchLabels db.LabelSlice
+	for _, label := range blueprint.Labels {
+		stitchLabels = append(stitchLabels, db.Label{
+			Label:     label.Name,
+			Hostnames: label.Hostnames,
+		})
+	}
+
+	key := func(intf interface{}) interface{} {
+		return intf.(db.Label).Label
+	}
+
+	dbLabels := db.LabelSlice(view.SelectFromLabel(nil))
+	pairs, toAdd, toRemove := join.HashJoin(stitchLabels, dbLabels,
+		key, key)
+
+	for _, intf := range toRemove {
+		view.Remove(intf.(db.Label))
+	}
+
+	for _, intf := range toAdd {
+		pairs = append(pairs, join.Pair{L: intf, R: view.InsertLabel()})
+	}
+
+	for _, pair := range pairs {
+		dbLabel := pair.R.(db.Label)
+		stitchLabel := pair.L.(db.Label)
+
+		// Modify the original database label so that we preserve whatever IP
+		// the label might have already been allocated.
+		dbLabel.Label = stitchLabel.Label
+		dbLabel.Hostnames = stitchLabel.Hostnames
+		view.Commit(dbLabel)
+	}
+}
+
 func updateConnections(view db.Database, blueprint stitch.Stitch) {
-	scs, vcs := stitch.ConnectionSlice(blueprint.Connections),
-		view.SelectFromConnection(nil)
+	scs := stitch.ConnectionSlice(blueprint.Connections)
+
+	// Setup connections to load balanced containers. Load balancing works by
+	// rewriting the load balancer IPs to the IP address of one of the load
+	// balanced containers. This means allowing connections only to the load
+	// balancer IP address is insufficient -- the container must also be able
+	// to communicate directly with the containers behind the load balancer.
+	labels := map[string]stitch.Label{}
+	for _, label := range blueprint.Labels {
+		labels[label.Name] = label
+	}
+
+	for _, c := range scs {
+		label, ok := labels[c.To]
+		if !ok {
+			continue
+		}
+
+		for _, hostname := range label.Hostnames {
+			scs = append(scs, stitch.Connection{
+				From:    c.From,
+				To:      hostname,
+				MinPort: c.MinPort,
+				MaxPort: c.MaxPort,
+			})
+		}
+	}
 
 	dbcKey := func(val interface{}) interface{} {
 		c := val.(db.Connection)
@@ -130,6 +191,7 @@ func updateConnections(view db.Database, blueprint stitch.Stitch) {
 		}
 	}
 
+	vcs := view.SelectFromConnection(nil)
 	pairs, stitches, dbcs := join.HashJoin(scs, db.ConnectionSlice(vcs), nil, dbcKey)
 
 	for _, dbc := range dbcs {
@@ -155,7 +217,7 @@ func updateConnections(view db.Database, blueprint stitch.Stitch) {
 func queryContainers(blueprint stitch.Stitch) []db.Container {
 	containers := map[string]*db.Container{}
 	for _, c := range blueprint.Containers {
-		containers[c.ID] = &db.Container{
+		containers[c.Hostname] = &db.Container{
 			StitchID:          c.ID,
 			Command:           c.Command,
 			Env:               c.Env,
@@ -163,12 +225,6 @@ func queryContainers(blueprint stitch.Stitch) []db.Container {
 			Image:             c.Image.Name,
 			Dockerfile:        c.Image.Dockerfile,
 			Hostname:          c.Hostname,
-		}
-	}
-
-	for _, label := range blueprint.Labels {
-		for _, id := range label.IDs {
-			containers[id].Labels = append(containers[id].Labels, label.Name)
 		}
 	}
 
@@ -199,11 +255,6 @@ func updateContainers(view db.Database, blueprint stitch.Stitch) {
 	for _, pair := range pairs {
 		newc := pair.L.(db.Container)
 		dbc := pair.R.(db.Container)
-
-		// By sorting the labels we prevent the database from getting confused
-		// when their order is non deterministic.
-		dbc.Labels = newc.Labels
-		sort.Sort(sort.StringSlice(dbc.Labels))
 
 		dbc.Command = newc.Command
 		dbc.Image = newc.Image

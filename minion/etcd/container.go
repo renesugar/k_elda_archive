@@ -128,7 +128,6 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 		dbc.Image = edbc.Image
 		dbc.ImageID = edbc.ImageID
 		dbc.Command = edbc.Command
-		dbc.Labels = edbc.Labels
 		dbc.Env = edbc.Env
 		dbc.FilepathToContent = edbc.FilepathToContent
 		dbc.Hostname = edbc.Hostname

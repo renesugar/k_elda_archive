@@ -75,7 +75,7 @@ func runMaster(conn db.Conn) {
 
 	updateLogicalSwitch(ovsdbClient, containers)
 	updateLoadBalancerRouter(ovsdbClient)
-	updateLoadBalancers(ovsdbClient, labels)
+	updateLoadBalancers(ovsdbClient, labels, hostnameToIP)
 	updateACLs(ovsdbClient, connections, hostnameToIP)
 }
 
