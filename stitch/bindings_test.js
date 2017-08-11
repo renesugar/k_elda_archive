@@ -167,23 +167,25 @@ describe('Bindings', function() {
     describe('Container', function() {
         it('basic', function() {
             deployment.deploy(new Service('foo', [
-                new Container('image'),
+                new Container('host', 'image'),
             ]));
             checkContainers([{
-                id: '2d9d1ea3ba5f462202d278f6f07a890c1fb2b8d4',
+                id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 image: new Image('image'),
+                hostname: 'host',
                 command: [],
                 env: {},
                 filepathToContent: {},
             }]);
         });
         it('containers are not duplicated', function() {
-            let container = new Container('image');
+            let container = new Container('host', 'image');
             deployment.deploy(new Service('foo', [container]));
             deployment.deploy(new Service('bar', [container]));
             checkContainers([{
-                id: '2d9d1ea3ba5f462202d278f6f07a890c1fb2b8d4',
+                id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 image: new Image('image'),
+                hostname: 'host',
                 command: [],
                 env: {},
                 filepathToContent: {},
@@ -191,102 +193,36 @@ describe('Bindings', function() {
         });
         it('command', function() {
             deployment.deploy(new Service('foo', [
-                new Container('image', {
+                new Container('host', 'image', {
                   command: ['arg1', 'arg2'],
                 }),
             ]));
             checkContainers([{
-                id: 'c5dfd3d1747e3600b07781e99c4fb05b4f649b96',
+                id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
                 image: new Image('image'),
                 command: ['arg1', 'arg2'],
+                hostname: 'host',
                 env: {},
                 filepathToContent: {},
             }]);
         });
         it('env', function() {
-            const c = new Container('image');
+            const c = new Container('host', 'image');
             c.env.foo = 'bar';
             deployment.deploy(new Service('foo', [c]));
             checkContainers([{
-                id: '05ac1a3e606854a5fc2f87b9ea891d0e41d3e6e1',
+                id: '299619d3fb4b89fd5cc822983bc3fbcced2f0a98',
                 image: new Image('image'),
                 command: [],
                 env: {foo: 'bar'},
+                hostname: 'host',
                 filepathToContent: {},
             }]);
-        });
-        it('hostnames returned by uniqueHostname cannot be reused', function() {
-            const containerA = new Container('ignoreme');
-            containerA.setHostname('host');
-            const containerB = new Container('ignoreme');
-            containerB.setHostname('host');
-            const containerC = new Container('ignoreme');
-            containerC.setHostname('host2');
-            const hostnames = [containerA, containerB, containerC]
-              .map((c) => c.getHostname());
-            const hostnameSet = new Set(hostnames);
-            expect(hostnames.length).to.equal(hostnameSet.size);
-        });
-        it('image dockerfile', function() {
-            const c = new Container(new Image('name', 'dockerfile'));
-            deployment.deploy(new Service('foo', [c]));
-            checkContainers([{
-                id: 'ba85ca3e0371189fba2be551a598fe2bbf87a534',
-                image: new Image('name', 'dockerfile'),
-                command: [],
-                env: {},
-                filepathToContent: {},
-            }]);
-        });
-        it('replicate', function() {
-            deployment.deploy(new Service('foo', new Container('image', {
-              command: ['arg'],
-            }).replicate(2)));
-            checkContainers([
-                {
-                    id: '667fab4c9692fa0d17af369bb90f4dd6191ed446',
-                    image: new Image('image'),
-                    command: ['arg'],
-                    env: {},
-                    filepathToContent: {},
-                },
-                {
-                    id: '50b9741213374695336437b366fca04a7b1541dd',
-                    image: new Image('image'),
-                    command: ['arg'],
-                    env: {},
-                    filepathToContent: {},
-                },
-            ]);
-        });
-        it('replicate independent', function() {
-            const repl = new Container('image', {
-              command: ['arg'],
-            }).replicate(2);
-            repl[0].env.foo = 'bar';
-            repl[0].command.push('changed');
-            deployment.deploy(new Service('baz', repl));
-            checkContainers([
-                {
-                    id: '667fab4c9692fa0d17af369bb90f4dd6191ed446',
-                    image: new Image('image'),
-                    command: ['arg'],
-                    env: {},
-                    filepathToContent: {},
-                },
-                {
-                    id: '2615a8954bbc34b19e4d4f9ba37cd771c29499ac',
-                    image: new Image('image'),
-                    command: ['arg', 'changed'],
-                    env: {foo: 'bar'},
-                    filepathToContent: {},
-                },
-            ]);
         });
         it('hostname', function() {
-            const c = new Container(new Image('image'));
-            c.setHostname('host');
+            const c = new Container('host', new Image('image'));
             deployment.deploy(new Service('foo', [c]));
+            expect(c.getHostname()).to.equal('host.q');
             checkContainers([{
                 id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 image: new Image('image'),
@@ -296,25 +232,9 @@ describe('Bindings', function() {
                 hostname: 'host',
             }]);
         });
-        it('#getHostname()', function() {
-            const c = new Container('image');
-            c.setHostname('host');
-            expect(c.getHostname()).to.equal('host.q');
-        });
-        it('duplicate hostname', function() {
-            const a = new Container('image');
-            a.hostname = 'host';
-            const b = new Container('image');
-            b.hostname = 'host';
-            deployment.deploy(new Service('foo', [a, b]));
-            expect(() => deployment.toQuiltRepresentation()).to
-                .throw('hostname "host" used for multiple containers');
-        });
-        it('setHostname generates unique hostnames', function() {
-            const a = new Container('image');
-            a.setHostname('host');
-            const b = new Container('image');
-            b.setHostname('host');
+        it('repeated hostnames don\'t conflict', function() {
+            const a = new Container('host', 'image');
+            const b = new Container('host', 'image');
             deployment.deploy(new Service('foo', [a, b]));
             checkContainers([{
                 id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
@@ -333,39 +253,132 @@ describe('Bindings', function() {
             }]);
         });
         it('Container.hostname and Service.hostname don\'t conflict', () => {
-            const container = new Container('image');
-            container.setHostname('foo');
+            const container = new Container('foo', 'image');
             const serv = new Service('foo', []);
             expect(container.getHostname()).to.equal('foo.q');
             expect(serv.hostname()).to.equal('foo2.q');
         });
+        it('hostnames returned by uniqueHostname cannot be reused', function() {
+            const containerA = new Container('host', 'ignoreme');
+            const containerB = new Container('host', 'ignoreme');
+            const containerC = new Container('host2', 'ignoreme');
+            const hostnames = [containerA, containerB, containerC]
+              .map((c) => c.getHostname());
+            const hostnameSet = new Set(hostnames);
+            expect(hostnames.length).to.equal(hostnameSet.size);
+        });
+        it('clone increments existing index if one exists', function() {
+            const containerA = new Container('host', 'ignoreme');
+            const containerB = containerA.clone();
+            const containerC = containerB.clone();
+            expect(containerA.getHostname()).to.equal('host.q');
+            expect(containerB.getHostname()).to.equal('host2.q');
+            expect(containerC.getHostname()).to.equal('host3.q');
+        });
+        it('duplicate hostname causes error', function() {
+            const a = new Container('host', 'image');
+            a.hostname = 'host';
+            const b = new Container('host', 'image');
+            b.hostname = 'host';
+            deployment.deploy(new Service('foo', [a, b]));
+            expect(() => deployment.toQuiltRepresentation()).to
+                .throw('hostname "host" used for multiple containers');
+        });
+        it('image dockerfile', function() {
+            const c = new Container('host', new Image('name', 'dockerfile'));
+            deployment.deploy(new Service('foo', [c]));
+            checkContainers([{
+                id: 'fbc9aedb5af0039b8cf09bca2ef5771467b44085',
+                image: new Image('name', 'dockerfile'),
+                hostname: 'host',
+                command: [],
+                env: {},
+                filepathToContent: {},
+            }]);
+        });
+        it('replicate', function() {
+            deployment.deploy(new Service('foo',
+                new Container('host', 'image', {
+                  command: ['arg'],
+                }).replicate(2)));
+            checkContainers([
+                {
+                    id: 'aaf63faa86e552ec4ca75ab66e1b14a5993fa29d',
+                    image: new Image('image'),
+                    command: ['arg'],
+                    hostname: 'host2',
+                    env: {},
+                    filepathToContent: {},
+                },
+                {
+                    id: '339b2dafcb9fd3c17f01930b5c4782e8d7a9c1b8',
+                    image: new Image('image'),
+                    command: ['arg'],
+                    hostname: 'host3',
+                    env: {},
+                    filepathToContent: {},
+                },
+            ]);
+        });
+        it('replicate independent', function() {
+            const repl = new Container('host', 'image', {
+              command: ['arg'],
+            }).replicate(2);
+            repl[0].env.foo = 'bar';
+            repl[0].command.push('changed');
+            deployment.deploy(new Service('baz', repl));
+            checkContainers([
+                {
+                    id: '339b2dafcb9fd3c17f01930b5c4782e8d7a9c1b8',
+                    image: new Image('image'),
+                    command: ['arg'],
+                    hostname: 'host3',
+                    env: {},
+                    filepathToContent: {},
+                },
+                {
+                    id: 'b318fc1c08ee0a8d74d99f8023112f323268e479',
+                    image: new Image('image'),
+                    command: ['arg', 'changed'],
+                    env: {foo: 'bar'},
+                    hostname: 'host2',
+                    filepathToContent: {},
+                },
+            ]);
+        });
     });
 
     describe('Container attributes', function() {
+        const hostname = 'host';
         const image = new Image('image');
         const command = ['arg1', 'arg2'];
         const env = {foo: 'bar'};
         const filepathToContent = {qux: 'quuz'};
-        const id = '9d8cfb613ef8df786ac42834b29b19ec1df56a43';
         it('with*', function() {
+            // The stitch ID is different than the Container created with the
+            // constructor because the hostname ID increases with each with*
+            // call.
+            const id = 'f5c3e0fa3843e6fa149289d476f507831a45654d';
             deployment.deploy(new Service('foo', [
-                new Container(image, {
+                new Container(hostname, image, {
                     command,
                 }).withEnv(env)
                   .withFiles(filepathToContent),
             ]));
             checkContainers([{
                 id, image, command, env, filepathToContent,
+                hostname: 'host3',
             }]);
         });
         it('constructor', function() {
+            const id = '9f9d0c0868163eda5b4ad5861c9558f055508959';
             deployment.deploy(new Service('foo', [
-                new Container(image, {
+                new Container(hostname, image, {
                     command, env, filepathToContent,
                 }),
             ]));
             checkContainers([{
-                id, image, command, env, filepathToContent,
+                id, hostname, image, command, env, filepathToContent,
             }]);
         });
     });
@@ -416,22 +429,22 @@ describe('Bindings', function() {
     describe('Label', function() {
         it('basic', function() {
             deployment.deploy(
-                new Service('web_tier', [new Container('nginx')]));
+                new Service('web_tier', [new Container('host', 'nginx')]));
             checkLabels([{
                 name: 'web_tier',
-                ids: ['e08ea919185a436516c87d8dc33342b3adbb2f89'],
+                ids: ['6199c16b509ee4229bff81e73906ae9e33543db4'],
             }]);
         });
         it('multiple containers', function() {
             deployment.deploy(new Service('web_tier', [
-                new Container('nginx'),
-                new Container('nginx'),
+                new Container('host', 'nginx'),
+                new Container('host', 'nginx'),
             ]));
             checkLabels([{
                 name: 'web_tier',
                 ids: [
-                    'e08ea919185a436516c87d8dc33342b3adbb2f89',
-                    '13666ee3835edd19e9ccb840a5c62424cbfd7cea',
+                    '6199c16b509ee4229bff81e73906ae9e33543db4',
+                    'ccbfb4955a7202235cb82e142f2b648e6791997d',
                 ],
             }]);
         });
@@ -440,21 +453,23 @@ describe('Bindings', function() {
                containers so that the two deployed containers have _refID's
                that are sorted differently lexicographically and numerically. */
             for (let i = 0; i < 2; i += 1) {
-                new Container('image');
+                new Container('host', 'image');
             }
-            deployment.deploy(new Service('foo', [new Container('image')]));
+            deployment.deploy(new Service('foo', [
+                new Container('host', 'image')]));
             for (let i = 0; i < 7; i += 1) {
-                new Container('image');
+                new Container('host', 'image');
             }
-            deployment.deploy(new Service('foo', [new Container('image')]));
+            deployment.deploy(new Service('foo', [
+                new Container('host', 'image')]));
             checkLabels([
                 {
                     name: 'foo',
-                    ids: ['2d9d1ea3ba5f462202d278f6f07a890c1fb2b8d4'],
+                    ids: ['4a21221322b00f0eafb611542bc74aa19a6855ae'],
                 },
                 {
                     name: 'foo2',
-                    ids: ['caedda0972c6ae354de95afc066a9f2fbd2c284b'],
+                    ids: ['f3b69c6a34de4ef2858bb51e443941d768f03fb1'],
                 },
             ]);
         });
@@ -554,16 +569,16 @@ describe('Bindings', function() {
         });
         it('duplicate image', function() {
             deployment.deploy(new Service('foo',
-                [new Container(new Image('img', 'dk'))]));
+                [new Container('host', new Image('img', 'dk'))]));
             deployment.deploy(new Service('foo',
-                [new Container(new Image('img', 'dk'))]));
+                [new Container('host', new Image('img', 'dk'))]));
             expect(deploy).to.not.throw();
         });
         it('duplicate image with different Dockerfiles', function() {
             deployment.deploy(new Service('foo',
-                [new Container(new Image('img', 'dk'))]));
+                [new Container('host', new Image('img', 'dk'))]));
             deployment.deploy(new Service('foo',
-                [new Container(new Image('img', 'dk2'))]));
+                [new Container('host', new Image('img', 'dk2'))]));
             expect(deploy).to.throw('img has differing Dockerfiles');
         });
     });
@@ -572,8 +587,10 @@ describe('Bindings', function() {
             deployment.deploy({
                 deploy(dep) {
                     dep.deploy([
-                        new Service('web_tier', [new Container('nginx')]),
-                        new Service('web_tier2', [new Container('nginx')]),
+                        new Service('web_tier', [
+                            new Container('host', 'nginx')]),
+                        new Service('web_tier2', [
+                            new Container('host', 'nginx')]),
                     ]);
                 },
             });
@@ -582,11 +599,11 @@ describe('Bindings', function() {
                 .and.containSubset([
                     {
                         name: 'web_tier',
-                        ids: ['e08ea919185a436516c87d8dc33342b3adbb2f89'],
+                        ids: ['6199c16b509ee4229bff81e73906ae9e33543db4'],
                     },
                     {
                         name: 'web_tier2',
-                        ids: ['13666ee3835edd19e9ccb840a5c62424cbfd7cea'],
+                        ids: ['ccbfb4955a7202235cb82e142f2b648e6791997d'],
                     },
                 ]);
         });

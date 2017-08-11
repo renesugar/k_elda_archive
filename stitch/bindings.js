@@ -559,7 +559,10 @@ Image.prototype.clone = function() {
     return new Image(this.name, this.dockerfile);
 };
 
-function Container(image, {command=[], env={}, filepathToContent={}} = {}) {
+function Container(hostnamePrefix, image, {
+    command=[],
+    env={},
+    filepathToContent={}} = {}) {
     // refID is used to distinguish deployments with multiple references to the
     // same container, and deployments with multiple containers with the exact
     // same attributes.
@@ -574,6 +577,8 @@ function Container(image, {command=[], env={}, filepathToContent={}} = {}) {
             `${stringify(image)})`);
     }
 
+    this.hostnamePrefix = getString('hostnamePrefix', hostnamePrefix);
+    this.hostname = uniqueHostname(this.hostnamePrefix);
     this.command = getStringArray('command', command);
     this.env = getStringMap('env', env);
     this.filepathToContent = getStringMap('filepathToContent',
@@ -588,7 +593,7 @@ function Container(image, {command=[], env={}, filepathToContent={}} = {}) {
 
 // Create a new Container with the same attributes.
 Container.prototype.clone = function() {
-    return new Container(this.image, this);
+    return new Container(this.hostnamePrefix, this.image, this);
 };
 
 // Create n new Containers with the same attributes.
@@ -622,9 +627,6 @@ Container.prototype.setHostname = function(h) {
 };
 
 Container.prototype.getHostname = function() {
-    if (this.hostname === undefined) {
-        throw new Error('no hostname');
-    }
     return this.hostname + '.q';
 };
 

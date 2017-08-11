@@ -5,5 +5,6 @@ let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
 let containers = new quilt.Service('containers',
-    new quilt.Container('google/pause').replicate(infrastructure.nWorker));
+    new quilt.Container('foo', 'google/pause')
+    .replicate(infrastructure.nWorker));
 deployment.deploy(containers);

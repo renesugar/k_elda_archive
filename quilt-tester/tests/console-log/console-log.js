@@ -8,6 +8,6 @@ console.log('This should show up in the terminal.');
 console.warn('This too.');
 
 deployment.deploy(new quilt.Service('red',
-  [new quilt.Container('google/pause')]));
+  [new quilt.Container('red', 'google/pause')]));
 deployment.deploy(new quilt.Service('blue',
-  [new quilt.Container('google/pause')]));
+  [new quilt.Container('blue', 'google/pause')]));

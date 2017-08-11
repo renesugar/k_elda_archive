@@ -6,7 +6,7 @@ deployment.deploy(infrastructure);
 
 for (let i = 0; i < infrastructure.nWorker; i++) {
     deployment.deploy(new quilt.Service('foo',
-        new quilt.Container(
+        new quilt.Container('bar',
             new quilt.Image('test-custom-image' + i,
                 'FROM alpine\n' +
                 'RUN echo ' + i + ' > /dockerfile-id\n' +

@@ -12,7 +12,7 @@ const indexPath = '/usr/share/nginx/html/index.html';
 function containerWithContent(content) {
   let files = {};
   files[indexPath] = content;
-  return new quilt.Container('nginx').withFiles(files);
+  return new quilt.Container('web', 'nginx').withFiles(files);
 };
 
 let serviceA = new quilt.Service('serviceA', [

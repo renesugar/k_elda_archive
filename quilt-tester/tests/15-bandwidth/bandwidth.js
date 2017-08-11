@@ -4,7 +4,7 @@ let infrastructure = require('../../config/infrastructure.js');
 let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
-let c = new quilt.Container('networkstatic/iperf3', {
+let c = new quilt.Container('iperf', 'networkstatic/iperf3', {
   command: ['-s'],
 });
 

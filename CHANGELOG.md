@@ -26,6 +26,10 @@ new Container('imageName', {
   filepathToContent: { path: 'content' },
 });
 ```
+- Require a hostname to be provided to the container constructor:
+```javascript
+new Container('hostname', 'imageName');
+```
 
 Release 0.2.0
 -------------
