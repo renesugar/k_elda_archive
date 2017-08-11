@@ -38,6 +38,15 @@ func (conn Conn) SelectFromHostname(check func(Hostname) bool) []Hostname {
 	return hostnames
 }
 
+// GetHostnameMappings returns a map of all hostnames to their IP.
+func (db Database) GetHostnameMappings() map[string]string {
+	hostnameToIP := map[string]string{}
+	for _, hostname := range db.SelectFromHostname(nil) {
+		hostnameToIP[hostname.Hostname] = hostname.IP
+	}
+	return hostnameToIP
+}
+
 func (r Hostname) getID() int {
 	return r.ID
 }

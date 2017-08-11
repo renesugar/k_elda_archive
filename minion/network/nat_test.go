@@ -55,16 +55,12 @@ func TestPreroutingRules(t *testing.T) {
 
 	containers := []db.Container{
 		{
-			IP:     "8.8.8.8",
-			Labels: []string{"red", "blue"},
+			IP:       "8.8.8.8",
+			Hostname: "red",
 		},
 		{
-			IP:     "9.9.9.9",
-			Labels: []string{"purple"},
-		},
-		{
-			IP:     "10.10.10.10",
-			Labels: []string{"green"},
+			IP:       "9.9.9.9",
+			Hostname: "purple",
 		},
 	}
 
@@ -76,18 +72,8 @@ func TestPreroutingRules(t *testing.T) {
 		},
 		{
 			From:    stitch.PublicInternetLabel,
-			To:      "blue",
-			MinPort: 81,
-		},
-		{
-			From:    stitch.PublicInternetLabel,
 			To:      "purple",
-			MinPort: 80,
-		},
-		{
-			From:    "green",
-			To:      stitch.PublicInternetLabel,
-			MinPort: 80,
+			MinPort: 81,
 		},
 		{
 			From:    "yellow",
@@ -100,10 +86,8 @@ func TestPreroutingRules(t *testing.T) {
 	exp := []string{
 		"-i eth0 -p tcp -m tcp --dport 80 -j DNAT --to-destination 8.8.8.8:80",
 		"-i eth0 -p udp -m udp --dport 80 -j DNAT --to-destination 8.8.8.8:80",
-		"-i eth0 -p tcp -m tcp --dport 81 -j DNAT --to-destination 8.8.8.8:81",
-		"-i eth0 -p udp -m udp --dport 81 -j DNAT --to-destination 8.8.8.8:81",
-		"-i eth0 -p tcp -m tcp --dport 80 -j DNAT --to-destination 9.9.9.9:80",
-		"-i eth0 -p udp -m udp --dport 80 -j DNAT --to-destination 9.9.9.9:80",
+		"-i eth0 -p tcp -m tcp --dport 81 -j DNAT --to-destination 9.9.9.9:81",
+		"-i eth0 -p udp -m udp --dport 81 -j DNAT --to-destination 9.9.9.9:81",
 	}
 	assert.Equal(t, exp, actual)
 }
@@ -113,16 +97,12 @@ func TestPostroutingRules(t *testing.T) {
 
 	containers := []db.Container{
 		{
-			IP:     "8.8.8.8",
-			Labels: []string{"red", "blue"},
+			IP:       "8.8.8.8",
+			Hostname: "red",
 		},
 		{
-			IP:     "9.9.9.9",
-			Labels: []string{"purple"},
-		},
-		{
-			IP:     "10.10.10.10",
-			Labels: []string{"green"},
+			IP:       "9.9.9.9",
+			Hostname: "purple",
 		},
 	}
 
@@ -133,40 +113,16 @@ func TestPostroutingRules(t *testing.T) {
 			MinPort: 80,
 		},
 		{
-			From:    "blue",
-			To:      stitch.PublicInternetLabel,
-			MinPort: 81,
-		},
-		{
-			From:    "purple",
-			To:      stitch.PublicInternetLabel,
-			MinPort: 80,
-		},
-		{
 			From:    "purple",
 			To:      stitch.PublicInternetLabel,
 			MinPort: 81,
-		},
-		{
-			From:    stitch.PublicInternetLabel,
-			To:      "green",
-			MinPort: 80,
-		},
-		{
-			From:    "yellow",
-			To:      stitch.PublicInternetLabel,
-			MinPort: 80,
 		},
 	}
 
 	exp := []string{
 		"-s 8.8.8.8/32 -p tcp -m tcp --dport 80 -o eth0 -j MASQUERADE",
-		"-s 8.8.8.8/32 -p tcp -m tcp --dport 81 -o eth0 -j MASQUERADE",
 		"-s 8.8.8.8/32 -p udp -m udp --dport 80 -o eth0 -j MASQUERADE",
-		"-s 8.8.8.8/32 -p udp -m udp --dport 81 -o eth0 -j MASQUERADE",
-		"-s 9.9.9.9/32 -p tcp -m tcp --dport 80 -o eth0 -j MASQUERADE",
 		"-s 9.9.9.9/32 -p tcp -m tcp --dport 81 -o eth0 -j MASQUERADE",
-		"-s 9.9.9.9/32 -p udp -m udp --dport 80 -o eth0 -j MASQUERADE",
 		"-s 9.9.9.9/32 -p udp -m udp --dport 81 -o eth0 -j MASQUERADE",
 	}
 	actual := postroutingRules("eth0", containers, connections)

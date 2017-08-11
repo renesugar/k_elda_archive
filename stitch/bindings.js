@@ -183,10 +183,16 @@ Deployment.prototype.toQuiltRepresentation = function() {
          }
     });
 
+    let quiltContainers = [];
+    containersNoDups.forEach((c) => {
+        connections = connections.concat(c.getQuiltConnections());
+        quiltContainers.push(c.toQuiltRepresentation());
+    });
+
     const quiltDeployment = {
         machines: this.machines,
         labels: services,
-        containers: containersNoDups,
+        containers: quiltContainers,
         connections: connections,
         placements: placements,
 
@@ -201,22 +207,28 @@ Deployment.prototype.toQuiltRepresentation = function() {
 // Check if all referenced services in connections and placements are
 // really deployed.
 function vet(deployment) {
-    let labelMap = {[publicInternetLabel]: true};
-    deployment.labels.forEach(function(service) {
-        labelMap[service.name] = true;
+    const labelHostnames = deployment.labels.map((l) => l.name);
+    const containerHostnames = deployment.containers.map((c) => c.hostname);
+    const hostnames = labelHostnames.concat(containerHostnames);
+
+    const hostnameMap = {[publicInternetLabel]: true};
+    hostnames.forEach((hostname) => {
+        if (hostnameMap[hostname] !== undefined) {
+            throw new Error(`hostname "${hostname}" used multiple times`);
+        }
+        hostnameMap[hostname] = true;
     });
 
     deployment.connections.forEach((conn) => {
-        [conn.from, conn.to].forEach((label) => {
-            if (!labelMap[label]) {
+        [conn.from, conn.to].forEach((host) => {
+            if (!hostnameMap[host]) {
                 throw new Error(`connection ${stringify(conn)} references ` +
-                    `an undeployed service: ${label}`);
+                    `an undefined hostname: ${host}`);
             }
         });
     });
 
     let dockerfiles = {};
-    let hostnames = {};
     deployment.containers.forEach((c) => {
         let name = c.image.name;
         if (dockerfiles[name] != undefined &&
@@ -224,14 +236,6 @@ function vet(deployment) {
             throw new Error(`${name} has differing Dockerfiles`);
         }
         dockerfiles[name] = c.image.dockerfile;
-
-        if (c.hostname !== undefined) {
-            if (hostnames[c.hostname]) {
-                throw new Error(`hostname "${c.hostname}" used for ` +
-                    `multiple containers`);
-            }
-            hostnames[c.hostname] = true;
-        }
     });
 };
 
@@ -252,27 +256,17 @@ Deployment.prototype.deploy = function(toDeployList) {
     });
 };
 
+/**
+ * @implements {Connectable}
+ */
 function Service(name, containers) {
     if (typeof name !== 'string') {
         throw new Error(`name must be a string; was ${stringify(name)}`);
     }
-    if (!Array.isArray(containers)) {
-        throw new Error(`containers must be an array of Containers (was ` +
-            `${stringify(containers)})`);
-    }
-    for (let i = 0; i < containers.length; i++) {
-        if (!(containers[i] instanceof Container)) {
-            throw new Error(`containers must be an array of Containers; item ` +
-                `at index ${i} (${stringify(containers[i])}) is not a ` +
-                `Container`);
-        }
-    }
     this.name = uniqueHostname(name);
-    this.containers = containers;
+    this.containers = boxContainers(containers);
 
     this.allowedInboundConnections = [];
-    this.outgoingPublic = [];
-    this.incomingPublic = [];
 }
 
 // Get the Quilt hostname that represents the entire service.
@@ -284,80 +278,88 @@ Service.prototype.deploy = function(deployment) {
     deployment.services.push(this);
 };
 
-Service.prototype.allowFrom = function(sourceService, portRange) {
-    portRange = boxRange(portRange);
-    if (sourceService === publicInternet) {
-        return this.allowFromPublic(portRange);
+/**
+ * Allow inbound connections to the load balancer. Note that this does not
+ * allow direct connections to the containers behind the load balancer.
+ *
+ * @param {Container|Container[]} srcArg The containers that can open
+ * connections to this Service.
+ * @param {int|Port|PortRange} portRange The ports on which containers can open
+ * connections.
+ * @return {void}
+ */
+Service.prototype.allowFrom = function(srcArg, portRange) {
+    let src;
+    try {
+        src = boxContainers(srcArg);
+    } catch (err) {
+        throw new Error(`Services can only allow traffic from containers. ` +
+            `Check that you're allowing connections from a Container ` +
+            `or list of containers and not from a Service or other object.`);
     }
-    if (!(sourceService instanceof Service)) {
-        throw new Error(`Services can only connect to other services. ` +
-            `Check that you're allowing connections from a service, and ` +
-            `not from a Container or other object.`);
-    }
-    this.allowedInboundConnections.push(
-        new Connection(sourceService, portRange));
+
+    src.forEach((c) => {
+        this.allowedInboundConnections.push(
+            new Connection(c, boxRange(portRange)));
+    });
 };
 
-// publicInternet is an object that looks like another service that can
+// publicInternet is an object that looks like another container that can
 // allow inbound connections. However, it is actually just syntactic sugar
 // to hide the allowOutboundPublic and allowFromPublic functions.
+/**
+ * @implements {Connectable}
+ */
 let publicInternet = {
-    allowFrom: function(sourceService, portRange) {
-        sourceService.allowOutboundPublic(portRange);
+    allowFrom: function(srcArg, portRange) {
+        let src;
+        try {
+            src = boxContainers(srcArg);
+        } catch (err) {
+            throw new Error(`Only containers can connect to public. ` +
+                `Check that you're allowing connections from a Container or ` +
+                `list of containers and not from a Service or other object.`);
+        }
+
+        src.forEach((c) => {
+          c.allowOutboundPublic(portRange);
+        });
     },
 };
 
-Service.prototype.allowOutboundPublic = function(range) {
-    range = boxRange(range);
-    if (range.min != range.max) {
-        throw new Error(`public internet can only connect to single ports ` +
-            `and not to port ranges`);
-    }
-    this.outgoingPublic.push(range);
-};
-
-Service.prototype.allowFromPublic = function(range) {
-    range = boxRange(range);
-    if (range.min != range.max) {
-        throw new Error(`public internet can only connect to single ports ` +
-            `and not to port ranges`);
-    }
-    this.incomingPublic.push(range);
-};
-
 Service.prototype.getQuiltConnections = function() {
-    let connections = [];
-    let that = this;
-
-    this.allowedInboundConnections.forEach(function(conn) {
-        connections.push({
-            from: conn.from.name,
-            to: that.name,
+    return this.allowedInboundConnections.map((conn) => {
+        return {
+            from: conn.from.hostname,
+            to: this.name,
             minPort: conn.minPort,
             maxPort: conn.maxPort,
-        });
+        };
     });
-
-    this.outgoingPublic.forEach(function(rng) {
-        connections.push({
-            from: that.name,
-            to: publicInternetLabel,
-            minPort: rng.min,
-            maxPort: rng.max,
-        });
-    });
-
-    this.incomingPublic.forEach(function(rng) {
-        connections.push({
-            from: publicInternetLabel,
-            to: that.name,
-            minPort: rng.min,
-            maxPort: rng.max,
-        });
-    });
-
-    return connections;
 };
+
+function boxContainers(x) {
+    if (x instanceof Container) {
+        return [x];
+    }
+
+    assertContainerList(x);
+    return x;
+}
+
+function assertContainerList(containers) {
+    if (!Array.isArray(containers)) {
+        throw new Error(`not an array of Containers (was ` +
+            `${stringify(containers)})`);
+    }
+    for (let i = 0; i < containers.length; i++) {
+        if (!(containers[i] instanceof Container)) {
+            throw new Error(`not an array of Containers; item ` +
+                `at index ${i} (${stringify(containers[i])}) is not a ` +
+                `Container`);
+        }
+    }
+}
 
 let hostnameCount = {};
 function uniqueHostname(name) {
@@ -548,6 +550,9 @@ Image.prototype.clone = function() {
     return new Image(this.name, this.dockerfile);
 };
 
+/**
+ * @implements {Connectable}
+ */
 function Container(hostnamePrefix, image, {
     command=[],
     env={},
@@ -582,6 +587,10 @@ function Container(hostnamePrefix, image, {
     // When generating the Quilt deployment JSON object, these placements must
     // be converted using Container.getPlacementsWithID.
     this.placements = [];
+
+    this.allowedInboundConnections = [];
+    this.outgoingPublic = [];
+    this.incomingPublic = [];
 }
 
 // Create a new Container with the same attributes.
@@ -651,6 +660,167 @@ Container.prototype.getPlacementsWithID = function() {
     });
 };
 
+Container.prototype.allowFrom = function(srcArg, portRange) {
+    if (srcArg === publicInternet) {
+        this.allowFromPublic(portRange);
+        return;
+    }
+
+    let src;
+    try {
+        src = boxContainers(srcArg);
+    } catch (err) {
+        throw new Error(`Containers can only connect to other containers. ` +
+            `Check that you're allowing connections from a container or list ` +
+            `of containers, and not from a Service or other object.`);
+    }
+
+    src.forEach((c) => {
+      this.allowedInboundConnections.push(
+          new Connection(c, boxRange(portRange)));
+    });
+};
+
+Container.prototype.allowOutboundPublic = function(range) {
+    range = boxRange(range);
+    if (range.min != range.max) {
+        throw new Error(`public internet can only connect to single ports ` +
+            `and not to port ranges`);
+    }
+    this.outgoingPublic.push(range);
+};
+
+Container.prototype.allowFromPublic = function(range) {
+    range = boxRange(range);
+    if (range.min != range.max) {
+        throw new Error(`public internet can only connect to single ports ` +
+            `and not to port ranges`);
+    }
+    this.incomingPublic.push(range);
+};
+
+Container.prototype.getQuiltConnections = function() {
+    let connections = [];
+
+    this.allowedInboundConnections.forEach((conn) => {
+        connections.push({
+            from: conn.from.hostname,
+            to: this.hostname,
+            minPort: conn.minPort,
+            maxPort: conn.maxPort,
+        });
+    });
+
+    this.outgoingPublic.forEach((rng) => {
+        connections.push({
+            from: this.hostname,
+            to: publicInternetLabel,
+            minPort: rng.min,
+            maxPort: rng.max,
+        });
+    });
+
+    this.incomingPublic.forEach((rng) => {
+        connections.push({
+            from: publicInternetLabel,
+            to: this.hostname,
+            minPort: rng.min,
+            maxPort: rng.max,
+        });
+    });
+
+    return connections;
+};
+
+Container.prototype.toQuiltRepresentation = function() {
+    return {
+        id: this.id,
+        image: this.image,
+        command: this.command,
+        env: this.env,
+        filepathToContent: this.filepathToContent,
+        hostname: this.hostname,
+    };
+};
+
+/**
+ * boxConnectable attempts to convert `objects` into an array of objects that
+ * define allowFrom.
+ * If `objects` is an Array, it asserts that each element is connectable. If
+ * it's just a single object, boxConnectable asserts that it is connectable,
+ * and if so, returns it as a single-element Array.
+ *
+ * @param objects
+ * @returns {Connectable[]}
+ */
+function boxConnectable(objects) {
+    if (isConnectable(objects)) {
+        return [objects];
+    }
+
+    if (!Array.isArray(objects)) {
+        throw new Error(`not an array of connectable objects (was ` +
+            `${stringify(objects)})`);
+    }
+    objects.forEach((x, i) => {
+        if (!isConnectable(x)) {
+            throw new Error(
+                `item at index ${i} (${stringify(x)}) cannot be connected to`);
+        }
+    });
+    return objects;
+}
+
+
+/**
+ * Interface for classes that can allow inbound traffic.
+ *
+ *  @interface
+ */
+// Connectable is never used because it's defining an interface for creating
+// JsDoc.
+// eslint-disable-next-line no-unused-vars
+class Connectable {
+  /**
+   * allowFrom allows traffic from src on port
+   *
+   * @param {Container} src The container that can initiate connections.
+   * @param {int|Port|PortRange} port The ports to allow traffic on.
+   * @return {void}
+   */
+  allowFrom(src, port) {
+    throw new Error('not implemented');
+  }
+}
+
+/**
+ * isConnectable returns whether x can allow inbound connections.
+ *
+ * @param {object} x The object to check
+ * @return {boolean} Whether x can be connected to
+ */
+function isConnectable(x) {
+    return typeof(x.allowFrom) === 'function';
+}
+
+/**
+ * allow is a utility function to allow calling `allowFrom` on groups of
+ * containers.
+ *
+ * @param {Container|publicInternet} src The containers that can
+ * initiate a connection.
+ * @param {Connectable[]} dst The objects that traffic can be sent to. Examples
+ * of connectable objects are Containers, Services, publicInternet, and
+ * user-defined objects that implement allowFrom.
+ * @param {int|Port|PortRange} ports The ports that traffic is allowed on.
+ * @return {void}
+ */
+function allow(src, dst, port) {
+  boxConnectable(dst).forEach((c) => {
+    c.allowFrom(src, port);
+  });
+}
+
 function Connection(from, ports) {
     this.minPort = ports.min;
     this.maxPort = ports.max;
@@ -687,6 +857,7 @@ module.exports = {
     PortRange,
     Range,
     Service,
+    allow,
     createDeployment,
     getDeployment,
     githubKeys,

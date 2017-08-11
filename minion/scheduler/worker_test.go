@@ -241,7 +241,7 @@ func TestOpenFlowContainers(t *testing.T) {
 		{MinPort: 4, MaxPort: 4, To: stitch.PublicInternetLabel, From: "blue"}}
 
 	res := openflowContainers([]db.Container{
-		{EndpointID: "f", IP: "1.2.3.4", Labels: []string{"red"}}},
+		{EndpointID: "f", IP: "1.2.3.4", Hostname: "red"}},
 		conns)
 	exp := []openflow.Container{{
 		Veth:    "f",

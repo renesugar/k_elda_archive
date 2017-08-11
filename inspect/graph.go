@@ -1,13 +1,13 @@
 package inspect
 
 import (
+	"fmt"
 	"github.com/quilt/quilt/stitch"
 )
 
-// A Node in the communiction Graph.
+// A Node in the communication Graph.
 type Node struct {
 	Name        string
-	Label       string
 	Connections map[string]Node
 }
 
@@ -30,12 +30,13 @@ func New(blueprint stitch.Stitch) (Graph, error) {
 		Nodes: map[string]Node{},
 	}
 
-	for _, label := range blueprint.Labels {
-		for _, cid := range label.IDs {
-			g.addNode(cid, label.Name)
-		}
+	for _, c := range blueprint.Containers {
+		g.addNode(c.Hostname)
 	}
-	g.addNode(stitch.PublicInternetLabel, stitch.PublicInternetLabel)
+	for _, service := range blueprint.Labels {
+		g.addNode(service.Name)
+	}
+	g.addNode(stitch.PublicInternetLabel)
 
 	for _, conn := range blueprint.Connections {
 		err := g.addConnection(conn.From, conn.To)
@@ -59,37 +60,26 @@ func (g Graph) GetConnections() []Edge {
 }
 
 func (g *Graph) addConnection(from string, to string) error {
-	// from and to are labels
-	var fromContainers []Node
-	var toContainers []Node
-
-	for _, node := range g.Nodes {
-		if node.Label == from {
-			fromContainers = append(fromContainers, node)
-		}
-		if node.Label == to {
-			toContainers = append(toContainers, node)
-		}
+	fromNode, ok := g.Nodes[from]
+	if !ok {
+		return fmt.Errorf("no node: %s", from)
 	}
 
-	for _, fromNode := range fromContainers {
-		for _, toNode := range toContainers {
-			if fromNode.Name != toNode.Name {
-				fromNode.Connections[toNode.Name] = toNode
-			}
-		}
+	toNode, ok := g.Nodes[to]
+	if !ok {
+		return fmt.Errorf("no node: %s", to)
 	}
 
+	fromNode.Connections[to] = toNode
 	return nil
 }
 
-func (g *Graph) addNode(cid string, label string) Node {
+func (g *Graph) addNode(hostname string) Node {
 	n := Node{
-		Name:        cid,
-		Label:       label,
+		Name:        hostname,
 		Connections: map[string]Node{},
 	}
-	g.Nodes[cid] = n
+	g.Nodes[hostname] = n
 
 	return n
 }

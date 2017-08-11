@@ -8,6 +8,7 @@ const {
     PortRange,
     Range,
     Service,
+    allow,
     createDeployment,
     publicInternet,
     resetGlobals,
@@ -282,7 +283,7 @@ describe('Bindings', function() {
             b.hostname = 'host';
             deployment.deploy(new Service('foo', [a, b]));
             expect(() => deployment.toQuiltRepresentation()).to
-                .throw('hostname "host" used for multiple containers');
+                .throw('hostname "host" used multiple times');
         });
         it('image dockerfile', function() {
             const c = new Container('host', new Image('name', 'dockerfile'));
@@ -479,12 +480,16 @@ describe('Bindings', function() {
         });
     });
     describe('AllowFrom', function() {
+        let fooService;
         let foo;
+        let barService;
         let bar;
         beforeEach(function() {
-            foo = new Service('foo', []);
-            bar = new Service('bar', []);
-            deployment.deploy([foo, bar]);
+            foo = new Container('foo', 'image');
+            fooService = new Service('fooService', [foo]);
+            bar = new Container('bar', 'image');
+            barService = new Service('barService', [bar]);
+            deployment.deploy([fooService, barService]);
         });
         it('autobox port ranges', function() {
             bar.allowFrom(foo, 80);
@@ -535,6 +540,15 @@ describe('Bindings', function() {
                 maxPort: 80,
             }]);
         });
+        it('connect to service', function() {
+            fooService.allowFrom(bar, 80);
+            checkConnections([{
+                from: 'bar',
+                to: 'fooService',
+                minPort: 80,
+                maxPort: 80,
+            }]);
+        });
         it('connect to publicInternet port range', function() {
             expect(() =>
                 publicInternet.allowFrom(foo, new PortRange(80, 81))).to
@@ -547,11 +561,83 @@ describe('Bindings', function() {
                     .throw('public internet can only connect to single ports ' +
                         'and not to port ranges');
         });
-        it('allowFrom non-service', function() {
+        it('allowFrom non-container', function() {
             expect(() => foo.allowFrom(10, 10)).to
-                .throw(`Services can only connect to other services. ` +
-                    `Check that you're allowing connections from a service, ` +
-                    `and not from a Container or other object.`);
+                .throw(`Containers can only connect to other containers. ` +
+                    `Check that you're allowing connections from a ` +
+                    `container or list of containers, and not from a Service `+
+                    `or other object.`);
+        });
+    });
+    describe('allow', function() {
+        let foo;
+        let bar;
+        let qux;
+        let quuz;
+        let fooBarGroup;
+        let quxQuuzGroup;
+        let service;
+        beforeEach(function() {
+            foo = new Container('foo', 'image');
+            bar = new Container('bar', 'image');
+            qux = new Container('qux', 'image');
+            quuz = new Container('quuz', 'image');
+
+            fooBarGroup = [foo, bar];
+            quxQuuzGroup = [qux, quuz];
+            service = new Service('serv', [foo, bar, qux, quuz]);
+
+            deployment.deploy(service);
+        });
+
+        it('both src and dst are lists', () => {
+            allow(quxQuuzGroup, fooBarGroup, 80);
+            checkConnections([
+                {from: 'qux', to: 'foo', minPort: 80, maxPort: 80},
+                {from: 'qux', to: 'bar', minPort: 80, maxPort: 80},
+                {from: 'quuz', to: 'foo', minPort: 80, maxPort: 80},
+                {from: 'quuz', to: 'bar', minPort: 80, maxPort: 80},
+            ]);
+        });
+
+        it('dst is a list', () => {
+            allow(qux, fooBarGroup, 80);
+            checkConnections([
+                {from: 'qux', to: 'foo', minPort: 80, maxPort: 80},
+                {from: 'qux', to: 'bar', minPort: 80, maxPort: 80},
+            ]);
+        });
+
+        it('src is a list', () => {
+            allow(fooBarGroup, qux, 80);
+            checkConnections([
+                {from: 'foo', to: 'qux', minPort: 80, maxPort: 80},
+                {from: 'bar', to: 'qux', minPort: 80, maxPort: 80},
+            ]);
+        });
+
+        it('src is public', () => {
+            allow(publicInternet, fooBarGroup, 80);
+            checkConnections([
+                {from: 'public', to: 'foo', minPort: 80, maxPort: 80},
+                {from: 'public', to: 'bar', minPort: 80, maxPort: 80},
+            ]);
+        });
+
+        it('dst is public', () => {
+            allow(fooBarGroup, publicInternet, 80);
+            checkConnections([
+                {from: 'foo', to: 'public', minPort: 80, maxPort: 80},
+                {from: 'bar', to: 'public', minPort: 80, maxPort: 80},
+            ]);
+        });
+
+        it('dst is a Service', () => {
+            allow(fooBarGroup, service, 80);
+            checkConnections([
+                {from: 'foo', to: 'serv', minPort: 80, maxPort: 80},
+                {from: 'bar', to: 'serv', minPort: 80, maxPort: 80},
+            ]);
         });
     });
     describe('Vet', function() {
@@ -561,11 +647,11 @@ describe('Bindings', function() {
             foo = new Service('foo', []);
             deployment.deploy([foo]);
         });
-        it('connect to undeployed label', function() {
-            foo.allowFrom(new Service('baz', []), 80);
+        it('connect from undeployed container', function() {
+            foo.allowFrom(new Container('baz', 'image'), 80);
             expect(deploy).to.throw(
                 'connection {"from":"baz","maxPort":80,"minPort":80,'+
-                '"to":"foo"} references an undeployed service: baz');
+                '"to":"foo"} references an undefined hostname: baz');
         });
         it('duplicate image', function() {
             deployment.deploy(new Service('foo',

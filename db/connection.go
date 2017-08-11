@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-// A Connection allows the members of two labels to speak to each other on the port
+// A Connection allows two hostnames to speak to each other on the port
 // range [MinPort, MaxPort] inclusive.
 type Connection struct {
 	ID int `json:"-"`

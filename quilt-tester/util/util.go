@@ -33,14 +33,8 @@ func CheckPublicConnections(t *testing.T, machines []db.Machine,
 			t.Error(err)
 			continue
 		}
-		for _, lbl := range cont.Labels {
-			ports, ok := pubConns[lbl]
-			if !ok {
-				continue
-			}
-			for _, port := range ports {
-				tryGet(t, contIP+":"+strconv.Itoa(port))
-			}
+		for _, port := range pubConns[cont.Hostname] {
+			tryGet(t, contIP+":"+strconv.Itoa(port))
 		}
 	}
 }

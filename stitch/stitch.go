@@ -59,8 +59,8 @@ type Label struct {
 	IDs  []string `json:",omitempty"`
 }
 
-// A Connection allows containers implementing the From label to speak to containers
-// implementing the To label in ports in the range [MinPort, MaxPort]
+// A Connection allows the container with the `From` hostname to speak to the container
+// with the `To` hostname in ports in the range [MinPort, MaxPort]
 type Connection struct {
 	From    string `json:",omitempty"`
 	To      string `json:",omitempty"`

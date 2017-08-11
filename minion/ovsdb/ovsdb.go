@@ -37,10 +37,6 @@ type Client interface {
 	CreateACL(lswitch, direction string, priority int, match, action string) error
 	DeleteACL(lswitch string, ovsdbACL ACL) error
 
-	ListAddressSets() ([]AddressSet, error)
-	CreateAddressSet(name string, addresses []string) error
-	DeleteAddressSet(name string) error
-
 	ListLoadBalancers() ([]LoadBalancer, error)
 	CreateLoadBalancer(lswitch string, name string, vips map[string]string) error
 	DeleteLoadBalancer(lswitch string, lb LoadBalancer) error
@@ -523,73 +519,6 @@ func (ovsdb client) DeleteACL(lswitch string, ovsdbACL ACL) error {
 			lswitch, err)
 	}
 	return errorCheck(results, 2)
-}
-
-// AddressSet is a named group of IPs in OVN.
-type AddressSet struct {
-	Name      string
-	Addresses []string
-}
-
-// ListAddressSets lists the address sets in OVN.
-func (ovsdb client) ListAddressSets() ([]AddressSet, error) {
-	c.Inc("List Address Sets")
-	result := []AddressSet{}
-
-	addressReply, err := ovsdb.Transact("OVN_Northbound", ovs.Operation{
-		Op:    "select",
-		Table: "Address_Set",
-		Where: noCondition,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("transaction error: list address sets: %s", err)
-	}
-
-	for _, addr := range addressReply[0].Rows {
-		result = append(result, AddressSet{
-			Name:      addr["name"].(string),
-			Addresses: ovsStringSetToSlice(addr["addresses"]),
-		})
-	}
-	return result, nil
-}
-
-// CreateAddressSet creates an address set in OVN.
-func (ovsdb client) CreateAddressSet(name string, addresses []string) error {
-	c.Inc("Create Address Set")
-	addrs := newOvsSet(addresses)
-	addressRow := map[string]interface{}{
-		"name":      name,
-		"addresses": addrs,
-	}
-
-	insertOp := ovs.Operation{
-		Op:    "insert",
-		Table: "Address_Set",
-		Row:   addressRow,
-	}
-
-	results, err := ovsdb.Transact("OVN_Northbound", insertOp)
-	if err != nil {
-		return fmt.Errorf("transaction error: creating address set: %s", err)
-	}
-	return errorCheck(results, 1)
-}
-
-// DeleteAddressSet removes an address set from OVN.
-func (ovsdb client) DeleteAddressSet(name string) error {
-	c.Inc("DeleteAddressSet")
-	deleteOp := ovs.Operation{
-		Op:    "delete",
-		Table: "Address_Set",
-		Where: newCondition("name", "==", name),
-	}
-
-	results, err := ovsdb.Transact("OVN_Northbound", deleteOp)
-	if err != nil {
-		return fmt.Errorf("transaction error: deleting address set: %s", err)
-	}
-	return errorCheck(results, 1)
 }
 
 // OpenFlowPorts returns a map from interface name to OpenFlow port number for every

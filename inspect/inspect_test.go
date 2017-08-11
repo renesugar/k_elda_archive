@@ -24,15 +24,13 @@ func TestStripExtension(t *testing.T) {
 
 // The expected graphviz graph returned by inspect when run on `testStitch`.
 const expGraph = `strict digraph {
-    "3c1a5738512a43c3122608ab32dbf9f84a14e5f9";
-    "54be1283e837c6e40ac79709aca8cdb8ec5f31f5";
-    "cb129f8a27df770b1dac70955c227a57bc5c4af6";
+    "a";
+    "b";
+    "c";
     "public";
 
-    "3c1a5738512a43c3122608ab32dbf9f84a14e5f9" ->
-        "cb129f8a27df770b1dac70955c227a57bc5c4af6";
-    "54be1283e837c6e40ac79709aca8cdb8ec5f31f5" ->
-        "3c1a5738512a43c3122608ab32dbf9f84a14e5f9";
+    "a" -> "b";
+    "b" -> "c";
 }`
 
 func isGraphEqual(a, b string) bool {
@@ -49,36 +47,19 @@ func TestViz(t *testing.T) {
 	blueprint := stitch.Stitch{
 		Containers: []stitch.Container{
 			{
-				ID:    "54be1283e837c6e40ac79709aca8cdb8ec5f31f5",
-				Image: stitch.Image{Name: "ubuntu"},
+				Hostname: "a",
+				ID:       "54be1283e837c6e40ac79709aca8cdb8ec5f31f5",
+				Image:    stitch.Image{Name: "ubuntu"},
 			},
 			{
-				ID:    "3c1a5738512a43c3122608ab32dbf9f84a14e5f9",
-				Image: stitch.Image{Name: "ubuntu"},
+				Hostname: "b",
+				ID:       "3c1a5738512a43c3122608ab32dbf9f84a14e5f9",
+				Image:    stitch.Image{Name: "ubuntu"},
 			},
 			{
-				ID:    "cb129f8a27df770b1dac70955c227a57bc5c4af6",
-				Image: stitch.Image{Name: "ubuntu"},
-			},
-		},
-		Labels: []stitch.Label{
-			{
-				Name: "a",
-				IDs: []string{
-					"54be1283e837c6e40ac79709aca8cdb8ec5f31f5",
-				},
-			},
-			{
-				Name: "b",
-				IDs: []string{
-					"3c1a5738512a43c3122608ab32dbf9f84a14e5f9",
-				},
-			},
-			{
-				Name: "c",
-				IDs: []string{
-					"cb129f8a27df770b1dac70955c227a57bc5c4af6",
-				},
+				Hostname: "c",
+				ID:       "cb129f8a27df770b1dac70955c227a57bc5c4af6",
+				Image:    stitch.Image{Name: "ubuntu"},
 			},
 		},
 		Connections: []stitch.Connection{

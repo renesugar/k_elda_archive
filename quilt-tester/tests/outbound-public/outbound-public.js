@@ -9,7 +9,7 @@ let connected = new quilt.Service('connected',
         command: ['tail', '-f', '/dev/null'],
     }).replicate(infrastructure.nWorker*2)
 );
-quilt.publicInternet.allowFrom(connected, 80);
+quilt.publicInternet.allowFrom(connected.containers, 80);
 
 let notConnected = new quilt.Service('not-connected',
     new quilt.Container('ignoreme', 'alpine', {

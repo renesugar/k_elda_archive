@@ -16,6 +16,6 @@ let fetcher = new quilt.Service('fetcher',
     [new quilt.Container('fetcher', 'alpine', {
         command: ['tail', '-f', '/dev/null']})]);
 let loadBalanced = new quilt.Service('loadBalanced', containers);
-loadBalanced.allowFrom(fetcher, 80);
+loadBalanced.allowFrom(fetcher.containers[0], 80);
 
 deployment.deploy([fetcher, loadBalanced]);

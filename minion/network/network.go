@@ -30,7 +30,7 @@ func Run(conn db.Conn, inboundPubIntf, outboundPubIntf string) {
 	go runDNS(conn)
 	go runUpdateIPs(conn)
 
-	for range conn.TriggerTick(30, db.ContainerTable,
+	for range conn.TriggerTick(30, db.ContainerTable, db.HostnameTable,
 		db.ConnectionTable, db.LabelTable, db.EtcdTable).C {
 		if conn.EtcdLeader() {
 			runMaster(conn)
@@ -49,8 +49,9 @@ func runMaster(conn db.Conn) {
 	var labels []db.Label
 	var containers []db.Container
 	var connections []db.Connection
+	var hostnameToIP map[string]string
 	conn.Txn(db.ConnectionTable, db.ContainerTable, db.EtcdTable,
-		db.LabelTable).Run(func(view db.Database) error {
+		db.LabelTable, db.HostnameTable).Run(func(view db.Database) error {
 
 		labels = view.SelectFromLabel(func(label db.Label) bool {
 			return label.IP != ""
@@ -61,6 +62,7 @@ func runMaster(conn db.Conn) {
 		})
 
 		connections = view.SelectFromConnection(nil)
+		hostnameToIP = view.GetHostnameMappings()
 		return nil
 	})
 
@@ -74,7 +76,7 @@ func runMaster(conn db.Conn) {
 	updateLogicalSwitch(ovsdbClient, containers)
 	updateLoadBalancerRouter(ovsdbClient)
 	updateLoadBalancers(ovsdbClient, labels)
-	updateACLs(ovsdbClient, connections, labels)
+	updateACLs(ovsdbClient, connections, hostnameToIP)
 }
 
 func updateLogicalSwitch(ovsdbClient ovsdb.Client, containers []db.Container) {

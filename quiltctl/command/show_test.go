@@ -153,16 +153,19 @@ func TestContainerOutput(t *testing.T) {
 	containers := []db.Container{
 		{ID: 1, StitchID: "3", Minion: "3.3.3.3", IP: "1.2.3.4",
 			Image: "image1", Command: []string{"cmd", "1"},
-			Status: "running"},
+			Hostname: "notpublic", Status: "running"},
 		{ID: 2, StitchID: "1", Minion: "1.1.1.1", Image: "image2",
-			Labels: []string{"label1", "label2"}, Status: "scheduled"},
+			Labels: []string{"label1", "label2"}, Status: "scheduled",
+			Hostname: "frompublic1"},
 		{ID: 3, StitchID: "4", Minion: "1.1.1.1", Image: "image3",
-			Command: []string{"cmd"},
-			Labels:  []string{"label1"},
-			Status:  "scheduled"},
+			Command:  []string{"cmd"},
+			Labels:   []string{"label1"},
+			Hostname: "frompublic2",
+			Status:   "scheduled"},
 		{ID: 4, StitchID: "7", Minion: "2.2.2.2", Image: "image1",
-			Command: []string{"cmd", "3", "4"},
-			Labels:  []string{"label1"}},
+			Command:  []string{"cmd", "3", "4"},
+			Hostname: "frompublic3",
+			Labels:   []string{"label1"}},
 		{ID: 5, StitchID: "8", Image: "image1"},
 	}
 	machines := []db.Machine{
@@ -171,8 +174,10 @@ func TestContainerOutput(t *testing.T) {
 		{StitchID: "7", PrivateIP: ""},
 	}
 	connections := []db.Connection{
-		{ID: 1, From: "public", To: "label1", MinPort: 80, MaxPort: 80},
-		{ID: 2, From: "notpublic", To: "label2", MinPort: 100, MaxPort: 101},
+		{ID: 1, From: "public", To: "frompublic1", MinPort: 80, MaxPort: 80},
+		{ID: 1, From: "public", To: "frompublic2", MinPort: 80, MaxPort: 80},
+		{ID: 1, From: "public", To: "frompublic3", MinPort: 80, MaxPort: 80},
+		{ID: 2, From: "notpublic", To: "frompublic1", MinPort: 100, MaxPort: 101},
 	}
 
 	expected := `CONTAINER____MACHINE____COMMAND___________LABELS________` +
@@ -259,24 +264,22 @@ ________________________________________________________________________________
 `
 	checkContainerOutput(t, containers, machines, connections, nil, false, expected)
 
-	// Test writing container that has multiple labels connected to the public
+	// Test writing container that has multiple connections to the public
 	// internet.
 	containers = []db.Container{
-		{StitchID: "3", Minion: "1.1.1.1", Image: "image1",
-			Labels: []string{"red"}},
+		{StitchID: "3", Minion: "1.1.1.1", Image: "image1", Hostname: "frompub"},
 	}
 	machines = []db.Machine{
 		{StitchID: "5", PublicIP: "7.7.7.7", PrivateIP: "1.1.1.1"},
 	}
 	connections = []db.Connection{
-		{ID: 1, From: "public", To: "red", MinPort: 80, MaxPort: 80},
-		{ID: 2, From: "public", To: "red", MinPort: 100, MaxPort: 101},
+		{ID: 1, From: "public", To: "frompub", MinPort: 80, MaxPort: 80},
+		{ID: 2, From: "public", To: "frompub", MinPort: 100, MaxPort: 101},
 	}
 
 	expected = `CONTAINER____MACHINE____COMMAND____LABELS____STATUS` +
 		`_______CREATED____PUBLIC_IP
-3____________5__________image1_____red_______scheduled` +
-		`_______________7.7.7.7:[80,100-101]
+3____________5__________image1_______________scheduled_______________7.7.7.7:[80,100-101]
 `
 	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 }

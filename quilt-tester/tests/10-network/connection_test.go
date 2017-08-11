@@ -11,9 +11,8 @@ import (
 )
 
 type connectionTester struct {
-	labelMap      map[string]db.Label
 	connectionMap map[string][]string
-	allIPs        []string
+	allHostnames  []string
 }
 
 func newConnectionTester(clnt client.Client) (connectionTester, error) {
@@ -22,24 +21,22 @@ func newConnectionTester(clnt client.Client) (connectionTester, error) {
 		return connectionTester{}, err
 	}
 
-	allIPsSet := make(map[string]struct{})
-	labelMap := make(map[string]db.Label)
-	for _, label := range labels {
-		labelMap[label.Label] = label
-
-		for _, ip := range append(label.ContainerIPs, label.IP) {
-			allIPsSet[ip] = struct{}{}
-		}
-	}
-
-	var allIPs []string
-	for ip := range allIPsSet {
-		allIPs = append(allIPs, ip)
+	containers, err := clnt.QueryContainers()
+	if err != nil {
+		return connectionTester{}, err
 	}
 
 	connections, err := clnt.QueryConnections()
 	if err != nil {
 		return connectionTester{}, err
+	}
+
+	var allHostnames []string
+	for _, label := range labels {
+		allHostnames = append(allHostnames, label.Label+".q")
+	}
+	for _, c := range containers {
+		allHostnames = append(allHostnames, c.Hostname+".q")
 	}
 
 	connectionMap := make(map[string][]string)
@@ -50,9 +47,8 @@ func newConnectionTester(clnt client.Client) (connectionTester, error) {
 	}
 
 	return connectionTester{
-		labelMap:      labelMap,
 		connectionMap: connectionMap,
-		allIPs:        allIPs,
+		allHostnames:  allHostnames,
 	}, nil
 }
 
@@ -71,7 +67,7 @@ type pingResult struct {
 const execConcurrencyLimit = 5
 
 func (tester connectionTester) pingAll(container db.Container) []pingResult {
-	pingResultsChan := make(chan pingResult, len(tester.allIPs))
+	pingResultsChan := make(chan pingResult, len(tester.allHostnames))
 
 	// Create worker threads.
 	pingRequests := make(chan string, execConcurrencyLimit)
@@ -80,11 +76,11 @@ func (tester connectionTester) pingAll(container db.Container) []pingResult {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for ip := range pingRequests {
+			for hostname := range pingRequests {
 				startTime := time.Now()
-				_, err := ping(container.StitchID, ip)
+				_, err := ping(container.StitchID, hostname)
 				pingResultsChan <- pingResult{
-					target:    ip,
+					target:    hostname,
 					reachable: err == nil,
 					err:       err,
 					cmdTime:   commandTime{startTime, time.Now()},
@@ -94,8 +90,8 @@ func (tester connectionTester) pingAll(container db.Container) []pingResult {
 	}
 
 	// Feed worker threads.
-	for _, ip := range tester.allIPs {
-		pingRequests <- ip
+	for _, hostname := range tester.allHostnames {
+		pingRequests <- hostname
 	}
 	close(pingRequests)
 	wg.Wait()
@@ -113,19 +109,14 @@ func (tester connectionTester) pingAll(container db.Container) []pingResult {
 func (tester connectionTester) test(container db.Container) (failures []error) {
 	// We should be able to ping ourselves.
 	expReachable := map[string]struct{}{
-		container.IP: {},
+		container.Hostname + ".q": {},
 	}
-	for _, label := range container.Labels {
-		for _, toLabelName := range tester.connectionMap[label] {
-			toLabel := tester.labelMap[toLabelName]
-			for _, ip := range append(toLabel.ContainerIPs, toLabel.IP) {
-				expReachable[ip] = struct{}{}
-			}
-		}
+	for _, dst := range tester.connectionMap[container.Hostname] {
+		expReachable[dst+".q"] = struct{}{}
 	}
 
 	var expPings []pingResult
-	for _, ip := range tester.allIPs {
+	for _, ip := range tester.allHostnames {
 		_, reachable := expReachable[ip]
 		expPings = append(expPings, pingResult{
 			target:    ip,

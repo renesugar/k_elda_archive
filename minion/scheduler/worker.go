@@ -259,14 +259,12 @@ func openflowContainers(dbcs []db.Container,
 			FromPub: map[int]struct{}{},
 		}
 
-		for _, l := range dbc.Labels {
-			for _, p := range toPubPorts[l] {
-				ofc.ToPub[p] = struct{}{}
-			}
+		for _, p := range toPubPorts[dbc.Hostname] {
+			ofc.ToPub[p] = struct{}{}
+		}
 
-			for _, p := range fromPubPorts[l] {
-				ofc.FromPub[p] = struct{}{}
-			}
+		for _, p := range fromPubPorts[dbc.Hostname] {
+			ofc.FromPub[p] = struct{}{}
 		}
 
 		ofcs = append(ofcs, ofc)

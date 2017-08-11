@@ -36,16 +36,17 @@ Check out more in our [Getting Started Guide](http://docs.quilt.io/#getting-star
 Run any container.
 
 [//]: # (b1)
-<!-- const {Container, Service, Machine, publicInternet} = require('@quilt/quilt'); -->
+<!-- const {Container, Service, Machine, allow, publicInternet} = require('@quilt/quilt'); -->
 ```javascript
-let webContainer = new Container('someNodejsImage');
+let web = new Container('someNodejsImage');
 ```
 
 Load balance traffic with Services.
 
 [//]: # (b1)
 ```javascript
-let webApp = new Service('web', webContainer.replicate(3)); // A load balancer over 3 containers.
+let webGroup = web.replicate(3);
+let webLoadBalancer = new Service('web-lb', webGroup); // A load balancer over 3 containers.
 ```
 
 Share and import blueprints via npm.
@@ -60,8 +61,8 @@ Set up a secure network.
 
 [//]: # (b1)
 ```javascript
-webApp.allowFrom(publicInternet, 80); // Open the webservers' port 80 to the public internet.
-redis.allowFrom(webApp, redis.port); // Let the web app communicate with Redis.
+allow(publicInternet, webGroup, 80); // Open the webservers' port 80 to the public internet.
+redis.allowFrom(webGroup, redis.port); // Let the web app communicate with Redis.
 ```
 
 Deploy VMs on any [supported cloud provider](#deploy-quickly-on).

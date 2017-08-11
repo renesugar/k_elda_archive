@@ -24,20 +24,6 @@ func (_m *Client) CreateACL(lswitch string, direction string, priority int, matc
 	return r0
 }
 
-// CreateAddressSet provides a mock function with given fields: name, addresses
-func (_m *Client) CreateAddressSet(name string, addresses []string) error {
-	ret := _m.Called(name, addresses)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, []string) error); ok {
-		r0 = rf(name, addresses)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // CreateLoadBalancer provides a mock function with given fields: lswitch, name, vips
 func (_m *Client) CreateLoadBalancer(lswitch string, name string, vips map[string]string) error {
 	ret := _m.Called(lswitch, name, vips)
@@ -122,20 +108,6 @@ func (_m *Client) DeleteACL(lswitch string, ovsdbACL ovsdb.ACL) error {
 	return r0
 }
 
-// DeleteAddressSet provides a mock function with given fields: name
-func (_m *Client) DeleteAddressSet(name string) error {
-	ret := _m.Called(name)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(name)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteLoadBalancer provides a mock function with given fields: lswitch, lb
 func (_m *Client) DeleteLoadBalancer(lswitch string, lb ovsdb.LoadBalancer) error {
 	ret := _m.Called(lswitch, lb)
@@ -193,29 +165,6 @@ func (_m *Client) ListACLs() ([]ovsdb.ACL, error) {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]ovsdb.ACL)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListAddressSets provides a mock function with given fields:
-func (_m *Client) ListAddressSets() ([]ovsdb.AddressSet, error) {
-	ret := _m.Called()
-
-	var r0 []ovsdb.AddressSet
-	if rf, ok := ret.Get(0).(func() []ovsdb.AddressSet); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]ovsdb.AddressSet)
 		}
 	}
 

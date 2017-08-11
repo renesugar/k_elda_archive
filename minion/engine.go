@@ -29,23 +29,29 @@ func updatePolicy(view db.Database, blueprint string) {
 func portPlacements(connections []db.Connection, containers []db.Container) (
 	placements []db.Placement) {
 
+	hostnameToContainer := map[string]db.Container{}
+	for _, c := range containers {
+		hostnameToContainer[c.Hostname] = c
+	}
+
 	ports := make(map[int][]string)
 	for _, conn := range connections {
 		if conn.From != stitch.PublicInternetLabel {
 			continue
 		}
 
-		for _, container := range containers {
-			for _, label := range container.Labels {
-				if label == conn.To {
-					// XXX: Public connections do not currently
-					// support ranges, so we can safely consider
-					// just the MinPort.
-					ports[conn.MinPort] = append(ports[conn.MinPort],
-						container.StitchID)
-				}
-			}
+		toContainer, ok := hostnameToContainer[conn.To]
+		if !ok {
+			log.WithField("connection", conn).
+				WithField("hostname", conn.To).
+				Warn("Public connection in terms of unknown hostname." +
+					"Ignoring.")
+			continue
 		}
+
+		// XXX: Public connections do not currently support ranges, so we can
+		// safely consider just the MinPort.
+		ports[conn.MinPort] = append(ports[conn.MinPort], toContainer.StitchID)
 	}
 
 	// Create placement rules for all combinations of containers that listen on

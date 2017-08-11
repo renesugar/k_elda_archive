@@ -45,23 +45,23 @@ func test(t *testing.T, containers []db.Container, connections []db.Connection) 
 	}
 
 	for _, c := range containers {
-		shouldErr := !containsAny(connected, c.Labels)
+		_, shouldPass := connected[c.Hostname]
 
 		fmt.Printf("Fetching %s from container %s\n", testHost, c.StitchID)
-		if shouldErr {
-			fmt.Println(".. It should fail")
-		} else {
+		if shouldPass {
 			fmt.Println(".. It should not fail")
+		} else {
+			fmt.Println(".. It should fail")
 		}
 
 		out, err := exec.Command("quilt", "ssh", c.StitchID,
 			"wget", "-T", "2", "-O", "-", testHost).CombinedOutput()
 
 		errored := err != nil
-		if !shouldErr && errored {
+		if shouldPass && errored {
 			t.Errorf("Fetch failed when it should have succeeded: %s", err)
 			fmt.Println(string(out))
-		} else if shouldErr && !errored {
+		} else if !shouldPass && !errored {
 			t.Error("Fetch succeeded when it should have failed")
 			fmt.Println(string(out))
 		}
@@ -70,13 +70,4 @@ func test(t *testing.T, containers []db.Container, connections []db.Connection) 
 
 func inRange(candidate, min, max int) bool {
 	return min <= candidate && candidate <= max
-}
-
-func containsAny(m map[string]struct{}, keys []string) bool {
-	for _, k := range keys {
-		if _, ok := m[k]; ok {
-			return true
-		}
-	}
-	return false
 }

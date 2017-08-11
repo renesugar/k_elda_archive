@@ -251,40 +251,6 @@ func TestConnectionTxn(t *testing.T) {
 	assert.False(t, fired(trigg))
 
 	stc := stitch.Stitch{
-		Containers: []stitch.Container{
-			{
-				ID:    "018e4ee517d85640d9bf0adb4579d2ac9bd358af",
-				Image: stitch.Image{Name: "alpine"},
-			},
-			{
-				ID:    "ac4693f0b7fc17aa0e885aa03dc8f7cd6017f496",
-				Image: stitch.Image{Name: "alpine"},
-			},
-			{
-				ID:    "6c1423bb4006da48cd36aa664afec85f05575702",
-				Image: stitch.Image{Name: "alpine"},
-			},
-		},
-		Labels: []stitch.Label{
-			{
-				Name: "a",
-				IDs: []string{
-					"018e4ee517d85640d9bf0adb4579d2ac9bd358af",
-				},
-			},
-			{
-				Name: "b",
-				IDs: []string{
-					"ac4693f0b7fc17aa0e885aa03dc8f7cd6017f496",
-				},
-			},
-			{
-				Name: "c",
-				IDs: []string{
-					"6c1423bb4006da48cd36aa664afec85f05575702",
-				},
-			},
-		},
 		Connections: []stitch.Connection{
 			{From: "a", To: "a", MinPort: 80, MaxPort: 80},
 		},
@@ -392,36 +358,28 @@ func TestPlacementTxn(t *testing.T) {
 		assert.Empty(t, extra)
 	}
 
+	fooHostname := "foo"
+	barHostname := "bar"
+	bazHostname := "baz"
 	fooID := "fooID"
 	barID := "barID"
 	bazID := "bazID"
 	stc := stitch.Stitch{
 		Containers: []stitch.Container{
 			{
-				ID:    fooID,
-				Image: stitch.Image{Name: "foo"},
+				Hostname: fooHostname,
+				ID:       fooID,
+				Image:    stitch.Image{Name: "foo"},
 			},
 			{
-				ID:    barID,
-				Image: stitch.Image{Name: "bar"},
+				Hostname: barHostname,
+				ID:       barID,
+				Image:    stitch.Image{Name: "bar"},
 			},
 			{
-				ID:    bazID,
-				Image: stitch.Image{Name: "baz"},
-			},
-		},
-		Labels: []stitch.Label{
-			{
-				Name: "foo",
-				IDs:  []string{fooID},
-			},
-			{
-				Name: "bar",
-				IDs:  []string{barID},
-			},
-			{
-				Name: "baz",
-				IDs:  []string{bazID},
+				Hostname: bazHostname,
+				ID:       bazID,
+				Image:    stitch.Image{Name: "baz"},
 			},
 		},
 	}
@@ -441,16 +399,22 @@ func TestPlacementTxn(t *testing.T) {
 	// Port placement
 	stc.Placements = nil
 	stc.Connections = []stitch.Connection{
-		{From: stitch.PublicInternetLabel, To: "foo", MinPort: 80, MaxPort: 80},
-		{From: stitch.PublicInternetLabel, To: "foo", MinPort: 81, MaxPort: 81},
+		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 80,
+			MaxPort: 80},
+		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 81,
+			MaxPort: 81},
 	}
 	checkPlacement(stc)
 
 	stc.Connections = []stitch.Connection{
-		{From: stitch.PublicInternetLabel, To: "foo", MinPort: 80, MaxPort: 80},
-		{From: stitch.PublicInternetLabel, To: "bar", MinPort: 80, MaxPort: 80},
-		{From: stitch.PublicInternetLabel, To: "bar", MinPort: 81, MaxPort: 81},
-		{From: stitch.PublicInternetLabel, To: "baz", MinPort: 81, MaxPort: 81},
+		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 80,
+			MaxPort: 80},
+		{From: stitch.PublicInternetLabel, To: barHostname, MinPort: 80,
+			MaxPort: 80},
+		{From: stitch.PublicInternetLabel, To: barHostname, MinPort: 81,
+			MaxPort: 81},
+		{From: stitch.PublicInternetLabel, To: bazHostname, MinPort: 81,
+			MaxPort: 81},
 	}
 	checkPlacement(stc,
 		db.Placement{

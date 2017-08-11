@@ -35,6 +35,10 @@ new Container('hostname', 'imageName');
 
 API Breaking Changes:
 - Make `placeOn` a method of `Container` rather than `Service`.
+- Allow containers to explicitly connect to each other (rather than requiring
+all connections to occur by connecting services).
+- Change Service.allowFrom so that it allows connections to the load balancer,
+and not directly to the containers that get load balanced over.
 
 Release 0.2.0
 -------------

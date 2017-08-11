@@ -195,7 +195,7 @@ func getRules(ipt IPTables, table, chain string) (rules []string, err error) {
 func preroutingRules(publicInterface string, containers []db.Container,
 	connections []db.Connection) (rules []string) {
 
-	// Map each label to all ports on which it can receive packets
+	// Map each hostname to all ports on which it can receive packets
 	// from the public internet.
 	portsFromWeb := make(map[string]map[int]struct{})
 	for _, conn := range connections {
@@ -212,15 +212,13 @@ func preroutingRules(publicInterface string, containers []db.Container,
 
 	// Map the container's port to the same port of the host.
 	for _, dbc := range containers {
-		for _, label := range dbc.Labels {
-			for port := range portsFromWeb[label] {
-				for _, protocol := range []string{"tcp", "udp"} {
-					rules = append(rules, fmt.Sprintf(
-						"-i %[1]s -p %[2]s -m %[2]s "+
-							"--dport %[3]d -j DNAT "+
-							"--to-destination %[4]s:%[3]d",
-						publicInterface, protocol, port, dbc.IP))
-				}
+		for port := range portsFromWeb[dbc.Hostname] {
+			for _, protocol := range []string{"tcp", "udp"} {
+				rules = append(rules, fmt.Sprintf(
+					"-i %[1]s -p %[2]s -m %[2]s "+
+						"--dport %[3]d -j DNAT "+
+						"--to-destination %[4]s:%[3]d",
+					publicInterface, protocol, port, dbc.IP))
 			}
 		}
 	}
@@ -231,7 +229,7 @@ func preroutingRules(publicInterface string, containers []db.Container,
 func postroutingRules(publicInterface string, containers []db.Container,
 	connections []db.Connection) (rules []string) {
 
-	// Map each label to all ports on which it can send packets
+	// Map each hostname to all ports on which it can send packets
 	// to the public internet.
 	portsToWeb := make(map[string]map[int]struct{})
 	for _, conn := range connections {
@@ -247,16 +245,14 @@ func postroutingRules(publicInterface string, containers []db.Container,
 	}
 
 	for _, dbc := range containers {
-		for _, label := range dbc.Labels {
-			for port := range portsToWeb[label] {
-				for _, protocol := range []string{"tcp", "udp"} {
-					rules = append(rules, fmt.Sprintf(
-						"-s %[1]s/32 -p %[2]s -m %[2]s "+
-							"--dport %[3]d -o %[4]s "+
-							"-j MASQUERADE",
-						dbc.IP, protocol, port, publicInterface,
-					))
-				}
+		for port := range portsToWeb[dbc.Hostname] {
+			for _, protocol := range []string{"tcp", "udp"} {
+				rules = append(rules, fmt.Sprintf(
+					"-s %[1]s/32 -p %[2]s -m %[2]s "+
+						"--dport %[3]d -o %[4]s "+
+						"-j MASQUERADE",
+					dbc.IP, protocol, port, publicInterface,
+				))
 			}
 		}
 	}
