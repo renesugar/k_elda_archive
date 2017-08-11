@@ -26,6 +26,11 @@ func newDNSTester(clnt client.Client) (dnsTester, error) {
 		return dnsTester{}, err
 	}
 
+	containers, err := clnt.QueryContainers()
+	if err != nil {
+		return dnsTester{}, err
+	}
+
 	hostnameIPMap := make(map[string]string)
 	for _, host := range externalHostnames {
 		hostnameIPMap[host] = anyIPAllowed
@@ -35,6 +40,12 @@ func newDNSTester(clnt client.Client) (dnsTester, error) {
 		hostnameIPMap[label.Label+".q"] = label.IP
 		for i, ip := range label.ContainerIPs {
 			hostnameIPMap[fmt.Sprintf("%d.%s.q", i+1, label.Label)] = ip
+		}
+	}
+
+	for _, c := range containers {
+		if c.Hostname != "" {
+			hostnameIPMap[c.Hostname+".q"] = c.IP
 		}
 	}
 
