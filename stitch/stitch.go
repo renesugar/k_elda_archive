@@ -25,7 +25,7 @@ type Stitch struct {
 // A Placement constraint guides on what type of machine a container can be
 // scheduled.
 type Placement struct {
-	TargetLabel string `json:",omitempty"`
+	TargetContainerID string `json:",omitempty"`
 
 	Exclusive bool `json:",omitempty"`
 

@@ -26,33 +26,44 @@ func updatePolicy(view db.Database, blueprint string) {
 
 // `portPlacements` creates exclusive placement rules such that no two containers
 // listening on the same public port get placed on the same machine.
-func portPlacements(connections []db.Connection) (placements []db.Placement) {
+func portPlacements(connections []db.Connection, containers []db.Container) (
+	placements []db.Placement) {
+
 	ports := make(map[int][]string)
-	for _, c := range connections {
-		if c.From != stitch.PublicInternetLabel {
+	for _, conn := range connections {
+		if conn.From != stitch.PublicInternetLabel {
 			continue
 		}
 
-		// XXX: Public connections do not currently support ranges, so we can
-		// safely consider just the MinPort.
-		ports[c.MinPort] = append(ports[c.MinPort], c.To)
+		for _, container := range containers {
+			for _, label := range container.Labels {
+				if label == conn.To {
+					// XXX: Public connections do not currently
+					// support ranges, so we can safely consider
+					// just the MinPort.
+					ports[conn.MinPort] = append(ports[conn.MinPort],
+						container.StitchID)
+				}
+			}
+		}
 	}
 
-	// Create placement rules for all combinations of labels that listen on the
-	// same port. We do not need to create a rule for every permutation because
-	// order does not matter for the `TargetLabel` and `OtherLabel` fields --
-	// the placement is equivalent if the two fields are swapped.
-	// We do so by creating a placement rule between each label, and
-	// the labels after it. There is no need to create rules for the preceding
-	// labels because the previous rules will have covered it.
-	for _, labels := range ports {
-		for i, tgt := range labels {
-			for _, other := range labels[i:] {
+	// Create placement rules for all combinations of containers that listen on
+	// the same port. We do not need to create a rule for every permutation
+	// because order does not matter for the `TargetContainer` and
+	// `OtherContainer` fields -- the placement is equivalent if the two fields
+	// are swapped.  We do so by creating a placement rule between each
+	// container, and the containers after it. There is no need to create rules
+	// for the preceding containers because the previous rules will have
+	// covered it.
+	for _, cids := range ports {
+		for i, tgt := range cids {
+			for _, other := range cids[i+1:] {
 				placements = append(placements,
 					db.Placement{
-						Exclusive:   true,
-						TargetLabel: tgt,
-						OtherLabel:  other,
+						Exclusive:       true,
+						TargetContainer: tgt,
+						OtherContainer:  other,
 					},
 				)
 			}
@@ -63,15 +74,17 @@ func portPlacements(connections []db.Connection) (placements []db.Placement) {
 }
 
 func updatePlacements(view db.Database, blueprint stitch.Stitch) {
-	placements := db.PlacementSlice(portPlacements(view.SelectFromConnection(nil)))
+	connections := view.SelectFromConnection(nil)
+	containers := view.SelectFromContainer(nil)
+	placements := db.PlacementSlice(portPlacements(connections, containers))
 	for _, sp := range blueprint.Placements {
 		placements = append(placements, db.Placement{
-			TargetLabel: sp.TargetLabel,
-			Exclusive:   sp.Exclusive,
-			Provider:    sp.Provider,
-			Size:        sp.Size,
-			Region:      sp.Region,
-			FloatingIP:  sp.FloatingIP,
+			TargetContainer: sp.TargetContainerID,
+			Exclusive:       sp.Exclusive,
+			Provider:        sp.Provider,
+			Size:            sp.Size,
+			Region:          sp.Region,
+			FloatingIP:      sp.FloatingIP,
 		})
 	}
 

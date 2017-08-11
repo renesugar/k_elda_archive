@@ -6,12 +6,14 @@ package db
 type Placement struct {
 	ID int
 
-	TargetLabel string
+	TargetContainer string
 
 	Exclusive bool
 
-	// Label Constraint
-	OtherLabel string
+	// Constraint based on co-location with another container. If Exclusive is
+	// true, then the TargetContainer cannot be placed on the same machine as
+	// OtherContainer.
+	OtherContainer string
 
 	// Machine Constraints
 	Provider   string

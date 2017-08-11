@@ -89,45 +89,10 @@ Outer:
 	}
 }
 
-// Compute the peer labels map if it is nil, otherwise just return it
-func computePeerLabels(peerLabels map[string]struct{}, peers []*db.Container,
-	dbcID int) map[string]struct{} {
-
-	if peerLabels != nil {
-		return peerLabels
-	}
-
-	peerLabels = map[string]struct{}{}
-	for _, peer := range peers {
-		if peer.ID == dbcID {
-			continue
-		}
-
-		for _, label := range peer.Labels {
-			peerLabels[label] = struct{}{}
-		}
-	}
-	return peerLabels
-}
-
-// Check that the placement is not violated by both directions of the constraint
-func validExclusion(target, other string, cLabels, pLabels map[string]struct{}) bool {
-	_, tcOK := cLabels[target]
-	_, tpOK := pLabels[other]
-	tValid := !tcOK || !tpOK
-
-	_, ocOK := cLabels[other]
-	_, opOK := pLabels[target]
-	oValid := !ocOK || !opOK
-
-	return tValid && oValid
-}
-
-func checkExclusionConstraint(constraint db.Placement, cLabels,
-	pLabels map[string]struct{}) bool {
-
+func canBeColocated(constraint db.Placement, toPlace db.Container,
+	peers []*db.Container) bool {
 	if !constraint.Exclusive {
-		// XXX: Inclusive OtherLabel is hard because we can't
+		// XXX: Inclusive OtherContainer is hard because we can't
 		// make placement decisions without considering all the
 		// containers on all of the minions.
 		log.WithField("constraint", constraint).Warning(
@@ -136,29 +101,29 @@ func checkExclusionConstraint(constraint db.Placement, cLabels,
 		return true
 	}
 
-	return validExclusion(constraint.TargetLabel, constraint.OtherLabel,
-		cLabels, pLabels)
+	for _, p := range peers {
+		toPlaceIsTarget := toPlace.StitchID == constraint.TargetContainer
+		peerIsTarget := p.StitchID == constraint.TargetContainer
+		toPlaceIsOther := toPlace.StitchID == constraint.OtherContainer
+		peerIsOther := p.StitchID == constraint.OtherContainer
+		if (toPlaceIsTarget && peerIsOther) || (peerIsTarget && toPlaceIsOther) {
+			return false
+		}
+	}
+	return true
 }
 
 func validPlacement(constraints []db.Placement, m minion, peers []*db.Container,
 	dbc *db.Container) bool {
 
-	cLabels := map[string]struct{}{}
-	for _, label := range dbc.Labels {
-		cLabels[label] = struct{}{}
-	}
-
-	var peerLabels map[string]struct{}
 	for _, constraint := range constraints {
-		if constraint.OtherLabel != "" {
-			peerLabels = computePeerLabels(peerLabels, peers, dbc.ID)
-			ok := checkExclusionConstraint(constraint, cLabels, peerLabels)
-			if !ok {
+		if constraint.OtherContainer != "" {
+			if !canBeColocated(constraint, *dbc, peers) {
 				return false
 			}
 		}
 
-		if _, ok := cLabels[constraint.TargetLabel]; !ok {
+		if dbc.StitchID != constraint.TargetContainer {
 			continue
 		}
 

@@ -375,14 +375,14 @@ func TestPlacementTxn(t *testing.T) {
 			plcm := plcmIntf.(db.Placement)
 			plcm.ID = 0 // Ignore the Database ID.
 
-			// If it's a label constraint, the order of TargetLabel and
-			// OtherLabel doesn't matter. Therefore, we sort the labels
-			// so that the assignment is consistent.
-			if plcm.OtherLabel != "" {
-				labels := []string{plcm.TargetLabel, plcm.OtherLabel}
-				sort.Strings(labels)
-				plcm.TargetLabel = labels[0]
-				plcm.OtherLabel = labels[1]
+			// If it's a container constraint, the order of TargetContainer
+			// and OtherContainer doesn't matter. Therefore, we sort the
+			// containers IDs so that the assignment is consistent.
+			if plcm.OtherContainer != "" {
+				ids := []string{plcm.TargetContainer, plcm.OtherContainer}
+				sort.Strings(ids)
+				plcm.TargetContainer = ids[0]
+				plcm.OtherContainer = ids[1]
 			}
 			return plcm
 		}
@@ -392,52 +392,49 @@ func TestPlacementTxn(t *testing.T) {
 		assert.Empty(t, extra)
 	}
 
+	fooID := "fooID"
+	barID := "barID"
+	bazID := "bazID"
 	stc := stitch.Stitch{
 		Containers: []stitch.Container{
 			{
-				ID:    "1a84f87eebbf7dc7edda83a38f34a49f2116240b",
+				ID:    fooID,
 				Image: stitch.Image{Name: "foo"},
 			},
 			{
-				ID:    "1806739e57b7678db83f0a5c6c63b16325c54242",
+				ID:    barID,
 				Image: stitch.Image{Name: "bar"},
 			},
 			{
-				ID:    "af771c5f8cd87c550263b011541cbf6a14051976",
-				Image: stitch.Image{Name: "bar"},
+				ID:    bazID,
+				Image: stitch.Image{Name: "baz"},
 			},
 		},
 		Labels: []stitch.Label{
 			{
 				Name: "foo",
-				IDs: []string{
-					"1a84f87eebbf7dc7edda83a38f34a49f2116240b",
-				},
+				IDs:  []string{fooID},
 			},
 			{
 				Name: "bar",
-				IDs: []string{
-					"1806739e57b7678db83f0a5c6c63b16325c54242",
-				},
+				IDs:  []string{barID},
 			},
 			{
 				Name: "baz",
-				IDs: []string{
-					"af771c5f8cd87c550263b011541cbf6a14051976",
-				},
+				IDs:  []string{bazID},
 			},
 		},
 	}
 
 	// Machine placement
 	stc.Placements = []stitch.Placement{
-		{TargetLabel: "foo", Exclusive: false, Size: "m4.large"},
+		{TargetContainerID: "foo", Exclusive: false, Size: "m4.large"},
 	}
 	checkPlacement(stc,
 		db.Placement{
-			TargetLabel: "foo",
-			Exclusive:   false,
-			Size:        "m4.large",
+			TargetContainer: "foo",
+			Exclusive:       false,
+			Size:            "m4.large",
 		},
 	)
 
@@ -447,13 +444,7 @@ func TestPlacementTxn(t *testing.T) {
 		{From: stitch.PublicInternetLabel, To: "foo", MinPort: 80, MaxPort: 80},
 		{From: stitch.PublicInternetLabel, To: "foo", MinPort: 81, MaxPort: 81},
 	}
-	checkPlacement(stc,
-		db.Placement{
-			TargetLabel: "foo",
-			Exclusive:   true,
-			OtherLabel:  "foo",
-		},
-	)
+	checkPlacement(stc)
 
 	stc.Connections = []stitch.Connection{
 		{From: stitch.PublicInternetLabel, To: "foo", MinPort: 80, MaxPort: 80},
@@ -463,33 +454,14 @@ func TestPlacementTxn(t *testing.T) {
 	}
 	checkPlacement(stc,
 		db.Placement{
-			TargetLabel: "foo",
-			Exclusive:   true,
-			OtherLabel:  "foo",
+			TargetContainer: fooID,
+			OtherContainer:  barID,
+			Exclusive:       true,
 		},
-
 		db.Placement{
-			TargetLabel: "bar",
-			Exclusive:   true,
-			OtherLabel:  "bar",
-		},
-
-		db.Placement{
-			TargetLabel: "foo",
-			Exclusive:   true,
-			OtherLabel:  "bar",
-		},
-
-		db.Placement{
-			TargetLabel: "baz",
-			Exclusive:   true,
-			OtherLabel:  "baz",
-		},
-
-		db.Placement{
-			TargetLabel: "bar",
-			Exclusive:   true,
-			OtherLabel:  "baz",
+			TargetContainer: barID,
+			OtherContainer:  bazID,
+			Exclusive:       true,
 		},
 	)
 }

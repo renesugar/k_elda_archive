@@ -154,16 +154,17 @@ Deployment.prototype.toQuiltRepresentation = function() {
     let connections = [];
     let placements = [];
 
-    // For each service, convert the associated connections and placement rules.
-    // Also, aggregate all containers referenced by services.
+    // For each service, convert the associated connections, and placements.
+    // Also, convert the service into the form required by the Quilt
+    // deployment engine.
     this.services.forEach(function(service) {
         connections = connections.concat(service.getQuiltConnections());
-        placements = placements.concat(service.placements);
 
-        // Collect the containers IDs, and add them to the container map.
+        // Collect the containers IDs.
         let ids = [];
         service.containers.forEach(function(container) {
             ids.push(container.id);
+            placements = placements.concat(container.getPlacementsWithID());
         });
 
         services.push({
@@ -268,7 +269,6 @@ function Service(name, containers) {
     }
     this.name = uniqueHostname(name);
     this.containers = containers;
-    this.placements = [];
 
     this.allowedInboundConnections = [];
     this.outgoingPublic = [];
@@ -323,17 +323,6 @@ Service.prototype.allowFromPublic = function(range) {
             `and not to port ranges`);
     }
     this.incomingPublic.push(range);
-};
-
-Service.prototype.placeOn = function(machineAttrs) {
-    this.placements.push({
-        targetLabel: this.name,
-        exclusive: false,
-        provider: getString('provider', machineAttrs.provider),
-        size: getString('size', machineAttrs.size),
-        region: getString('region', machineAttrs.region),
-        floatingIp: getString('floatingIp', machineAttrs.floatingIp),
-    });
 };
 
 Service.prototype.getQuiltConnections = function() {
@@ -589,6 +578,10 @@ function Container(hostnamePrefix, image, {
     this.env = _.clone(this.env);
     this.filepathToContent = _.clone(this.filepathToContent);
     this.image = this.image.clone();
+
+    // When generating the Quilt deployment JSON object, these placements must
+    // be converted using Container.getPlacementsWithID.
+    this.placements = [];
 }
 
 // Create a new Container with the same attributes.
@@ -633,6 +626,28 @@ Container.prototype.hash = function() {
         env: this.env,
         filepathToContent: this.filepathToContent,
         hostname: this.hostname,
+    });
+};
+
+Container.prototype.placeOn = function(machineAttrs) {
+    this.placements.push({
+        exclusive: false,
+        provider: getString('provider', machineAttrs.provider),
+        size: getString('size', machineAttrs.size),
+        region: getString('region', machineAttrs.region),
+        floatingIp: getString('floatingIp', machineAttrs.floatingIp),
+    });
+};
+
+/**
+ * Set the targetContainer of the placement rules to be this container. This
+ * cannot be done when `placeOn` is called because the container ID is not
+ * determined until after all user code has executed.
+ */
+Container.prototype.getPlacementsWithID = function() {
+    return this.placements.map((plcm) => {
+        plcm.targetContainer = this.id;
+        return plcm;
     });
 };
 

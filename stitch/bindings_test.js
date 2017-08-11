@@ -386,8 +386,8 @@ describe('Bindings', function() {
     describe('Placement', function() {
         let target;
         beforeEach(function() {
-            target = new Service('target', []);
-            deployment.deploy(target);
+            target = new Container('host', 'image');
+            deployment.deploy(new Service('target', [target]));
         });
         it('MachineRule size, region, provider', function() {
             target.placeOn({
@@ -396,7 +396,7 @@ describe('Bindings', function() {
                 provider: 'Amazon',
             });
             checkPlacements([{
-                targetLabel: 'target',
+                targetContainer: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 exclusive: false,
                 region: 'us-west-2',
                 provider: 'Amazon',
@@ -409,7 +409,7 @@ describe('Bindings', function() {
                 provider: 'Amazon',
             });
             checkPlacements([{
-                targetLabel: 'target',
+                targetContainer: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 exclusive: false,
                 provider: 'Amazon',
                 size: 'm4.large',
@@ -420,7 +420,7 @@ describe('Bindings', function() {
                 floatingIp: 'xxx.xxx.xxx.xxx',
             });
             checkPlacements([{
-                targetLabel: 'target',
+                targetContainer: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 exclusive: false,
                 floatingIp: 'xxx.xxx.xxx.xxx',
             }]);

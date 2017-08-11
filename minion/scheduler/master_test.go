@@ -46,14 +46,14 @@ func TestCleanup(t *testing.T) {
 
 	containers := []db.Container{
 		{
-			ID:     1,
-			Labels: []string{"1"},
-			Minion: "1",
+			ID:       1,
+			StitchID: "1",
+			Minion:   "1",
 		},
 		{
-			ID:     2,
-			Labels: []string{"2"},
-			Minion: "1",
+			ID:       2,
+			StitchID: "2",
+			Minion:   "1",
 		},
 	}
 
@@ -66,10 +66,10 @@ func TestCleanup(t *testing.T) {
 	}
 	placements := []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "1",
-			Region:      "Region1",
-			FloatingIP:  "xxx.xxx.xxx.xxx",
+			Exclusive:       true,
+			TargetContainer: "1",
+			Region:          "Region1",
+			FloatingIP:      "xxx.xxx.xxx.xxx",
 		},
 	}
 
@@ -87,9 +87,9 @@ func TestCleanup(t *testing.T) {
 
 	expUnassigned := []*db.Container{
 		{
-			ID:     1,
-			Labels: []string{"1"},
-			Minion: "",
+			ID:       1,
+			StitchID: "1",
+			Minion:   "",
 		},
 	}
 	assert.Equal(t, expUnassigned, ctx.unassigned)
@@ -103,39 +103,19 @@ func TestCleanupLabelRule(t *testing.T) {
 
 	containers := []db.Container{
 		{
-			ID:     1,
-			Labels: []string{"1"},
-			Minion: "1",
+			ID:       1,
+			StitchID: "1",
+			Minion:   "1",
 		},
 		{
-			ID:     2,
-			Labels: []string{"1"},
-			Minion: "1",
+			ID:       2,
+			StitchID: "2",
+			Minion:   "1",
 		},
 		{
-			ID:     3,
-			Labels: []string{"1"},
-			Minion: "1",
-		},
-		{
-			ID:     4,
-			Labels: []string{"1"},
-			Minion: "1",
-		},
-		{
-			ID:     5,
-			Labels: []string{"2"},
-			Minion: "1",
-		},
-		{
-			ID:     6,
-			Labels: []string{"3"},
-			Minion: "2",
-		},
-		{
-			ID:     7,
-			Labels: []string{"1"},
-			Minion: "2",
+			ID:       3,
+			StitchID: "3",
+			Minion:   "2",
 		},
 	}
 
@@ -152,14 +132,14 @@ func TestCleanupLabelRule(t *testing.T) {
 
 	placements := []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "1",
-			OtherLabel:  "2",
+			Exclusive:       true,
+			TargetContainer: "1",
+			OtherContainer:  "2",
 		},
 		{
-			Exclusive:   true,
-			TargetLabel: "1",
-			OtherLabel:  "3",
+			Exclusive:       true,
+			TargetContainer: "1",
+			OtherContainer:  "3",
 		},
 	}
 
@@ -171,15 +151,12 @@ func TestCleanupLabelRule(t *testing.T) {
 			Minion: minions[0],
 			containers: []*db.Container{
 				&containers[0],
-				&containers[1],
-				&containers[2],
-				&containers[3],
 			},
 		},
 		{
 			Minion: minions[1],
 			containers: []*db.Container{
-				&containers[5],
+				&containers[2],
 			},
 		},
 	}
@@ -188,8 +165,7 @@ func TestCleanupLabelRule(t *testing.T) {
 	assert.Equal(t, placements, ctx.constraints)
 
 	expUnassigned := []*db.Container{
-		&containers[4],
-		&containers[6],
+		&containers[1],
 	}
 	assert.Equal(t, expUnassigned, ctx.unassigned)
 
@@ -225,23 +201,23 @@ func TestPlaceUnassigned(t *testing.T) {
 	}
 	containers := []db.Container{
 		{
-			ID:     1,
-			Labels: []string{"1"},
+			ID:       1,
+			StitchID: "1",
 		},
 		{
-			ID:     2,
-			Labels: []string{"2"},
+			ID:       2,
+			StitchID: "2",
 		},
 		{
-			ID:     3,
-			Labels: []string{"3"},
+			ID:       3,
+			StitchID: "3",
 		},
 	}
 	placements := []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "1",
-			Region:      "Region1",
+			Exclusive:       true,
+			TargetContainer: "1",
+			Region:          "Region1",
 		},
 	}
 
@@ -340,9 +316,9 @@ func TestMakeContext(t *testing.T) {
 	}
 	placements := []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "1",
-			Region:      "Region1",
+			Exclusive:       true,
+			TargetContainer: "1",
+			Region:          "Region1",
 		},
 	}
 
@@ -371,7 +347,7 @@ func TestMakeContext(t *testing.T) {
 func TestValidPlacementTwoWay(t *testing.T) {
 	t.Parallel()
 
-	dbc := &db.Container{ID: 1, Labels: []string{"red"}}
+	dbc := &db.Container{ID: 1, StitchID: "red"}
 	m := minion{
 		db.Minion{
 			PrivateIP: "1.2.3.4",
@@ -379,10 +355,10 @@ func TestValidPlacementTwoWay(t *testing.T) {
 			Size:      "Size",
 			Region:    "Region",
 		},
-		[]*db.Container{{ID: 2, Labels: []string{"blue"}}},
+		[]*db.Container{{ID: 2, StitchID: "blue"}},
 	}
 
-	dbc1 := &db.Container{ID: 4, Labels: []string{"blue"}}
+	dbc1 := &db.Container{ID: 4, StitchID: "blue"}
 	m1 := minion{
 		db.Minion{
 			PrivateIP: "1.2.3.4",
@@ -390,14 +366,14 @@ func TestValidPlacementTwoWay(t *testing.T) {
 			Size:      "Size",
 			Region:    "Region",
 		},
-		[]*db.Container{{ID: 3, Labels: []string{"red"}}},
+		[]*db.Container{{ID: 3, StitchID: "red"}},
 	}
 
 	constraints := []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "blue",
-			OtherLabel:  "red",
+			Exclusive:       true,
+			TargetContainer: "blue",
+			OtherContainer:  "red",
 		},
 	}
 
@@ -414,8 +390,8 @@ func TestValidPlacementTwoWay(t *testing.T) {
 			testCase.dbc)
 		if res {
 			t.Fatalf("Succeeded with bad placement: %s on %s",
-				testCase.dbc.Labels[0],
-				testCase.m.containers[0].Labels[0])
+				testCase.dbc.StitchID,
+				testCase.m.containers[0].StitchID)
 		}
 	}
 }
@@ -424,8 +400,8 @@ func TestValidPlacementLabel(t *testing.T) {
 	t.Parallel()
 
 	dbc := &db.Container{
-		ID:     1,
-		Labels: []string{"red"},
+		ID:       1,
+		StitchID: "red",
 	}
 
 	m := minion{}
@@ -436,20 +412,20 @@ func TestValidPlacementLabel(t *testing.T) {
 	m.containers = []*db.Container{
 		dbc,
 		{
-			ID:     2,
-			Labels: []string{"blue"},
+			ID:       2,
+			StitchID: "blue",
 		},
 		{
-			ID:     3,
-			Labels: []string{"yellow", "orange"},
+			ID:       3,
+			StitchID: "yellow",
 		},
 	}
 
 	constraints := []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "blue", // Wrong target.
-			OtherLabel:  "orange",
+			Exclusive:       true,
+			TargetContainer: "blue", // Wrong target.
+			OtherContainer:  "orange",
 		},
 	}
 	res := validPlacement(constraints, m, m.containers, dbc)
@@ -457,9 +433,9 @@ func TestValidPlacementLabel(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "red",
-			OtherLabel:  "blue",
+			Exclusive:       true,
+			TargetContainer: "red",
+			OtherContainer:  "blue",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -471,9 +447,9 @@ func TestValidPlacementLabel(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "red",
-			OtherLabel:  "yellow",
+			Exclusive:       true,
+			TargetContainer: "red",
+			OtherContainer:  "yellow",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -481,9 +457,9 @@ func TestValidPlacementLabel(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "red",
-			OtherLabel:  "magenta",
+			Exclusive:       true,
+			TargetContainer: "red",
+			OtherContainer:  "magenta",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -491,9 +467,9 @@ func TestValidPlacementLabel(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			OtherLabel:  "yellow",
+			Exclusive:       false,
+			TargetContainer: "red",
+			OtherContainer:  "yellow",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -505,8 +481,9 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	var constraints []db.Placement
 
-	dbc := &db.Container{}
-	dbc.Labels = []string{"red"}
+	dbc := &db.Container{
+		StitchID: "red",
+	}
 
 	m := minion{}
 	m.PrivateIP = "1.2.3.4"
@@ -519,9 +496,9 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Provider:    "Provider",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Provider:        "Provider",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -529,9 +506,9 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "red",
-			Provider:    "Provider",
+			Exclusive:       true,
+			TargetContainer: "red",
+			Provider:        "Provider",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -539,9 +516,9 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Provider:    "NotProvider",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Provider:        "NotProvider",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -550,9 +527,9 @@ func TestValidPlacementMachine(t *testing.T) {
 	// Region
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Region:      "Region",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Region:          "Region",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -560,9 +537,9 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "red",
-			Region:      "Region",
+			Exclusive:       true,
+			TargetContainer: "red",
+			Region:          "Region",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -570,9 +547,9 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Region:      "NoRegion",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Region:          "NoRegion",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -581,9 +558,9 @@ func TestValidPlacementMachine(t *testing.T) {
 	// Size
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Size:        "Size",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Size:            "Size",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -591,9 +568,9 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   true,
-			TargetLabel: "red",
-			Size:        "Size",
+			Exclusive:       true,
+			TargetContainer: "red",
+			Size:            "Size",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -601,9 +578,9 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Size:        "NoSize",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Size:            "NoSize",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -612,19 +589,19 @@ func TestValidPlacementMachine(t *testing.T) {
 	// Combination
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Size:        "Size",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Size:            "Size",
 		},
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Region:      "Region",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Region:          "Region",
 		},
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Provider:    "Provider",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Provider:        "Provider",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)
@@ -632,19 +609,19 @@ func TestValidPlacementMachine(t *testing.T) {
 
 	constraints = []db.Placement{
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Size:        "Size",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Size:            "Size",
 		},
 		{
-			Exclusive:   true,
-			TargetLabel: "red",
-			Region:      "Region",
+			Exclusive:       true,
+			TargetContainer: "red",
+			Region:          "Region",
 		},
 		{
-			Exclusive:   false,
-			TargetLabel: "red",
-			Provider:    "Provider",
+			Exclusive:       false,
+			TargetContainer: "red",
+			Provider:        "Provider",
 		},
 	}
 	res = validPlacement(constraints, m, m.containers, dbc)

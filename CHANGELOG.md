@@ -33,6 +33,9 @@ new Container('hostname', 'imageName');
 - Hostnames are now immutable after the container is constructed -- the
 `Container.setHostname` method has been removed.
 
+API Breaking Changes:
+- Make `placeOn` a method of `Container` rather than `Service`.
+
 Release 0.2.0
 -------------
 
