@@ -53,24 +53,9 @@ function Deployment(deploymentOpts) {
     this.services = [];
 }
 
-function omitSSHKey(key, value) {
-    if (key == 'sshKeys') {
-        return undefined;
-    }
-    return value;
-}
-
 // Returns a globally unique integer ID.
 function uniqueID() {
     return uniqueIDCounter++;
-}
-
-// key creates a string key for objects that have a _refID, namely Containers
-// and Machines.
-function key(obj) {
-    let keyObj = obj.clone();
-    keyObj._refID = '';
-    return stringify(keyObj, {replacer: omitSSHKey});
 }
 
 // setQuiltIDs deterministically sets the id field of objects based on
@@ -81,7 +66,7 @@ function setQuiltIDs(objs) {
     // The refIDs for each identical instance.
     let refIDs = {};
     objs.forEach(function(obj) {
-        let k = key(obj);
+        let k = obj.hash();
         if (!refIDs[k]) {
             refIDs[k] = [];
         }
@@ -95,7 +80,7 @@ function setQuiltIDs(objs) {
     });
 
     objs.forEach(function(obj) {
-        let k = key(obj);
+        let k = obj.hash();
         obj.id = hash(k + refIDs[k].indexOf(obj._refID));
     });
 }
@@ -505,6 +490,20 @@ Machine.prototype.replicate = function(n) {
     return res;
 };
 
+Machine.prototype.hash = function() {
+    return stringify({
+        provider: this.provider,
+        role: this.role,
+        region: this.region,
+        size: this.size,
+        floatingIp: this.floatingIp,
+        diskSize: this.diskSize,
+        cpu: this.cpu,
+        ram: this.ram,
+        preemptible: this.preemptible,
+    });
+};
+
 function Image(name, dockerfile) {
     this.name = name;
     this.dockerfile = dockerfile;
@@ -577,6 +576,16 @@ Container.prototype.getHostname = function() {
         throw new Error('no hostname');
     }
     return this.hostname + '.q';
+};
+
+Container.prototype.hash = function() {
+    return stringify({
+        image: this.image,
+        command: this.command,
+        env: this.env,
+        filepathToContent: this.filepathToContent,
+        hostname: this.hostname,
+    });
 };
 
 function Connection(from, ports) {

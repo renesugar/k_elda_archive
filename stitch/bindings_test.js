@@ -41,7 +41,7 @@ describe('Bindings', function() {
                 sshKeys: ['key1', 'key2'],
             })]);
             checkMachines([{
-                id: '0dba3e899652cc7280485c75ad82e7ac7fd6b26e',
+                id: 'ae657514e0aa41ed95d9e27c3f3c9b2ff23bd05e',
                 role: 'Worker',
                 provider: 'Amazon',
                 region: 'us-west-2',
@@ -64,7 +64,7 @@ describe('Bindings', function() {
                 sshKeys: ['key3'],
             })]);
             checkMachines([{
-                id: '0dba3e899652cc7280485c75ad82e7ac7fd6b26e',
+                id: 'ae657514e0aa41ed95d9e27c3f3c9b2ff23bd05e',
                 role: 'Worker',
                 provider: 'Amazon',
                 region: 'us-west-2',
@@ -80,12 +80,12 @@ describe('Bindings', function() {
             deployment.deploy(baseMachine.asMaster().replicate(2));
             checkMachines([
                 {
-                    id: '4a364f325f7143db589a507cd3defb41a385d1bd',
+                    id: '38f289007e41382ce4e2773508609674bac7df52',
                     role: 'Master',
                     provider: 'Amazon',
                 },
                 {
-                    id: '6595fa48111eec0c9cef2367f370b20f96d4a38c',
+                    id: 'e23719b2160e4b42c6bbca72567220833fac68da',
                     role: 'Master',
                     provider: 'Amazon',
                 },
@@ -98,13 +98,13 @@ describe('Bindings', function() {
             deployment.deploy(machines);
             checkMachines([
                 {
-                    id: '4a364f325f7143db589a507cd3defb41a385d1bd',
+                    id: '38f289007e41382ce4e2773508609674bac7df52',
                     role: 'Master',
                     provider: 'Amazon',
                     sshKeys: ['key'],
                 },
                 {
-                    id: '6595fa48111eec0c9cef2367f370b20f96d4a38c',
+                    id: 'e23719b2160e4b42c6bbca72567220833fac68da',
                     role: 'Master',
                     provider: 'Amazon',
                 },
@@ -117,7 +117,7 @@ describe('Bindings', function() {
             });
             deployment.deploy(baseMachine.asMaster());
             checkMachines([{
-                id: '632f9edd209f2fcda1e9d407832f169abf66a1a2',
+                id: 'bc2c5392f98b605e90007056e580a42c0c3f960d',
                 role: 'Master',
                 provider: 'Amazon',
                 floatingIp: 'xxx.xxx.xxx.xxx',
@@ -130,7 +130,7 @@ describe('Bindings', function() {
               preemptible: true,
             }).asMaster());
             checkMachines([{
-                id: '8a0d2198229c09b8b5ec1bdba7105a9e08f8ef0b',
+                id: '893cfbfaccf6aa6e518f1757dadb07ffb936082f',
                 role: 'Master',
                 provider: 'Amazon',
                 preemptible: true,
@@ -149,7 +149,7 @@ describe('Bindings', function() {
                 new Container('image'),
             ]));
             checkContainers([{
-                id: '475c40d6070969839ba0f88f7a9bd0cc7936aa30',
+                id: '2d9d1ea3ba5f462202d278f6f07a890c1fb2b8d4',
                 image: new Image('image'),
                 command: [],
                 env: {},
@@ -161,7 +161,7 @@ describe('Bindings', function() {
             deployment.deploy(new Service('foo', [container]));
             deployment.deploy(new Service('bar', [container]));
             checkContainers([{
-                id: '475c40d6070969839ba0f88f7a9bd0cc7936aa30',
+                id: '2d9d1ea3ba5f462202d278f6f07a890c1fb2b8d4',
                 image: new Image('image'),
                 command: [],
                 env: {},
@@ -173,7 +173,7 @@ describe('Bindings', function() {
                 new Container('image', ['arg1', 'arg2']),
             ]));
             checkContainers([{
-                id: '45b5015830c4b8fb738d15c7a2822ee108c20bd8',
+                id: 'c5dfd3d1747e3600b07781e99c4fb05b4f649b96',
                 image: new Image('image'),
                 command: ['arg1', 'arg2'],
                 env: {},
@@ -185,7 +185,7 @@ describe('Bindings', function() {
             c.env.foo = 'bar';
             deployment.deploy(new Service('foo', [c]));
             checkContainers([{
-                id: 'f54486d0f95b4cc478952a1a775a0699d8f5d959',
+                id: '05ac1a3e606854a5fc2f87b9ea891d0e41d3e6e1',
                 image: new Image('image'),
                 command: [],
                 env: {foo: 'bar'},
@@ -199,7 +199,7 @@ describe('Bindings', function() {
                     .withFiles({qux: 'quuz'}),
             ]));
             checkContainers([{
-                id: '3f0028780b8d9e35ae8c02e4e8b87e2ca55305db',
+                id: '9d8cfb613ef8df786ac42834b29b19ec1df56a43',
                 image: new Image('image'),
                 command: ['arg1', 'arg2'],
                 env: {foo: 'bar'},
@@ -210,7 +210,7 @@ describe('Bindings', function() {
             const c = new Container(new Image('name', 'dockerfile'));
             deployment.deploy(new Service('foo', [c]));
             checkContainers([{
-                id: '1dc23744f60b5c2fb7e3eafb3e8a7e3b085b9b9c',
+                id: 'ba85ca3e0371189fba2be551a598fe2bbf87a534',
                 image: new Image('name', 'dockerfile'),
                 command: [],
                 env: {},
@@ -222,14 +222,14 @@ describe('Bindings', function() {
                 .replicate(2)));
             checkContainers([
                 {
-                    id: '6563036090dd1a6d4a2fe2f56a31e61c2cdca8e2',
+                    id: '667fab4c9692fa0d17af369bb90f4dd6191ed446',
                     image: new Image('image'),
                     command: ['arg'],
                     env: {},
                     filepathToContent: {},
                 },
                 {
-                    id: 'c6cea5bd411c6e5afac755c37517af89a2d03dbe',
+                    id: '50b9741213374695336437b366fca04a7b1541dd',
                     image: new Image('image'),
                     command: ['arg'],
                     env: {},
@@ -244,14 +244,14 @@ describe('Bindings', function() {
             deployment.deploy(new Service('baz', repl));
             checkContainers([
                 {
-                    id: '6563036090dd1a6d4a2fe2f56a31e61c2cdca8e2',
+                    id: '667fab4c9692fa0d17af369bb90f4dd6191ed446',
                     image: new Image('image'),
                     command: ['arg'],
                     env: {},
                     filepathToContent: {},
                 },
                 {
-                    id: 'c3371b4dec2600f20cd8cc5b59bc116dedcbea92',
+                    id: '2615a8954bbc34b19e4d4f9ba37cd771c29499ac',
                     image: new Image('image'),
                     command: ['arg', 'changed'],
                     env: {foo: 'bar'},
@@ -264,7 +264,7 @@ describe('Bindings', function() {
             c.setHostname('host');
             deployment.deploy(new Service('foo', [c]));
             checkContainers([{
-                id: '475c40d6070969839ba0f88f7a9bd0cc7936aa30',
+                id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 image: new Image('image'),
                 command: [],
                 env: {},
@@ -293,14 +293,14 @@ describe('Bindings', function() {
             b.setHostname('host');
             deployment.deploy(new Service('foo', [a, b]));
             checkContainers([{
-                id: '475c40d6070969839ba0f88f7a9bd0cc7936aa30',
+                id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 image: new Image('image'),
                 command: [],
                 env: {},
                 filepathToContent: {},
                 hostname: 'host',
             }, {
-                id: '3047630375a1621cb400811b795757a07de8e268',
+                id: '968bcf8c6d235afbc88aec8e1bdddc506714a0b8',
                 image: new Image('image'),
                 command: [],
                 env: {},
@@ -376,7 +376,7 @@ describe('Bindings', function() {
                 new Service('web_tier', [new Container('nginx')]));
             checkLabels([{
                 name: 'web_tier',
-                ids: ['c47b5770b59a4459519ba2b3ae3cd7a1598fbd8d'],
+                ids: ['e08ea919185a436516c87d8dc33342b3adbb2f89'],
             }]);
         });
         it('multiple containers', function() {
@@ -387,8 +387,8 @@ describe('Bindings', function() {
             checkLabels([{
                 name: 'web_tier',
                 ids: [
-                    'c47b5770b59a4459519ba2b3ae3cd7a1598fbd8d',
-                    '6044e40ba6e4d97be45ca290b993ef2f368c7bb1',
+                    'e08ea919185a436516c87d8dc33342b3adbb2f89',
+                    '13666ee3835edd19e9ccb840a5c62424cbfd7cea',
                 ],
             }]);
         });
@@ -407,11 +407,11 @@ describe('Bindings', function() {
             checkLabels([
                 {
                     name: 'foo',
-                    ids: ['475c40d6070969839ba0f88f7a9bd0cc7936aa30'],
+                    ids: ['2d9d1ea3ba5f462202d278f6f07a890c1fb2b8d4'],
                 },
                 {
                     name: 'foo2',
-                    ids: ['3047630375a1621cb400811b795757a07de8e268'],
+                    ids: ['caedda0972c6ae354de95afc066a9f2fbd2c284b'],
                 },
             ]);
         });
@@ -561,11 +561,11 @@ describe('Bindings', function() {
                 .and.containSubset([
                     {
                         name: 'web_tier',
-                        ids: ['c47b5770b59a4459519ba2b3ae3cd7a1598fbd8d'],
+                        ids: ['e08ea919185a436516c87d8dc33342b3adbb2f89'],
                     },
                     {
                         name: 'web_tier2',
-                        ids: ['6044e40ba6e4d97be45ca290b993ef2f368c7bb1'],
+                        ids: ['13666ee3835edd19e9ccb840a5c62424cbfd7cea'],
                     },
                 ]);
         });
