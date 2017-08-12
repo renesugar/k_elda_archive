@@ -4,7 +4,9 @@ let infrastructure = require('../../config/infrastructure.js');
 let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
-let c = new quilt.Container('alpine', ['tail', '-f', '/dev/null']);
+let c = new quilt.Container('alpine', {
+    command: ['tail', '-f', '/dev/null'],
+});
 
 let red = new quilt.Service('red', c.replicate(5));
 setHostnames(red.containers, 'red');

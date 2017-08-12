@@ -423,6 +423,32 @@ function getString(argName, arg) {
 }
 
 /**
+ * Returns an empty object if `arg` is not defined, and otherwise
+ * ensures that `arg` is an object with string keys and values and then returns
+ * it.
+ */
+function getStringMap(argName, arg) {
+    if (arg === undefined) {
+        return {};
+    }
+    if (typeof arg !== 'object') {
+        throw new Error(`${argName} must be a string map ` +
+            `(was: ${stringify(arg)})`);
+    }
+    Object.keys(arg).forEach((k) => {
+        if (typeof k !== 'string') {
+            throw new Error(`${argName} must be a string map (key ` +
+                `${stringify(k)} is not a string)`);
+        }
+        if (typeof arg[k] !== 'string') {
+            throw new Error(`${argName} must be a string map (value ` +
+                `${stringify(arg[k])} associated with ${k} is not a string)`);
+        }
+    });
+    return arg;
+}
+
+/**
  * Returns an empty array if `arg` is not defined, and otherwise
  * ensures that `arg` is an array of strings and then returns it.
  */
@@ -533,7 +559,7 @@ Image.prototype.clone = function() {
     return new Image(this.name, this.dockerfile);
 };
 
-function Container(image, command) {
+function Container(image, {command=[], env={}, filepathToContent={}} = {}) {
     // refID is used to distinguish deployments with multiple references to the
     // same container, and deployments with multiple containers with the exact
     // same attributes.
@@ -549,16 +575,20 @@ function Container(image, command) {
     }
 
     this.command = getStringArray('command', command);
-    this.env = {};
-    this.filepathToContent = {};
+    this.env = getStringMap('env', env);
+    this.filepathToContent = getStringMap('filepathToContent',
+        filepathToContent);
+
+    // Don't allow callers to modify the arguments by reference.
+    this.command = _.clone(this.command);
+    this.env = _.clone(this.env);
+    this.filepathToContent = _.clone(this.filepathToContent);
+    this.image = this.image.clone();
 }
 
 // Create a new Container with the same attributes.
 Container.prototype.clone = function() {
-    let cloned = new Container(this.image.clone(), _.clone(this.command));
-    cloned.env = _.clone(this.env);
-    cloned.filepathToContent = _.clone(this.filepathToContent);
-    return cloned;
+    return new Container(this.image, this);
 };
 
 // Create n new Containers with the same attributes.

@@ -13,7 +13,7 @@ for (let i = 0; i < 4; i++) {
 }
 
 let fetcher = new quilt.Service('fetcher',
-    [new quilt.Container('alpine', ['tail', '-f', '/dev/null'])]);
+    [new quilt.Container('alpine', {command: ['tail', '-f', '/dev/null']})]);
 let loadBalanced = new quilt.Service('loadBalanced', containers);
 loadBalanced.allowFrom(fetcher, 80);
 

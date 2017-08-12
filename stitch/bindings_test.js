@@ -191,7 +191,9 @@ describe('Bindings', function() {
         });
         it('command', function() {
             deployment.deploy(new Service('foo', [
-                new Container('image', ['arg1', 'arg2']),
+                new Container('image', {
+                  command: ['arg1', 'arg2'],
+                }),
             ]));
             checkContainers([{
                 id: 'c5dfd3d1747e3600b07781e99c4fb05b4f649b96',
@@ -211,20 +213,6 @@ describe('Bindings', function() {
                 command: [],
                 env: {foo: 'bar'},
                 filepathToContent: {},
-            }]);
-        });
-        it('command, env, and files', function() {
-            deployment.deploy(new Service('foo', [
-                new Container('image', ['arg1', 'arg2'])
-                    .withEnv({foo: 'bar'})
-                    .withFiles({qux: 'quuz'}),
-            ]));
-            checkContainers([{
-                id: '9d8cfb613ef8df786ac42834b29b19ec1df56a43',
-                image: new Image('image'),
-                command: ['arg1', 'arg2'],
-                env: {foo: 'bar'},
-                filepathToContent: {qux: 'quuz'},
             }]);
         });
         it('hostnames returned by uniqueHostname cannot be reused', function() {
@@ -251,8 +239,9 @@ describe('Bindings', function() {
             }]);
         });
         it('replicate', function() {
-            deployment.deploy(new Service('foo', new Container('image', ['arg'])
-                .replicate(2)));
+            deployment.deploy(new Service('foo', new Container('image', {
+              command: ['arg'],
+            }).replicate(2)));
             checkContainers([
                 {
                     id: '667fab4c9692fa0d17af369bb90f4dd6191ed446',
@@ -271,7 +260,9 @@ describe('Bindings', function() {
             ]);
         });
         it('replicate independent', function() {
-            const repl = new Container('image', ['arg']).replicate(2);
+            const repl = new Container('image', {
+              command: ['arg'],
+            }).replicate(2);
             repl[0].env.foo = 'bar';
             repl[0].command.push('changed');
             deployment.deploy(new Service('baz', repl));
@@ -347,6 +338,35 @@ describe('Bindings', function() {
             const serv = new Service('foo', []);
             expect(container.getHostname()).to.equal('foo.q');
             expect(serv.hostname()).to.equal('foo2.q');
+        });
+    });
+
+    describe('Container attributes', function() {
+        const image = new Image('image');
+        const command = ['arg1', 'arg2'];
+        const env = {foo: 'bar'};
+        const filepathToContent = {qux: 'quuz'};
+        const id = '9d8cfb613ef8df786ac42834b29b19ec1df56a43';
+        it('with*', function() {
+            deployment.deploy(new Service('foo', [
+                new Container(image, {
+                    command,
+                }).withEnv(env)
+                  .withFiles(filepathToContent),
+            ]));
+            checkContainers([{
+                id, image, command, env, filepathToContent,
+            }]);
+        });
+        it('constructor', function() {
+            deployment.deploy(new Service('foo', [
+                new Container(image, {
+                    command, env, filepathToContent,
+                }),
+            ]));
+            checkContainers([{
+                id, image, command, env, filepathToContent,
+            }]);
         });
     });
 

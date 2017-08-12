@@ -17,6 +17,15 @@ floating IP is now expressed as `myService.placeOn({floatingIp: '8.8.8.8'})`.
 - Restart containers if their hostname changes.
 - Fix a bug where containers might get assigned duplicate hostnames.
 - Remove `Service.children`. Container hostnames should be used from now on.
+- Change the container constructor syntax to take optional settings as the
+last argument:
+```javascript
+new Container('imageName', {
+  command: ['command', 'args'],
+  env: { key: 'val' },
+  filepathToContent: { path: 'content' },
+});
+```
 
 Release 0.2.0
 -------------

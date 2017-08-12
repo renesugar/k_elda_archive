@@ -4,7 +4,9 @@ let infrastructure = require('../../config/infrastructure.js');
 let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
-let c = new quilt.Container('networkstatic/iperf3', ['-s']);
+let c = new quilt.Container('networkstatic/iperf3', {
+  command: ['-s'],
+});
 
 // If we deploy nWorker+1 containers, at least one machine is guaranteed to run
 // two containers, and thus be able to test intra-machine bandwidth.
