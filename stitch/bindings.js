@@ -622,10 +622,6 @@ Container.prototype.withFiles = function(fileMap) {
     return cloned;
 };
 
-Container.prototype.setHostname = function(h) {
-    this.hostname = uniqueHostname(h);
-};
-
 Container.prototype.getHostname = function() {
     return this.hostname + '.q';
 };

@@ -30,6 +30,8 @@ new Container('imageName', {
 ```javascript
 new Container('hostname', 'imageName');
 ```
+- Hostnames are now immutable after the container is constructed -- the
+`Container.setHostname` method has been removed.
 
 Release 0.2.0
 -------------
