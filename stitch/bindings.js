@@ -93,8 +93,6 @@ function hash(str) {
 
 // Convert the deployment to the QRI deployment format.
 Deployment.prototype.toQuiltRepresentation = function() {
-    this.vet();
-
     setQuiltIDs(this.machines);
 
     // List all of the containers in the deployment. This list may contain
@@ -140,7 +138,7 @@ Deployment.prototype.toQuiltRepresentation = function() {
          }
     });
 
-    return {
+    const quiltDeployment = {
         machines: this.machines,
         labels: services,
         containers: containersNoDups,
@@ -151,56 +149,44 @@ Deployment.prototype.toQuiltRepresentation = function() {
         adminACL: this.adminACL,
         maxPrice: this.maxPrice,
     };
+    vet(quiltDeployment);
+    return quiltDeployment;
 };
 
 // Check if all referenced services in connections and placements are
 // really deployed.
-Deployment.prototype.vet = function() {
-    let labelMap = {};
-    this.services.forEach(function(service) {
+function vet(deployment) {
+    let labelMap = {[publicInternetLabel]: true};
+    deployment.labels.forEach(function(service) {
         labelMap[service.name] = true;
+    });
+
+    deployment.connections.forEach((conn) => {
+        [conn.from, conn.to].forEach((label) => {
+            if (!labelMap[label]) {
+                throw new Error(`connection ${stringify(conn)} references ` +
+                    `an undeployed service: ${label}`);
+            }
+        });
     });
 
     let dockerfiles = {};
     let hostnames = {};
-    this.services.forEach(function(service) {
-        service.allowedInboundConnections.forEach(function(conn) {
-            let from = conn.from.name;
-            if (!labelMap[from]) {
-                throw new Error(`${service.name} allows connections from ` +
-                    `an undeployed service: ${from}`);
-            }
-        });
-
-        let hasFloatingIp = false;
-        service.placements.forEach(function(plcm) {
-            if (plcm.floatingIp) {
-                hasFloatingIp = true;
-            }
-        });
-
-        if (hasFloatingIp && service.incomingPublic.length
-            && service.containers.length > 1) {
-            throw new Error(`${service.name} has a floating IP and ` +
-                `multiple containers. This is not yet supported.`);
+    deployment.containers.forEach((c) => {
+        let name = c.image.name;
+        if (dockerfiles[name] != undefined &&
+                dockerfiles[name] != c.image.dockerfile) {
+            throw new Error(`${name} has differing Dockerfiles`);
         }
+        dockerfiles[name] = c.image.dockerfile;
 
-        service.containers.forEach(function(c) {
-            let name = c.image.name;
-            if (dockerfiles[name] != undefined &&
-                    dockerfiles[name] != c.image.dockerfile) {
-                throw new Error(`${name} has differing Dockerfiles`);
+        if (c.hostname !== undefined) {
+            if (hostnames[c.hostname]) {
+                throw new Error(`hostname "${c.hostname}" used for ` +
+                    `multiple containers`);
             }
-            dockerfiles[name] = c.image.dockerfile;
-
-            if (c.hostname !== undefined) {
-                if (hostnames[c.hostname]) {
-                    throw new Error(`hostname "${c.hostname}" used for ` +
-                        `multiple containers`);
-                }
-                hostnames[c.hostname] = true;
-            }
-        });
+            hostnames[c.hostname] = true;
+        }
     });
 };
 

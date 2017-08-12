@@ -518,18 +518,8 @@ describe('Bindings', function() {
         it('connect to undeployed label', function() {
             foo.allowFrom(new Service('baz', []), 80);
             expect(deploy).to.throw(
-                'foo allows connections from an undeployed service: baz');
-        });
-        it('floating IP and multiple containers', function() {
-            foo = new Service('foo', new Container('image').replicate(2));
-            foo.placeOn({
-                floatingIp: '123',
-            });
-            foo.allowFromPublic(80);
-            deployment.deploy([foo]);
-            expect(deploy).to.throw(
-                'foo2 has a floating IP and multiple containers. This is ' +
-                'not yet supported.');
+                'connection {"from":"baz","maxPort":80,"minPort":80,'+
+                '"to":"foo"} references an undeployed service: baz');
         });
         it('duplicate image', function() {
             deployment.deploy(new Service('foo',
