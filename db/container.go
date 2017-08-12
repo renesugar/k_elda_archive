@@ -24,7 +24,7 @@ type Container struct {
 	Labels            []string          `json:",omitempty"`
 	Env               map[string]string `json:",omitempty"`
 	FilepathToContent map[string]string `json:",omitempty"`
-	Hostname          string            `json:"-"`
+	Hostname          string            `json:",omitempty"`
 	Created           time.Time         `json:","`
 
 	Image      string `json:",omitempty"`
