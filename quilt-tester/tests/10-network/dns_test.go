@@ -38,9 +38,6 @@ func newDNSTester(clnt client.Client) (dnsTester, error) {
 
 	for _, label := range labels {
 		hostnameIPMap[label.Label+".q"] = label.IP
-		for i, ip := range label.ContainerIPs {
-			hostnameIPMap[fmt.Sprintf("%d.%s.q", i+1, label.Label)] = ip
-		}
 	}
 
 	for _, c := range containers {

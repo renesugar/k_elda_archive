@@ -62,12 +62,6 @@ func joinHostnames(view db.Database) error {
 				IP:       label.IP,
 			})
 		}
-		for i, containerIP := range label.ContainerIPs {
-			target = append(target, db.Hostname{
-				Hostname: fmt.Sprintf("%d.%s", i+1, label.Label),
-				IP:       containerIP,
-			})
-		}
 	}
 	for _, c := range view.SelectFromContainer(nil) {
 		if c.Hostname != "" && c.IP != "" {

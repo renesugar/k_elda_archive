@@ -280,16 +280,6 @@ Service.prototype.hostname = function() {
     return this.name + '.q';
 };
 
-// Get a list of Quilt hostnames that address the containers within the service.
-Service.prototype.children = function() {
-    let i;
-    let res = [];
-    for (i = 1; i < this.containers.length + 1; i++) {
-        res.push(i + '.' + this.name + '.q');
-    }
-    return res;
-};
-
 Service.prototype.deploy = function(deployment) {
     deployment.services.push(this);
 };

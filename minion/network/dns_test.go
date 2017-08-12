@@ -173,23 +173,19 @@ func TestSyncHostnames(t *testing.T) {
 		{
 			labels: []db.Label{
 				{
-					Label:        "foo",
-					IP:           "fooIP",
-					ContainerIPs: []string{"container", "ips"},
+					Label: "foo",
+					IP:    "fooIP",
 				},
 			},
 			expHostnames: []db.Hostname{
 				{Hostname: "foo", IP: "fooIP"},
-				{Hostname: "1.foo", IP: "container"},
-				{Hostname: "2.foo", IP: "ips"},
 			},
 		},
 		{
 			labels: []db.Label{
 				{
-					Label:        "foo",
-					IP:           "fooIP",
-					ContainerIPs: []string{"container", "ips"},
+					Label: "foo",
+					IP:    "fooIP",
 				},
 				{
 					Label: "bar",
@@ -198,13 +194,9 @@ func TestSyncHostnames(t *testing.T) {
 			},
 			oldHostnames: []db.Hostname{
 				{Hostname: "foo", IP: "fooIP"},
-				{Hostname: "1.foo", IP: "container"},
-				{Hostname: "2.foo", IP: "ips"},
 			},
 			expHostnames: []db.Hostname{
 				{Hostname: "foo", IP: "fooIP"},
-				{Hostname: "1.foo", IP: "container"},
-				{Hostname: "2.foo", IP: "ips"},
 				{Hostname: "bar", IP: "barIP"},
 			},
 		},

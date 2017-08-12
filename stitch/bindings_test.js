@@ -442,13 +442,6 @@ describe('Bindings', function() {
             const foo = new Service('foo', []);
             expect(foo.hostname()).to.equal('foo.q');
         });
-        it('get service children', function() {
-            const foo = new Service('foo', [
-                new Container('bar'),
-                new Container('baz'),
-            ]);
-            expect(foo.children()).to.eql(['1.foo.q', '2.foo.q']);
-        });
     });
     describe('AllowFrom', function() {
         let foo;
