@@ -524,14 +524,6 @@ func TestImageTxn(t *testing.T) {
 				Image: stitch.Image{Name: "image"},
 			},
 		},
-		Labels: []stitch.Label{
-			{
-				Name: "foo",
-				IDs: []string{
-					"475c40d6070969839ba0f88f7a9bd0cc7936aa30",
-				},
-			},
-		},
 	})
 
 	conn := db.New()
@@ -552,32 +544,6 @@ func TestImageTxn(t *testing.T) {
 			{
 				ID:    "133c61c61ef4b49ea26717efe0f0468d455fd317",
 				Image: stitch.Image{Name: "c"},
-			},
-		},
-		Labels: []stitch.Label{
-			{
-				Name: "foo",
-				IDs: []string{
-					"96189e4ea36c80171fd842ccc4c3438d06061991",
-				},
-			},
-			{
-				Name: "foo2",
-				IDs: []string{
-					"c51d206a1414f1fadf5020e5db35feee91410f79",
-				},
-			},
-			{
-				Name: "foo3",
-				IDs: []string{
-					"ede1e03efba48e66be3e51aabe03ec77d9f9def9",
-				},
-			},
-			{
-				Name: "foo4",
-				IDs: []string{
-					"133c61c61ef4b49ea26717efe0f0468d455fd317",
-				},
 			},
 		},
 	},
@@ -609,19 +575,6 @@ func TestImageTxn(t *testing.T) {
 			{
 				ID:    "18c2c81fb48a2a481af58ba5ad6da0e2b244f060",
 				Image: stitch.Image{Name: "b", Dockerfile: "2"},
-			},
-		},
-		Labels: []stitch.Label{
-			{
-				Name: "foo",
-				IDs: []string{
-					"96189e4ea36c80171fd842ccc4c3438d06061991",
-				},
-			}, {
-				Name: "foo2",
-				IDs: []string{
-					"18c2c81fb48a2a481af58ba5ad6da0e2b244f060",
-				},
 			},
 		},
 	},
