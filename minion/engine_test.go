@@ -1,6 +1,7 @@
 package minion
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -363,25 +364,32 @@ func fired(c chan struct{}) bool {
 func TestPlacementTxn(t *testing.T) {
 	conn := db.New()
 	checkPlacement := func(stc stitch.Stitch, exp ...db.Placement) {
-		placements := map[db.Placement]struct{}{}
+		var actual db.PlacementSlice
 		conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 			updatePolicy(view, stc.String())
-			res := view.SelectFromPlacement(nil)
-
-			// Set the ID to 0 so that we can use reflect.DeepEqual.
-			for _, p := range res {
-				p.ID = 0
-				placements[p] = struct{}{}
-			}
-
+			actual = db.PlacementSlice(view.SelectFromPlacement(nil))
 			return nil
 		})
 
-		assert.Equal(t, len(exp), len(placements))
-		for _, p := range exp {
-			_, ok := placements[p]
-			assert.True(t, ok)
+		key := func(plcmIntf interface{}) interface{} {
+			plcm := plcmIntf.(db.Placement)
+			plcm.ID = 0 // Ignore the Database ID.
+
+			// If it's a label constraint, the order of TargetLabel and
+			// OtherLabel doesn't matter. Therefore, we sort the labels
+			// so that the assignment is consistent.
+			if plcm.OtherLabel != "" {
+				labels := []string{plcm.TargetLabel, plcm.OtherLabel}
+				sort.Strings(labels)
+				plcm.TargetLabel = labels[0]
+				plcm.OtherLabel = labels[1]
+			}
+			return plcm
 		}
+		_, missing, extra := join.HashJoin(db.PlacementSlice(exp), actual,
+			key, key)
+		assert.Empty(t, missing)
+		assert.Empty(t, extra)
 	}
 
 	stc := stitch.Stitch{
@@ -473,12 +481,6 @@ func TestPlacementTxn(t *testing.T) {
 		},
 
 		db.Placement{
-			TargetLabel: "bar",
-			Exclusive:   true,
-			OtherLabel:  "foo",
-		},
-
-		db.Placement{
 			TargetLabel: "baz",
 			Exclusive:   true,
 			OtherLabel:  "baz",
@@ -488,12 +490,6 @@ func TestPlacementTxn(t *testing.T) {
 			TargetLabel: "bar",
 			Exclusive:   true,
 			OtherLabel:  "baz",
-		},
-
-		db.Placement{
-			TargetLabel: "baz",
-			Exclusive:   true,
-			OtherLabel:  "bar",
 		},
 	)
 }

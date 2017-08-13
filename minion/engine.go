@@ -38,9 +38,16 @@ func portPlacements(connections []db.Connection) (placements []db.Placement) {
 		ports[c.MinPort] = append(ports[c.MinPort], c.To)
 	}
 
+	// Create placement rules for all combinations of labels that listen on the
+	// same port. We do not need to create a rule for every permutation because
+	// order does not matter for the `TargetLabel` and `OtherLabel` fields --
+	// the placement is equivalent if the two fields are swapped.
+	// We do so by creating a placement rule between each label, and
+	// the labels after it. There is no need to create rules for the preceding
+	// labels because the previous rules will have covered it.
 	for _, labels := range ports {
-		for _, tgt := range labels {
-			for _, other := range labels {
+		for i, tgt := range labels {
+			for _, other := range labels[i:] {
 				placements = append(placements,
 					db.Placement{
 						Exclusive:   true,
