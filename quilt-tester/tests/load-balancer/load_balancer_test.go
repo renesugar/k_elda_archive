@@ -62,7 +62,7 @@ func TestLoadBalancer(t *testing.T) {
 
 	log.WithField("counts", loadBalancedCounts).Info("Fetching completed")
 	if len(loadBalancedCounts) < len(loadBalancedContainers) {
-		t.Fatal("some containers not load balanced: "+
+		t.Fatalf("some containers not load balanced: "+
 			"expected to query %d containers, got %d",
 			len(loadBalancedContainers), len(loadBalancedCounts))
 	}
