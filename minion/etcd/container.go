@@ -85,6 +85,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 		dbc := iface.(db.Container)
 
 		return struct {
+			Hostname          string
 			IP                string
 			StitchID          string
 			Image             string
@@ -93,6 +94,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 			Env               string
 			FilepathToContent string
 		}{
+			Hostname:          dbc.Hostname,
 			IP:                dbc.IP,
 			StitchID:          dbc.StitchID,
 			Image:             dbc.Image,
@@ -129,6 +131,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 		dbc.Labels = edbc.Labels
 		dbc.Env = edbc.Env
 		dbc.FilepathToContent = edbc.FilepathToContent
+		dbc.Hostname = edbc.Hostname
 		view.Commit(dbc)
 	}
 }

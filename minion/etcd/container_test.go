@@ -30,6 +30,7 @@ func TestRunContainerOnce(t *testing.T) {
 		view.Commit(etcd)
 
 		dbc := view.InsertContainer()
+		dbc.Hostname = "host"
 		dbc.IP = "10.0.0.2"
 		dbc.Minion = "1.2.3.4"
 		dbc.StitchID = "12"
@@ -64,6 +65,7 @@ func TestRunContainerOnce(t *testing.T) {
         "FilepathToContent": {
             "foo": "bar"
         },
+        "Hostname": "host",
         "Created": "0001-01-01T00:00:00Z",
         "Image": "ubuntu"
     }
@@ -93,6 +95,7 @@ func TestRunContainerOnce(t *testing.T) {
 		Command:           []string{"1", "2", "3"},
 		Env:               map[string]string{"red": "pill", "blue": "pill"},
 		FilepathToContent: map[string]string{"foo": "bar"},
+		Hostname:          "host",
 	}
 	dbcs := conn.SelectFromContainer(nil)
 	assert.Len(t, dbcs, 1)
