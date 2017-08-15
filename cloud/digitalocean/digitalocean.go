@@ -20,6 +20,8 @@ import (
 	"github.com/kelda/kelda/util"
 
 	"golang.org/x/oauth2"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // DefaultRegion is assigned to Machines without a specified region
@@ -31,6 +33,38 @@ var Regions = []string{"nyc1", "nyc2", "lon1", "sfo1", "sfo2"}
 var c = counter.New("Digital Ocean")
 
 var apiKeyPath = ".digitalocean/key"
+
+var (
+	// When creating firewall rules, the API requires that each rule have a protocol
+	// associated with it. It accepts the ones listed below, and we want to allow
+	// traffic only based on IP and port, so allow them all.
+	//
+	// https://developers.digitalocean.com/documentation/v2/#add-rules-to-a-firewall
+	protocols = []string{"tcp", "udp", "icmp"}
+
+	allIPs = &godo.Destinations{
+		Addresses: []string{"0.0.0.0/0", "::/0"},
+	}
+
+	// DigitalOcean firewalls block all traffic that is not explicitly allowed. We
+	// want to allow all outgoing traffic.
+	allowAll = []godo.OutboundRule{
+		{
+			Protocol:     "tcp",
+			PortRange:    "all",
+			Destinations: allIPs,
+		},
+		{
+			Protocol:     "udp",
+			PortRange:    "all",
+			Destinations: allIPs,
+		},
+		{
+			Protocol:     "icmp",
+			Destinations: allIPs,
+		},
+	}
+)
 
 // 16.04.1 x64 created at 2017-02-03.
 var imageID = 22601368
@@ -174,6 +208,11 @@ func (prvdr Provider) Boot(bootSet []db.Machine) error {
 	return err
 }
 
+// Returns a unique tag to use for all entities in this namespace and region.
+func (prvdr Provider) getTag() string {
+	return fmt.Sprintf("%s-%s", prvdr.namespace, prvdr.region)
+}
+
 // Creates a new machine, and waits for the machine to become active.
 func (prvdr Provider) createAndAttach(m db.Machine) error {
 	cloudConfig := cfg.Ubuntu(m, "")
@@ -184,6 +223,7 @@ func (prvdr Provider) createAndAttach(m db.Machine) error {
 		Image:             godo.DropletCreateImage{ID: imageID},
 		PrivateNetworking: true,
 		UserData:          cloudConfig,
+		Tags:              []string{prvdr.getTag()},
 	}
 
 	d, _, err := prvdr.CreateDroplet(createReq)
@@ -293,7 +333,144 @@ func (prvdr Provider) deleteAndWait(ids string) error {
 	return wait.Wait(pred)
 }
 
-// SetACLs is not supported in DigitalOcean.
+// SetACLs adds and removes acls in `prvdr` so that it conforms to `acls`.
 func (prvdr Provider) SetACLs(acls []acl.ACL) error {
+	firewall, err := prvdr.getCreateFirewall()
+	if err != nil {
+		return err
+	}
+
+	add, remove := syncACLs(acls, firewall.InboundRules)
+
+	if len(add) > 0 {
+		if _, err := prvdr.AddRules(firewall.ID, add); err != nil {
+			return err
+		}
+	}
+	if len(remove) > 0 {
+		if _, err := prvdr.RemoveRules(firewall.ID, remove); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (prvdr Provider) getCreateFirewall() (*godo.Firewall, error) {
+	firewalls, _, err := prvdr.ListFirewalls()
+	if err != nil {
+		return nil, err
+	}
+
+	tagName := prvdr.getTag()
+	for _, firewall := range firewalls {
+		if firewall.Name == tagName {
+			return &firewall, nil
+		}
+	}
+
+	_, _, err = prvdr.CreateTag(tagName)
+	if err != nil {
+		return nil, err
+	}
+
+	// The outbound rules and inter-droplet inbound rules are generated only
+	// once: when the firewall is first created. If these rules are externally
+	// deleted, there will be errors unless the firewall is destroyed
+	// (and then recreated by the daemon).
+	internalDroplets := &godo.Sources{
+		Tags: []string{tagName},
+	}
+	allowInternal := []godo.InboundRule{
+		{
+			Protocol:  "tcp",
+			PortRange: "all",
+			Sources:   internalDroplets,
+		},
+		{
+			Protocol:  "udp",
+			PortRange: "all",
+			Sources:   internalDroplets,
+		},
+	}
+	firewall, _, err := prvdr.CreateFirewall(tagName, allowAll, allowInternal)
+	return firewall, err
+}
+
+func syncACLs(desired []acl.ACL, current []godo.InboundRule) (
+	addRules, removeRules []godo.InboundRule) {
+
+	curACLSet := map[acl.ACL]struct{}{}
+	for _, cur := range current {
+		ports := strings.Split(cur.PortRange, "-")
+		if len(ports) == 1 {
+			ports = []string{ports[0], ports[0]}
+		}
+
+		from, err := strconv.Atoi(ports[0])
+		if err != nil {
+			log.WithError(err).WithField("port", ports[0]).Warn(
+				"Failed to parse from port of InboundRule")
+			continue
+		}
+
+		to, err := strconv.Atoi(ports[1])
+		if err != nil {
+			log.WithError(err).WithField("port", ports[1]).Warn(
+				"Failed to parse to port of InboundRule")
+			continue
+		}
+
+		for _, addr := range cur.Sources.Addresses {
+			key := acl.ACL{
+				CidrIP:  addr,
+				MinPort: int(from),
+				MaxPort: int(to),
+			}
+			curACLSet[key] = struct{}{}
+		}
+	}
+
+	var curACLs acl.Slice
+	for key := range curACLSet {
+		curACLs = append(curACLs, key)
+	}
+
+	_, toAdd, toRemove := join.HashJoin(acl.Slice(desired), curACLs, nil, nil)
+
+	var add, remove []acl.ACL
+	for _, intf := range toAdd {
+		add = append(add, intf.(acl.ACL))
+	}
+	for _, intf := range toRemove {
+		remove = append(remove, intf.(acl.ACL))
+	}
+	return toRules(add), toRules(remove)
+}
+
+func toRules(acls []acl.ACL) (rules []godo.InboundRule) {
+	for _, acl := range acls {
+		for _, proto := range protocols {
+			portRange := fmt.Sprintf("%d-%d", acl.MinPort, acl.MaxPort)
+			if acl.MinPort == acl.MaxPort {
+				portRange = fmt.Sprintf("%d", acl.MinPort)
+				if acl.MinPort == 0 {
+					portRange = "all"
+				}
+			}
+
+			if proto == "icmp" {
+				portRange = ""
+			}
+
+			rules = append(rules, godo.InboundRule{
+				Protocol:  proto,
+				PortRange: portRange,
+				Sources: &godo.Sources{
+					Addresses: []string{acl.CidrIP},
+				},
+			})
+		}
+	}
+
+	return rules
 }
