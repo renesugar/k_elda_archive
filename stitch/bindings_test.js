@@ -23,12 +23,37 @@ describe('Bindings', function() {
         deployment = createDeployment();
     });
 
+    const checkMachines = function(expected) {
+        const {machines} = deployment.toQuiltRepresentation();
+        expect(machines).to.have.lengthOf(expected.length)
+            .and.containSubset(expected);
+    };
+
+    const checkContainers = function(expected) {
+        const {containers} = deployment.toQuiltRepresentation();
+        expect(containers).to.have.lengthOf(expected.length)
+            .and.containSubset(expected);
+    };
+
+    const checkPlacements = function(expected) {
+        const {placements} = deployment.toQuiltRepresentation();
+        expect(placements).to.have.lengthOf(expected.length)
+            .and.containSubset(expected);
+    };
+
+    const checkLabels = function(expected) {
+        const {labels} = deployment.toQuiltRepresentation();
+        expect(labels).to.have.lengthOf(expected.length)
+            .and.containSubset(expected);
+    };
+
+    const checkConnections = function(expected) {
+        const {connections} = deployment.toQuiltRepresentation();
+        expect(connections).to.have.lengthOf(expected.length)
+            .and.containSubset(expected);
+    };
+
     describe('Machine', function() {
-        const checkMachines = function(expected) {
-            const {machines} = deployment.toQuiltRepresentation();
-            expect(machines).to.have.lengthOf(expected.length)
-                .and.containSubset(expected);
-        };
         it('basic', function() {
             deployment.deploy([new Machine({
                 role: 'Worker',
@@ -139,11 +164,6 @@ describe('Bindings', function() {
     });
 
     describe('Container', function() {
-        const checkContainers = function(expected) {
-            const {containers} = deployment.toQuiltRepresentation();
-            expect(containers).to.have.lengthOf(expected.length)
-                .and.containSubset(expected);
-        };
         it('basic', function() {
             deployment.deploy(new Service('foo', [
                 new Container('image'),
@@ -319,14 +339,9 @@ describe('Bindings', function() {
 
     describe('Placement', function() {
         let target;
-        const checkPlacements = function(expected) {
-            deployment.deploy(target);
-            const {placements} = deployment.toQuiltRepresentation();
-            expect(placements).to.have.lengthOf(expected.length)
-                .and.containSubset(expected);
-        };
         beforeEach(function() {
             target = new Service('target', []);
+            deployment.deploy(target);
         });
         it('MachineRule size, region, provider', function() {
             target.placeOn({
@@ -366,11 +381,6 @@ describe('Bindings', function() {
         });
     });
     describe('Label', function() {
-        const checkLabels = function(expected) {
-            const {labels} = deployment.toQuiltRepresentation();
-            expect(labels).to.have.lengthOf(expected.length)
-                .and.containSubset(expected);
-        };
         it('basic', function() {
             deployment.deploy(
                 new Service('web_tier', [new Container('nginx')]));
@@ -435,11 +445,6 @@ describe('Bindings', function() {
             bar = new Service('bar', []);
             deployment.deploy([foo, bar]);
         });
-        const checkConnections = function(expected) {
-            const {connections} = deployment.toQuiltRepresentation();
-            expect(connections).to.have.lengthOf(expected.length)
-                .and.containSubset(expected);
-        };
         it('autobox port ranges', function() {
             bar.allowFrom(foo, 80);
             checkConnections([{
