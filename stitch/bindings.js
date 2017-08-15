@@ -193,7 +193,7 @@ function vet(deployment) {
 // deploy adds an object, or list of objects, to the deployment.
 // Deployable objects must implement the deploy(deployment) interface.
 Deployment.prototype.deploy = function(toDeployList) {
-    if (toDeployList.constructor !== Array) {
+    if (!Array.isArray(toDeployList)) {
         toDeployList = [toDeployList];
     }
 
