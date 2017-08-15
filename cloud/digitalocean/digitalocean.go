@@ -20,6 +20,7 @@ import (
 	"github.com/kelda/kelda/util"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/sync/errgroup"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -188,24 +189,16 @@ func (prvdr Provider) getFloatingIPs() (map[int]string, error) {
 
 // Boot will boot every machine in a goroutine, and wait for the machines to come up.
 func (prvdr Provider) Boot(bootSet []db.Machine) error {
-	errChan := make(chan error, len(bootSet))
+	var eg errgroup.Group
 	for _, m := range bootSet {
 		if m.Preemptible {
 			return errors.New("preemptible instances are not yet implemented")
 		}
 
-		go func(m db.Machine) {
-			errChan <- prvdr.createAndAttach(m)
-		}(m)
+		eg.Go(machineAction(m, prvdr.createAndAttach))
 	}
 
-	var err error
-	for range bootSet {
-		if e := <-errChan; e != nil {
-			err = e
-		}
-	}
-	return err
+	return eg.Wait()
 }
 
 // Returns a unique tag to use for all entities in this namespace and region.
@@ -299,24 +292,16 @@ func (prvdr Provider) syncFloatingIPs(curr, targets []db.Machine) error {
 
 // Stop stops each machine and deletes their attached volumes.
 func (prvdr Provider) Stop(machines []db.Machine) error {
-	errChan := make(chan error, len(machines))
+	var eg errgroup.Group
 	for _, m := range machines {
-		go func(m db.Machine) {
-			errChan <- prvdr.deleteAndWait(m.CloudID)
-		}(m)
+		eg.Go(machineAction(m, prvdr.deleteAndWait))
 	}
 
-	var err error
-	for range machines {
-		if e := <-errChan; e != nil {
-			err = e
-		}
-	}
-	return err
+	return eg.Wait()
 }
 
-func (prvdr Provider) deleteAndWait(ids string) error {
-	id, err := strconv.Atoi(ids)
+func (prvdr Provider) deleteAndWait(m db.Machine) error {
+	id, err := strconv.Atoi(m.CloudID)
 	if err != nil {
 		return err
 	}
@@ -473,4 +458,10 @@ func toRules(acls []acl.ACL) (rules []godo.InboundRule) {
 	}
 
 	return rules
+}
+
+func machineAction(m db.Machine, fn func(db.Machine) error) func() error {
+	return func() error {
+		return fn(m)
+	}
 }
