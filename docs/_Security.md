@@ -28,7 +28,7 @@ MACHINE         ROLE      PROVIDER    REGION       SIZE         PUBLIC IP       
 8a0d2198229c    Master    Amazon      us-west-1    m3.medium    54.153.11.92      connected
 b92d625c6847    Worker    Amazon      us-west-1    m3.medium    52.53.170.129     connected
 
-CONTAINER       MACHINE         COMMAND                     LABELS    STATUS     CREATED           PUBLIC IP
+CONTAINER       MACHINE         COMMAND                     HOSTNAME  STATUS     CREATED           PUBLIC IP
 1daa461f0805    b92d625c6847    alpine tail -f /dev/null    alpine    running    24 seconds ago    52.53.170.129:8000
 ```
 

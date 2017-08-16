@@ -155,17 +155,14 @@ func TestContainerOutput(t *testing.T) {
 			Image: "image1", Command: []string{"cmd", "1"},
 			Hostname: "notpublic", Status: "running"},
 		{ID: 2, StitchID: "1", Minion: "1.1.1.1", Image: "image2",
-			Labels: []string{"label1", "label2"}, Status: "scheduled",
-			Hostname: "frompublic1"},
+			Status: "scheduled", Hostname: "frompublic1"},
 		{ID: 3, StitchID: "4", Minion: "1.1.1.1", Image: "image3",
 			Command:  []string{"cmd"},
-			Labels:   []string{"label1"},
 			Hostname: "frompublic2",
 			Status:   "scheduled"},
 		{ID: 4, StitchID: "7", Minion: "2.2.2.2", Image: "image1",
 			Command:  []string{"cmd", "3", "4"},
-			Hostname: "frompublic3",
-			Labels:   []string{"label1"}},
+			Hostname: "frompublic3"},
 		{ID: 5, StitchID: "8", Image: "image1"},
 	}
 	machines := []db.Machine{
@@ -180,18 +177,18 @@ func TestContainerOutput(t *testing.T) {
 		{ID: 2, From: "notpublic", To: "frompublic1", MinPort: 100, MaxPort: 101},
 	}
 
-	expected := `CONTAINER____MACHINE____COMMAND___________LABELS________` +
-		`____STATUS_______CREATED____PUBLIC_IP
-3_______________________image1_cmd_1________________________running_________________
-____________________________________________________________________________________
-1____________5__________image2____________label1,_label2____scheduled__________` +
-		`_____7.7.7.7:80
-4____________5__________image3_cmd________label1____________scheduled__________` +
-		`_____7.7.7.7:80
-____________________________________________________________________________________
-7____________6__________image1_cmd_3_4____label1____________scheduled_______________
-____________________________________________________________________________________
-8____________7__________image1______________________________________________________
+	expected := `CONTAINER____MACHINE____COMMAND___________HOSTNAME_______` +
+		`STATUS_______CREATED____PUBLIC_IP
+3_______________________image1_cmd_1______notpublic______running_________________
+_________________________________________________________________________________
+1____________5__________image2____________frompublic1____scheduled_______________` +
+		`7.7.7.7:80
+4____________5__________image3_cmd________frompublic2____scheduled_______________` +
+		`7.7.7.7:80
+_________________________________________________________________________________
+7____________6__________image1_cmd_3_4____frompublic3____scheduled_______________
+_________________________________________________________________________________
+8____________7__________image1___________________________________________________
 `
 	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 
@@ -209,10 +206,10 @@ ________________________________________________________________________________
 	machines = []db.Machine{}
 	connections = []db.Connection{}
 
-	expected = `CONTAINER____MACHINE____COMMAND_________LABELS____STATUS___` +
-		`__CREATED___________________PUBLIC_IP
-3_______________________image1_cmd_1______________running____` + mockCreatedString +
-		`____
+	expected = `CONTAINER____MACHINE____COMMAND_________HOSTNAME____` +
+		`STATUS_____CREATED___________________PUBLIC_IP
+3_______________________image1_cmd_1________________running____` +
+		mockCreatedString + `____
 `
 	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 
@@ -231,10 +228,10 @@ ________________________________________________________________________________
 	machines = []db.Machine{}
 	connections = []db.Connection{}
 
-	expected = `CONTAINER____MACHINE____COMMAND_________LABELS____STATUS___` +
-		`__CREATED______________PUBLIC_IP
-3_______________________image1_cmd_1______________running____` + mockCreatedString +
-		`____
+	expected = `CONTAINER____MACHINE____COMMAND_________HOSTNAME____` +
+		`STATUS_____CREATED______________PUBLIC_IP
+3_______________________image1_cmd_1________________running____` +
+		mockCreatedString + `____
 `
 	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 
@@ -248,19 +245,19 @@ ________________________________________________________________________________
 	machines = []db.Machine{}
 	connections = []db.Connection{}
 
-	expected = `CONTAINER____MACHINE____COMMAND_____________________________` +
-		`_LABELS____STATUS_____CREATED______________PUBLIC_IP
-3_______________________image1_cmd_1_&&_cmd_9128340347...______________running____` +
+	expected = `CONTAINER____MACHINE____COMMAND______________________________` +
+		`HOSTNAME____STATUS_____CREATED______________PUBLIC_IP
+3_______________________image1_cmd_1_&&_cmd_9128340347...________________running____` +
 		mockCreatedString + `____
 `
 	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 
 	// Test that long outputs are not truncated when `truncate` is false
-	expected = `CONTAINER____MACHINE____COMMAND___________________________________` +
-		`________________________________LABELS____STATUS_____CREATED_________` +
-		`_____PUBLIC_IP
-3_______________________image1_cmd_1_&&_cmd_91283403472903847293014320984723908473248` +
-		`-23843984______________running____` + mockCreatedString + `____
+	expected = `CONTAINER____MACHINE____COMMAND_________________________________` +
+		`__________________________________HOSTNAME____STATUS_____CREATED` +
+		`______________PUBLIC_IP
+3_______________________image1_cmd_1_&&_cmd_912834034729038472930143209847239084` +
+		`73248-23843984________________running____` + mockCreatedString + `____
 `
 	checkContainerOutput(t, containers, machines, connections, nil, false, expected)
 
@@ -277,9 +274,10 @@ ________________________________________________________________________________
 		{ID: 2, From: "public", To: "frompub", MinPort: 100, MaxPort: 101},
 	}
 
-	expected = `CONTAINER____MACHINE____COMMAND____LABELS____STATUS` +
-		`_______CREATED____PUBLIC_IP
-3____________5__________image1_______________scheduled_______________7.7.7.7:[80,100-101]
+	expected = `CONTAINER____MACHINE____COMMAND____HOSTNAME____STATUS_______` +
+		`CREATED____PUBLIC_IP
+3____________5__________image1_____frompub_____scheduled_______________` +
+		`7.7.7.7:[80,100-101]
 `
 	checkContainerOutput(t, containers, machines, connections, nil, true, expected)
 }
@@ -295,9 +293,9 @@ func TestContainerOutputCustomImage(t *testing.T) {
 		{Name: "custom-dockerfile", Status: db.Building},
 	}
 
-	exp := `CONTAINER____MACHINE____COMMAND_______________LABELS____` +
-		`STATUS______CREATED____PUBLIC_IP
-3_______________________custom-dockerfile_______________building_______________
+	exp := `CONTAINER____MACHINE____COMMAND_______________HOSTNAME____STATUS` +
+		`______CREATED____PUBLIC_IP
+3_______________________custom-dockerfile_________________building_______________
 `
 	checkContainerOutput(t, containers, nil, nil, images, true, exp)
 
@@ -305,9 +303,9 @@ func TestContainerOutputCustomImage(t *testing.T) {
 	images = []db.Image{
 		{Name: "custom-dockerfile", Status: db.Built},
 	}
-	exp = `CONTAINER____MACHINE____COMMAND_______________LABELS____` +
-		`STATUS____CREATED____PUBLIC_IP
-3_______________________custom-dockerfile_______________built________________
+	exp = `CONTAINER____MACHINE____COMMAND_______________HOSTNAME____STATUS` +
+		`____CREATED____PUBLIC_IP
+3_______________________custom-dockerfile_________________built________________
 `
 	checkContainerOutput(t, containers, nil, nil, images, true, exp)
 
@@ -315,9 +313,9 @@ func TestContainerOutputCustomImage(t *testing.T) {
 	images = []db.Image{
 		{Name: "ignoreme", Status: db.Built},
 	}
-	exp = `CONTAINER____MACHINE____COMMAND_______________LABELS____` +
-		`STATUS____CREATED____PUBLIC_IP
-3_______________________custom-dockerfile____________________________________
+	exp = `CONTAINER____MACHINE____COMMAND_______________HOSTNAME____STATUS` +
+		`____CREATED____PUBLIC_IP
+3_______________________custom-dockerfile______________________________________
 `
 	checkContainerOutput(t, containers, nil, nil, images, true, exp)
 
@@ -328,9 +326,9 @@ func TestContainerOutputCustomImage(t *testing.T) {
 	containers = []db.Container{
 		{StitchID: "3", Image: "custom-dockerfile", Minion: "foo"},
 	}
-	exp = `CONTAINER____MACHINE____COMMAND_______________LABELS` +
-		`____STATUS_______CREATED____PUBLIC_IP
-3_______________________custom-dockerfile_______________scheduled_______________
+	exp = `CONTAINER____MACHINE____COMMAND_______________HOSTNAME____STATUS` +
+		`_______CREATED____PUBLIC_IP
+3_______________________custom-dockerfile_________________scheduled_______________
 `
 	checkContainerOutput(t, containers, nil, nil, images, true, exp)
 }

@@ -171,8 +171,8 @@ MACHINE         ROLE      PROVIDER    REGION       SIZE        PUBLIC IP        
 e5b1839d2bea    Master    Amazon      us-west-1    t2.micro    54.183.98.15      connected
 e2401c348c78    Worker    Amazon      us-west-1    t2.micro    54.241.251.192    connected
 
-CONTAINER       MACHINE         COMMAND        LABELS           STATUS     CREATED               PUBLIC IP
-bd681b3d3af7    e2401c348c78    nginx:1.13     nginx_example    running    About a minute ago    54.241.251.192:80
+CONTAINER       MACHINE         COMMAND        HOSTNAME           STATUS     CREATED               PUBLIC IP
+bd681b3d3af7    e2401c348c78    nginx:1.13     web_tier           running    About a minute ago    54.241.251.192:80
 ```
 
 The bottom row lists the container that's running `nginx`.  The `nginx`

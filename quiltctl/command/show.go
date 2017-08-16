@@ -142,7 +142,7 @@ func writeContainers(fd io.Writer, containers []db.Container, machines []db.Mach
 	connections []db.Connection, images []db.Image, truncate bool) {
 	w := tabwriter.NewWriter(fd, 0, 0, 4, ' ', 0)
 	defer w.Flush()
-	fmt.Fprintln(w, "CONTAINER\tMACHINE\tCOMMAND\tLABELS"+
+	fmt.Fprintln(w, "CONTAINER\tMACHINE\tCOMMAND\tHOSTNAME"+
 		"\tSTATUS\tCREATED\tPUBLIC IP")
 
 	hostnamePublicPorts := map[string][]string{}
@@ -194,7 +194,6 @@ func writeContainers(fd io.Writer, containers []db.Container, machines []db.Mach
 		sort.Sort(db.ContainerSlice(dbcs))
 		for _, dbc := range dbcs {
 			container := containerStr(dbc.Image, dbc.Command, truncate)
-			labels := strings.Join(dbc.Labels, ", ")
 
 			var status string
 			switch {
@@ -220,7 +219,7 @@ func writeContainers(fd io.Writer, containers []db.Container, machines []db.Mach
 
 			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\t%v\n",
 				util.ShortUUID(dbc.StitchID), util.ShortUUID(machineID),
-				container, labels, status, created, publicIP)
+				container, dbc.Hostname, status, created, publicIP)
 		}
 	}
 }
