@@ -23,27 +23,28 @@ func viz(configPath string, graph Graph, outputFormat string) {
 }
 
 func makeGraphviz(graph Graph) string {
-	dotfile := "strict digraph {\n"
+	var nodes []string
+	for node := range graph.Nodes {
+		nodes = append(nodes, fmt.Sprintf("    %q;", node))
+	}
+	sort.Strings(nodes)
 
-	var lines []string
+	var connections []string
 	for _, edge := range graph.GetConnections() {
-		lines = append(lines,
+		connections = append(connections,
 			fmt.Sprintf(
-				"    %q -> %q;\n",
+				"    %q -> %q;",
 				edge.From,
 				edge.To,
 			),
 		)
 	}
+	sort.Strings(connections)
 
-	sort.Strings(lines)
-	for _, line := range lines {
-		dotfile += line + "\n"
-	}
-
-	dotfile += "}\n"
-
-	return dotfile
+	return "strict digraph {\n" +
+		strings.Join(nodes, "\n") + "\n" +
+		strings.Join(connections, "\n") + "\n" +
+		"}\n"
 }
 
 // Graphviz generates a specification for the graphviz program that visualizes the
