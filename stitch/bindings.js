@@ -343,7 +343,7 @@ function uniqueHostname(name) {
         return name;
     }
     hostnameCount[name]++;
-    return name + hostnameCount[name];
+    return uniqueHostname(name + hostnameCount[name]);
 }
 
 // Box raw integers into range.

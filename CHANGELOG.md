@@ -15,6 +15,7 @@ non-deterministic and rely on pulling data from the network.
 floating IP is now expressed as `myService.placeOn({floatingIp: '8.8.8.8'})`.
 - Remove `Service.connect`. Only `Service.allowFrom` can be used from now on.
 - Restart containers if their hostname changes.
+- Fix a bug where containers might get assigned duplicate hostnames.
 
 Release 0.2.0
 -------------

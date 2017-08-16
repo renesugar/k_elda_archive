@@ -226,6 +226,18 @@ describe('Bindings', function() {
                 filepathToContent: {qux: 'quuz'},
             }]);
         });
+        it('hostnames returned by uniqueHostname cannot be reused', function() {
+            const containerA = new Container('ignoreme');
+            containerA.setHostname('host');
+            const containerB = new Container('ignoreme');
+            containerB.setHostname('host');
+            const containerC = new Container('ignoreme');
+            containerC.setHostname('host2');
+            const hostnames = [containerA, containerB, containerC]
+              .map((c) => c.getHostname());
+            const hostnameSet = new Set(hostnames);
+            expect(hostnames.length).to.equal(hostnameSet.size);
+        });
         it('image dockerfile', function() {
             const c = new Container(new Image('name', 'dockerfile'));
             deployment.deploy(new Service('foo', [c]));
