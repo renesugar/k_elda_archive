@@ -153,7 +153,8 @@ use Quilt's `show` command to list everything that's running:
 
 ```console
 $ quilt show
-MACHINE         ROLE      PROVIDER    REGION       SIZE     PUBLIC IP    STATUS e5b1839d2bea    Master    Amazon      us-west-1    t2.micro              disconnected
+MACHINE         ROLE      PROVIDER    REGION       SIZE     PUBLIC IP    STATUS
+e5b1839d2bea    Master    Amazon      us-west-1    t2.micro              disconnected
 e2401c348c78    Worker    Amazon      us-west-1    t2.micro              disconnected
 ```
 
