@@ -17,11 +17,9 @@ let app = new Node({
   },
 });
 
-// We should not need to access _app. We will fix this when we decide on a
-// general style.
-let proxy = haproxy.singleServiceLoadBalancer(3, app._app);
+let proxy = haproxy.simpleLoadBalancer(app.cluster);
 
-mongo.allowFrom(app, mongo.port);
+mongo.allowFrom(app.cluster, mongo.port);
 proxy.allowFrom(quilt.publicInternet, haproxy.exposedPort);
 
 deployment.deploy([app, mongo, proxy]);

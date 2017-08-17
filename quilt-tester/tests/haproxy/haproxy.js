@@ -10,23 +10,25 @@ const indexPath = '/usr/share/nginx/html/index.html';
  * @return {Container} - A container with given content in its index file.
  */
 function containerWithContent(content) {
-  let files = {};
-  files[indexPath] = content;
-  return new quilt.Container('web', 'nginx').withFiles(files);
+  return new quilt.Container('web', 'nginx', {
+    filepathToContent: {
+      [indexPath]: content,
+    },
+  });
 };
 
-let serviceA = new quilt.Service('serviceA', [
+let serviceA = [
   containerWithContent('a1'),
   containerWithContent('a2'),
-]);
+];
 
-let serviceB = new quilt.Service('serviceB', [
+let serviceB = [
   containerWithContent('b1'),
   containerWithContent('b2'),
   containerWithContent('b3'),
-]);
+];
 
-let proxy = hap.withURLrouting(2, {
+let proxy = hap.withURLrouting({
   'serviceB.com': serviceB,
   'serviceA.com': serviceA,
 });
