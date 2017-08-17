@@ -115,10 +115,10 @@ descrbie the machines to launch for the containers to run on.
 To run the containers for your application with Quilt, you'll need to write a
 Quilt blueprint.  Quilt blueprints are written in Javascript, and the Quilt
 Javascript API
-is described [here](https://github.com/quilt/quilt/tree/master/stitch).  In this
+is described [here](http://docs.quilt.io/#quilt-js-api-documentation).  In this
 guide, we'll walk through how to write a Quilt blueprint for lobste.rs, but the
 Quilt API has more functionality than we could describe here.  See the [API
-guide](https://github.com/quilt/quilt/tree/master/stitch) for more usage
+guide](http://docs.quilt.io/#quilt-js-api-documentation) for more usage
 information.
 
 ### Writing the Quilt blueprint for MySQL
