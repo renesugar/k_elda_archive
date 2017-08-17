@@ -167,9 +167,7 @@ describe('Bindings', function() {
 
     describe('Container', function() {
         it('basic', function() {
-            deployment.deploy(new Service('foo', [
-                new Container('host', 'image'),
-            ]));
+            deployment.deploy(new Container('host', 'image'));
             checkContainers([{
                 id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 image: new Image('image'),
@@ -181,8 +179,7 @@ describe('Bindings', function() {
         });
         it('containers are not duplicated', function() {
             let container = new Container('host', 'image');
-            deployment.deploy(new Service('foo', [container]));
-            deployment.deploy(new Service('bar', [container]));
+            deployment.deploy([container, container]);
             checkContainers([{
                 id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 image: new Image('image'),
@@ -193,11 +190,9 @@ describe('Bindings', function() {
             }]);
         });
         it('command', function() {
-            deployment.deploy(new Service('foo', [
-                new Container('host', 'image', {
-                  command: ['arg1', 'arg2'],
-                }),
-            ]));
+            deployment.deploy(new Container('host', 'image', {
+                command: ['arg1', 'arg2'],
+            }));
             checkContainers([{
                 id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
                 image: new Image('image'),
@@ -210,7 +205,7 @@ describe('Bindings', function() {
         it('env', function() {
             const c = new Container('host', 'image');
             c.env.foo = 'bar';
-            deployment.deploy(new Service('foo', [c]));
+            deployment.deploy(c);
             checkContainers([{
                 id: '299619d3fb4b89fd5cc822983bc3fbcced2f0a98',
                 image: new Image('image'),
@@ -222,7 +217,7 @@ describe('Bindings', function() {
         });
         it('hostname', function() {
             const c = new Container('host', new Image('image'));
-            deployment.deploy(new Service('foo', [c]));
+            deployment.deploy(c);
             expect(c.getHostname()).to.equal('host.q');
             checkContainers([{
                 id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
@@ -236,7 +231,7 @@ describe('Bindings', function() {
         it('repeated hostnames don\'t conflict', function() {
             const a = new Container('host', 'image');
             const b = new Container('host', 'image');
-            deployment.deploy(new Service('foo', [a, b]));
+            deployment.deploy([a, b]);
             checkContainers([{
                 id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
                 image: new Image('image'),
@@ -281,13 +276,13 @@ describe('Bindings', function() {
             a.hostname = 'host';
             const b = new Container('host', 'image');
             b.hostname = 'host';
-            deployment.deploy(new Service('foo', [a, b]));
+            deployment.deploy([a, b]);
             expect(() => deployment.toQuiltRepresentation()).to
                 .throw('hostname "host" used multiple times');
         });
         it('image dockerfile', function() {
             const c = new Container('host', new Image('name', 'dockerfile'));
-            deployment.deploy(new Service('foo', [c]));
+            deployment.deploy(c);
             checkContainers([{
                 id: 'fbc9aedb5af0039b8cf09bca2ef5771467b44085',
                 image: new Image('name', 'dockerfile'),
@@ -298,10 +293,9 @@ describe('Bindings', function() {
             }]);
         });
         it('replicate', function() {
-            deployment.deploy(new Service('foo',
-                new Container('host', 'image', {
-                  command: ['arg'],
-                }).replicate(2)));
+            deployment.deploy(new Container('host', 'image', {
+              command: ['arg'],
+            }).replicate(2));
             checkContainers([
                 {
                     id: 'aaf63faa86e552ec4ca75ab66e1b14a5993fa29d',
@@ -327,7 +321,7 @@ describe('Bindings', function() {
             }).replicate(2);
             repl[0].env.foo = 'bar';
             repl[0].command.push('changed');
-            deployment.deploy(new Service('baz', repl));
+            deployment.deploy(repl);
             checkContainers([
                 {
                     id: '339b2dafcb9fd3c17f01930b5c4782e8d7a9c1b8',
@@ -360,12 +354,10 @@ describe('Bindings', function() {
             // constructor because the hostname ID increases with each with*
             // call.
             const id = 'f5c3e0fa3843e6fa149289d476f507831a45654d';
-            deployment.deploy(new Service('foo', [
-                new Container(hostname, image, {
+            deployment.deploy(new Container(hostname, image, {
                     command,
                 }).withEnv(env)
-                  .withFiles(filepathToContent),
-            ]));
+                  .withFiles(filepathToContent));
             checkContainers([{
                 id, image, command, env, filepathToContent,
                 hostname: 'host3',
@@ -373,11 +365,9 @@ describe('Bindings', function() {
         });
         it('constructor', function() {
             const id = '9f9d0c0868163eda5b4ad5861c9558f055508959';
-            deployment.deploy(new Service('foo', [
-                new Container(hostname, image, {
+            deployment.deploy(new Container(hostname, image, {
                     command, env, filepathToContent,
-                }),
-            ]));
+                }));
             checkContainers([{
                 id, hostname, image, command, env, filepathToContent,
             }]);
@@ -388,7 +378,7 @@ describe('Bindings', function() {
         let target;
         beforeEach(function() {
             target = new Container('host', 'image');
-            deployment.deploy(new Service('target', [target]));
+            deployment.deploy(target);
         });
         it('MachineRule size, region, provider', function() {
             target.placeOn({
@@ -480,16 +470,14 @@ describe('Bindings', function() {
         });
     });
     describe('AllowFrom', function() {
-        let fooService;
         let foo;
-        let barService;
         let bar;
+        let fooService;
         beforeEach(function() {
             foo = new Container('foo', 'image');
             fooService = new Service('fooService', [foo]);
             bar = new Container('bar', 'image');
-            barService = new Service('barService', [bar]);
-            deployment.deploy([fooService, barService]);
+            deployment.deploy([foo, bar, fooService]);
         });
         it('autobox port ranges', function() {
             bar.allowFrom(foo, 80);
@@ -587,6 +575,8 @@ describe('Bindings', function() {
             quxQuuzGroup = [qux, quuz];
             service = new Service('serv', [foo, bar, qux, quuz]);
 
+            deployment.deploy(fooBarGroup);
+            deployment.deploy(quxQuuzGroup);
             deployment.deploy(service);
         });
 
@@ -654,17 +644,13 @@ describe('Bindings', function() {
                 '"to":"foo"} references an undefined hostname: baz');
         });
         it('duplicate image', function() {
-            deployment.deploy(new Service('foo',
-                [new Container('host', new Image('img', 'dk'))]));
-            deployment.deploy(new Service('foo',
-                [new Container('host', new Image('img', 'dk'))]));
+            deployment.deploy(new Container('host', new Image('img', 'dk')));
+            deployment.deploy(new Container('host', new Image('img', 'dk')));
             expect(deploy).to.not.throw();
         });
         it('duplicate image with different Dockerfiles', function() {
-            deployment.deploy(new Service('foo',
-                [new Container('host', new Image('img', 'dk'))]));
-            deployment.deploy(new Service('foo',
-                [new Container('host', new Image('img', 'dk2'))]));
+            deployment.deploy(new Container('host', new Image('img', 'dk')));
+            deployment.deploy(new Container('host', new Image('img', 'dk2')));
             expect(deploy).to.throw('img has differing Dockerfiles');
         });
     });

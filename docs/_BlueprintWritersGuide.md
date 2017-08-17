@@ -127,67 +127,57 @@ First, let's write the Quilt blueprint to get the MySQL container up and running
 need to create a container based on the mysql image:
 
 ```javascript
-let sqlContainer = new Container('mysql:5.6.32');
+let sql = new Container('sql', 'mysql:5.6.32');
 ```
     
-Here, the argument to `Container` is the name of an image.  You can also pass in
-a Dockerfile to use to create a new image, as described in the [Javascript API
-documentation](https://github.com/quilt/quilt/tree/master/stitch).
+Here, the argument to `Container` is the hostname for the container, and the
+name of an image.  You can also pass in a Dockerfile to use to create a new
+image, as described in the [Javascript API
+documentation](http://docs.quilt.io/#quilt-js-api-documentation).
 
 Next, the SQL container requires some environment variables to be set.  In
 particular, we need to specify a root password for SQL.  We can set the root
 password to `foo` with the `setEnv` function:
 
 ```javascript
-sqlContainer.setEnv('MYSQL_ROOT_PASSWORD', 'foo');
+sql.setEnv('MYSQL_ROOT_PASSWORD', 'foo');
 ```
-    
-All containers need to be part of a service in order to be executed.  In this
-case, the service just has our single mysql container.  Each service is created
-using a name and a list of containers:
-
-```javascript
-let sqlService = new Service('sql', [sqlContainer]);
-```
-    
-The SQL service is now initialized.  
 
 ### Writing the Quilt blueprint for lobste.rs
 
-Next, we can similarly initialize the lobsters service.  The lobsters service is
+Next, we can similarly initialize the lobsters container.  The lobsters container is
 a little trickier to initialize because it requires an environment variable
 (`DATABASE_URL`) to be set to the URL of the SQL container.  Quilt containers
 are each assigned unique hostnames when they're initialized, so we can create
 the lobsters container and initialize the URL as follows:
 
 ```javascript
-let lobstersContainer = new Container('kayousterhout/lobsters');
-const sqlDatabaseUrl = 'mysql2://root:' + mysqlOpts.rootPassword + '@' + sqlService.hostname() + ':3306/lobsters';
-lobstersContainer.setEnv('DATABASE_URL', sqlDatabaseUrl);
-let lobstersService = new Service('lobsters', [lobstersContainer]);
+let lobsters = new Container('kayousterhout/lobsters');
+const sqlDatabaseUrl = 'mysql2://root:' + mysqlOpts.rootPassword + '@' + sqlContainer.getHostname() + ':3306/lobsters';
+lobsters.setEnv('DATABASE_URL', sqlDatabaseUrl);
 ```
 
 ### Allowing network connections
     
-At this point, we've written code to create a mysql service and a lobsters
-service.  With Quilt, by default, all network connections are blocked.  To allow
+At this point, we've written code to create a mysql container and a lobsters
+container.  With Quilt, by default, all network connections are blocked.  To allow
 lobsters to talk to mysql, we need to explicitly open the mysql port (3306):
 
 ```javascript
-sqlService.allowFrom(lobstersService, 3306);
+sql.allowFrom(lobsters, 3306);
 ```
     
 Because lobsters is a web application, the relevant port should also be open to
-the public internet on the lobsters service.  Quilt has a `publicInternet`
-variable that can be used to connect services to any IP address:
+the public internet on the lobsters container.  Quilt has a `publicInternet`
+variable that can be used to connect containers to any IP address:
 
 ```javascript
-lobstersService.allowFrom(publicInternet, 3000);
+lobsters.allowFrom(publicInternet, 3000);
 ```
     
 ### Deploying the application on infrastructure
 
-Finally, we'll use Quilt to launch some machines, and then start our services on
+Finally, we'll use Quilt to launch some machines, and then start our containers on
 those machines.  First, we'll define a "base machine."  We'll deploy a few
 machines, and creating the base machine is a useful way to create one machine
 that all of the machines in our deployment will be based off of.  In this case,
@@ -201,7 +191,7 @@ let baseMachine = new Machine({provider: 'Amazon', sshKeys: ['ssh-rsa bar']});
 Now, using that base machine, we can deploy a master and a worker machine.  All
 quilt deployments must have one master, which keeps track of state for all of
 the machines in the cluster, and 0 or more workers.  To deploy machines and
-services, you must create a deployment object, which maintains state about the
+containers, you must create a deployment object, which maintains state about the
 deployment.
 
 ```javascript
@@ -211,11 +201,11 @@ deployment.deploy(baseMachine.asWorker());
 ```
 
 We've now defined a deployment with a master and worker machine.  Let's finally
-deploy the two services on that infrastructure:
+deploy the two containers on that infrastructure:
 
 ```javascript
-deployment.deploy(sqlService);
-deployment.deploy(lobstersService);
+deployment.deploy(sql);
+deployment.deploy(lobsters);
 ```
     
 We're done!  Running the blueprint is now trivial.  With a quilt daemon running, run
@@ -226,5 +216,5 @@ $ quilt run ./lobsters.js
 ```
     
 Now users of lobsters, for example, can deploy it without needing to worry about
-the details of how different services are connected with each other.  All they
+the details of how different containers are connected with each other.  All they
 need to do is to `quilt run` the existing blueprint.

@@ -94,6 +94,7 @@ function Deployment(deploymentOpts) {
     this.adminACL = getStringArray('adminACL', deploymentOpts.adminACL);
 
     this.machines = [];
+    this.containers = new Set();
     this.services = [];
 }
 
@@ -138,58 +139,32 @@ function hash(str) {
 // Convert the deployment to the QRI deployment format.
 Deployment.prototype.toQuiltRepresentation = function() {
     setQuiltIDs(this.machines);
-
-    // List all of the containers in the deployment. This list may contain
-    // duplicates; e.g., if the same container is referenced by multiple
-    // services.
-    let containers = [];
-    this.services.forEach(function(serv) {
-        serv.containers.forEach(function(c) {
-            containers.push(c);
-        });
-    });
-    setQuiltIDs(containers);
+    setQuiltIDs(this.containers);
 
     let services = [];
     let connections = [];
     let placements = [];
+    let containers = [];
 
-    // For each service, convert the associated connections, and placements.
-    // Also, convert the service into the form required by the Quilt
-    // deployment engine.
+    // Convert the services.
     this.services.forEach(function(service) {
         connections = connections.concat(service.getQuiltConnections());
-
-        service.containers.forEach(function(container) {
-            placements = placements.concat(container.getPlacementsWithID());
-        });
-
         services.push({
             name: service.name,
             hostnames: service.containers.map((c) => c.hostname),
         });
     });
 
-    // Create a list of unique containers.
-    let addedIds = new Set();
-    let containersNoDups = [];
-    containers.forEach(function(container) {
-        if (!addedIds.has(container.id)) {
-            addedIds.add(container.id);
-            containersNoDups.push(container);
-         }
-    });
-
-    let quiltContainers = [];
-    containersNoDups.forEach((c) => {
+    this.containers.forEach((c) => {
         connections = connections.concat(c.getQuiltConnections());
-        quiltContainers.push(c.toQuiltRepresentation());
+        placements = placements.concat(c.getPlacementsWithID());
+        containers.push(c.toQuiltRepresentation());
     });
 
     const quiltDeployment = {
         machines: this.machines,
         labels: services,
-        containers: quiltContainers,
+        containers: containers,
         connections: connections,
         placements: placements,
 
@@ -201,7 +176,7 @@ Deployment.prototype.toQuiltRepresentation = function() {
     return quiltDeployment;
 };
 
-// Check if all referenced services in connections and placements are
+// Check if all referenced containers in connections and services are
 // really deployed.
 function vet(deployment) {
     const labelHostnames = deployment.labels.map((l) => l.name);
@@ -694,6 +669,10 @@ Container.prototype.allowFromPublic = function(range) {
             `and not to port ranges`);
     }
     this.incomingPublic.push(range);
+};
+
+Container.prototype.deploy = function(deployment) {
+    deployment.containers.add(this);
 };
 
 Container.prototype.getQuiltConnections = function() {

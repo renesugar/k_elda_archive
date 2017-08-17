@@ -32,6 +32,9 @@ new Container('hostname', 'imageName');
 ```
 - Hostnames are now immutable after the container is constructed -- the
 `Container.setHostname` method has been removed.
+- Containers can now be `deploy`ed directly without wrapping them in a Service.
+Deploying a Service does _not_ deploy the Containers behind it -- the Containers
+must be explicitly deployed.
 
 API Breaking Changes:
 - Make `placeOn` a method of `Container` rather than `Service`.

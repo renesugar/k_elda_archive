@@ -11,11 +11,12 @@ for (let i = 0; i < 4; i++) {
         'I am container number ' + i.toString() + '\n',
   }));
 }
+deployment.deploy(containers);
 
-let fetcher = new quilt.Service('fetcher',
-    [new quilt.Container('fetcher', 'alpine', {
-        command: ['tail', '-f', '/dev/null']})]);
+let fetcher = new quilt.Container('fetcher', 'alpine', {
+    command: ['tail', '-f', '/dev/null'],
+});
 let loadBalanced = new quilt.Service('loadBalanced', containers);
-loadBalanced.allowFrom(fetcher.containers[0], 80);
+loadBalanced.allowFrom(fetcher, 80);
 
 deployment.deploy([fetcher, loadBalanced]);

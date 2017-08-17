@@ -4,7 +4,6 @@ let infrastructure = require('../../config/infrastructure.js');
 let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
-let containers = new quilt.Service('containers',
-    new quilt.Container('foo', 'google/pause')
-    .replicate(infrastructure.nWorker));
+let containers = new quilt.Container('foo', 'google/pause')
+  .replicate(infrastructure.nWorker);
 deployment.deploy(containers);

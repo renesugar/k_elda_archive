@@ -3,8 +3,4 @@ let infrastructure = require('../../config/infrastructure.js');
 
 let deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
-
-let red = new quilt.Service('red', [
-  new quilt.Container('red', 'google/pause'),
-]);
-deployment.deploy(red);
+deployment.deploy(new quilt.Container('red', 'google/pause'));
