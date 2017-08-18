@@ -1,5 +1,11 @@
 language: go
 
+env:
+    # The location where the decrypted releaser key will be placed. The file
+    # ./scripts/releaser_key.enc is an encrypted version of this key generated
+    # using the Travis public key for this repo.
+    - RELEASER_KEY_PATH=./scripts/releaser_key
+
 sudo: required
 
 services:
@@ -39,16 +45,25 @@ notifications:
   slack:
     secure: jap4ODSrC9Nrd61tU3vSB9z8GBUUQmVcQzHWzIUHtQ2orGE8NqlrgdL17Bang26mm083vjFuaHb82OeJXeeMnH+8WFBY8ju19KJI/4Lgnou+Q0eOZ6bmHY9fjIgLTm+HiOrMaeDiDtLUPQIm1O4aNQ1GjT410LeQ0QkFZSPRJN+kxYDvLW8GQi3kG12BvIWPWFJY/r5B6JvSWQPzsJXvFTFAfu5B9enhwzy/s7W9tT+ddpnuCyz2+O2ADpGfLwtyH50jLlmIyrq3QKT6vYy2COq5GZ3yM2noaQRYRbl/5LIPdsAh99wjJF4X9oNXCl4EmxK7sWPKZc7Yk/AIGVHhlOlkkYhYzbajw3OPLo/02RDJv4IPCpFKfePOYLNpvcH4F+ae4ZQ1NmU0ksH9q04fTUH6xtwRU74WIiaelWMoH4qegUR4GJHbIEbCcT1HwN36ZkAeIFtY8HHT9+3wag1nnWG3l3uRIudcvjYFp7flGhaqW/t+VFbxaKRbahRPHV9K71XajdxR2GoQOggaE6k7/TeGBkHDR/3zX0sA30+meHxrb8Zo3py+Lsb8CQ5ULE/TWyGQyLN8RN/ynj+qtvI6nVIgKzkD+pgluerEIu5KhA0WslHY1Z0cQgI8mmoU4SY5Tzim/kwyljmBVFAIafyDibc5OjVSRpGca1vtBc18ZrY=
 
-before_deploy: make release
+before_deploy:
+    - make release
+    # Decrypt the SSH key used to upload releases to Jenkins.
+    - openssl aes-256-cbc -K $encrypted_e63862ef6e81_key -iv $encrypted_e63862ef6e81_iv
+      -in ${RELEASER_KEY_PATH}.enc -out ${RELEASER_KEY_PATH} -d && chmod 600 ${RELEASER_KEY_PATH}
 
 deploy:
-  provider: releases
-  api_key:
-    secure: mI8h+nDDYjmhxt+cLTqxPM5J7PdRXYPQusoYqjVLW9R9Q5U14fduatTYdiMCd3/Wag2JDLydRhYVxtfvY9VqGLJDP6nYaNrp8CVtBBgf+CnhIFtdOST5u0ekpeFDSvO36XPEaeM8TLdBgqljao3WFhkOZJ2mXhS3462qu6Y4BhiOko0p6OwOwPuibQ/23+8h1ITfxmj9Q+2WdqQkq1cF8Z6LP/bNOAK5+/1M5KoD7rbnliaSjcy349CWDqkNQay49hIHJXo519l68cZxiJtvq4FXG0qgNgpJ5wAY3iY9fHJZ5COJ61DRvMjs6EX43vviX1F+rXBkbXVE3q0T9ePhbe1Ph9Gq3ZOjw2Rz9gi0szDgNPES7kyTTrg1z1eqokVMSO1HofV1INfeFfHNn22zg+mezDm7KPbQV17G0Mtw71aYHsDFpJB9dMj/NKmHyAQU7n02TjQ/xo66RLJiEwq1YN23BdHhiDvcGuT4VusaOyuqpl73x7wJwJkSnJTpBvYlANCHsFWhRzyYJFlro+bEKAcsYlPEwX+d3laiGcz2xa76New0DuMtYsrHZt8yjMbv7Aq3MqCFLAJPGnSvxCQRv3oCrhrZ+Q+GJMXcsFOnd+rheLAXoSY4Qk0PD5qkMMZIJtaiw03C3tLIoZ+GM/55lgK3ylgW9RCutgCVxzrwQSk=
-  file:
-      - quilt_darwin
-      - quilt_linux
-  overwrite: true
-  skip_cleanup: true
-  on:
-    tags: true
+    - provider: script
+      script: ./scripts/scp-to-jenkins ${RELEASER_KEY_PATH}
+      skip_cleanup: true
+      on:
+        tags: true
+    - provider: releases
+      api_key:
+        secure: mI8h+nDDYjmhxt+cLTqxPM5J7PdRXYPQusoYqjVLW9R9Q5U14fduatTYdiMCd3/Wag2JDLydRhYVxtfvY9VqGLJDP6nYaNrp8CVtBBgf+CnhIFtdOST5u0ekpeFDSvO36XPEaeM8TLdBgqljao3WFhkOZJ2mXhS3462qu6Y4BhiOko0p6OwOwPuibQ/23+8h1ITfxmj9Q+2WdqQkq1cF8Z6LP/bNOAK5+/1M5KoD7rbnliaSjcy349CWDqkNQay49hIHJXo519l68cZxiJtvq4FXG0qgNgpJ5wAY3iY9fHJZ5COJ61DRvMjs6EX43vviX1F+rXBkbXVE3q0T9ePhbe1Ph9Gq3ZOjw2Rz9gi0szDgNPES7kyTTrg1z1eqokVMSO1HofV1INfeFfHNn22zg+mezDm7KPbQV17G0Mtw71aYHsDFpJB9dMj/NKmHyAQU7n02TjQ/xo66RLJiEwq1YN23BdHhiDvcGuT4VusaOyuqpl73x7wJwJkSnJTpBvYlANCHsFWhRzyYJFlro+bEKAcsYlPEwX+d3laiGcz2xa76New0DuMtYsrHZt8yjMbv7Aq3MqCFLAJPGnSvxCQRv3oCrhrZ+Q+GJMXcsFOnd+rheLAXoSY4Qk0PD5qkMMZIJtaiw03C3tLIoZ+GM/55lgK3ylgW9RCutgCVxzrwQSk=
+      file:
+          - quilt_darwin
+          - quilt_linux
+      overwrite: true
+      skip_cleanup: true
+      on:
+        tags: true

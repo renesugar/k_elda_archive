@@ -1,0 +1,17 @@
+#!/bin/bash
+# This script bundles the parent directory into a tarball, and copies it to a
+# SCP server for Jenkins to use when running tests. This way, Jenkins won't
+# inflate our download numbers by downloading the release off GitHub for every
+# test.
+set -e
+
+keyPath=$1
+tarOut=${TRAVIS_TAG}.tar.gz
+base=$(basename $PWD)
+
+cd ..
+tar czf ${tarOut} ${base}
+cd ${base}
+
+scp -i ${keyPath} -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ../${tarOut} releaser@jenkins.quilt.io:
+rm ../${tarOut}
