@@ -1,3 +1,5 @@
+/* eslint-env mocha */
+/* eslint-disable no-unused-expressions, no-underscore-dangle */
 const expect = require('chai').expect;
 const mock = require('mock-fs');
 const os = require('os');

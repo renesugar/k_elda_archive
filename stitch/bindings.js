@@ -1,12 +1,20 @@
 /* eslint require-jsdoc: [1] valid-jsdoc: [1] */
+/* eslint-disable no-underscore-dangle */
 const crypto = require('crypto');
 const request = require('sync-request');
 const stringify = require('json-stable-stringify');
 const _ = require('underscore');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
 const githubCache = {};
+
+/**
+ * Gets the public key associated with a github username.
+ * @param {string} user - The GitHub username.
+ * @return {string} The SSH key.
+ */
 function githubKeys(user) {
   if (user in githubCache) {
     return githubCache[user];
@@ -32,24 +40,24 @@ function githubKeys(user) {
 const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
 
 /**
-  * Returns the absolute path to the infrastructure with the given name.
-  *
-  * @param {string} infraName The name of the infrastructure.
-  * @return {string} The absolute path to the infrastructure file.
-  */
+ * Returns the absolute path to the infrastructure with the given name.
+ *
+ * @param {string} infraName The name of the infrastructure.
+ * @return {string} The absolute path to the infrastructure file.
+ */
 function getInfraPath(infraName) {
   return path.join(infraDirectory, `${infraName}.js`);
 }
 
 /**
-  * Returns a base infrastructure. The infrastructure can be deployed to simply
-  * by calling .deploy() on the returned object.
-  * The base infrastructure could be created with `quilt init`.
-  *
-  * @param {string} name The name of the infrastructure, as passed to
-  *   `quilt init`.
-  * @return {Deployment} A deployment object representing the infrastructure.
-  */
+ * Returns a base infrastructure. The infrastructure can be deployed to simply
+ * by calling .deploy() on the returned object.
+ * The base infrastructure could be created with `quilt init`.
+ *
+ * @param {string} name The name of the infrastructure, as passed to
+ *   `quilt init`.
+ * @return {Deployment} A deployment object representing the infrastructure.
+ */
 function baseInfrastructure(name = 'default') {
   if (typeof name !== 'string') {
     throw new Error(`name must be a string; was ${stringify(name)}`);
@@ -60,7 +68,7 @@ function baseInfrastructure(name = 'default') {
     throw new Error(`no infrastructure called ${name}. Use 'quilt init' ` +
       'to create a new infrastructure.');
   }
-  const infraGetter = require(infraPath);
+  const infraGetter = require(infraPath); // eslint-disable-line
 
   // By passing this module to the infraGetter, the blueprint doesn't have to
   // require Quilt directly and we thus don't have to `npm install` in the
@@ -80,14 +88,30 @@ const publicInternetLabel = 'public';
 // Global unique ID counter.
 let uniqueIDCounter = 0;
 
-// Overwrite the deployment object with a new one.
+/**
+ * Overwrites the deployment object with a new one.
+ *
+ * @param {object} deploymentOpts - Options for the new deployment object.
+ * @return {object} A deployment object.
+ */
 function createDeployment(deploymentOpts) {
   global._quiltDeployment = new Deployment(deploymentOpts);
   return global._quiltDeployment;
 }
 
-function Deployment(deploymentOpts) {
-  deploymentOpts = deploymentOpts || {};
+/**
+ * Creates a new deployment object with the given options.
+ * @constructor
+ *
+ * @param {object} opts - An object containing options that can tweak
+ *   the behavor of the namespace.  Options include: `maxPrice` which defines
+ *   the price that should be bid in spot auctions for preemptible machines,
+ *   `namespace` which instructs the deployment what namespace it should
+ *   operate in, and `adminACL` which defines what network traffic should be
+ *   allowed to access the deployment.
+ */
+function Deployment(opts) {
+  const deploymentOpts = opts || {};
 
   this.maxPrice = getNumber('maxPrice', deploymentOpts.maxPrice);
   this.namespace = deploymentOpts.namespace || 'default-namespace';
@@ -98,15 +122,22 @@ function Deployment(deploymentOpts) {
   this.services = [];
 }
 
-// Returns a globally unique integer ID.
+/**
+ * @return {integer} A globally unique integer ID.
+ */
 function uniqueID() {
-  return uniqueIDCounter++;
+  uniqueIDCounter += 1;
+  return uniqueIDCounter;
 }
 
-// setQuiltIDs deterministically sets the id field of objects based on
-// their attributes. The _refID field is required to differentiate between
-// multiple references to the same object, and multiple instantiations with
-// the exact same attributes.
+/**
+ * Deterministically sets the id field of objects based on their attributes. The
+ * _refID field is required to differentiate between multiple references to the
+ * same object, and multiple instantiations with the exact same attributes.
+ *
+ * @param {Object[]} objs - An array of objects.
+ * @returns {void}
+ */
 function setQuiltIDs(objs) {
   // The refIDs for each identical instance.
   const refIDs = {};
@@ -126,10 +157,17 @@ function setQuiltIDs(objs) {
 
   objs.forEach((obj) => {
     const k = obj.hash();
-    obj.id = hash(k + refIDs[k].indexOf(obj._refID));
+    const h = hash(k + refIDs[k].indexOf(obj._refID));
+    obj.id = h; // eslint-disable-line no-param-reassign
   });
 }
 
+/**
+ * Cryptographically hashes the given string.
+ *
+ * @param {string} str - The string to be hashed.
+ * @return {string} The hash.
+ */
 function hash(str) {
   const shaSum = crypto.createHash('sha1');
   shaSum.update(str);
@@ -137,7 +175,7 @@ function hash(str) {
 }
 
 // Convert the deployment to the QRI deployment format.
-Deployment.prototype.toQuiltRepresentation = function () {
+Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
   setQuiltIDs(this.machines);
   setQuiltIDs(this.containers);
 
@@ -176,8 +214,13 @@ Deployment.prototype.toQuiltRepresentation = function () {
   return quiltDeployment;
 };
 
-// Check if all referenced containers in connections and services are
-// really deployed.
+/**
+ * Checks if all referenced containers in connections and services are really
+ * deployed.
+ *
+ * @param {object} deployment - A deployment object.
+ * @returns {void}
+ */
 function vet(deployment) {
   const labelHostnames = deployment.labels.map(l => l.name);
   const containerHostnames = deployment.containers.map(c => c.hostname);
@@ -203,8 +246,8 @@ function vet(deployment) {
   const dockerfiles = {};
   deployment.containers.forEach((c) => {
     const name = c.image.name;
-    if (dockerfiles[name] != undefined &&
-                dockerfiles[name] != c.image.dockerfile) {
+    if (dockerfiles[name] !== undefined &&
+                dockerfiles[name] !== c.image.dockerfile) {
       throw new Error(`${name} has differing Dockerfiles`);
     }
     dockerfiles[name] = c.image.dockerfile;
@@ -213,7 +256,8 @@ function vet(deployment) {
 
 // deploy adds an object, or list of objects, to the deployment.
 // Deployable objects must implement the deploy(deployment) interface.
-Deployment.prototype.deploy = function (toDeployList) {
+Deployment.prototype.deploy = function deploy(list) {
+  let toDeployList = list;
   if (!Array.isArray(toDeployList)) {
     toDeployList = [toDeployList];
   }
@@ -229,7 +273,13 @@ Deployment.prototype.deploy = function (toDeployList) {
 };
 
 /**
+ * Creates a new Service object which represents a collection of containers
+ * behind a load balancer.
  * @implements {Connectable}
+ * @constructor
+ *
+ * @param {string} name - The name of the service.
+ * @param {Container[]} containers - The containers in the service.
  */
 function Service(name, containers) {
   if (typeof name !== 'string') {
@@ -242,11 +292,11 @@ function Service(name, containers) {
 }
 
 // Get the Quilt hostname that represents the entire service.
-Service.prototype.hostname = function () {
+Service.prototype.hostname = function servicehostname() {
   return `${this.name}.q`;
 };
 
-Service.prototype.deploy = function (deployment) {
+Service.prototype.deploy = function serviceDeploy(deployment) {
   deployment.services.push(this);
 };
 
@@ -255,19 +305,19 @@ Service.prototype.deploy = function (deployment) {
  * allow direct connections to the containers behind the load balancer.
  *
  * @param {Container|Container[]} srcArg The containers that can open
- * connections to this Service.
+ *   connections to this Service.
  * @param {int|Port|PortRange} portRange The ports on which containers can open
- * connections.
+ *   connections.
  * @return {void}
  */
-Service.prototype.allowFrom = function (srcArg, portRange) {
+Service.prototype.allowFrom = function serviceAllowFrom(srcArg, portRange) {
   let src;
   try {
     src = boxContainers(srcArg);
   } catch (err) {
     throw new Error('Services can only allow traffic from containers. ' +
-            'Check that you\'re allowing connections from a Container ' +
-            'or list of containers and not from a Service or other object.');
+          'Check that you\'re allowing connections from a Container ' +
+          'or list of containers and not from a Service or other object.');
   }
 
   src.forEach((c) => {
@@ -299,7 +349,7 @@ const publicInternet = {
   },
 };
 
-Service.prototype.getQuiltConnections = function () {
+Service.prototype.getQuiltConnections = function serviceGetQuiltConnections() {
   return this.allowedInboundConnections.map(conn => ({
     from: conn.from.hostname,
     to: this.name,
@@ -308,6 +358,14 @@ Service.prototype.getQuiltConnections = function () {
   }));
 };
 
+/**
+ * Boxes a container into a list of containers, or do nothing if `x` is a list
+ * of containers.
+ *
+ * @param {Container|Container[]} x - A container object, or a list of
+ *   container objects.
+ * @returns {Container[]} The resulting list of container objects.
+ */
 function boxContainers(x) {
   if (x instanceof Container) {
     return [x];
@@ -317,12 +375,18 @@ function boxContainers(x) {
   return x;
 }
 
+/**
+ * Assert that `containers` is an array of Container objects.
+ *
+ * @param {Container[]} containers - An array of container objects.
+ * @returns {void}
+ */
 function assertContainerList(containers) {
   if (!Array.isArray(containers)) {
     throw new Error('not an array of Containers (was ' +
             `${stringify(containers)})`);
   }
-  for (let i = 0; i < containers.length; i++) {
+  for (let i = 0; i < containers.length; i += 1) {
     if (!(containers[i] instanceof Container)) {
       throw new Error('not an array of Containers; item ' +
                 `at index ${i} (${stringify(containers[i])}) is not a ` +
@@ -332,16 +396,28 @@ function assertContainerList(containers) {
 }
 
 let hostnameCount = {};
+
+/**
+ * @param {string} name - The name that the generated hostname should be based
+ *   on.
+ * @returns {string} The unique hostname.
+ */
 function uniqueHostname(name) {
   if (!(name in hostnameCount)) {
     hostnameCount[name] = 1;
     return name;
   }
-  hostnameCount[name]++;
+  hostnameCount[name] += 1;
   return uniqueHostname(name + hostnameCount[name]);
 }
 
-// Box raw integers into range.
+/**
+ * Boxes raw integers into range.
+ *
+ * @param {integer|Range} x - The integer to be boxed into the range (or
+ *   undefined).
+ * @returns {Range} The resulting Range object.
+ */
 function boxRange(x) {
   if (x === undefined) {
     return new Range(0, 0);
@@ -356,8 +432,12 @@ function boxRange(x) {
 }
 
 /**
- * Returns 0 if `arg` is not defined, and otherwise ensures that `arg`
- * is a number and then returns it.
+ * Forces `arg` to be a number, even if it's undefined.
+ *
+ * @param {string} argName - The name of the number (for logging).
+ * @param {number} arg - The number that might be undefined.
+ * @return {number} Zero if `arg` is not defined, and otherwise ensures that
+ *   `arg` is a number and then returns it.
  */
 function getNumber(argName, arg) {
   if (arg === undefined) {
@@ -370,8 +450,12 @@ function getNumber(argName, arg) {
 }
 
 /**
- * Returns an empty string if `arg` is not defined, and otherwise
- * ensures that `arg` is a string and then returns it.
+ * Forces `arg` to be a string, even if it's undefined.
+ *
+ * @param {string} argName - The name of the string (for logging).
+ * @param {string} arg - The arg that might be undefined.
+ * @return {string} An empty string if `arg` is not defined, and otherwise
+ *   ensures that `arg` is a string and then returns it.
  */
 function getString(argName, arg) {
   if (arg === undefined) {
@@ -384,9 +468,11 @@ function getString(argName, arg) {
 }
 
 /**
- * Returns an empty object if `arg` is not defined, and otherwise
- * ensures that `arg` is an object with string keys and values and then returns
- * it.
+ * @param {string} argName - The name of `arg` (for logging).
+ * @param {Object.<string, string>} arg - The map of strings.
+ * @return {Deployment} An empty object if `arg` is not defined, and
+ *   otherwise ensures that `arg` is an object with string keys and values and
+ *   then returns it.
  */
 function getStringMap(argName, arg) {
   if (arg === undefined) {
@@ -410,8 +496,12 @@ function getStringMap(argName, arg) {
 }
 
 /**
- * Returns an empty array if `arg` is not defined, and otherwise
- * ensures that `arg` is an array of strings and then returns it.
+ * Verifies `arg` is an array of strings or undefined.
+ * @param {string} argName - The name of `arg` (for logging).
+ * @param {string[]} arg - The array of strings.
+ * @return {string[]} Returns an empty array if `arg` is not
+ *   defined, and otherwise ensures that `arg` is an array of strings and then
+ *   returns it.
  */
 function getStringArray(argName, arg) {
   if (arg === undefined) {
@@ -421,7 +511,7 @@ function getStringArray(argName, arg) {
     throw new Error(`${argName} must be an array of strings ` +
             `(was: ${stringify(arg)})`);
   }
-  for (let i = 0; i < arg.length; i++) {
+  for (let i = 0; i < arg.length; i += 1) {
     if (typeof arg[i] !== 'string') {
       throw new Error(`${argName} must be an array of strings. ` +
                 `Item at index ${i} (${stringify(arg[i])}) is not a ` +
@@ -432,8 +522,10 @@ function getStringArray(argName, arg) {
 }
 
 /**
- * Returns false if `arg` is not defined, and otherwise ensures
- * that `arg` is a boolean and then returns it.
+ * @param {string} argName - The name of `arg` (for logging).
+ * @param {boolean} arg - The boolean that might be undefined.
+ * @return {boolean} False if `arg` is not defined, and otherwise ensures
+ *   that `arg` is a boolean and then returns it.
  */
 function getBoolean(argName, arg) {
   if (arg === undefined) {
@@ -445,6 +537,13 @@ function getBoolean(argName, arg) {
   throw new Error(`${argName} must be a boolean (was: ${stringify(arg)})`);
 }
 
+/**
+ * Constructs a machine object.
+ * @constructor
+ *
+ * @param {Object.<string, string>} optionalArgs - Optional arguments that
+ *   modify the machine.
+ */
 function Machine(optionalArgs) {
   this._refID = uniqueID();
 
@@ -460,12 +559,12 @@ function Machine(optionalArgs) {
   this.preemptible = getBoolean('preemptible', optionalArgs.preemptible);
 }
 
-Machine.prototype.deploy = function (deployment) {
+Machine.prototype.deploy = function machineDeploy(deployment) {
   deployment.machines.push(this);
 };
 
 // Create a new machine with the same attributes.
-Machine.prototype.clone = function () {
+Machine.prototype.clone = function machineClone() {
   // _.clone only creates a shallow copy, so we must clone sshKeys ourselves.
   const keyClone = _.clone(this.sshKeys);
   const cloned = _.clone(this);
@@ -473,31 +572,31 @@ Machine.prototype.clone = function () {
   return new Machine(cloned);
 };
 
-Machine.prototype.withRole = function (role) {
+Machine.prototype.withRole = function machineWithRole(role) {
   const copy = this.clone();
   copy.role = role;
   return copy;
 };
 
-Machine.prototype.asWorker = function () {
+Machine.prototype.asWorker = function machineAsWorker() {
   return this.withRole('Worker');
 };
 
-Machine.prototype.asMaster = function () {
+Machine.prototype.asMaster = function machineAsMaster() {
   return this.withRole('Master');
 };
 
 // Create n new machines with the same attributes.
-Machine.prototype.replicate = function (n) {
+Machine.prototype.replicate = function machineReplicate(n) {
   let i;
   const res = [];
-  for (i = 0; i < n; i++) {
+  for (i = 0; i < n; i += 1) {
     res.push(this.clone());
   }
   return res;
 };
 
-Machine.prototype.hash = function () {
+Machine.prototype.hash = function machineHash() {
   return stringify({
     provider: this.provider,
     role: this.role,
@@ -511,17 +610,31 @@ Machine.prototype.hash = function () {
   });
 };
 
+/**
+ * Creates a Docker Image.
+ * @constructor
+ *
+ * @param {string} name - The name of the docker image.
+ * @param {string} dockerfile - The string contents of the Docker file that
+ *   constructs the Image.
+ */
 function Image(name, dockerfile) {
   this.name = name;
   this.dockerfile = dockerfile;
 }
 
-Image.prototype.clone = function () {
+Image.prototype.clone = function imageClone() {
   return new Image(this.name, this.dockerfile);
 };
 
 /**
+ * Creates a new Container.
+ *
+ * @constructor
  * @implements {Connectable}
+ *
+ * @param {string} hostnamePrefix - The network hostname of the container.
+ * @param {string} image - The image the container will boot.
  */
 function Container(hostnamePrefix, image, {
   command = [],
@@ -564,41 +677,41 @@ function Container(hostnamePrefix, image, {
 }
 
 // Create a new Container with the same attributes.
-Container.prototype.clone = function () {
+Container.prototype.clone = function containerClone() {
   return new Container(this.hostnamePrefix, this.image, this);
 };
 
 // Create n new Containers with the same attributes.
-Container.prototype.replicate = function (n) {
+Container.prototype.replicate = function containerReplicate(n) {
   let i;
   const res = [];
-  for (i = 0; i < n; i++) {
+  for (i = 0; i < n; i += 1) {
     res.push(this.clone());
   }
   return res;
 };
 
-Container.prototype.setEnv = function (key, val) {
+Container.prototype.setEnv = function containerSetEnv(key, val) {
   this.env[key] = val;
 };
 
-Container.prototype.withEnv = function (env) {
+Container.prototype.withEnv = function containerWithEnv(env) {
   const cloned = this.clone();
   cloned.env = env;
   return cloned;
 };
 
-Container.prototype.withFiles = function (fileMap) {
+Container.prototype.withFiles = function containerWithFiles(fileMap) {
   const cloned = this.clone();
   cloned.filepathToContent = fileMap;
   return cloned;
 };
 
-Container.prototype.getHostname = function () {
+Container.prototype.getHostname = function containerGetHostname() {
   return `${this.hostname}.q`;
 };
 
-Container.prototype.hash = function () {
+Container.prototype.hash = function containerHash() {
   return stringify({
     image: this.image,
     command: this.command,
@@ -608,7 +721,7 @@ Container.prototype.hash = function () {
   });
 };
 
-Container.prototype.placeOn = function (machineAttrs) {
+Container.prototype.placeOn = function containerPlaceOn(machineAttrs) {
   this.placements.push({
     exclusive: false,
     provider: getString('provider', machineAttrs.provider),
@@ -622,15 +735,20 @@ Container.prototype.placeOn = function (machineAttrs) {
  * Set the targetContainer of the placement rules to be this container. This
  * cannot be done when `placeOn` is called because the container ID is not
  * determined until after all user code has executed.
+ *
+ * @returns {object} The placements in the form required by the deployment
+ *   engine.
  */
-Container.prototype.getPlacementsWithID = function () {
+Container.prototype.getPlacementsWithID =
+function containerGetPlacementsWithID() {
   return this.placements.map((plcm) => {
-    plcm.targetContainer = this.id;
+    plcm.targetContainer = this.id; // eslint-disable-line no-param-reassign
     return plcm;
   });
 };
 
-Container.prototype.allowFrom = function (srcArg, portRange) {
+Container.prototype.allowFrom =
+function containerAllowFrom(srcArg, portRange) {
   if (srcArg === publicInternet) {
     this.allowFromPublic(portRange);
     return;
@@ -651,29 +769,31 @@ Container.prototype.allowFrom = function (srcArg, portRange) {
   });
 };
 
-Container.prototype.allowOutboundPublic = function (range) {
-  range = boxRange(range);
-  if (range.min != range.max) {
+Container.prototype.allowOutboundPublic =
+function containerAllowOutboundPublic(r) {
+  const range = boxRange(r);
+  if (range.min !== range.max) {
     throw new Error('public internet can only connect to single ports ' +
             'and not to port ranges');
   }
   this.outgoingPublic.push(range);
 };
 
-Container.prototype.allowFromPublic = function (range) {
-  range = boxRange(range);
-  if (range.min != range.max) {
+Container.prototype.allowFromPublic = function containerAllowFromPublic(r) {
+  const range = boxRange(r);
+  if (range.min !== range.max) {
     throw new Error('public internet can only connect to single ports ' +
             'and not to port ranges');
   }
   this.incomingPublic.push(range);
 };
 
-Container.prototype.deploy = function (deployment) {
+Container.prototype.deploy = function containerDeploy(deployment) {
   deployment.containers.add(this);
 };
 
-Container.prototype.getQuiltConnections = function () {
+Container.prototype.getQuiltConnections =
+function containerGetQuiltConnections() {
   const connections = [];
 
   this.allowedInboundConnections.forEach((conn) => {
@@ -706,7 +826,8 @@ Container.prototype.getQuiltConnections = function () {
   return connections;
 };
 
-Container.prototype.toQuiltRepresentation = function () {
+Container.prototype.toQuiltRepresentation =
+function containerToQuiltRepresentation() {
   return {
     id: this.id,
     image: this.image,
@@ -724,8 +845,8 @@ Container.prototype.toQuiltRepresentation = function () {
  * it's just a single object, boxConnectable asserts that it is connectable,
  * and if so, returns it as a single-element Array.
  *
- * @param objects
- * @returns {Connectable[]}
+ * @param {Connectable|Connectable[]} objects The Connectables to be boxed.
+ * @returns {Connectable[]} The boxed Connectables.
  */
 function boxConnectable(objects) {
   if (isConnectable(objects)) {
@@ -762,7 +883,7 @@ class Connectable {
    * @param {int|Port|PortRange} port The ports to allow traffic on.
    * @return {void}
    */
-  allowFrom(src, port) {
+  allowFrom(src, port) { // eslint-disable-line
     throw new Error('not implemented');
   }
 }
@@ -784,9 +905,9 @@ function isConnectable(x) {
  * @param {Container|publicInternet} src The containers that can
  * initiate a connection.
  * @param {Connectable[]} dst The objects that traffic can be sent to. Examples
- * of connectable objects are Containers, Services, publicInternet, and
- * user-defined objects that implement allowFrom.
- * @param {int|Port|PortRange} ports The ports that traffic is allowed on.
+ *   of connectable objects are Containers, Services, publicInternet, and
+ *   user-defined objects that implement allowFrom.
+ * @param {int|Port|PortRange} port The ports that traffic is allowed on.
  * @return {void}
  */
 function allow(src, dst, port) {
@@ -795,28 +916,54 @@ function allow(src, dst, port) {
   });
 }
 
+/**
+ * Creates a Connection.
+ * @constructor
+ *
+ * @param {string} from - The host from which connections are allowed.
+ * @param {PortRange} ports - The port numbers which are allowed.
+ */
 function Connection(from, ports) {
   this.minPort = ports.min;
   this.maxPort = ports.max;
   this.from = from;
 }
 
+/**
+ * Creates a Range object.
+ * @constructor
+ *
+ * @param {integer} min - The minimum of the range (inclusive).
+ * @param {integer} max - The maximum of the range (inclusive).
+ */
 function Range(min, max) {
   this.min = min;
   this.max = max;
 }
 
+const PortRange = Range;
+
+/**
+ * Creates a Port object.
+ * @constructor
+ *
+ * @param {integer} p - The port number.
+ */
 function Port(p) {
   return new PortRange(p, p);
 }
 
-let PortRange = Range;
-
+/**
+ * @returns {Deployment} The global deployment object.
+ */
 function getDeployment() {
   return global._quiltDeployment;
 }
 
-// Reset global unique counters. Used only for unit testing.
+/**
+ * Resets global unique counters. Used only for unit testing.
+ * @returns {void}
+ */
 function resetGlobals() {
   uniqueIDCounter = 0;
   hostnameCount = {};

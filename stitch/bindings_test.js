@@ -1,3 +1,6 @@
+/* eslint-env mocha */
+
+/* eslint-disable import/no-extraneous-dependencies */
 const chai = require('chai');
 const chaiSubset = require('chai-subset');
 const {
@@ -25,31 +28,31 @@ describe('Bindings', () => {
     deployment = createDeployment();
   });
 
-  const checkMachines = function (expected) {
+  const checkMachines = function checkMachines(expected) {
     const { machines } = deployment.toQuiltRepresentation();
     expect(machines).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
-  const checkContainers = function (expected) {
+  const checkContainers = function checkContainers(expected) {
     const { containers } = deployment.toQuiltRepresentation();
     expect(containers).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
-  const checkPlacements = function (expected) {
+  const checkPlacements = function checkPlacements(expected) {
     const { placements } = deployment.toQuiltRepresentation();
     expect(placements).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
-  const checkLabels = function (expected) {
+  const checkLabels = function checkLabels(expected) {
     const { labels } = deployment.toQuiltRepresentation();
     expect(labels).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
-  const checkConnections = function (expected) {
+  const checkConnections = function checkConnections(expected) {
     const { connections } = deployment.toQuiltRepresentation();
     expect(connections).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
@@ -448,12 +451,12 @@ describe('Bindings', () => {
                containers so that the two deployed containers have _refID's
                that are sorted differently lexicographically and numerically. */
       for (let i = 0; i < 2; i += 1) {
-        new Container('host', 'image');
+        new Container('host', 'image'); // eslint-disable-line no-new
       }
       deployment.deploy(new Service('foo', [
         new Container('host', 'image')]));
       for (let i = 0; i < 7; i += 1) {
-        new Container('host', 'image');
+        new Container('host', 'image'); // eslint-disable-line no-new
       }
       deployment.deploy(new Service('foo', [
         new Container('host', 'image')]));

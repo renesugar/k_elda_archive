@@ -1,3 +1,5 @@
+/* eslint-env mocha */
+/* eslint-disable no-unused-expressions, no-underscore-dangle */
 const expect = require('chai').expect;
 const fs = require('fs');
 const fsExtra = require('fs-extra');
@@ -139,8 +141,10 @@ describe('Initializer', () => {
     });
 
     it('should not do anything, when the SSH key option is skipped', () => {
+      /* eslint-disable no-undef */
       answers = { [consts.sshKeyOption]: consts.skip };
       initializer.getSshKey(answers);
+      /* eslint-enable no-undef */
       expect(readFileStub.notCalled).to.be.true;
     });
 

@@ -5,7 +5,7 @@ const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
 const containers = [];
-for (let i = 0; i < 4; i++) {
+for (let i = 0; i < 4; i += 1) {
   containers.push(new quilt.Container('web', 'nginx:1.10').withFiles({
     '/usr/share/nginx/html/index.html':
         `I am container number ${i.toString()}\n`,

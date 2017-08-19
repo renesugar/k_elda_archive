@@ -4,12 +4,15 @@ const path = require('path');
 const os = require('os');
 const execSync = require('child_process').execSync;
 const exit = require('process').exit;
+
 // Assign imports to variables rather than consts so the modules can
 // be mocked out in tests.
+/* eslint-disable prefer-const */
 let fs = require('fs');
 let fsExtra = require('fs-extra');
 
 let log = console.log;
+/* eslint-enable prefer-const */
 
 const handlebars = require('handlebars');
 

@@ -10,7 +10,7 @@ const providerFile = path.join(__dirname, 'providers.json');
 // keys used in the provider's credentials template.
 // If the credentials should be given as a file path, the key name should be
 // [inputCredsPath].
-let providerConfig = {
+let providerConfig = { // eslint-disable-line prefer-const
   Amazon: {
     credsTemplate: 'amazon_creds_template',
     credsKeys: {

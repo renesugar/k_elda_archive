@@ -8,7 +8,7 @@ function MachineDeployer(nWorker) {
   this.nWorker = nWorker;
 }
 
-MachineDeployer.prototype.deploy = function (deployment) {
+MachineDeployer.prototype.deploy = function deploy(deployment) {
   const baseMachine = new Machine({
     provider: process.env.PROVIDER || 'Amazon',
     size: process.env.SIZE || 'm3.medium',
