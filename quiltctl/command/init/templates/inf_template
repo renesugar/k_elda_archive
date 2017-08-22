@@ -1,0 +1,24 @@
+function infraGetter(quilt) {
+  const inf = quilt.createDeployment({namespace: 'quilt-deployment'});
+
+  var vmTemplate = new quilt.Machine({
+    provider: '{{provider}}',
+  {{#if size}}
+    size: '{{size}}',
+  {{else}}
+    ram: {{ram}},
+    cpu: {{cpu}},
+  {{/if}}
+  {{#if sshKey}}
+    sshKeys: ['{{sshKey}}'],
+  {{/if}}
+    preemptible: {{preemptible}}
+  });
+
+  inf.deploy(vmTemplate.asMaster().replicate({{masterCount}}));
+  inf.deploy(vmTemplate.asWorker().replicate({{workerCount}}));
+
+  return inf;
+}
+
+module.exports = infraGetter;

@@ -17,7 +17,7 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 		    ./stitch/bindings.js.go
 
 JS_LINT_COMMAND = node_modules/eslint/bin/eslint.js -c stitch/eslint.conf \
-                  stitch/ quilt-tester/
+                  stitch/ quilt-tester/ quiltctl/command/init/ util/
 REPO = quilt
 DOCKER = docker
 SHELL := /bin/bash

@@ -1,0 +1,50 @@
+{
+  "Amazon": {
+    "sizes": {
+      "tiny - does not work with spot instances": "t2.micro",
+      "small": "m3.medium",
+      "medium": "m3.large",
+      "large": "m3.xlarge"
+    },
+    "regions": [
+      "ap-southeast-2",
+      "us-west-1",
+      "us-west-2"
+    ],
+    "hasPreemptible": true,
+    "credsLocation": [".aws", "credentials"]
+  },
+  "Google": {
+    "sizes": {
+      "small": "n1-standard-1",
+      "medium": "n1-standard-2",
+      "large": "n1-standard-4"
+    },
+    "regions": [
+      "us-central1-a",
+      "us-east1-b",
+      "europe-west1-b"
+    ],
+    "hasPreemptible": false,
+    "credsLocation": [".gce", "quilt.json"]
+  },
+  "DigitalOcean": {
+    "sizes": {
+      "small": "512mb",
+      "medium": "1gb",
+      "large": "2gb"
+    },
+    "regions": [
+      "nyc1",
+      "nyc2",
+      "lon1",
+      "sfo1",
+      "sfo2"
+    ],
+    "hasPreemptible": false,
+    "credsLocation": [".digitalocean", "key"]
+  },
+  "Vagrant": {
+    "hasPreemptible": false
+  }
+}
