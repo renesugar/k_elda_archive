@@ -12,6 +12,7 @@ includes:
   - GettingStarted
   - BlueprintWritersGuide
   - BlueprintAPI
+  - jsdoc
   - Security
   - QuiltCLI
   - CloudProviders
