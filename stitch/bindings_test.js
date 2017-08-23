@@ -11,6 +11,7 @@ const {
     createDeployment,
     publicInternet,
     resetGlobals,
+    baseInfrastructure,
 } = require('./bindings.js');
 
 chai.use(chaiSubset);
@@ -614,4 +615,12 @@ describe('Bindings', function() {
         });
     });
     describe('githubKeys()', function() {});
+    describe('baseInfrastructure', () => {
+      it('should error if name is not a string', () => {
+        const expectedFail = () => {
+          baseInfrastructure(1);
+        };
+        expect(expectedFail).to.throw('name must be a string');
+      });
+    });
 });

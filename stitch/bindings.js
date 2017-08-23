@@ -24,6 +24,33 @@ function githubKeys(user) {
     return keys;
 }
 
+/**
+  * Returns a base infrastructure. The infrastructure can be deployed to simply
+  * by calling .deploy() on the returned object.
+  * The base infrastructure could be created with `quilt init`.
+  *
+  * @param {string} name The name of the infrastructure, as passed to
+  *   `quilt init`.
+  * @return {Deployment} A deployment object representing the infrastructure.
+  */
+function baseInfrastructure(name = 'default') {
+  if (typeof name !== 'string') {
+    throw new Error(`name must be a string; was ${stringify(name)}`);
+  }
+
+  const infraPath = util.infraPath(name);
+  if (!fs.existsSync(infraPath)) {
+    throw new Error(`no infrastructure called ${name}. Use 'quilt init' ` +
+      `to create a new infrastructure.`);
+  }
+  const infraGetter = require(infraPath);
+
+  // By passing this module to the infraGetter, the blueprint doesn't have to
+  // require Quilt directly and we thus don't have to `npm install` in the
+  // infrastructure directory, which would be messy.
+  return infraGetter(module.exports);
+}
+
 // The default deployment object. createDeployment overwrites this.
 global._quiltDeployment = new Deployment({});
 
@@ -615,4 +642,5 @@ module.exports = {
     githubKeys,
     publicInternet,
     resetGlobals,
+    baseInfrastructure,
 };
