@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const request = require('sync-request');
 const stringify = require('json-stable-stringify');
 const _ = require('underscore');
+const path = require('path');
+const os = require('os');
 
 const githubCache = {};
 function githubKeys(user) {
@@ -24,6 +26,21 @@ function githubKeys(user) {
     return keys;
 }
 
+// Both infraDirectory and getInfraPath are also defined in initializer.js.
+// This code duplication is ugly, but it significantly simplifies packaging
+// the `quilt init` code with the "@quilt/install" module.
+const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
+
+/**
+  * Returns the absolute path to the infrastructure with the given name.
+  *
+  * @param {string} infraName The name of the infrastructure.
+  * @return {string} The absolute path to the infrastructure file.
+  */
+function getInfraPath(infraName) {
+  return path.join(infraDirectory, `${infraName}.js`);
+}
+
 /**
   * Returns a base infrastructure. The infrastructure can be deployed to simply
   * by calling .deploy() on the returned object.
@@ -38,7 +55,7 @@ function baseInfrastructure(name = 'default') {
     throw new Error(`name must be a string; was ${stringify(name)}`);
   }
 
-  const infraPath = util.infraPath(name);
+  const infraPath = getInfraPath(name);
   if (!fs.existsSync(infraPath)) {
     throw new Error(`no infrastructure called ${name}. Use 'quilt init' ` +
       `to create a new infrastructure.`);
