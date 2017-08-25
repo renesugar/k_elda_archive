@@ -4,7 +4,6 @@ import (
 	"flag"
 	"os"
 	"os/exec"
-	"path"
 
 	"github.com/quilt/quilt/util"
 )
@@ -44,10 +43,10 @@ func (iCmd *Init) AfterRun() error {
 
 // Run executes the Nodejs initializer that prompts the user.
 func (iCmd *Init) Run() int {
-	// This only works when Quilt is installed with `go get`, and `quilt init` is
-	// executed from the Quilt root.
-	initializerPath := path.Join("quiltctl", "command", "init", "initializer.js")
-	cmd := exec.Command("node", initializerPath)
+	// Assumes `quiltctl/command/init/intializer.js` was installed in the path
+	// somewhere as `quilt-initializer.js`. This is done automatically for users by
+	// npm when installed.
+	cmd := exec.Command("quilt-initializer.js")
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
