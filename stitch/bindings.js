@@ -306,7 +306,7 @@ Service.prototype.deploy = function serviceDeploy(deployment) {
 };
 
 /**
- * Allow inbound connections to the load balancer. Note that this does not
+ * Allows inbound connections to the load balancer. Note that this does not
  * allow direct connections to the containers behind the load balancer.
  *
  * @param {Container|Container[]} srcArg The containers that can open
@@ -382,7 +382,7 @@ function boxContainers(x) {
 }
 
 /**
- * Assert that `containers` is an array of Container objects.
+ * Asserts that `containers` is an array of Container objects.
  * @private
  *
  * @param {Container[]} containers - An array of container objects.
@@ -855,7 +855,7 @@ function containerToQuiltRepresentation() {
 };
 
 /**
- * boxConnectable attempts to convert `objects` into an array of objects that
+ * Attempts to convert `objects` into an array of objects that
  * define allowFrom.
  * If `objects` is an Array, it asserts that each element is connectable. If
  * it's just a single object, boxConnectable asserts that it is connectable,
@@ -894,7 +894,7 @@ function boxConnectable(objects) {
 // eslint-disable-next-line no-unused-vars
 class Connectable {
   /**
-   * allowFrom allows traffic from src on port
+   * Allows traffic from src on port
    *
    * @param {Container} src The container that can initiate connections.
    * @param {int|Port|PortRange} port The ports to allow traffic on.
@@ -906,7 +906,7 @@ class Connectable {
 }
 
 /**
- * isConnectable returns whether x can allow inbound connections.
+ * Returns whether x can allow inbound connections.
  * @private
  *
  * @param {object} x The object to check
