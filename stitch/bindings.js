@@ -921,7 +921,7 @@ function isConnectable(x) {
  * containers.
  *
  * @param {Container|publicInternet} src The containers that can
- * initiate a connection.
+ *   initiate a connection.
  * @param {Connectable[]} dst The objects that traffic can be sent to. Examples
  *   of connectable objects are Containers, Services, publicInternet, and
  *   user-defined objects that implement allowFrom.
