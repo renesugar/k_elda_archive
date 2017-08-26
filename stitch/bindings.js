@@ -41,6 +41,7 @@ const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
 
 /**
  * Returns the absolute path to the infrastructure with the given name.
+ * @private
  *
  * @param {string} infraName The name of the infrastructure.
  * @return {string} The absolute path to the infrastructure file.
@@ -123,6 +124,7 @@ function Deployment(opts) {
 }
 
 /**
+ * @private
  * @return {integer} A globally unique integer ID.
  */
 function uniqueID() {
@@ -134,6 +136,7 @@ function uniqueID() {
  * Deterministically sets the id field of objects based on their attributes. The
  * _refID field is required to differentiate between multiple references to the
  * same object, and multiple instantiations with the exact same attributes.
+ * @private
  *
  * @param {Object[]} objs - An array of objects.
  * @returns {void}
@@ -164,6 +167,7 @@ function setQuiltIDs(objs) {
 
 /**
  * Cryptographically hashes the given string.
+ * @private
  *
  * @param {string} str - The string to be hashed.
  * @return {string} The hash.
@@ -217,6 +221,7 @@ Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
 /**
  * Checks if all referenced containers in connections and services are really
  * deployed.
+ * @private
  *
  * @param {object} deployment - A deployment object.
  * @returns {void}
@@ -361,6 +366,7 @@ Service.prototype.getQuiltConnections = function serviceGetQuiltConnections() {
 /**
  * Boxes a container into a list of containers, or do nothing if `x` is a list
  * of containers.
+ * @private
  *
  * @param {Container|Container[]} x - A container object, or a list of
  *   container objects.
@@ -377,6 +383,7 @@ function boxContainers(x) {
 
 /**
  * Assert that `containers` is an array of Container objects.
+ * @private
  *
  * @param {Container[]} containers - An array of container objects.
  * @returns {void}
@@ -398,6 +405,7 @@ function assertContainerList(containers) {
 let hostnameCount = {};
 
 /**
+ * @private
  * @param {string} name - The name that the generated hostname should be based
  *   on.
  * @returns {string} The unique hostname.
@@ -413,6 +421,7 @@ function uniqueHostname(name) {
 
 /**
  * Boxes raw integers into range.
+ * @private
  *
  * @param {integer|Range} x - The integer to be boxed into the range (or
  *   undefined).
@@ -433,6 +442,7 @@ function boxRange(x) {
 
 /**
  * Forces `arg` to be a number, even if it's undefined.
+ * @private
  *
  * @param {string} argName - The name of the number (for logging).
  * @param {number} arg - The number that might be undefined.
@@ -451,6 +461,7 @@ function getNumber(argName, arg) {
 
 /**
  * Forces `arg` to be a string, even if it's undefined.
+ * @private
  *
  * @param {string} argName - The name of the string (for logging).
  * @param {string} arg - The arg that might be undefined.
@@ -468,6 +479,7 @@ function getString(argName, arg) {
 }
 
 /**
+ * @private
  * @param {string} argName - The name of `arg` (for logging).
  * @param {Object.<string, string>} arg - The map of strings.
  * @return {Object.<string, string>} An empty object if `arg` is not defined,
@@ -497,6 +509,8 @@ function getStringMap(argName, arg) {
 
 /**
  * Verifies `arg` is an array of strings or undefined.
+ * @private
+ *
  * @param {string} argName - The name of `arg` (for logging).
  * @param {string[]} arg - The array of strings.
  * @return {string[]} Returns an empty array if `arg` is not
@@ -522,6 +536,7 @@ function getStringArray(argName, arg) {
 }
 
 /**
+ * @private
  * @param {string} argName - The name of `arg` (for logging).
  * @param {boolean} arg - The boolean that might be undefined.
  * @return {boolean} False if `arg` is not defined, and otherwise ensures
@@ -735,6 +750,7 @@ Container.prototype.placeOn = function containerPlaceOn(machineAttrs) {
  * Set the targetContainer of the placement rules to be this container. This
  * cannot be done when `placeOn` is called because the container ID is not
  * determined until after all user code has executed.
+ * @private
  *
  * @returns {object} The placements in the form required by the deployment
  *   engine.
@@ -844,6 +860,7 @@ function containerToQuiltRepresentation() {
  * If `objects` is an Array, it asserts that each element is connectable. If
  * it's just a single object, boxConnectable asserts that it is connectable,
  * and if so, returns it as a single-element Array.
+ * @private
  *
  * @param {Connectable|Connectable[]} objects The Connectables to be boxed.
  * @returns {Connectable[]} The boxed Connectables.
@@ -890,6 +907,7 @@ class Connectable {
 
 /**
  * isConnectable returns whether x can allow inbound connections.
+ * @private
  *
  * @param {object} x The object to check
  * @return {boolean} Whether x can be connected to
@@ -962,6 +980,8 @@ function getDeployment() {
 
 /**
  * Resets global unique counters. Used only for unit testing.
+ * @private
+ *
  * @returns {void}
  */
 function resetGlobals() {
