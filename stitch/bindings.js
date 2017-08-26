@@ -92,8 +92,8 @@ let uniqueIDCounter = 0;
 /**
  * Overwrites the deployment object with a new one.
  *
- * @param {object} deploymentOpts - Options for the new deployment object.
- * @return {object} A deployment object.
+ * @param {Object} deploymentOpts - Options for the new deployment object.
+ * @return {Deployment} A deployment object.
  */
 function createDeployment(deploymentOpts) {
   global._quiltDeployment = new Deployment(deploymentOpts);
@@ -104,7 +104,7 @@ function createDeployment(deploymentOpts) {
  * Creates a new deployment object with the given options.
  * @constructor
  *
- * @param {object} opts - An object containing options that can tweak
+ * @param {Object} opts - An object containing options that can tweak
  *   the behavor of the namespace.  Options include: `maxPrice` which defines
  *   the price that should be bid in spot auctions for preemptible machines,
  *   `namespace` which instructs the deployment what namespace it should
@@ -223,7 +223,7 @@ Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
  * deployed.
  * @private
  *
- * @param {object} deployment - A deployment object.
+ * @param {Deployment} deployment - A deployment object.
  * @returns {void}
  */
 function vet(deployment) {
@@ -752,7 +752,7 @@ Container.prototype.placeOn = function containerPlaceOn(machineAttrs) {
  * determined until after all user code has executed.
  * @private
  *
- * @returns {object} The placements in the form required by the deployment
+ * @returns {Object} The placements in the form required by the deployment
  *   engine.
  */
 Container.prototype.getPlacementsWithID =
