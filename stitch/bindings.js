@@ -742,7 +742,7 @@ Container.prototype.placeOn = function containerPlaceOn(machineAttrs) {
 Container.prototype.getPlacementsWithID =
 function containerGetPlacementsWithID() {
   return this.placements.map((plcm) => {
-    plcm.targetContainer = this.id; // eslint-disable-line no-param-reassign
+    plcm.targetContainerID = this.id; // eslint-disable-line no-param-reassign
     return plcm;
   });
 };
