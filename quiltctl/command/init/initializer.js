@@ -14,20 +14,10 @@ const handlebars = require('handlebars');
 
 const prompter = require('./prompter');
 const consts = require('./constants');
+const util = require('./init-util');
 
 const templateDir = path.join(__dirname, 'templates');
 const infraTemplateFile = path.join(templateDir, 'inf_template');
-const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
-
-/**
-  * Returns the absolute path to the infrastructure with the given name.
-  *
-  * @param {string} infraName The name of the infrastructure.
-  * @return {string} The absolute path to the infrastructure file.
-  */
-function infraPath(infraName) {
-  return path.join(infraDirectory, `${infraName}.js`);
-}
 
 /**
   * Creates a file from the given template and context, and writes the result to
@@ -158,8 +148,8 @@ function getSshKey(answers) {
   * @return {void}
   */
 function processAnswers(provider, answers) {
-  fsExtra.mkdirp(infraDirectory, (err) => {
-    if (err) throw new Error(`Failed to create ${infraDirectory}: ${err}`);
+  fsExtra.mkdirp(util.infraDirectory, (err) => {
+    if (err) throw new Error(`Failed to create ${util.infraDirectory}: ${err}`);
   });
 
   writeProviderCreds(provider, answers);
@@ -176,7 +166,7 @@ function processAnswers(provider, answers) {
     [consts.workerCount]: answers[consts.workerCount],
   };
 
-  const outputPath = infraPath(answers[consts.name]);
+  const outputPath = util.infraPath(answers[consts.name]);
   createFileFromTemplate(infraTemplateFile, config, outputPath);
   log(`Created infrastructure in ${outputPath}`);
 }

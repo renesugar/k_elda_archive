@@ -26,7 +26,7 @@ function githubKeys(user) {
     return keys;
 }
 
-// Both infraDirectory and getInfraPath are also defined in initializer.js.
+// Both infraDirectory and getInfraPath are also defined in init-util.js.
 // This code duplication is ugly, but it significantly simplifies packaging
 // the `quilt init` code with the "@quilt/install" module.
 const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
