@@ -38,7 +38,7 @@ Run any container.
 [//]: # (b1)
 <!-- const {Container, Service, Machine, allow, publicInternet} = require('@quilt/quilt'); -->
 ```javascript
-let web = new Container('someNodejsImage');
+let web = new Container('web', 'someNodejsImage');
 ```
 
 Load balance traffic with Services.
