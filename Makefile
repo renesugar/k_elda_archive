@@ -17,10 +17,8 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 
 JS_LINT_COMMAND = node_modules/eslint/bin/eslint.js \
                   examples/ \
-                  blueprint/ \
                   integration-tester/ \
-                  cli/command/init/ \
-                  util/
+                  js/
 REPO = keldaio
 DOCKER = docker
 SHELL := /bin/bash
@@ -171,3 +169,12 @@ docker-build-ovs:
 
 # Include all .mk files so you can have your own local configurations
 include $(wildcard *.mk)
+
+# Prepare the js/install directory for either `npm install` or `npm publish`.
+prep-install: linux darwin js/install/package.json
+	cp kelda_linux js/install
+	cp kelda_darwin js/install
+	cp -r js/initializer js/install
+
+js/install/package.json: js/install/packageTemplate.json
+	node js/install/makePackage.js > js/install/package.json

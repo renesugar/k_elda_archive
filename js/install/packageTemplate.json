@@ -1,0 +1,14 @@
+{
+  "name": "@quilt/install",
+  "version": "0.2.0",
+  "homepage": "http://quilt.io",
+  "license": "MIT",
+  "preferGlobal": true,
+  "scripts": {
+    "preinstall": "node install.js"
+  },
+  "bin": {
+    "kelda": "kelda",
+    "kelda-initializer.js": "./initializer/initializer.js"
+  }
+}
