@@ -43,7 +43,7 @@ const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
  * Returns the absolute path to the infrastructure with the given name.
  * @private
  *
- * @param {string} infraName The name of the infrastructure.
+ * @param {string} infraName - The name of the infrastructure.
  * @return {string} The absolute path to the infrastructure file.
  */
 function getInfraPath(infraName) {
@@ -55,7 +55,7 @@ function getInfraPath(infraName) {
  * by calling .deploy() on the returned object.
  * The base infrastructure could be created with `quilt init`.
  *
- * @param {string} name The name of the infrastructure, as passed to
+ * @param {string} name - The name of the infrastructure, as passed to
  *   `quilt init`.
  * @return {Deployment} A deployment object representing the infrastructure.
  */
@@ -309,10 +309,10 @@ Service.prototype.deploy = function serviceDeploy(deployment) {
  * Allows inbound connections to the load balancer. Note that this does not
  * allow direct connections to the containers behind the load balancer.
  *
- * @param {Container|Container[]} srcArg The containers that can open
+ * @param {Container|Container[]} srcArg - The containers that can open
  *   connections to this Service.
- * @param {int|Port|PortRange} portRange The ports on which containers can open
- *   connections.
+ * @param {int|Port|PortRange} portRange - The ports on which containers can
+ *   open connections.
  * @return {void}
  */
 Service.prototype.allowFrom = function serviceAllowFrom(srcArg, portRange) {
@@ -862,7 +862,7 @@ function containerToQuiltRepresentation() {
  * and if so, returns it as a single-element Array.
  * @private
  *
- * @param {Connectable|Connectable[]} objects The Connectables to be boxed.
+ * @param {Connectable|Connectable[]} objects - The Connectables to be boxed.
  * @returns {Connectable[]} The boxed Connectables.
  */
 function boxConnectable(objects) {
@@ -896,8 +896,8 @@ class Connectable {
   /**
    * Allows traffic from src on port
    *
-   * @param {Container} src The container that can initiate connections.
-   * @param {int|Port|PortRange} port The ports to allow traffic on.
+   * @param {Container} src - The container that can initiate connections.
+   * @param {int|Port|PortRange} port - The ports to allow traffic on.
    * @return {void}
    */
   allowFrom(src, port) { // eslint-disable-line
@@ -909,7 +909,7 @@ class Connectable {
  * Returns whether x can allow inbound connections.
  * @private
  *
- * @param {object} x The object to check
+ * @param {object} x - The object to check
  * @return {boolean} Whether x can be connected to
  */
 function isConnectable(x) {
@@ -920,12 +920,12 @@ function isConnectable(x) {
  * allow is a utility function to allow calling `allowFrom` on groups of
  * containers.
  *
- * @param {Container|publicInternet} src The containers that can
+ * @param {Container|publicInternet} src - The containers that can
  *   initiate a connection.
- * @param {Connectable[]} dst The objects that traffic can be sent to. Examples
- *   of connectable objects are Containers, Services, publicInternet, and
- *   user-defined objects that implement allowFrom.
- * @param {int|Port|PortRange} port The ports that traffic is allowed on.
+ * @param {Connectable[]} dst - The objects that traffic can be sent to.
+ *   Examples of connectable objects are Containers, Services, publicInternet,
+ *   and user-defined objects that implement allowFrom.
+ * @param {int|Port|PortRange} port - The ports that traffic is allowed on.
  * @return {void}
  */
 function allow(src, dst, port) {
