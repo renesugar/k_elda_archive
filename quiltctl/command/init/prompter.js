@@ -135,7 +135,7 @@ function getProviderPrompt() {
   * @return {Promise} A promise that contains the user's answers.
   */
 function sshKeyPrompts(provider) {
-  if (!provider.requiresSsh) return {[consts.sshKeyOption]: consts.skip};
+  if (!provider.requiresSsh) return { [consts.sshKeyOption]: consts.skip };
 
   let choices = [consts.sshUseExistingKey, consts.skip];
   if (!quiltSshKeyExists()) {
@@ -414,9 +414,9 @@ function promptUser() {
 
         .then((machineAnswers) => {
           Object.assign(answers, machineAnswers);
-          return {provider, answers};
+          return { provider, answers };
         });
     });
 }
 
-module.exports = {promptUser};
+module.exports = { promptUser };

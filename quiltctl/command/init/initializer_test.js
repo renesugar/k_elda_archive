@@ -8,6 +8,7 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 
 const consts = require('./constants');
+
 const initializer = rewire('./initializer');
 const Provider = rewire('./provider');
 
@@ -16,22 +17,22 @@ describe('Initializer', () => {
     initializer.__set__('log', sinon.stub());
   });
 
-  describe('writeProviderCreds()', function() {
+  describe('writeProviderCreds()', () => {
     let revertConfig;
 
     beforeEach(() => {
       revertConfig = Provider.__set__('providerConfig', {
-        'provider': {
-          'credsTemplate': 'aTemplate',
-          'credsKeys': {
-            'key': 'key explanation',
-            'secret': 'secret explanation',
+        provider: {
+          credsTemplate: 'aTemplate',
+          credsKeys: {
+            key: 'key explanation',
+            secret: 'secret explanation',
           },
         },
       });
 
       mock({
-        'quiltctl/command/init/templates/aTemplate': `{{key}}-{{secret}}`,
+        'quiltctl/command/init/templates/aTemplate': '{{key}}-{{secret}}',
         'quiltctl/command/init/providers.json': `{
     "provider": {
       "credsLocation": [".some", "file"]
@@ -48,30 +49,30 @@ describe('Initializer', () => {
     const credsSrc = path.join(os.homedir(), '.some', 'src');
     const credsDst = path.join(os.homedir(), '.some', 'file');
 
-    it('creates correct credentials from template', function() {
-      let provider = new Provider('provider');
+    it('creates correct credentials from template', () => {
+      const provider = new Provider('provider');
 
-      let credsDest = path.join(os.homedir(), '.some', 'file');
+      const credsDest = path.join(os.homedir(), '.some', 'file');
       expect(fs.existsSync(credsDest)).to.be.false;
 
       fs.mkdir(path.join(os.homedir(), '.some'));
       initializer.writeProviderCreds(
         provider,
-        {'key': 'myKey', 'secret': 'mySecret'});
+        { key: 'myKey', secret: 'mySecret' });
       expect(fs.existsSync(credsDest)).to.be.true;
 
       expect(fs.readFileSync(credsDest, 'utf8')).to.equal('myKey-mySecret');
     });
 
-    it('creates correct credentials from path', function() {
-      let provider = new Provider('provider');
+    it('creates correct credentials from path', () => {
+      const provider = new Provider('provider');
 
-      let copySpy = sinon.spy();
-      let fsExtraMock = {
+      const copySpy = sinon.spy();
+      const fsExtraMock = {
         copy: copySpy,
         mkdirp: fsExtra.mkdirp,
       };
-      let revertFs = initializer.__set__('fsExtra', fsExtraMock);
+      const revertFs = initializer.__set__('fsExtra', fsExtraMock);
 
       // The template will be undefined when the provider requires a
       // credentials path instead of template input.
@@ -79,8 +80,7 @@ describe('Initializer', () => {
 
       initializer.writeProviderCreds(
         provider,
-        {[consts.inputCredsPath]: credsSrc}
-      );
+        { [consts.inputCredsPath]: credsSrc });
 
       expect(copySpy.calledOnce).to.be.true;
       expect(copySpy.getCall(0).args[0]).to.equal(credsSrc);
@@ -89,18 +89,17 @@ describe('Initializer', () => {
       revertFs();
     });
 
-    it('should not create credentials when they are not required', function() {
-      let provider = new Provider('provider');
+    it('should not create credentials when they are not required', () => {
+      const provider = new Provider('provider');
 
-      let requiresCredsStub = sinon.stub(provider, 'requiresCreds');
+      const requiresCredsStub = sinon.stub(provider, 'requiresCreds');
       requiresCredsStub.returns(false);
 
-      let getCredsPathSpy = sinon.spy(provider, 'getCredsPath');
+      const getCredsPathSpy = sinon.spy(provider, 'getCredsPath');
 
       initializer.writeProviderCreds(
         provider,
-        {[consts.inputCredsPath]: credsSrc}
-      );
+        { [consts.inputCredsPath]: credsSrc });
 
       expect(getCredsPathSpy.notCalled).to.be.true;
 
@@ -118,7 +117,7 @@ describe('Initializer', () => {
     before(() => {
       readFileStub = sinon.stub();
       readFileStub.returns('');
-      let fsMock = {
+      const fsMock = {
         readFileSync: readFileStub,
       };
       revertFs = initializer.__set__('fs', fsMock);
@@ -140,19 +139,19 @@ describe('Initializer', () => {
     });
 
     it('should not do anything, when the SSH key option is skipped', () => {
-      answers = {[consts.sshKeyOption]: consts.skip};
+      answers = { [consts.sshKeyOption]: consts.skip };
       initializer.getSshKey(answers);
       expect(readFileStub.notCalled).to.be.true;
     });
 
     it('should generate a new SSH key when relevant', () => {
-      initializer.getSshKey({[consts.sshKeyOption]: consts.sshGenerateKey});
+      initializer.getSshKey({ [consts.sshKeyOption]: consts.sshGenerateKey });
       expect(readFileStub.called).to.be.true;
       expect(generateSshStub.called).to.be.true;
     });
 
     it('should read an SSH key when given a path', () => {
-      let keyPath = 'some/ssh/path';
+      const keyPath = 'some/ssh/path';
       initializer.getSshKey({
         [consts.sshKeyOption]: consts.sshUseExistingKey,
         [consts.sshKeyPath]: keyPath,
@@ -164,8 +163,8 @@ describe('Initializer', () => {
     });
 
     it('should throw an error when passed an unexpected SSH key option', () => {
-      let expectFail = () => {
-        initializer.getSshKey({[consts.sshKeyOption]: 'badOption'});
+      const expectFail = () => {
+        initializer.getSshKey({ [consts.sshKeyOption]: 'badOption' });
       };
 
       expect(expectFail).to.throw();

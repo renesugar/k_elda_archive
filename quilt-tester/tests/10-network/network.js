@@ -1,15 +1,15 @@
 const quilt = require('@quilt/quilt');
-let infrastructure = require('../../config/infrastructure.js');
+const infrastructure = require('../../config/infrastructure.js');
 
-let deployment = quilt.createDeployment();
+const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
 const image = 'alpine';
 const command = ['tail', '-f', '/dev/null'];
 
-let red = new quilt.Container('red', image, {command}).replicate(5);
-let blue = new quilt.Container('blue', image, {command}).replicate(5);
-let yellow = new quilt.Container('yellow', image, {command}).replicate(5);
+const red = new quilt.Container('red', image, { command }).replicate(5);
+const blue = new quilt.Container('blue', image, { command }).replicate(5);
+const yellow = new quilt.Container('yellow', image, { command }).replicate(5);
 
 quilt.allow(red, blue, 80);
 quilt.allow(blue, red, 80);

@@ -8,6 +8,7 @@ const exit = require('process').exit;
 // be mocked out in tests.
 let fs = require('fs');
 let fsExtra = require('fs-extra');
+
 let log = console.log;
 
 const handlebars = require('handlebars');
@@ -70,8 +71,8 @@ function sshGenerateKeyPair() {
   try {
     execSync(
       `ssh-keygen -t rsa -b 2048 -f ${consts.quiltSshKeyLocationPrivate}` +
-      ` -N '' -C ''`,
-      {stdio: ['ignore', 'ignore', 'pipe']});
+      ' -N \'\' -C \'\'',
+      { stdio: ['ignore', 'ignore', 'pipe'] });
   } catch (err) {
     throw new Error('failed to create SSH key: ' +
       `${err.stderr.toString().trim()}`);
@@ -177,13 +178,13 @@ function processAnswers(provider, answers) {
   */
 function run() {
   prompter.promptUser()
-  .then((result) => {
-    processAnswers(result.provider, result.answers);
-  })
-  .catch((error) => {
-    console.warn(`Oops, something went wrong: ${error.message}`);
-    exit(1);
-  });
+    .then((result) => {
+      processAnswers(result.provider, result.answers);
+    })
+    .catch((error) => {
+      console.warn(`Oops, something went wrong: ${error.message}`);
+      exit(1);
+    });
 }
 
 if (require.main === module) {

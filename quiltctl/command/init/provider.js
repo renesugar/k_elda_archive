@@ -11,29 +11,29 @@ const providerFile = path.join(__dirname, 'providers.json');
 // If the credentials should be given as a file path, the key name should be
 // [inputCredsPath].
 let providerConfig = {
-  'Amazon': {
-    'credsTemplate': 'amazon_creds_template',
-    'credsKeys': {
-      'key': 'AWS access key id',
-      'secret': 'AWS secret access key',
+  Amazon: {
+    credsTemplate: 'amazon_creds_template',
+    credsKeys: {
+      key: 'AWS access key id',
+      secret: 'AWS secret access key',
     },
-    'requiresSsh': true,
+    requiresSsh: true,
   },
-  'Google': {
-    'credsKeys': {
+  Google: {
+    credsKeys: {
       [consts.inputCredsPath]: 'Path to GCE service account key',
     },
-    'requiresSsh': true,
+    requiresSsh: true,
   },
-  'DigitalOcean': {
-    'credsTemplate': 'digitalocean_creds_template',
-    'credsKeys': {
-      'key': 'DigitalOcean account token',
+  DigitalOcean: {
+    credsTemplate: 'digitalocean_creds_template',
+    credsKeys: {
+      key: 'DigitalOcean account token',
     },
-    'requiresSsh': true,
+    requiresSsh: true,
   },
-  'Vagrant': {
-    'requiresSsh': false,
+  Vagrant: {
+    requiresSsh: false,
   },
 };
 
