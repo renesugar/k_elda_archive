@@ -3,6 +3,9 @@ function infraGetter(quilt) {
 
   var vmTemplate = new quilt.Machine({
     provider: '{{provider}}',
+  {{#if region}}
+    region: '{{region}}',
+  {{/if}}
   {{#if size}}
     size: '{{size}}',
   {{else}}
