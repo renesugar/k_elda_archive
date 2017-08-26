@@ -14,10 +14,10 @@ includes:
   - BlueprintWritersGuide
   - BlueprintAPI
   - jsdoc
-  - Security
   - QuiltCLI
   - CloudProviders
   - Dev
+  - Security
   - FAQ
 
 search: true
