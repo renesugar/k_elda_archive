@@ -80,21 +80,6 @@ func TestBlueprints() error {
 		{"https://github.com/quilt/quilt", "./quilt-tester",
 			"./quilt-tester/tests/connection-credentials/" +
 				"connection-credentials.js"},
-
-		{"https://github.com/quilt/nginx", ".", "./main.js"},
-		{"https://github.com/quilt/spark", ".", "./sparkPI.js"},
-		{"https://github.com/quilt/etcd", ".", "./etcd-example.js"},
-		{"https://github.com/quilt/zookeeper", ".", "./zookeeper-example.js"},
-		{"https://github.com/quilt/redis", ".", "./redis-example.js"},
-		{"https://github.com/quilt/mean", ".", "./mean.js"},
-		{"https://github.com/quilt/elasticsearch", ".", "./main.js"},
-		{"https://github.com/quilt/kibana", ".", "./main.js"},
-		{"https://github.com/quilt/django", ".", "./django-example.js"},
-		{"https://github.com/quilt/mongo", ".", "./example.js"},
-		{"https://github.com/quilt/tester", ".", "./tester-runner-example.js"},
-		{"https://github.com/quilt/lobsters", ".", "./lobsters-example.js"},
-		{"https://github.com/quilt/infrastructure", ".", "./floating-ip.js"},
-		{"https://github.com/quilt/slackin", ".", "./main.js"},
 	}
 
 	for _, s := range blueprints {
