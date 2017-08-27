@@ -20,6 +20,9 @@ const (
 	blockIDPattern = "^\\[//\\]: # \\((b\\d+)\\)\\W*$"
 	// Matches lines like `<!-- (<code>) -->`
 	hiddenCodePattern = "<!--\\s*(.*)\\s*-->\\W*$"
+
+	// workDir is the directory blueprints are placed during testing.
+	workDir = "/tmp/quilt-blueprint-test"
 )
 
 var errUnbalanced = errors.New("unbalanced code blocks")

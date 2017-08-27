@@ -11,23 +11,8 @@ import (
 	"github.com/quilt/quilt/stitch"
 )
 
-// workDir is the directory blueprints are placed during testing.
-const workDir = "/tmp/quilt-blueprint-test"
-
-func tryRunBlueprint(s blueprint) error {
-	os.Mkdir(workDir, 0755)
-	defer os.RemoveAll(workDir)
-	os.Chdir(workDir)
-
-	if err := run("git", "clone", s.repo, "."); err != nil {
-		return err
-	}
-
-	if err := run("npm", "install", s.packageJSONFolder); err != nil {
-		return err
-	}
-
-	_, err := stitch.FromFile(s.blueprintPath)
+func tryRunBlueprint(blueprint string) error {
+	_, err := stitch.FromFile(blueprint)
 	return err
 }
 
@@ -41,50 +26,37 @@ func run(name string, args ...string) error {
 	return nil
 }
 
-type blueprint struct {
-	repo, packageJSONFolder, blueprintPath string
-}
+// TestCIBlueprints checks that the listed quilt-tester blueprints compile.
+func TestCIBlueprints() error {
+	// Make the working directory the root of the Quilt repo so that the following
+	// relative paths will work.
+	os.Chdir("../../quilt-tester")
 
-// TestBlueprints checks that the listed Quilt blueprints compile.
-func TestBlueprints() error {
-	blueprints := []blueprint{
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/100-logs/logs.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/61-duplicate-cluster/duplicate-cluster.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/60-duplicate-cluster-setup/" +
-				"duplicate-cluster-setup.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/40-stop/stop.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/30-mean/mean.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/20-spark/spark.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/15-bandwidth/bandwidth.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/10-network/network.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/outbound-public/outbound-public.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/inbound-public/inbound-public.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/elasticsearch/elasticsearch.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/build-dockerfile/build-dockerfile.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/etcd/etcd.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/zookeeper/zookeeper.js"},
-		{"https://github.com/quilt/quilt", "./quilt-tester",
-			"./quilt-tester/tests/connection-credentials/" +
-				"connection-credentials.js"},
+	if err := run("npm", "install", "."); err != nil {
+		return err
 	}
 
-	for _, s := range blueprints {
-		log.Infof("Testing %s in %s", s.blueprintPath, s.repo)
-		if err := tryRunBlueprint(s); err != nil {
+	blueprints := []string{
+		"./tests/100-logs/logs.js",
+		"./tests/61-duplicate-cluster/duplicate-cluster.js",
+		"./tests/60-duplicate-cluster-setup/duplicate-cluster-setup.js",
+		"./tests/40-stop/stop.js",
+		"./tests/30-mean/mean.js",
+		"./tests/20-spark/spark.js",
+		"./tests/15-bandwidth/bandwidth.js",
+		"./tests/10-network/network.js",
+		"./tests/outbound-public/outbound-public.js",
+		"./tests/inbound-public/inbound-public.js",
+		"./tests/elasticsearch/elasticsearch.js",
+		"./tests/build-dockerfile/build-dockerfile.js",
+		"./tests/etcd/etcd.js",
+		"./tests/zookeeper/zookeeper.js",
+		"./tests/connection-credentials/connection-credentials.js",
+	}
+
+	for _, blueprint := range blueprints {
+		log.Infof("Testing %s", blueprint)
+		if err := tryRunBlueprint(blueprint); err != nil {
 			return err
 		}
 	}
