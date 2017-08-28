@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -36,27 +37,14 @@ func TestCIBlueprints() error {
 		return err
 	}
 
-	blueprints := []string{
-		"./tests/100-logs/logs.js",
-		"./tests/61-duplicate-cluster/duplicate-cluster.js",
-		"./tests/60-duplicate-cluster-setup/duplicate-cluster-setup.js",
-		"./tests/40-stop/stop.js",
-		"./tests/30-mean/mean.js",
-		"./tests/20-spark/spark.js",
-		"./tests/15-bandwidth/bandwidth.js",
-		"./tests/10-network/network.js",
-		"./tests/outbound-public/outbound-public.js",
-		"./tests/inbound-public/inbound-public.js",
-		"./tests/elasticsearch/elasticsearch.js",
-		"./tests/build-dockerfile/build-dockerfile.js",
-		"./tests/etcd/etcd.js",
-		"./tests/zookeeper/zookeeper.js",
-		"./tests/connection-credentials/connection-credentials.js",
+	blueprints, err := filepath.Glob("./tests/*/*.js")
+	if err != nil {
+		return err
 	}
 
 	for _, blueprint := range blueprints {
 		log.Infof("Testing %s", blueprint)
-		if err := tryRunBlueprint(blueprint); err != nil {
+		if err := tryRunBlueprint("./" + blueprint); err != nil {
 			return err
 		}
 	}
