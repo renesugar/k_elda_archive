@@ -56,7 +56,7 @@ func updateACLs(ovsdbClient ovsdb.Client, connections []db.Connection,
 		src := hostnameToIP[conn.From]
 		dst := hostnameToIP[conn.To]
 		if src == "" || dst == "" {
-			log.WithField("connection", conn).Warn("Unknown hostname " +
+			log.WithField("connection", conn).Debug("Unknown hostname " +
 				"in ACL. Ignoring")
 			continue
 		}
