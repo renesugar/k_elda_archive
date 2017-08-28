@@ -6,6 +6,7 @@
     "@quilt/elasticsearch": "quilt/elasticsearch",
     "@quilt/etcd": "quilt/etcd",
     "@quilt/haproxy": "quilt/haproxy",
+    "@quilt/lobsters": "quilt/lobsters",
     "@quilt/mongo": "quilt/mongo",
     "@quilt/nginx": "quilt/nginx",
     "@quilt/nodejs": "quilt/nodejs",
