@@ -12,6 +12,7 @@
     "@quilt/nginx": "quilt/nginx",
     "@quilt/nodejs": "quilt/nodejs",
     "@quilt/quilt": "quilt/quilt",
+    "@quilt/redis": "quilt/redis",
     "@quilt/spark": "quilt/spark",
     "@quilt/zookeeper": "quilt/zookeeper"
   }
