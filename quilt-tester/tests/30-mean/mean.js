@@ -10,7 +10,7 @@ deployment.deploy(infrastructure);
 const mongo = new Mongo(3);
 const app = new Node({
   nWorker: 3,
-  repo: 'https://github.com/tejasmanohar/node-todo.git',
+  repo: 'https://github.com/quilt/node-todo.git',
   env: {
     PORT: '80',
     MONGO_URI: mongo.uri('mean-example'),
