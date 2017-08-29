@@ -64,7 +64,7 @@ func ToTar(name string, permissions int, content string) (io.Reader, error) {
 }
 
 // MyIP gets the local systems Public IP address as visible on the WAN by querying an
-// exeternal service.
+// external service.
 func MyIP() (string, error) {
 	return httpRequest("http://checkip.amazonaws.com/")
 }
