@@ -36,17 +36,17 @@ Check out more in our [Getting Started Guide](http://docs.quilt.io/#getting-star
 Run any container.
 
 [//]: # (b1)
-<!-- const {Container, Service, Machine, allow, publicInternet} = require('@quilt/quilt'); -->
+<!-- const {Container, LoadBalancer, Machine, allow, publicInternet} = require('@quilt/quilt'); -->
 ```javascript
 let web = new Container('web', 'someNodejsImage');
 ```
 
-Load balance traffic with Services.
+Load balance traffic.
 
 [//]: # (b1)
 ```javascript
 let webGroup = web.replicate(3);
-let webLoadBalancer = new Service('web-lb', webGroup); // A load balancer over 3 containers.
+let webLoadBalancer = new LoadBalancer('web-lb', webGroup); // A load balancer over 3 containers.
 ```
 
 Share and import blueprints via npm.

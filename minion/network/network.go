@@ -31,7 +31,7 @@ func Run(conn db.Conn, inboundPubIntf, outboundPubIntf string) {
 	go runUpdateIPs(conn)
 
 	for range conn.TriggerTick(30, db.ContainerTable, db.HostnameTable,
-		db.ConnectionTable, db.LabelTable, db.EtcdTable).C {
+		db.ConnectionTable, db.LoadBalancerTable, db.EtcdTable).C {
 		if conn.EtcdLeader() {
 			runMaster(conn)
 		}
@@ -46,16 +46,17 @@ func Run(conn db.Conn, inboundPubIntf, outboundPubIntf string) {
 func runMaster(conn db.Conn) {
 	c.Inc("Run Master")
 
-	var labels []db.Label
+	var loadBalancers []db.LoadBalancer
 	var containers []db.Container
 	var connections []db.Connection
 	var hostnameToIP map[string]string
 	conn.Txn(db.ConnectionTable, db.ContainerTable, db.EtcdTable,
-		db.LabelTable, db.HostnameTable).Run(func(view db.Database) error {
+		db.LoadBalancerTable, db.HostnameTable).Run(func(view db.Database) error {
 
-		labels = view.SelectFromLabel(func(label db.Label) bool {
-			return label.IP != ""
-		})
+		loadBalancers = view.SelectFromLoadBalancer(
+			func(lb db.LoadBalancer) bool {
+				return lb.IP != ""
+			})
 
 		containers = view.SelectFromContainer(func(dbc db.Container) bool {
 			return dbc.IP != ""
@@ -75,7 +76,7 @@ func runMaster(conn db.Conn) {
 
 	updateLogicalSwitch(ovsdbClient, containers)
 	updateLoadBalancerRouter(ovsdbClient)
-	updateLoadBalancers(ovsdbClient, labels, hostnameToIP)
+	updateLoadBalancers(ovsdbClient, loadBalancers, hostnameToIP)
 	updateACLs(ovsdbClient, connections, hostnameToIP)
 }
 

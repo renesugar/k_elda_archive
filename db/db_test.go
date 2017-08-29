@@ -46,7 +46,7 @@ func TestAllTablesNoPanic(t *testing.T) {
 	conn := New()
 	conn.Txn(AllTables...).Run(func(view Database) error {
 		view.InsertEtcd()
-		view.InsertLabel()
+		view.InsertLoadBalancer()
 		view.InsertMinion()
 		view.InsertMachine()
 		view.InsertBlueprint()
@@ -418,11 +418,11 @@ func TestSliceHelpers(t *testing.T) {
 	assert.Equal(t, expected, containers)
 	assert.Equal(t, containers[0], ContainerSlice(containers).Get(0))
 
-	labels := []Label{{Label: "b"}, {Label: "a"}}
-	expLabels := []Label{{Label: "a"}, {Label: "b"}}
-	sort.Sort(LabelSlice(labels))
-	assert.Equal(t, expLabels, labels)
-	assert.Equal(t, labels[0], LabelSlice(labels).Get(0))
+	loadBalancers := []LoadBalancer{{Name: "b"}, {Name: "a"}}
+	expLoadBalancers := []LoadBalancer{{Name: "a"}, {Name: "b"}}
+	sort.Sort(LoadBalancerSlice(loadBalancers))
+	assert.Equal(t, expLoadBalancers, loadBalancers)
+	assert.Equal(t, loadBalancers[0], LoadBalancerSlice(loadBalancers).Get(0))
 
 	conns := []Connection{{ID: 2}, {ID: 1}}
 	expConns := []Connection{{ID: 1}, {ID: 2}}

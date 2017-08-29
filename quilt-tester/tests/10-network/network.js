@@ -16,10 +16,10 @@ quilt.allow(blue, red, 80);
 quilt.allow(red, yellow, 80);
 quilt.allow(blue, yellow, 80);
 
-const redService = new quilt.Service('red-lb', red);
-redService.allowFrom(blue, 80);
+const redLB = new quilt.LoadBalancer('red-lb', red);
+redLB.allowFrom(blue, 80);
 
 deployment.deploy(red);
 deployment.deploy(yellow);
 deployment.deploy(blue);
-deployment.deploy(redService);
+deployment.deploy(redLB);

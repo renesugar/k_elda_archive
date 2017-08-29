@@ -23,8 +23,8 @@ var MinionTable = TableType(reflect.TypeOf(Minion{}).String())
 // ConnectionTable is the type of the connection table.
 var ConnectionTable = TableType(reflect.TypeOf(Connection{}).String())
 
-// LabelTable is the type of the label table.
-var LabelTable = TableType(reflect.TypeOf(Label{}).String())
+// LoadBalancerTable is the type of the load balancer table.
+var LoadBalancerTable = TableType(reflect.TypeOf(LoadBalancer{}).String())
 
 // EtcdTable is the type of the etcd table.
 var EtcdTable = TableType(reflect.TypeOf(Etcd{}).String())
@@ -45,8 +45,8 @@ var HostnameTable = TableType(reflect.TypeOf(Hostname{}).String())
 // where there is no reason to put lots of thought into which tables a Transaction
 // should use.
 var AllTables = []TableType{BlueprintTable, MachineTable, ContainerTable, MinionTable,
-	ConnectionTable, LabelTable, EtcdTable, PlacementTable, ACLTable, ImageTable,
-	HostnameTable}
+	ConnectionTable, LoadBalancerTable, EtcdTable, PlacementTable, ACLTable,
+	ImageTable, HostnameTable}
 
 type table struct {
 	rows map[int]row

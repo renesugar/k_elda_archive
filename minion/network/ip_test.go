@@ -100,22 +100,22 @@ func TestMakeIPContext(t *testing.T) {
 		dbc.StitchID = "3"
 		view.Commit(dbc)
 
-		// A label with an IP address.
-		label := view.InsertLabel()
-		label.Label = "yellow"
-		label.IP = "10.0.0.3"
-		view.Commit(label)
+		// A load balancer with an IP address.
+		loadBalancer := view.InsertLoadBalancer()
+		loadBalancer.Name = "yellow"
+		loadBalancer.IP = "10.0.0.3"
+		view.Commit(loadBalancer)
 
-		// A label without an IP address.
-		label = view.InsertLabel()
-		label.Label = "blue"
-		view.Commit(label)
+		// A load balancer without an IP address.
+		loadBalancer = view.InsertLoadBalancer()
+		loadBalancer.Name = "blue"
+		view.Commit(loadBalancer)
 
-		// A label with an IP in a blacklisted subnet.
-		label = view.InsertLabel()
-		label.Label = "green"
-		label.IP = "10.0.1.1"
-		view.Commit(label)
+		// A load balancer with an IP in a blacklisted subnet.
+		loadBalancer = view.InsertLoadBalancer()
+		loadBalancer.Name = "green"
+		loadBalancer.IP = "10.0.1.1"
+		view.Commit(loadBalancer)
 
 		return nil
 	})
@@ -137,9 +137,11 @@ func TestMakeIPContext(t *testing.T) {
 	assert.Contains(t, ctx.unassignedContainers, db.Container{ID: 2, StitchID: "2"})
 	assert.Contains(t, ctx.unassignedContainers, db.Container{ID: 3, StitchID: "3"})
 
-	assert.Len(t, ctx.unassignedLabels, 2)
-	assert.Contains(t, ctx.unassignedLabels, db.Label{ID: 5, Label: "blue"})
-	assert.Contains(t, ctx.unassignedLabels, db.Label{ID: 6, Label: "green"})
+	assert.Len(t, ctx.unassignedLoadBalancers, 2)
+	assert.Contains(t, ctx.unassignedLoadBalancers,
+		db.LoadBalancer{ID: 5, Name: "blue"})
+	assert.Contains(t, ctx.unassignedLoadBalancers,
+		db.LoadBalancer{ID: 6, Name: "green"})
 }
 
 func TestAllocateContainerIPs(t *testing.T) {
@@ -178,27 +180,27 @@ func TestAllocateContainerIPs(t *testing.T) {
 	assert.True(t, ipdef.QuiltSubnet.Contains(net.ParseIP(dbc.IP)))
 }
 
-func TestAllocateLabelIPs(t *testing.T) {
+func TestAllocateLoadBalancerIPs(t *testing.T) {
 	t.Parallel()
 	conn := db.New()
 
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		label := view.InsertLabel()
-		label.Label = "yellow"
-		view.Commit(label)
+		lb := view.InsertLoadBalancer()
+		lb.Name = "yellow"
+		view.Commit(lb)
 
 		ctx := ipContext{
-			reserved:         map[string]struct{}{},
-			unassignedLabels: []db.Label{label},
+			reserved:                map[string]struct{}{},
+			unassignedLoadBalancers: []db.LoadBalancer{lb},
 		}
-		assert.NoError(t, allocateLabelIPs(view, ctx))
+		assert.NoError(t, allocateLoadBalancerIPs(view, ctx))
 		return nil
 	})
 
-	labels := conn.SelectFromLabel(nil)
-	assert.Len(t, labels, 1)
-	labelIP := net.ParseIP(labels[0].IP)
-	assert.True(t, ipdef.QuiltSubnet.Contains(labelIP))
+	loadBalancers := conn.SelectFromLoadBalancer(nil)
+	assert.Len(t, loadBalancers, 1)
+	lbIP := net.ParseIP(loadBalancers[0].IP)
+	assert.True(t, ipdef.QuiltSubnet.Contains(lbIP))
 }
 
 func TestAllocate(t *testing.T) {

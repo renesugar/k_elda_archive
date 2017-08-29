@@ -16,7 +16,7 @@ type connectionTester struct {
 }
 
 func newConnectionTester(clnt client.Client) (connectionTester, error) {
-	labels, err := clnt.QueryLabels()
+	loadBalancers, err := clnt.QueryLoadBalancers()
 	if err != nil {
 		return connectionTester{}, err
 	}
@@ -32,8 +32,8 @@ func newConnectionTester(clnt client.Client) (connectionTester, error) {
 	}
 
 	var allHostnames []string
-	for _, label := range labels {
-		allHostnames = append(allHostnames, label.Label+".q")
+	for _, lb := range loadBalancers {
+		allHostnames = append(allHostnames, lb.Name+".q")
 	}
 	for _, c := range containers {
 		allHostnames = append(allHostnames, c.Hostname+".q")

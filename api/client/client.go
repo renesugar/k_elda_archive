@@ -39,8 +39,9 @@ type Client interface {
 	// Quilt daemon.
 	QueryConnections() ([]db.Connection, error)
 
-	// QueryLabels retrieves the label information tracked by the Quilt daemon.
-	QueryLabels() ([]db.Label, error)
+	// QueryLoadBalancers retrieves the load balancer information tracked by
+	// the Quilt daemon.
+	QueryLoadBalancers() ([]db.LoadBalancer, error)
 
 	// QueryBlueprints retrieves blueprint information tracked by the Quilt daemon.
 	QueryBlueprints() ([]db.Blueprint, error)
@@ -123,12 +124,12 @@ func query(pbClient pb.APIClient, table db.TableType) (interface{}, error) {
 			return nil, err
 		}
 		return etcds, nil
-	case db.LabelTable:
-		var labels []db.Label
-		if err := json.Unmarshal(replyBytes, &labels); err != nil {
+	case db.LoadBalancerTable:
+		var loadBalancers []db.LoadBalancer
+		if err := json.Unmarshal(replyBytes, &loadBalancers); err != nil {
 			return nil, err
 		}
-		return labels, nil
+		return loadBalancers, nil
 	case db.ConnectionTable:
 		var connections []db.Connection
 		if err := json.Unmarshal(replyBytes, &connections); err != nil {
@@ -197,14 +198,15 @@ func (c clientImpl) QueryConnections() ([]db.Connection, error) {
 	return rows.([]db.Connection), nil
 }
 
-// QueryLabels retrieves the label information tracked by the Quilt daemon.
-func (c clientImpl) QueryLabels() ([]db.Label, error) {
-	rows, err := query(c.pbClient, db.LabelTable)
+// QueryLoadBalancers retrieves the load balancer information tracked by the
+// Quilt daemon.
+func (c clientImpl) QueryLoadBalancers() ([]db.LoadBalancer, error) {
+	rows, err := query(c.pbClient, db.LoadBalancerTable)
 	if err != nil {
 		return nil, err
 	}
 
-	return rows.([]db.Label), nil
+	return rows.([]db.LoadBalancer), nil
 }
 
 // QueryBlueprints retrieves the blueprint information tracked by the Quilt daemon.

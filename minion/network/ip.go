@@ -13,7 +13,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-/* runUpdateIPs allocates IPs to containers and labels.
+/* runUpdateIPs allocates IPs to containers and load balancers.
 
 XXX: It takes into account the subnets governed by routes on the host network
 stack of worker machines. If any worker has a route that intersects with the
@@ -24,13 +24,13 @@ the host might get routed to the wrong interface.
 Note that the proper fix to this problem is to separate the Quilt networking
 stack from the host network. */
 func runUpdateIPs(conn db.Conn) {
-	for range conn.Trigger(db.ContainerTable, db.LabelTable, db.EtcdTable,
+	for range conn.Trigger(db.ContainerTable, db.LoadBalancerTable, db.EtcdTable,
 		db.MinionTable).C {
 		if !conn.EtcdLeader() {
 			continue
 		}
 
-		err := conn.Txn(db.ContainerTable, db.LabelTable,
+		err := conn.Txn(db.ContainerTable, db.LoadBalancerTable,
 			db.MinionTable).Run(updateIPsOnce)
 		if err != nil {
 			log.WithError(err).Warn("Failed to allocate IP addresses")
@@ -43,8 +43,8 @@ func runUpdateIPs(conn db.Conn) {
 type ipContext struct {
 	reserved map[string]struct{}
 
-	unassignedContainers []db.Container
-	unassignedLabels     []db.Label
+	unassignedContainers    []db.Container
+	unassignedLoadBalancers []db.LoadBalancer
 }
 
 func makeIPContext(view db.Database, subnetBlacklist []net.IPNet) ipContext {
@@ -71,7 +71,7 @@ func makeIPContext(view db.Database, subnetBlacklist []net.IPNet) ipContext {
 		}
 	}
 
-	for _, dbl := range view.SelectFromLabel(nil) {
+	for _, dbl := range view.SelectFromLoadBalancer(nil) {
 		if dbl.IP != "" && ipBlacklisted(dbl.IP, subnetBlacklist) {
 			dbl.IP = ""
 		}
@@ -79,7 +79,8 @@ func makeIPContext(view db.Database, subnetBlacklist []net.IPNet) ipContext {
 		if dbl.IP != "" {
 			ctx.reserved[dbl.IP] = struct{}{}
 		} else {
-			ctx.unassignedLabels = append(ctx.unassignedLabels, dbl)
+			ctx.unassignedLoadBalancers = append(ctx.unassignedLoadBalancers,
+				dbl)
 		}
 	}
 
@@ -96,13 +97,14 @@ func updateIPsOnce(view db.Database) error {
 	// an IP that falls within a blacklisted subnet.
 	for i := 0; i < 3; i++ {
 		ctx := makeIPContext(view, subnetBlacklist)
-		if len(ctx.unassignedContainers) == 0 && len(ctx.unassignedLabels) == 0 {
+		if len(ctx.unassignedContainers) == 0 &&
+			len(ctx.unassignedLoadBalancers) == 0 {
 			return nil
 		}
 
 		err = allocateContainerIPs(view, ctx)
 		if err == nil {
-			err = allocateLabelIPs(view, ctx)
+			err = allocateLoadBalancerIPs(view, ctx)
 		}
 	}
 	return err
@@ -165,16 +167,16 @@ func allocateContainerIPs(view db.Database, ctx ipContext) error {
 	return nil
 }
 
-func allocateLabelIPs(view db.Database, ctx ipContext) error {
-	for _, label := range ctx.unassignedLabels {
-		c.Inc("Allocate Label IP")
+func allocateLoadBalancerIPs(view db.Database, ctx ipContext) error {
+	for _, lb := range ctx.unassignedLoadBalancers {
+		c.Inc("Allocate LoadBalancer IP")
 		ip, err := allocateIP(ctx.reserved, ipdef.QuiltSubnet)
 		if err != nil {
 			return err
 		}
 
-		label.IP = ip
-		view.Commit(label)
+		lb.IP = ip
+		view.Commit(lb)
 	}
 
 	return nil

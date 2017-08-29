@@ -36,14 +36,14 @@ func TestUpdateLoadBalancerIPs(t *testing.T) {
 		lSwitch, ovsdb.LoadBalancer{Name: "bad"}).Return(nil)
 	client.On("CreateLoadBalancer", lSwitch, "new",
 		map[string]string{"10.0.0.10": "10.0.0.11"}).Return(nil)
-	updateLoadBalancerIPs(client, []db.Label{
+	updateLoadBalancerIPs(client, []db.LoadBalancer{
 		{
-			Label:     "red",
+			Name:      "red",
 			IP:        "10.0.0.2",
 			Hostnames: []string{"red", "blue"},
 		},
 		{
-			Label:     "new",
+			Name:      "new",
 			IP:        "10.0.0.10",
 			Hostnames: []string{"yellow"},
 		},
@@ -71,7 +71,7 @@ func TestUpdateLoadBalancerARP(t *testing.T) {
 	}, nil).Once()
 	client.On("UpdateSwitchPortAddresses", loadBalancerSwitchPort,
 		[]string{ipdef.LoadBalancerMac + " 10.0.0.2 10.0.0.3"}).Return(nil).Once()
-	updateLoadBalancerARP(client, []db.Label{
+	updateLoadBalancerARP(client, []db.LoadBalancer{
 		{IP: "10.0.0.2"}, {IP: "10.0.0.3"},
 	})
 	client.AssertExpectations(t)
@@ -81,7 +81,7 @@ func TestUpdateLoadBalancerARP(t *testing.T) {
 	client.On("ListSwitchPort", mock.Anything).Return(ovsdb.SwitchPort{
 		Addresses: []string{ipdef.LoadBalancerMac + " 10.0.0.2 10.0.0.3"},
 	}, nil).Once()
-	updateLoadBalancerARP(client, []db.Label{
+	updateLoadBalancerARP(client, []db.LoadBalancer{
 		{IP: "10.0.0.3"}, {IP: "10.0.0.2"},
 	})
 	client.AssertNotCalled(t, "UpdateSwitchPortAddresses",

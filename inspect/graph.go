@@ -33,8 +33,8 @@ func New(blueprint stitch.Stitch) (Graph, error) {
 	for _, c := range blueprint.Containers {
 		g.addNode(c.Hostname)
 	}
-	for _, service := range blueprint.Labels {
-		g.addNode(service.Name)
+	for _, lb := range blueprint.LoadBalancers {
+		g.addNode(lb.Name)
 	}
 	g.addNode(stitch.PublicInternetLabel)
 

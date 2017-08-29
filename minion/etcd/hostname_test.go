@@ -59,14 +59,14 @@ func TestRunHostnameOnce(t *testing.T) {
 	err = runHostnameOnce(conn, store)
 	assert.NoError(t, err)
 
-	explabel := db.Hostname{
+	expHostname := db.Hostname{
 		Hostname: "Robot",
 		IP:       "1.2.3.5",
 	}
 	hostnames := conn.SelectFromHostname(nil)
 	assert.Len(t, hostnames, 1)
 	hostnames[0].ID = 0
-	assert.Equal(t, explabel, hostnames[0])
+	assert.Equal(t, expHostname, hostnames[0])
 
 	err = runHostnameOnce(conn, store)
 	assert.NoError(t, err)
@@ -74,5 +74,5 @@ func TestRunHostnameOnce(t *testing.T) {
 	hostnames = conn.SelectFromHostname(nil)
 	assert.Len(t, hostnames, 1)
 	hostnames[0].ID = 0
-	assert.Equal(t, explabel, hostnames[0])
+	assert.Equal(t, expHostname, hostnames[0])
 }

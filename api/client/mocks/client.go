@@ -177,16 +177,16 @@ func (_m *Client) QueryImages() ([]db.Image, error) {
 	return r0, r1
 }
 
-// QueryLabels provides a mock function with given fields:
-func (_m *Client) QueryLabels() ([]db.Label, error) {
+// QueryLoadBalancers provides a mock function with given fields:
+func (_m *Client) QueryLoadBalancers() ([]db.LoadBalancer, error) {
 	ret := _m.Called()
 
-	var r0 []db.Label
-	if rf, ok := ret.Get(0).(func() []db.Label); ok {
+	var r0 []db.LoadBalancer
+	if rf, ok := ret.Get(0).(func() []db.LoadBalancer); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]db.Label)
+			r0 = ret.Get(0).([]db.LoadBalancer)
 		}
 	}
 

@@ -11,11 +11,11 @@ import (
 
 // A Stitch is an abstract representation of the policy language.
 type Stitch struct {
-	Containers  []Container  `json:",omitempty"`
-	Labels      []Label      `json:",omitempty"`
-	Connections []Connection `json:",omitempty"`
-	Placements  []Placement  `json:",omitempty"`
-	Machines    []Machine    `json:",omitempty"`
+	Containers    []Container    `json:",omitempty"`
+	LoadBalancers []LoadBalancer `json:",omitempty"`
+	Connections   []Connection   `json:",omitempty"`
+	Placements    []Placement    `json:",omitempty"`
+	Machines      []Machine      `json:",omitempty"`
 
 	AdminACL  []string `json:",omitempty"`
 	MaxPrice  float64  `json:",omitempty"`
@@ -53,8 +53,8 @@ type Container struct {
 	Hostname          string            `json:",omitempty"`
 }
 
-// A Label represents a logical group of containers.
-type Label struct {
+// A LoadBalancer represents a load balanced group of containers.
+type LoadBalancer struct {
 	Name      string   `json:",omitempty"`
 	Hostnames []string `json:",omitempty"`
 }

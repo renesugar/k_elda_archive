@@ -18,7 +18,7 @@ func updatePolicy(view db.Database, blueprint string) {
 	c.Inc("Update Policy")
 	updateImages(view, compiled)
 	updateContainers(view, compiled)
-	updateLabels(view, compiled)
+	updateLoadBalancers(view, compiled)
 	updateConnections(view, compiled)
 	updatePlacements(view, compiled)
 }
@@ -115,40 +115,40 @@ func updatePlacements(view db.Database, blueprint stitch.Stitch) {
 	}
 }
 
-func updateLabels(view db.Database, blueprint stitch.Stitch) {
-	var stitchLabels db.LabelSlice
-	for _, label := range blueprint.Labels {
-		stitchLabels = append(stitchLabels, db.Label{
-			Label:     label.Name,
-			Hostnames: label.Hostnames,
+func updateLoadBalancers(view db.Database, blueprint stitch.Stitch) {
+	var stitchLoadBalancers db.LoadBalancerSlice
+	for _, lb := range blueprint.LoadBalancers {
+		stitchLoadBalancers = append(stitchLoadBalancers, db.LoadBalancer{
+			Name:      lb.Name,
+			Hostnames: lb.Hostnames,
 		})
 	}
 
 	key := func(intf interface{}) interface{} {
-		return intf.(db.Label).Label
+		return intf.(db.LoadBalancer).Name
 	}
 
-	dbLabels := db.LabelSlice(view.SelectFromLabel(nil))
-	pairs, toAdd, toRemove := join.HashJoin(stitchLabels, dbLabels,
+	dbLoadBalancers := db.LoadBalancerSlice(view.SelectFromLoadBalancer(nil))
+	pairs, toAdd, toRemove := join.HashJoin(stitchLoadBalancers, dbLoadBalancers,
 		key, key)
 
 	for _, intf := range toRemove {
-		view.Remove(intf.(db.Label))
+		view.Remove(intf.(db.LoadBalancer))
 	}
 
 	for _, intf := range toAdd {
-		pairs = append(pairs, join.Pair{L: intf, R: view.InsertLabel()})
+		pairs = append(pairs, join.Pair{L: intf, R: view.InsertLoadBalancer()})
 	}
 
 	for _, pair := range pairs {
-		dbLabel := pair.R.(db.Label)
-		stitchLabel := pair.L.(db.Label)
+		dbLoadBalancer := pair.R.(db.LoadBalancer)
+		stitchLoadBalancer := pair.L.(db.LoadBalancer)
 
-		// Modify the original database label so that we preserve whatever IP
-		// the label might have already been allocated.
-		dbLabel.Label = stitchLabel.Label
-		dbLabel.Hostnames = stitchLabel.Hostnames
-		view.Commit(dbLabel)
+		// Modify the original database load balancer so that we preserve
+		// whatever IP the load balancer might have already been allocated.
+		dbLoadBalancer.Name = stitchLoadBalancer.Name
+		dbLoadBalancer.Hostnames = stitchLoadBalancer.Hostnames
+		view.Commit(dbLoadBalancer)
 	}
 }
 
@@ -160,18 +160,18 @@ func updateConnections(view db.Database, blueprint stitch.Stitch) {
 	// balanced containers. This means allowing connections only to the load
 	// balancer IP address is insufficient -- the container must also be able
 	// to communicate directly with the containers behind the load balancer.
-	labels := map[string]stitch.Label{}
-	for _, label := range blueprint.Labels {
-		labels[label.Name] = label
+	loadBalancers := map[string]stitch.LoadBalancer{}
+	for _, lb := range blueprint.LoadBalancers {
+		loadBalancers[lb.Name] = lb
 	}
 
 	for _, c := range scs {
-		label, ok := labels[c.To]
+		lb, ok := loadBalancers[c.To]
 		if !ok {
 			continue
 		}
 
-		for _, hostname := range label.Hostnames {
+		for _, hostname := range lb.Hostnames {
 			scs = append(scs, stitch.Connection{
 				From:    c.From,
 				To:      hostname,

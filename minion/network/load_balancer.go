@@ -45,13 +45,13 @@ unchanged.
 
 8. 10.2.0.1 receives the packet from the router.
 */
-func updateLoadBalancers(client ovsdb.Client, labels []db.Label,
+func updateLoadBalancers(client ovsdb.Client, loadBalancers []db.LoadBalancer,
 	hostnameToIP map[string]string) {
-	updateLoadBalancerIPs(client, labels, hostnameToIP)
-	updateLoadBalancerARP(client, labels)
+	updateLoadBalancerIPs(client, loadBalancers, hostnameToIP)
+	updateLoadBalancerARP(client, loadBalancers)
 }
 
-func updateLoadBalancerIPs(client ovsdb.Client, labels []db.Label,
+func updateLoadBalancerIPs(client ovsdb.Client, loadBalancers []db.LoadBalancer,
 	hostnameToIP map[string]string) {
 	curr, err := client.ListLoadBalancers()
 	if err != nil {
@@ -60,9 +60,9 @@ func updateLoadBalancerIPs(client ovsdb.Client, labels []db.Label,
 	}
 
 	var target []ovsdb.LoadBalancer
-	for _, label := range labels {
+	for _, lb := range loadBalancers {
 		var ips []string
-		for _, hostname := range label.Hostnames {
+		for _, hostname := range lb.Hostnames {
 			ip := hostnameToIP[hostname]
 			if ip != "" {
 				ips = append(ips, ip)
@@ -72,9 +72,9 @@ func updateLoadBalancerIPs(client ovsdb.Client, labels []db.Label,
 		sort.Strings(ips)
 
 		target = append(target, ovsdb.LoadBalancer{
-			Name: label.Label,
+			Name: lb.Name,
 			VIPs: map[string]string{
-				label.IP: strings.Join(ips, ","),
+				lb.IP: strings.Join(ips, ","),
 			},
 		})
 	}
@@ -112,7 +112,7 @@ func updateLoadBalancerIPs(client ovsdb.Client, labels []db.Label,
 // updateLoadBalancerARP updates the `addresses` field of the logical switch
 // port attached to the load balancer router. This is necessary so that the
 // switch port synthesizes ARP responses to load balanced VIPs.
-func updateLoadBalancerARP(client ovsdb.Client, labels []db.Label) {
+func updateLoadBalancerARP(client ovsdb.Client, loadBalancers []db.LoadBalancer) {
 	curr, err := client.ListSwitchPort(loadBalancerSwitchPort)
 	if err != nil {
 		log.WithError(err).Error("Failed to get load balancer switch port")
@@ -120,10 +120,10 @@ func updateLoadBalancerARP(client ovsdb.Client, labels []db.Label) {
 	}
 
 	var loadBalancedIPs []string
-	for _, label := range labels {
-		loadBalancedIPs = append(loadBalancedIPs, label.IP)
+	for _, lb := range loadBalancers {
+		loadBalancedIPs = append(loadBalancedIPs, lb.IP)
 	}
-	// Ignore the order of `labels`.
+	// Ignore the order of `loadBalancers`.
 	sort.Strings(loadBalancedIPs)
 	expAddresses := ipdef.LoadBalancerMac + " " + strings.Join(loadBalancedIPs, " ")
 

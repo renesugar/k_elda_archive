@@ -98,7 +98,7 @@ func TestCleanup(t *testing.T) {
 	assert.Equal(t, expChanged, ctx.changed)
 }
 
-func TestCleanupLabelRule(t *testing.T) {
+func TestCleanupContainerRule(t *testing.T) {
 	t.Parallel()
 
 	containers := []db.Container{
@@ -396,7 +396,7 @@ func TestValidPlacementTwoWay(t *testing.T) {
 	}
 }
 
-func TestValidPlacementLabel(t *testing.T) {
+func TestValidPlacementContainer(t *testing.T) {
 	t.Parallel()
 
 	dbc := &db.Container{

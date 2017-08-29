@@ -21,7 +21,7 @@ type dnsTester struct {
 }
 
 func newDNSTester(clnt client.Client) (dnsTester, error) {
-	labels, err := clnt.QueryLabels()
+	loadBalancers, err := clnt.QueryLoadBalancers()
 	if err != nil {
 		return dnsTester{}, err
 	}
@@ -36,8 +36,8 @@ func newDNSTester(clnt client.Client) (dnsTester, error) {
 		hostnameIPMap[host] = anyIPAllowed
 	}
 
-	for _, label := range labels {
-		hostnameIPMap[label.Label+".q"] = label.IP
+	for _, lb := range loadBalancers {
+		hostnameIPMap[lb.Name+".q"] = lb.IP
 	}
 
 	for _, c := range containers {

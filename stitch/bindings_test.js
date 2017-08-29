@@ -10,7 +10,7 @@ const {
   Port,
   PortRange,
   Range,
-  Service,
+  LoadBalancer,
   allow,
   createDeployment,
   publicInternet,
@@ -46,9 +46,9 @@ describe('Bindings', () => {
       .and.containSubset(expected);
   };
 
-  const checkLabels = function checkLabels(expected) {
-    const { labels } = deployment.toQuiltRepresentation();
-    expect(labels).to.have.lengthOf(expected.length)
+  const checkLoadBalancers = function checkLoadBalancers(expected) {
+    const { loadBalancers } = deployment.toQuiltRepresentation();
+    expect(loadBalancers).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
@@ -251,9 +251,9 @@ describe('Bindings', () => {
         hostname: 'host2',
       }]);
     });
-    it('Container.hostname and Service.hostname don\'t conflict', () => {
+    it('Container.hostname and LoadBalancer.hostname don\'t conflict', () => {
       const container = new Container('foo', 'image');
-      const serv = new Service('foo', []);
+      const serv = new LoadBalancer('foo', []);
       expect(container.getHostname()).to.equal('foo.q');
       expect(serv.hostname()).to.equal('foo2.q');
     });
@@ -424,21 +424,21 @@ describe('Bindings', () => {
       }]);
     });
   });
-  describe('Label', () => {
+  describe('LoadBalancer', () => {
     it('basic', () => {
       deployment.deploy(
-        new Service('web_tier', [new Container('host', 'nginx')]));
-      checkLabels([{
+        new LoadBalancer('web_tier', [new Container('host', 'nginx')]));
+      checkLoadBalancers([{
         name: 'web_tier',
         hostnames: ['host'],
       }]);
     });
     it('multiple containers', () => {
-      deployment.deploy(new Service('web_tier', [
+      deployment.deploy(new LoadBalancer('web_tier', [
         new Container('host', 'nginx'),
         new Container('host', 'nginx'),
       ]));
-      checkLabels([{
+      checkLoadBalancers([{
         name: 'web_tier',
         hostnames: [
           'host',
@@ -446,21 +446,21 @@ describe('Bindings', () => {
         ],
       }]);
     });
-    it('duplicate services', () => {
-      /* Conflicting label names.  We need to generate a couple of dummy
+    it('duplicate load balancers', () => {
+      /* Conflicting load balancer names.  We need to generate a couple of dummy
                containers so that the two deployed containers have _refID's
                that are sorted differently lexicographically and numerically. */
       for (let i = 0; i < 2; i += 1) {
         new Container('host', 'image'); // eslint-disable-line no-new
       }
-      deployment.deploy(new Service('foo', [
+      deployment.deploy(new LoadBalancer('foo', [
         new Container('host', 'image')]));
       for (let i = 0; i < 7; i += 1) {
         new Container('host', 'image'); // eslint-disable-line no-new
       }
-      deployment.deploy(new Service('foo', [
+      deployment.deploy(new LoadBalancer('foo', [
         new Container('host', 'image')]));
-      checkLabels([
+      checkLoadBalancers([
         {
           name: 'foo',
           hostnames: ['host3'],
@@ -471,20 +471,20 @@ describe('Bindings', () => {
         },
       ]);
     });
-    it('get service hostname', () => {
-      const foo = new Service('foo', []);
+    it('get LoadBalancer hostname', () => {
+      const foo = new LoadBalancer('foo', []);
       expect(foo.hostname()).to.equal('foo.q');
     });
   });
   describe('AllowFrom', () => {
     let foo;
     let bar;
-    let fooService;
+    let fooLoadBalancer;
     beforeEach(() => {
       foo = new Container('foo', 'image');
-      fooService = new Service('fooService', [foo]);
+      fooLoadBalancer = new LoadBalancer('fooLoadBalancer', [foo]);
       bar = new Container('bar', 'image');
-      deployment.deploy([foo, bar, fooService]);
+      deployment.deploy([foo, bar, fooLoadBalancer]);
     });
     it('autobox port ranges', () => {
       bar.allowFrom(foo, 80);
@@ -535,11 +535,11 @@ describe('Bindings', () => {
         maxPort: 80,
       }]);
     });
-    it('connect to service', () => {
-      fooService.allowFrom(bar, 80);
+    it('connect to LoadBalancer', () => {
+      fooLoadBalancer.allowFrom(bar, 80);
       checkConnections([{
         from: 'bar',
-        to: 'fooService',
+        to: 'fooLoadBalancer',
         minPort: 80,
         maxPort: 80,
       }]);
@@ -560,7 +560,7 @@ describe('Bindings', () => {
       expect(() => foo.allowFrom(10, 10)).to
         .throw('Containers can only connect to other containers. ' +
                     'Check that you\'re allowing connections from a ' +
-                    'container or list of containers, and not from a Service ' +
+                    'container or list of containers, and not from a LoadBalancer ' +
                     'or other object.');
     });
   });
@@ -571,7 +571,7 @@ describe('Bindings', () => {
     let quuz;
     let fooBarGroup;
     let quxQuuzGroup;
-    let service;
+    let lb;
     beforeEach(() => {
       foo = new Container('foo', 'image');
       bar = new Container('bar', 'image');
@@ -580,11 +580,11 @@ describe('Bindings', () => {
 
       fooBarGroup = [foo, bar];
       quxQuuzGroup = [qux, quuz];
-      service = new Service('serv', [foo, bar, qux, quuz]);
+      lb = new LoadBalancer('serv', [foo, bar, qux, quuz]);
 
       deployment.deploy(fooBarGroup);
       deployment.deploy(quxQuuzGroup);
-      deployment.deploy(service);
+      deployment.deploy(lb);
     });
 
     it('both src and dst are lists', () => {
@@ -629,8 +629,8 @@ describe('Bindings', () => {
       ]);
     });
 
-    it('dst is a Service', () => {
-      allow(fooBarGroup, service, 80);
+    it('dst is a LoadBalancer', () => {
+      allow(fooBarGroup, lb, 80);
       checkConnections([
         { from: 'foo', to: 'serv', minPort: 80, maxPort: 80 },
         { from: 'bar', to: 'serv', minPort: 80, maxPort: 80 },
@@ -641,7 +641,7 @@ describe('Bindings', () => {
     let foo;
     const deploy = () => deployment.toQuiltRepresentation();
     beforeEach(() => {
-      foo = new Service('foo', []);
+      foo = new LoadBalancer('foo', []);
       deployment.deploy([foo]);
     });
     it('connect from undeployed container', () => {
@@ -666,15 +666,15 @@ describe('Bindings', () => {
       deployment.deploy({
         deploy(dep) {
           dep.deploy([
-            new Service('web_tier', [
+            new LoadBalancer('web_tier', [
               new Container('host', 'nginx')]),
-            new Service('web_tier2', [
+            new LoadBalancer('web_tier2', [
               new Container('host', 'nginx')]),
           ]);
         },
       });
-      const { labels } = deployment.toQuiltRepresentation();
-      expect(labels).to.have.lengthOf(2)
+      const { loadBalancers } = deployment.toQuiltRepresentation();
+      expect(loadBalancers).to.have.lengthOf(2)
         .and.containSubset([
           {
             name: 'web_tier',

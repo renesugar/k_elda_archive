@@ -1,7 +1,7 @@
 package db
 
 // Placement represents a declaration about how containers should be placed.  These
-// directives can be made either relative to labels of other containers, or Machines
+// directives can be made either relative to other containers, or Machines
 // those containers run on.
 type Placement struct {
 	ID int

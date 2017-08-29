@@ -29,9 +29,9 @@ func TestLoadBalancer(t *testing.T) {
 		t.Fatalf("couldn't get containers: %s", err)
 	}
 
-	loadBalancers, err := c.QueryLabels()
+	loadBalancers, err := c.QueryLoadBalancers()
 	if err != nil {
-		t.Fatalf("couldn't get labels: %s", err)
+		t.Fatalf("couldn't get load balancers: %s", err)
 	}
 
 	var fetcherID string
@@ -43,9 +43,9 @@ func TestLoadBalancer(t *testing.T) {
 	}
 
 	var loadBalancedContainers []string
-	for _, label := range loadBalancers {
-		if label.Label == loadBalancedLabel {
-			loadBalancedContainers = label.Hostnames
+	for _, lb := range loadBalancers {
+		if lb.Name == loadBalancedLabel {
+			loadBalancedContainers = lb.Hostnames
 			break
 		}
 	}

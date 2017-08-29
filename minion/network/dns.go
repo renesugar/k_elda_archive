@@ -34,7 +34,8 @@ func runDNS(conn db.Conn) {
 }
 
 func syncHostnames(conn db.Conn) {
-	for range conn.Trigger(db.LabelTable, db.ContainerTable, db.MinionTable).C {
+	for range conn.Trigger(db.LoadBalancerTable, db.ContainerTable,
+		db.MinionTable).C {
 		syncHostnamesOnce(conn)
 	}
 }
@@ -50,16 +51,17 @@ func syncHostnamesOnce(conn db.Conn) {
 		return
 	}
 
-	conn.Txn(db.LabelTable, db.ContainerTable, db.HostnameTable).Run(joinHostnames)
+	conn.Txn(db.LoadBalancerTable, db.ContainerTable, db.HostnameTable).
+		Run(joinHostnames)
 }
 
 func joinHostnames(view db.Database) error {
 	var target []db.Hostname
-	for _, label := range view.SelectFromLabel(nil) {
-		if label.IP != "" {
+	for _, lb := range view.SelectFromLoadBalancer(nil) {
+		if lb.IP != "" {
 			target = append(target, db.Hostname{
-				Hostname: label.Label,
-				IP:       label.IP,
+				Hostname: lb.Name,
+				IP:       lb.IP,
 			})
 		}
 	}

@@ -16,7 +16,7 @@ deployment.deploy(containers);
 const fetcher = new quilt.Container('fetcher', 'alpine', {
   command: ['tail', '-f', '/dev/null'],
 });
-const loadBalanced = new quilt.Service('loadBalanced', containers);
+const loadBalanced = new quilt.LoadBalancer('loadBalanced', containers);
 loadBalanced.allowFrom(fetcher, 80);
 
 deployment.deploy([fetcher, loadBalanced]);

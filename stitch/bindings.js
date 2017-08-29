@@ -81,8 +81,8 @@ function baseInfrastructure(name = 'default') {
 global._quiltDeployment = new Deployment({});
 
 // The name used to refer to the public internet in the JSON description
-// of the network connections (connections to other services are referenced by
-// the name of the service, but since the public internet is not a service,
+// of the network connections (connections to other entities are referenced by
+// hostname, but since the public internet is not a container or load balancer,
 // we need a special label for it).
 const publicInternetLabel = 'public';
 
@@ -120,7 +120,7 @@ function Deployment(opts) {
 
   this.machines = [];
   this.containers = new Set();
-  this.services = [];
+  this.loadBalancers = [];
 }
 
 /**
@@ -183,17 +183,17 @@ Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
   setQuiltIDs(this.machines);
   setQuiltIDs(this.containers);
 
-  const services = [];
+  const loadBalancers = [];
   let connections = [];
   let placements = [];
   const containers = [];
 
-  // Convert the services.
-  this.services.forEach((service) => {
-    connections = connections.concat(service.getQuiltConnections());
-    services.push({
-      name: service.name,
-      hostnames: service.containers.map(c => c.hostname),
+  // Convert the load balancers.
+  this.loadBalancers.forEach((lb) => {
+    connections = connections.concat(lb.getQuiltConnections());
+    loadBalancers.push({
+      name: lb.name,
+      hostnames: lb.containers.map(c => c.hostname),
     });
   });
 
@@ -205,7 +205,7 @@ Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
 
   const quiltDeployment = {
     machines: this.machines,
-    labels: services,
+    loadBalancers,
     containers,
     connections,
     placements,
@@ -219,17 +219,17 @@ Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
 };
 
 /**
- * Checks if all referenced containers in connections and services are really
- * deployed.
+ * Checks if all referenced containers in connections and load balancers are
+ * really deployed.
  * @private
  *
  * @param {Deployment} deployment - A deployment object.
  * @returns {void}
  */
 function vet(deployment) {
-  const labelHostnames = deployment.labels.map(l => l.name);
+  const lbHostnames = deployment.loadBalancers.map(l => l.name);
   const containerHostnames = deployment.containers.map(c => c.hostname);
-  const hostnames = labelHostnames.concat(containerHostnames);
+  const hostnames = lbHostnames.concat(containerHostnames);
 
   const hostnameMap = { [publicInternetLabel]: true };
   hostnames.forEach((hostname) => {
@@ -278,15 +278,15 @@ Deployment.prototype.deploy = function deploy(list) {
 };
 
 /**
- * Creates a new Service object which represents a collection of containers
- * behind a load balancer.
+ * Creates a new LoadBalancer object which represents a collection of
+ * containers behind a load balancer.
  * @implements {Connectable}
  * @constructor
  *
- * @param {string} name - The name of the service.
- * @param {Container[]} containers - The containers in the service.
+ * @param {string} name - The name of the load balancer.
+ * @param {Container[]} containers - The containers behind the load balancer.
  */
-function Service(name, containers) {
+function LoadBalancer(name, containers) {
   if (typeof name !== 'string') {
     throw new Error(`name must be a string; was ${stringify(name)}`);
   }
@@ -296,13 +296,13 @@ function Service(name, containers) {
   this.allowedInboundConnections = [];
 }
 
-// Get the Quilt hostname that represents the entire service.
-Service.prototype.hostname = function servicehostname() {
+// Get the Quilt hostname that represents the entire load balancer.
+LoadBalancer.prototype.hostname = function lbHostname() {
   return `${this.name}.q`;
 };
 
-Service.prototype.deploy = function serviceDeploy(deployment) {
-  deployment.services.push(this);
+LoadBalancer.prototype.deploy = function lbDeploy(deployment) {
+  deployment.loadBalancers.push(this);
 };
 
 /**
@@ -310,19 +310,19 @@ Service.prototype.deploy = function serviceDeploy(deployment) {
  * allow direct connections to the containers behind the load balancer.
  *
  * @param {Container|Container[]} srcArg - The containers that can open
- *   connections to this Service.
+ *   connections to this load balancer.
  * @param {int|Port|PortRange} portRange - The ports on which containers can
  *   open connections.
  * @return {void}
  */
-Service.prototype.allowFrom = function serviceAllowFrom(srcArg, portRange) {
+LoadBalancer.prototype.allowFrom = function lbAllowFrom(srcArg, portRange) {
   let src;
   try {
     src = boxContainers(srcArg);
   } catch (err) {
-    throw new Error('Services can only allow traffic from containers. ' +
+    throw new Error('Load Balancers can only allow traffic from containers. ' +
           'Check that you\'re allowing connections from a Container ' +
-          'or list of containers and not from a Service or other object.');
+          'or list of containers and not from a Load Balancer or other object.');
   }
 
   src.forEach((c) => {
@@ -345,7 +345,7 @@ const publicInternet = {
     } catch (err) {
       throw new Error('Only containers can connect to public. ' +
                 'Check that you\'re allowing connections from a Container or ' +
-                'list of containers and not from a Service or other object.');
+                'list of containers and not from a Load Balancer or other object.');
     }
 
     src.forEach((c) => {
@@ -354,7 +354,7 @@ const publicInternet = {
   },
 };
 
-Service.prototype.getQuiltConnections = function serviceGetQuiltConnections() {
+LoadBalancer.prototype.getQuiltConnections = function lbGetQuiltConnections() {
   return this.allowedInboundConnections.map(conn => ({
     from: conn.from.hostname,
     to: this.name,
@@ -776,7 +776,7 @@ function containerAllowFrom(srcArg, portRange) {
   } catch (err) {
     throw new Error('Containers can only connect to other containers. ' +
             'Check that you\'re allowing connections from a container or ' +
-            'list of containers, and not from a Service or other object.');
+            'list of containers, and not from a LoadBalancer or other object.');
   }
 
   src.forEach((c) => {
@@ -923,7 +923,7 @@ function isConnectable(x) {
  * @param {Container|publicInternet} src - The containers that can
  *   initiate a connection.
  * @param {Connectable[]} dst - The objects that traffic can be sent to.
- *   Examples of connectable objects are Containers, Services, publicInternet,
+ *   Examples of connectable objects are Containers, LoadBalancers, publicInternet,
  *   and user-defined objects that implement allowFrom.
  * @param {int|Port|PortRange} port - The ports that traffic is allowed on.
  * @return {void}
@@ -997,7 +997,7 @@ module.exports = {
   Port,
   PortRange,
   Range,
-  Service,
+  LoadBalancer,
   allow,
   createDeployment,
   getDeployment,

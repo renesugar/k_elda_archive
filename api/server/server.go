@@ -33,7 +33,7 @@ type server struct {
 	// The API server runs in two locations:  on minions in the cluster, and on
 	// the daemon. When the server is running on the daemon, we automatically
 	// proxy certain Queries to the cluster because the daemon doesn't track
-	// those tables (e.g. Container, Connection, Label).
+	// those tables (e.g. Container, Connection, LoadBalancer).
 	runningOnDaemon bool
 
 	// The credentials to use while connecting to clients in the cluster.
@@ -119,8 +119,8 @@ func (s server) queryLocal(table db.TableType) (interface{}, error) {
 		return s.conn.SelectFromEtcd(nil), nil
 	case db.ConnectionTable:
 		return s.conn.SelectFromConnection(nil), nil
-	case db.LabelTable:
-		return s.conn.SelectFromLabel(nil), nil
+	case db.LoadBalancerTable:
+		return s.conn.SelectFromLoadBalancer(nil), nil
 	case db.BlueprintTable:
 		return s.conn.SelectFromBlueprint(nil), nil
 	case db.ImageTable:
@@ -150,8 +150,8 @@ func (s server) queryFromDaemon(table db.TableType) (
 		return s.getClusterContainers(leaderClient)
 	case db.ConnectionTable:
 		return leaderClient.QueryConnections()
-	case db.LabelTable:
-		return leaderClient.QueryLabels()
+	case db.LoadBalancerTable:
+		return leaderClient.QueryLoadBalancers()
 	case db.ImageTable:
 		return leaderClient.QueryImages()
 	default:

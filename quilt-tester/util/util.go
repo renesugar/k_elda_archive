@@ -16,7 +16,7 @@ import (
 func CheckPublicConnections(t *testing.T, machines []db.Machine,
 	containers []db.Container, connections []db.Connection) {
 
-	// Map of label to its publicly exposed ports.
+	// Map of hostname to its publicly exposed ports.
 	pubConns := map[string][]int{}
 	for _, conn := range connections {
 		if conn.From == "public" {

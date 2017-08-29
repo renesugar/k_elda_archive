@@ -97,7 +97,7 @@ func canBeColocated(constraint db.Placement, toPlace db.Container,
 		// containers on all of the minions.
 		log.WithField("constraint", constraint).Warning(
 			"Quilt currently does not support inclusive" +
-				" label placement constraints")
+				" container placement constraints")
 		return true
 	}
 

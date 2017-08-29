@@ -92,7 +92,8 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf, tlsDir string) {
 	for range conn.Trigger(db.MinionTable, db.EtcdTable).C {
 		loopLog.LogStart()
 		txn := conn.Txn(db.ConnectionTable, db.ContainerTable, db.MinionTable,
-			db.EtcdTable, db.PlacementTable, db.ImageTable, db.LabelTable)
+			db.EtcdTable, db.PlacementTable, db.ImageTable,
+			db.LoadBalancerTable)
 		txn.Run(func(view db.Database) error {
 			minion := view.MinionSelf()
 			if view.EtcdLeader() {

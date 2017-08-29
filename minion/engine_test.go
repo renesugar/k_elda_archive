@@ -30,7 +30,7 @@ func TestContainerTxn(t *testing.T) {
 				Command:  []string{"tail"},
 			},
 		},
-		Labels: []stitch.Label{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name: "a",
 				Hostnames: []string{
@@ -60,7 +60,7 @@ func TestContainerTxn(t *testing.T) {
 				Command:  []string{"tail"},
 			},
 		},
-		Labels: []stitch.Label{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name: "b",
 				Hostnames: []string{
@@ -93,7 +93,7 @@ func TestContainerTxn(t *testing.T) {
 				Command:  []string{"tail"},
 			},
 		},
-		Labels: []stitch.Label{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name: "b",
 				Hostnames: []string{
@@ -126,7 +126,7 @@ func TestContainerTxn(t *testing.T) {
 				Command:  []string{"tail"},
 			},
 		},
-		Labels: []stitch.Label{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name: "b",
 				Hostnames: []string{
@@ -159,7 +159,7 @@ func TestContainerTxn(t *testing.T) {
 				Command:  []string{"cat"},
 			},
 		},
-		Labels: []stitch.Label{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name: "a",
 				Hostnames: []string{
@@ -179,7 +179,7 @@ func TestContainerTxn(t *testing.T) {
 				Image:    stitch.Image{Name: "alpine"},
 			},
 		},
-		Labels: []stitch.Label{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name: "a",
 				Hostnames: []string{
@@ -203,7 +203,7 @@ func TestContainerTxn(t *testing.T) {
 				Image:    stitch.Image{Name: "alpine"},
 			},
 		},
-		Labels: []stitch.Label{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name: "b",
 				Hostnames: []string{
@@ -539,87 +539,88 @@ func TestImageTxn(t *testing.T) {
 	)
 }
 
-func checkLabel(t *testing.T, conn db.Conn, stc stitch.Stitch, exp ...db.Label) {
-	var labels []db.Label
+func checkLoadBalancer(t *testing.T, conn db.Conn, stc stitch.Stitch,
+	exp ...db.LoadBalancer) {
+	var loadBalancers []db.LoadBalancer
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		updatePolicy(view, stc.String())
-		labels = view.SelectFromLabel(nil)
+		loadBalancers = view.SelectFromLoadBalancer(nil)
 		return nil
 	})
 
 	key := func(intf interface{}) interface{} {
-		label := intf.(db.Label)
+		lb := intf.(db.LoadBalancer)
 		return struct {
-			Label, IP, Hostnames string
+			Name, IP, Hostnames string
 		}{
-			label.Label, label.IP, fmt.Sprintf("%+v", label.Hostnames),
+			lb.Name, lb.IP, fmt.Sprintf("%+v", lb.Hostnames),
 		}
 	}
 	_, lonelyLeft, lonelyRight := join.HashJoin(
-		db.LabelSlice(labels), db.LabelSlice(exp), key, key)
-	assert.Empty(t, lonelyLeft, "unexpected labels")
-	assert.Empty(t, lonelyRight, "missing labels")
+		db.LoadBalancerSlice(loadBalancers), db.LoadBalancerSlice(exp), key, key)
+	assert.Empty(t, lonelyLeft, "unexpected load balancers")
+	assert.Empty(t, lonelyRight, "missing load balancers")
 }
 
-func TestLabelTxn(t *testing.T) {
+func TestLoadBalancerTxn(t *testing.T) {
 	t.Parallel()
 	conn := db.New()
 
-	labelA := "labelA"
-	labelAIP := "8.8.8.8"
+	loadBalancerA := "loadBalancerA"
+	loadBalancerAIP := "8.8.8.8"
 	hostnamesA := []string{"a", "aa"}
 
-	// Insert a label into an empty db.
-	checkLabel(t, conn, stitch.Stitch{
-		Labels: []stitch.Label{
+	// Insert a load balancer into an empty db.
+	checkLoadBalancer(t, conn, stitch.Stitch{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
-				Name:      labelA,
+				Name:      loadBalancerA,
 				Hostnames: hostnamesA,
 			},
 		},
-	}, db.Label{
-		Label:     labelA,
+	}, db.LoadBalancer{
+		Name:      loadBalancerA,
 		Hostnames: hostnamesA,
 	})
 
-	// Simulate allocating an IP to the label. Ensure it doesn't get overwritten
-	// in the join.
-	conn.Txn(db.LabelTable).Run(func(view db.Database) error {
-		label := view.SelectFromLabel(func(label db.Label) bool {
-			return label.Label == labelA
+	// Simulate allocating an IP to the load balancer. Ensure it doesn't get
+	// overwritten in the join.
+	conn.Txn(db.LoadBalancerTable).Run(func(view db.Database) error {
+		lb := view.SelectFromLoadBalancer(func(lb db.LoadBalancer) bool {
+			return lb.Name == loadBalancerA
 		})[0]
-		label.IP = labelAIP
-		view.Commit(label)
+		lb.IP = loadBalancerAIP
+		view.Commit(lb)
 		return nil
 	})
 
 	hostnamesANew := []string{"a", "aa", "aaa"}
-	checkLabel(t, conn, stitch.Stitch{
-		Labels: []stitch.Label{
+	checkLoadBalancer(t, conn, stitch.Stitch{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
-				Name:      labelA,
+				Name:      loadBalancerA,
 				Hostnames: hostnamesANew,
 			},
 		},
-	}, db.Label{
-		Label:     labelA,
+	}, db.LoadBalancer{
+		Name:      loadBalancerA,
 		Hostnames: hostnamesANew,
-		IP:        labelAIP,
+		IP:        loadBalancerAIP,
 	})
 
-	// Change the deployment so that the current label is removed, and a
+	// Change the deployment so that the current load balancer is removed, and a
 	// different one is inserted.
-	labelB := "labelB"
+	loadBalancerB := "loadBalancerB"
 	hostnamesB := []string{"b", "bb"}
-	checkLabel(t, conn, stitch.Stitch{
-		Labels: []stitch.Label{
+	checkLoadBalancer(t, conn, stitch.Stitch{
+		LoadBalancers: []stitch.LoadBalancer{
 			{
-				Name:      labelB,
+				Name:      loadBalancerB,
 				Hostnames: hostnamesB,
 			},
 		},
-	}, db.Label{
-		Label:     labelB,
+	}, db.LoadBalancer{
+		Name:      loadBalancerB,
 		Hostnames: hostnamesB,
 	})
 }
