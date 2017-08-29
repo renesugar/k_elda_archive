@@ -3,20 +3,8 @@
 /* eslint-disable import/no-extraneous-dependencies */
 const chai = require('chai');
 const chaiSubset = require('chai-subset');
-const {
-  Container,
-  Image,
-  Machine,
-  Port,
-  PortRange,
-  Range,
-  LoadBalancer,
-  allow,
-  createDeployment,
-  publicInternet,
-  resetGlobals,
-  baseInfrastructure,
-} = require('./bindings.js');
+
+const b = require('./bindings.js');
 
 chai.use(chaiSubset);
 const { expect } = chai;
@@ -24,8 +12,8 @@ const { expect } = chai;
 describe('Bindings', () => {
   let deployment;
   beforeEach(() => {
-    resetGlobals();
-    deployment = createDeployment();
+    b.resetGlobals();
+    deployment = b.createDeployment();
   });
 
   const checkMachines = function checkMachines(expected) {
@@ -60,13 +48,13 @@ describe('Bindings', () => {
 
   describe('Machine', () => {
     it('basic', () => {
-      deployment.deploy([new Machine({
+      deployment.deploy([new b.Machine({
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
-        cpu: new Range(2, 4),
-        ram: new Range(4, 8),
+        cpu: new b.Range(2, 4),
+        ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key1', 'key2'],
       })]);
@@ -76,27 +64,27 @@ describe('Bindings', () => {
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
-        cpu: new Range(2, 4),
-        ram: new Range(4, 8),
+        cpu: new b.Range(2, 4),
+        ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key1', 'key2'],
       }]);
     });
     it('errors when passed invalid optional arguments', () => {
-      expect(() => new Machine({ badArg: 'foo' })).to
+      expect(() => new b.Machine({ badArg: 'foo' })).to
         .throw('Unrecognized keys passed to Machine constructor: badArg');
-      expect(() => new Machine({
+      expect(() => new b.Machine({
         badArg: 'foo', provider: 'Amazon', alsoBad: 'bar' }))
         .to.throw('Unrecognized keys passed to Machine constructor: ');
     });
     it('hash independent of SSH keys', () => {
-      deployment.deploy([new Machine({
+      deployment.deploy([new b.Machine({
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
-        cpu: new Range(2, 4),
-        ram: new Range(4, 8),
+        cpu: new b.Range(2, 4),
+        ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key3'],
       })]);
@@ -106,14 +94,14 @@ describe('Bindings', () => {
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
-        cpu: new Range(2, 4),
-        ram: new Range(4, 8),
+        cpu: new b.Range(2, 4),
+        ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key3'],
       }]);
     });
     it('replicate', () => {
-      const baseMachine = new Machine({ provider: 'Amazon' });
+      const baseMachine = new b.Machine({ provider: 'Amazon' });
       deployment.deploy(baseMachine.asMaster().replicate(2));
       checkMachines([
         {
@@ -129,7 +117,7 @@ describe('Bindings', () => {
       ]);
     });
     it('replicate independent', () => {
-      const baseMachine = new Machine({ provider: 'Amazon' });
+      const baseMachine = new b.Machine({ provider: 'Amazon' });
       const machines = baseMachine.asMaster().replicate(2);
       machines[0].sshKeys.push('key');
       deployment.deploy(machines);
@@ -148,7 +136,7 @@ describe('Bindings', () => {
       ]);
     });
     it('set floating IP', () => {
-      const baseMachine = new Machine({
+      const baseMachine = new b.Machine({
         provider: 'Amazon',
         floatingIp: 'xxx.xxx.xxx.xxx',
       });
@@ -162,7 +150,7 @@ describe('Bindings', () => {
       }]);
     });
     it('preemptible attribute', () => {
-      deployment.deploy(new Machine({
+      deployment.deploy(new b.Machine({
         provider: 'Amazon',
         preemptible: true,
       }).asMaster());
@@ -177,10 +165,10 @@ describe('Bindings', () => {
 
   describe('Container', () => {
     it('basic', () => {
-      deployment.deploy(new Container('host', 'image'));
+      deployment.deploy(new b.Container('host', 'image'));
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
-        image: new Image('image'),
+        image: new b.Image('image'),
         hostname: 'host',
         command: [],
         env: {},
@@ -188,18 +176,18 @@ describe('Bindings', () => {
       }]);
     });
     it('errors when passed invalid optional arguments', () => {
-      expect(() => new Container('host', 'image', { badArg: 'foo' })).to
+      expect(() => new b.Container('host', 'image', { badArg: 'foo' })).to
         .throw('Unrecognized keys passed to Container constructor: badArg');
-      expect(() => new Container('host', 'image',
+      expect(() => new b.Container('host', 'image',
         { badArg: 'foo', command: [], alsoBad: 'bar' }))
         .to.throw('Unrecognized keys passed to Container constructor: ');
     });
     it('containers are not duplicated', () => {
-      const container = new Container('host', 'image');
+      const container = new b.Container('host', 'image');
       deployment.deploy([container, container]);
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
-        image: new Image('image'),
+        image: new b.Image('image'),
         hostname: 'host',
         command: [],
         env: {},
@@ -207,12 +195,12 @@ describe('Bindings', () => {
       }]);
     });
     it('command', () => {
-      deployment.deploy(new Container('host', 'image', {
+      deployment.deploy(new b.Container('host', 'image', {
         command: ['arg1', 'arg2'],
       }));
       checkContainers([{
         id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
-        image: new Image('image'),
+        image: new b.Image('image'),
         command: ['arg1', 'arg2'],
         hostname: 'host',
         env: {},
@@ -220,12 +208,12 @@ describe('Bindings', () => {
       }]);
     });
     it('env', () => {
-      const c = new Container('host', 'image');
+      const c = new b.Container('host', 'image');
       c.env.foo = 'bar';
       deployment.deploy(c);
       checkContainers([{
         id: '299619d3fb4b89fd5cc822983bc3fbcced2f0a98',
-        image: new Image('image'),
+        image: new b.Image('image'),
         command: [],
         env: { foo: 'bar' },
         hostname: 'host',
@@ -233,12 +221,12 @@ describe('Bindings', () => {
       }]);
     });
     it('hostname', () => {
-      const c = new Container('host', new Image('image'));
+      const c = new b.Container('host', new b.Image('image'));
       deployment.deploy(c);
       expect(c.getHostname()).to.equal('host.q');
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
-        image: new Image('image'),
+        image: new b.Image('image'),
         command: [],
         env: {},
         filepathToContent: {},
@@ -246,19 +234,19 @@ describe('Bindings', () => {
       }]);
     });
     it('repeated hostnames don\'t conflict', () => {
-      const a = new Container('host', 'image');
-      const b = new Container('host', 'image');
-      deployment.deploy([a, b]);
+      const x = new b.Container('host', 'image');
+      const y = new b.Container('host', 'image');
+      deployment.deploy([x, y]);
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
-        image: new Image('image'),
+        image: new b.Image('image'),
         command: [],
         env: {},
         filepathToContent: {},
         hostname: 'host',
       }, {
         id: '968bcf8c6d235afbc88aec8e1bdddc506714a0b8',
-        image: new Image('image'),
+        image: new b.Image('image'),
         command: [],
         env: {},
         filepathToContent: {},
@@ -266,22 +254,22 @@ describe('Bindings', () => {
       }]);
     });
     it('Container.hostname and LoadBalancer.hostname don\'t conflict', () => {
-      const container = new Container('foo', 'image');
-      const serv = new LoadBalancer('foo', []);
+      const container = new b.Container('foo', 'image');
+      const serv = new b.LoadBalancer('foo', []);
       expect(container.getHostname()).to.equal('foo.q');
       expect(serv.hostname()).to.equal('foo2.q');
     });
     it('hostnames returned by uniqueHostname cannot be reused', () => {
-      const containerA = new Container('host', 'ignoreme');
-      const containerB = new Container('host', 'ignoreme');
-      const containerC = new Container('host2', 'ignoreme');
+      const containerA = new b.Container('host', 'ignoreme');
+      const containerB = new b.Container('host', 'ignoreme');
+      const containerC = new b.Container('host2', 'ignoreme');
       const hostnames = [containerA, containerB, containerC]
         .map(c => c.getHostname());
       const hostnameSet = new Set(hostnames);
       expect(hostnames.length).to.equal(hostnameSet.size);
     });
     it('clone increments existing index if one exists', () => {
-      const containerA = new Container('host', 'ignoreme');
+      const containerA = new b.Container('host', 'ignoreme');
       const containerB = containerA.clone();
       const containerC = containerB.clone();
       expect(containerA.getHostname()).to.equal('host.q');
@@ -289,20 +277,20 @@ describe('Bindings', () => {
       expect(containerC.getHostname()).to.equal('host3.q');
     });
     it('duplicate hostname causes error', () => {
-      const a = new Container('host', 'image');
-      a.hostname = 'host';
-      const b = new Container('host', 'image');
-      b.hostname = 'host';
-      deployment.deploy([a, b]);
+      const x = new b.Container('host', 'image');
+      x.hostname = 'host';
+      const y = new b.Container('host', 'image');
+      y.hostname = 'host';
+      deployment.deploy([x, y]);
       expect(() => deployment.toQuiltRepresentation()).to
         .throw('hostname "host" used multiple times');
     });
     it('image dockerfile', () => {
-      const c = new Container('host', new Image('name', 'dockerfile'));
-      deployment.deploy(c);
+      const z = new b.Container('host', new b.Image('name', 'dockerfile'));
+      deployment.deploy(z);
       checkContainers([{
         id: 'fbc9aedb5af0039b8cf09bca2ef5771467b44085',
-        image: new Image('name', 'dockerfile'),
+        image: new b.Image('name', 'dockerfile'),
         hostname: 'host',
         command: [],
         env: {},
@@ -310,13 +298,13 @@ describe('Bindings', () => {
       }]);
     });
     it('replicate', () => {
-      deployment.deploy(new Container('host', 'image', {
+      deployment.deploy(new b.Container('host', 'image', {
         command: ['arg'],
       }).replicate(2));
       checkContainers([
         {
           id: 'aaf63faa86e552ec4ca75ab66e1b14a5993fa29d',
-          image: new Image('image'),
+          image: new b.Image('image'),
           command: ['arg'],
           hostname: 'host2',
           env: {},
@@ -324,7 +312,7 @@ describe('Bindings', () => {
         },
         {
           id: '339b2dafcb9fd3c17f01930b5c4782e8d7a9c1b8',
-          image: new Image('image'),
+          image: new b.Image('image'),
           command: ['arg'],
           hostname: 'host3',
           env: {},
@@ -333,7 +321,7 @@ describe('Bindings', () => {
       ]);
     });
     it('replicate independent', () => {
-      const repl = new Container('host', 'image', {
+      const repl = new b.Container('host', 'image', {
         command: ['arg'],
       }).replicate(2);
       repl[0].env.foo = 'bar';
@@ -342,7 +330,7 @@ describe('Bindings', () => {
       checkContainers([
         {
           id: '339b2dafcb9fd3c17f01930b5c4782e8d7a9c1b8',
-          image: new Image('image'),
+          image: new b.Image('image'),
           command: ['arg'],
           hostname: 'host3',
           env: {},
@@ -350,7 +338,7 @@ describe('Bindings', () => {
         },
         {
           id: 'b318fc1c08ee0a8d74d99f8023112f323268e479',
-          image: new Image('image'),
+          image: new b.Image('image'),
           command: ['arg', 'changed'],
           env: { foo: 'bar' },
           hostname: 'host2',
@@ -362,7 +350,7 @@ describe('Bindings', () => {
 
   describe('Container attributes', () => {
     const hostname = 'host';
-    const image = new Image('image');
+    const image = new b.Image('image');
     const command = ['arg1', 'arg2'];
     const env = { foo: 'bar' };
     const filepathToContent = { qux: 'quuz' };
@@ -371,7 +359,7 @@ describe('Bindings', () => {
       // constructor because the hostname ID increases with each with*
       // call.
       const id = 'f5c3e0fa3843e6fa149289d476f507831a45654d';
-      deployment.deploy(new Container(hostname, image, {
+      deployment.deploy(new b.Container(hostname, image, {
         command,
       }).withEnv(env)
         .withFiles(filepathToContent));
@@ -386,7 +374,7 @@ describe('Bindings', () => {
     });
     it('constructor', () => {
       const id = '9f9d0c0868163eda5b4ad5861c9558f055508959';
-      deployment.deploy(new Container(hostname, image, {
+      deployment.deploy(new b.Container(hostname, image, {
         command, env, filepathToContent,
       }));
       checkContainers([{
@@ -398,7 +386,7 @@ describe('Bindings', () => {
   describe('Placement', () => {
     let target;
     beforeEach(() => {
-      target = new Container('host', 'image');
+      target = new b.Container('host', 'image');
       deployment.deploy(target);
     });
     it('MachineRule size, region, provider', () => {
@@ -441,16 +429,16 @@ describe('Bindings', () => {
   describe('LoadBalancer', () => {
     it('basic', () => {
       deployment.deploy(
-        new LoadBalancer('web_tier', [new Container('host', 'nginx')]));
+        new b.LoadBalancer('web_tier', [new b.Container('host', 'nginx')]));
       checkLoadBalancers([{
         name: 'web_tier',
         hostnames: ['host'],
       }]);
     });
     it('multiple containers', () => {
-      deployment.deploy(new LoadBalancer('web_tier', [
-        new Container('host', 'nginx'),
-        new Container('host', 'nginx'),
+      deployment.deploy(new b.LoadBalancer('web_tier', [
+        new b.Container('host', 'nginx'),
+        new b.Container('host', 'nginx'),
       ]));
       checkLoadBalancers([{
         name: 'web_tier',
@@ -465,15 +453,15 @@ describe('Bindings', () => {
                containers so that the two deployed containers have _refID's
                that are sorted differently lexicographically and numerically. */
       for (let i = 0; i < 2; i += 1) {
-        new Container('host', 'image'); // eslint-disable-line no-new
+        new b.Container('host', 'image'); // eslint-disable-line no-new
       }
-      deployment.deploy(new LoadBalancer('foo', [
-        new Container('host', 'image')]));
+      deployment.deploy(new b.LoadBalancer('foo', [
+        new b.Container('host', 'image')]));
       for (let i = 0; i < 7; i += 1) {
-        new Container('host', 'image'); // eslint-disable-line no-new
+        new b.Container('host', 'image'); // eslint-disable-line no-new
       }
-      deployment.deploy(new LoadBalancer('foo', [
-        new Container('host', 'image')]));
+      deployment.deploy(new b.LoadBalancer('foo', [
+        new b.Container('host', 'image')]));
       checkLoadBalancers([
         {
           name: 'foo',
@@ -486,7 +474,7 @@ describe('Bindings', () => {
       ]);
     });
     it('get LoadBalancer hostname', () => {
-      const foo = new LoadBalancer('foo', []);
+      const foo = new b.LoadBalancer('foo', []);
       expect(foo.hostname()).to.equal('foo.q');
     });
   });
@@ -495,9 +483,9 @@ describe('Bindings', () => {
     let bar;
     let fooLoadBalancer;
     beforeEach(() => {
-      foo = new Container('foo', 'image');
-      fooLoadBalancer = new LoadBalancer('fooLoadBalancer', [foo]);
-      bar = new Container('bar', 'image');
+      foo = new b.Container('foo', 'image');
+      fooLoadBalancer = new b.LoadBalancer('fooLoadBalancer', [foo]);
+      bar = new b.Container('bar', 'image');
       deployment.deploy([foo, bar, fooLoadBalancer]);
     });
     it('autobox port ranges', () => {
@@ -510,7 +498,7 @@ describe('Bindings', () => {
       }]);
     });
     it('port', () => {
-      bar.allowFrom(foo, new Port(80));
+      bar.allowFrom(foo, new b.Port(80));
       checkConnections([{
         from: 'foo',
         to: 'bar',
@@ -519,7 +507,7 @@ describe('Bindings', () => {
       }]);
     });
     it('port range', () => {
-      bar.allowFrom(foo, new PortRange(80, 85));
+      bar.allowFrom(foo, new b.PortRange(80, 85));
       checkConnections([{
         from: 'foo',
         to: 'bar',
@@ -532,7 +520,7 @@ describe('Bindings', () => {
         .throw('Input argument must be a number or a Range');
     });
     it('allow connections to publicInternet', () => {
-      publicInternet.allowFrom(foo, 80);
+      b.publicInternet.allowFrom(foo, 80);
       checkConnections([{
         from: 'foo',
         to: 'public',
@@ -541,7 +529,7 @@ describe('Bindings', () => {
       }]);
     });
     it('allow connections from publicInternet', () => {
-      foo.allowFrom(publicInternet, 80);
+      foo.allowFrom(b.publicInternet, 80);
       checkConnections([{
         from: 'public',
         to: 'foo',
@@ -560,13 +548,13 @@ describe('Bindings', () => {
     });
     it('connect to publicInternet port range', () => {
       expect(() =>
-        publicInternet.allowFrom(foo, new PortRange(80, 81))).to
+        b.publicInternet.allowFrom(foo, new b.PortRange(80, 81))).to
         .throw('public internet can only connect to single ports ' +
                         'and not to port ranges');
     });
     it('connect from publicInternet port range', () => {
       expect(() =>
-        foo.allowFrom(publicInternet, new PortRange(80, 81))).to
+        foo.allowFrom(b.publicInternet, new b.PortRange(80, 81))).to
         .throw('public internet can only connect to single ports ' +
                         'and not to port ranges');
     });
@@ -587,14 +575,14 @@ describe('Bindings', () => {
     let quxQuuzGroup;
     let lb;
     beforeEach(() => {
-      foo = new Container('foo', 'image');
-      bar = new Container('bar', 'image');
-      qux = new Container('qux', 'image');
-      quuz = new Container('quuz', 'image');
+      foo = new b.Container('foo', 'image');
+      bar = new b.Container('bar', 'image');
+      qux = new b.Container('qux', 'image');
+      quuz = new b.Container('quuz', 'image');
 
       fooBarGroup = [foo, bar];
       quxQuuzGroup = [qux, quuz];
-      lb = new LoadBalancer('serv', [foo, bar, qux, quuz]);
+      lb = new b.LoadBalancer('serv', [foo, bar, qux, quuz]);
 
       deployment.deploy(fooBarGroup);
       deployment.deploy(quxQuuzGroup);
@@ -602,7 +590,7 @@ describe('Bindings', () => {
     });
 
     it('both src and dst are lists', () => {
-      allow(quxQuuzGroup, fooBarGroup, 80);
+      b.allow(quxQuuzGroup, fooBarGroup, 80);
       checkConnections([
         { from: 'qux', to: 'foo', minPort: 80, maxPort: 80 },
         { from: 'qux', to: 'bar', minPort: 80, maxPort: 80 },
@@ -612,7 +600,7 @@ describe('Bindings', () => {
     });
 
     it('dst is a list', () => {
-      allow(qux, fooBarGroup, 80);
+      b.allow(qux, fooBarGroup, 80);
       checkConnections([
         { from: 'qux', to: 'foo', minPort: 80, maxPort: 80 },
         { from: 'qux', to: 'bar', minPort: 80, maxPort: 80 },
@@ -620,7 +608,7 @@ describe('Bindings', () => {
     });
 
     it('src is a list', () => {
-      allow(fooBarGroup, qux, 80);
+      b.allow(fooBarGroup, qux, 80);
       checkConnections([
         { from: 'foo', to: 'qux', minPort: 80, maxPort: 80 },
         { from: 'bar', to: 'qux', minPort: 80, maxPort: 80 },
@@ -628,7 +616,7 @@ describe('Bindings', () => {
     });
 
     it('src is public', () => {
-      allow(publicInternet, fooBarGroup, 80);
+      b.allow(b.publicInternet, fooBarGroup, 80);
       checkConnections([
         { from: 'public', to: 'foo', minPort: 80, maxPort: 80 },
         { from: 'public', to: 'bar', minPort: 80, maxPort: 80 },
@@ -636,7 +624,7 @@ describe('Bindings', () => {
     });
 
     it('dst is public', () => {
-      allow(fooBarGroup, publicInternet, 80);
+      b.allow(fooBarGroup, b.publicInternet, 80);
       checkConnections([
         { from: 'foo', to: 'public', minPort: 80, maxPort: 80 },
         { from: 'bar', to: 'public', minPort: 80, maxPort: 80 },
@@ -644,7 +632,7 @@ describe('Bindings', () => {
     });
 
     it('dst is a LoadBalancer', () => {
-      allow(fooBarGroup, lb, 80);
+      b.allow(fooBarGroup, lb, 80);
       checkConnections([
         { from: 'foo', to: 'serv', minPort: 80, maxPort: 80 },
         { from: 'bar', to: 'serv', minPort: 80, maxPort: 80 },
@@ -655,40 +643,40 @@ describe('Bindings', () => {
     let foo;
     const deploy = () => deployment.toQuiltRepresentation();
     beforeEach(() => {
-      foo = new LoadBalancer('foo', []);
+      foo = new b.LoadBalancer('foo', []);
       deployment.deploy([foo]);
     });
     it('connect from undeployed container', () => {
-      foo.allowFrom(new Container('baz', 'image'), 80);
+      foo.allowFrom(new b.Container('baz', 'image'), 80);
       expect(deploy).to.throw(
         'connection {"from":"baz","maxPort":80,"minPort":80,' +
                 '"to":"foo"} references an undefined hostname: baz');
     });
     it('duplicate image', () => {
-      deployment.deploy(new Container('host', new Image('img', 'dk')));
-      deployment.deploy(new Container('host', new Image('img', 'dk')));
+      deployment.deploy(new b.Container('host', new b.Image('img', 'dk')));
+      deployment.deploy(new b.Container('host', new b.Image('img', 'dk')));
       expect(deploy).to.not.throw();
     });
     it('duplicate image with different Dockerfiles', () => {
-      deployment.deploy(new Container('host', new Image('img', 'dk')));
-      deployment.deploy(new Container('host', new Image('img', 'dk2')));
+      deployment.deploy(new b.Container('host', new b.Image('img', 'dk')));
+      deployment.deploy(new b.Container('host', new b.Image('img', 'dk2')));
       expect(deploy).to.throw('img has differing Dockerfiles');
     });
     it('machines with same regions/providers', () => {
-      deployment.deploy([new Machine({
+      deployment.deploy([new b.Machine({
         provider: 'Amazon',
         region: 'us-west-2',
-      }), new Machine({
+      }), new b.Machine({
         provider: 'Amazon',
         region: 'us-west-2',
       })]);
       expect(deploy).to.not.throw();
     });
     it('machines with different regions', () => {
-      deployment.deploy([new Machine({
+      deployment.deploy([new b.Machine({
         provider: 'Amazon',
         region: 'us-west-2',
-      }), new Machine({
+      }), new b.Machine({
         provider: 'Amazon',
         region: 'us-east-2',
       })]);
@@ -697,10 +685,10 @@ describe('Bindings', () => {
         + 'region \'us-east-2\'.');
     });
     it('machines with different providers', () => {
-      deployment.deploy([new Machine({
+      deployment.deploy([new b.Machine({
         provider: 'Amazon',
         region: '',
-      }), new Machine({
+      }), new b.Machine({
         provider: 'DigitalOcean',
         region: '',
       })]);
@@ -714,10 +702,10 @@ describe('Bindings', () => {
       deployment.deploy({
         deploy(dep) {
           dep.deploy([
-            new LoadBalancer('web_tier', [
-              new Container('host', 'nginx')]),
-            new LoadBalancer('web_tier2', [
-              new Container('host', 'nginx')]),
+            new b.LoadBalancer('web_tier', [
+              new b.Container('host', 'nginx')]),
+            new b.LoadBalancer('web_tier2', [
+              new b.Container('host', 'nginx')]),
           ]);
         },
       });
@@ -742,16 +730,16 @@ describe('Bindings', () => {
   });
   describe('Create Deployment', () => {
     it('no args', () => {
-      expect(createDeployment).to.not.throw();
+      expect(b.createDeployment).to.not.throw();
     });
     it('should error when given invalid arguments', () => {
-      expect(() => createDeployment({ badArg: 'foo' }))
+      expect(() => b.createDeployment({ badArg: 'foo' }))
         .to.throw('Unrecognized keys passed to Deployment constructor: badArg');
     });
   });
   describe('Query', () => {
     it('namespace', () => {
-      deployment = createDeployment({ namespace: 'myNamespace' });
+      deployment = b.createDeployment({ namespace: 'myNamespace' });
       expect(deployment.toQuiltRepresentation().namespace).to.equal(
         'myNamespace');
     });
@@ -760,14 +748,14 @@ describe('Bindings', () => {
         'default-namespace');
     });
     it('max price', () => {
-      deployment = createDeployment({ maxPrice: 5 });
+      deployment = b.createDeployment({ maxPrice: 5 });
       expect(deployment.toQuiltRepresentation().maxPrice).to.equal(5);
     });
     it('default max price', () => {
       expect(deployment.toQuiltRepresentation().maxPrice).to.equal(0);
     });
     it('admin ACL', () => {
-      deployment = createDeployment({ adminACL: ['local'] });
+      deployment = b.createDeployment({ adminACL: ['local'] });
       expect(deployment.toQuiltRepresentation().adminACL).to.eql(
         ['local']);
     });
@@ -779,7 +767,7 @@ describe('Bindings', () => {
   describe('baseInfrastructure', () => {
     it('should error if name is not a string', () => {
       const expectedFail = () => {
-        baseInfrastructure(1);
+        b.baseInfrastructure(1);
       };
       expect(expectedFail).to.throw('name must be a string');
     });
