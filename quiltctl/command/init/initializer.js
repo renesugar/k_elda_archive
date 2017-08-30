@@ -52,7 +52,7 @@ function createFileFromTemplate(templateLocation, context, destination) {
   * @return {void}
   */
 function makeDirPath(filePath) {
-  const lastSlash = filePath.lastIndexOf('/');
+  const lastSlash = filePath.lastIndexOf(path.sep);
   const directories = filePath.slice(0, lastSlash);
   const fullPath = path.join(os.homedir(), directories);
 
