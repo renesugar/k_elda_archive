@@ -6,7 +6,9 @@ const stringify = require('json-stable-stringify');
 const _ = require('underscore');
 const path = require('path');
 const os = require('os');
-const fs = require('fs');
+
+// Use `let` to enable mocking of `fs` in tests.
+let fs = require('fs'); // eslint-disable-line prefer-const
 
 const githubCache = {};
 const objectHasKey = Object.prototype.hasOwnProperty;
@@ -52,6 +54,24 @@ function getInfraPath(infraName) {
 }
 
 /**
+ * Returns the Deployment exported by the infrastructure in the given blueprint.
+ * Having this as a separate function simplifies testing baseInfrastructure().
+ * @private
+ *
+ * @param {string} infraPath - Absolute path to the infrastructure blueprint.
+ * @return {Deployment} - The Deployment exported by the infrastructure
+ *  blueprint.
+ */
+function getInfraDeployment(infraPath) {
+  const infraGetter = require(infraPath); // eslint-disable-line
+
+  // By passing this module to the infraGetter, the blueprint doesn't have to
+  // require Quilt directly and we thus don't have to `npm install` in the
+  // infrastructure directory, which would be messy.
+  return infraGetter(module.exports);
+}
+
+/**
  * Returns a base infrastructure. The infrastructure can be deployed to simply
  * by calling .deploy() on the returned object.
  * The base infrastructure could be created with `quilt init`.
@@ -70,12 +90,7 @@ function baseInfrastructure(name = 'default') {
     throw new Error(`no infrastructure called ${name}. Use 'quilt init' ` +
       'to create a new infrastructure.');
   }
-  const infraGetter = require(infraPath); // eslint-disable-line
-
-  // By passing this module to the infraGetter, the blueprint doesn't have to
-  // require Quilt directly and we thus don't have to `npm install` in the
-  // infrastructure directory, which would be messy.
-  return infraGetter(module.exports);
+  return getInfraDeployment(infraPath);
 }
 
 // The default deployment object. createDeployment overwrites this.
@@ -1158,5 +1173,6 @@ module.exports = {
   githubKeys,
   publicInternet,
   resetGlobals,
+  getInfraPath,
   baseInfrastructure,
 };

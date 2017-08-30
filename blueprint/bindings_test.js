@@ -1,10 +1,12 @@
 /* eslint-env mocha */
 
-/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable import/no-extraneous-dependencies, no-underscore-dangle */
 const chai = require('chai');
 const chaiSubset = require('chai-subset');
+const rewire = require('rewire');
+const sinon = require('sinon');
 
-const b = require('./bindings.js');
+const b = rewire('./bindings.js');
 
 chai.use(chaiSubset);
 const { expect } = chai;
@@ -764,12 +766,56 @@ describe('Bindings', () => {
     });
   });
   describe('githubKeys()', () => {});
-  describe('baseInfrastructure', () => {
+  describe('baseInfrastructure()', () => {
+    let fsExistsStub;
+    let revertFs;
+
+    beforeEach(() => {
+      fsExistsStub = sinon.stub();
+      const fsMock = {
+        existsSync: fsExistsStub,
+      };
+      revertFs = b.__set__('fs', fsMock);
+    });
+
+    afterEach(() => {
+      revertFs();
+    });
+
     it('should error if name is not a string', () => {
       const expectedFail = () => {
         b.baseInfrastructure(1);
       };
       expect(expectedFail).to.throw('name must be a string');
+    });
+
+    it('should error when the infrastructure doesn\'t exist', () => {
+      fsExistsStub.withArgs(b.getInfraPath('foo')).returns(false);
+      const expectedFail = () => {
+        b.baseInfrastructure('foo');
+      };
+      expect(expectedFail).to.throw('no infrastructure called foo');
+    });
+
+    it('should return the deployment object when the infra exists', () => {
+      const expected = 'someDeployment';
+      const infraPath = b.getInfraPath('foo');
+
+      const getInfraStub = sinon.stub();
+      getInfraStub.withArgs(infraPath).returns(expected);
+      const revertGetInfra = b.__set__('getInfraDeployment', getInfraStub);
+
+      fsExistsStub.withArgs(infraPath).returns(true);
+
+      let output;
+      const expectedPass = () => {
+        output = b.baseInfrastructure('foo');
+      };
+
+      expect(expectedPass).to.not.throw();
+      expect(output).to.equal(expected);
+
+      revertGetInfra();
     });
   });
 });
