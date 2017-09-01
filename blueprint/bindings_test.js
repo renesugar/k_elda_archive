@@ -780,6 +780,7 @@ describe('Bindings', () => {
 
     afterEach(() => {
       revertFs();
+      fsExistsStub.resetBehavior();
     });
 
     it('should error if name is not a string', () => {
