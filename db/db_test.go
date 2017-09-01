@@ -467,9 +467,6 @@ func TestProvider(t *testing.T) {
 
 	_, err = ParseProvider("error")
 	assert.Error(t, err)
-
-	assert.Equal(t, Amazon, ProviderSlice([]Provider{Amazon}).Get(0))
-	assert.Equal(t, 1, ProviderSlice([]Provider{Amazon}).Len())
 }
 
 func TestRowSlice(t *testing.T) {

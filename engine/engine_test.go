@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/stitch"
 	"github.com/stretchr/testify/assert"
 )
@@ -117,15 +116,19 @@ func TestEngine(t *testing.T) {
 
 	// This function checks whether there is a one-to-one mapping for each machine
 	// in `slice` to a provider in `providers`.
-	providersInSlice := func(slice db.MachineSlice, providers db.ProviderSlice) bool {
-		lKey := func(left interface{}) interface{} {
-			return left.(db.Machine).Provider
+	assertProvidersInSlice := func(slice db.MachineSlice, providers []db.Provider) {
+		for _, p := range providers {
+			found := false
+			for _, m := range slice {
+				if m.Provider == p {
+					found = true
+					break
+				}
+			}
+			assert.True(t, found)
 		}
-		rKey := func(right interface{}) interface{} {
-			return right.(db.Provider)
-		}
-		_, l, r := join.HashJoin(slice, providers, lKey, rKey)
-		return len(l) == 0 && len(r) == 0
+		// Make sure there are no extra machines.
+		assert.Equal(t, len(slice), len(providers))
 	}
 
 	/* Test mixed providers. */
@@ -138,9 +141,8 @@ func TestEngine(t *testing.T) {
 		},
 	}, "")
 	masters, workers = selectMachines(conn)
-	assert.True(t, providersInSlice(masters,
-		db.ProviderSlice{db.Amazon, db.Vagrant}))
-	assert.True(t, providersInSlice(workers, db.ProviderSlice{db.Amazon, db.Google}))
+	assertProvidersInSlice(masters, []db.Provider{db.Amazon, db.Vagrant})
+	assertProvidersInSlice(workers, []db.Provider{db.Amazon, db.Google})
 
 	/* Test that machines with different providers don't match. */
 	updateStitch(t, conn, stitch.Stitch{
@@ -150,7 +152,7 @@ func TestEngine(t *testing.T) {
 		},
 	}, "")
 	masters, _ = selectMachines(conn)
-	assert.True(t, providersInSlice(masters, db.ProviderSlice{db.Amazon}))
+	assertProvidersInSlice(masters, []db.Provider{db.Amazon})
 }
 
 func TestAdminKey(t *testing.T) {
