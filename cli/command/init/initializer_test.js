@@ -10,6 +10,7 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 
 const consts = require('./constants');
+const util = require('./init-util');
 
 const initializer = rewire('./initializer');
 const Provider = rewire('./provider');
@@ -172,6 +173,134 @@ describe('Initializer', () => {
       };
 
       expect(expectFail).to.throw();
+    });
+  });
+
+  describe('processAnswers()', () => {
+    let revertWriteCreds;
+    let revertFs;
+    let revertFsExtra;
+    let revertSshKey;
+    let writeCredsStub;
+    let writeFileStub;
+    let getSshKeyStub;
+    const provider = { provider: 'provider' };
+
+    beforeEach(() => {
+      const fsExtraMock = {
+        mkdirp: sinon.stub(),
+      };
+
+      writeFileStub = sinon.stub();
+      const fsMock = {
+        existsSync: sinon.stub().returns(true),
+        writeFileSync: writeFileStub,
+        readFileSync: fs.readFileSync,
+      };
+
+      getSshKeyStub = sinon.stub();
+      writeCredsStub = sinon.stub();
+
+      revertFsExtra = initializer.__set__('fsExtra', fsExtraMock);
+      revertFs = initializer.__set__('fs', fsMock);
+      revertSshKey = initializer.__set__('getSshKey', getSshKeyStub);
+      revertWriteCreds = initializer.__set__(
+        'writeProviderCreds', writeCredsStub);
+    });
+
+    afterEach(() => {
+      revertWriteCreds();
+      revertFs();
+      revertFsExtra();
+      revertSshKey();
+      writeFileStub.resetHistory();
+      writeCredsStub.resetHistory();
+      getSshKeyStub.resetBehavior();
+    });
+
+    function checkInfrastructure(answers, expInfraFile) {
+      initializer.processAnswers(provider, answers);
+      expect(getSshKeyStub.called).to.be.true;
+      expect(writeCredsStub.getCall(0).args[0]).to.equal(provider);
+      expect(writeCredsStub.getCall(0).args[1]).to.equal(answers);
+      expect(writeFileStub.getCall(0).args[0]).to.equal(
+        util.infraPath(answers.name));
+      expect(writeFileStub.getCall(0).args[1]).to.equal(expInfraFile);
+    }
+
+    it('should set SSH key and size when provided', () => {
+      getSshKeyStub.returns('key');
+      const answers = {
+        [consts.name]: 'foo',
+        [consts.provider]: 'provider',
+        [consts.size]: 'big',
+        // Size overrides RAM and CPU.
+        [consts.ram]: 2,
+        [consts.cpu]: 1,
+        [consts.preemptible]: true,
+        [consts.region]: 'somewhere',
+        [consts.sshKey]: 'keyOption',
+        [consts.masterCount]: 1,
+        [consts.workerCount]: 2,
+      };
+
+      const expInfraFile = `function infraGetter(quilt) {
+  const inf = quilt.createDeployment({namespace: 'quilt-deployment'});
+
+  var vmTemplate = new quilt.Machine({
+    provider: 'provider',
+    region: 'somewhere',
+    size: 'big',
+    sshKeys: ['key'],
+    preemptible: true
+  });
+
+  inf.deploy(vmTemplate.asMaster().replicate(1));
+  inf.deploy(vmTemplate.asWorker().replicate(2));
+
+  return inf;
+}
+
+module.exports = infraGetter;
+`;
+      checkInfrastructure(answers, expInfraFile);
+    });
+    it('should omit SSH key and size when not provided and use RAM/CPU ' +
+      'instead', () => {
+      getSshKeyStub.returns('');
+      const answers = {
+        [consts.name]: 'foo',
+        [consts.provider]: 'provider',
+        [consts.ram]: 2,
+        [consts.cpu]: 1,
+        [consts.preemptible]: true,
+        [consts.region]: 'somewhere',
+        [consts.sshKey]: 'noKey',
+        [consts.masterCount]: 1,
+        [consts.workerCount]: 2,
+      };
+
+      const expInfraFile = `function infraGetter(quilt) {
+  const inf = quilt.createDeployment({namespace: 'quilt-deployment'});
+
+  var vmTemplate = new quilt.Machine({
+    provider: 'provider',
+    region: 'somewhere',
+    ram: 2,
+    cpu: 1,
+    preemptible: true
+  });
+
+  inf.deploy(vmTemplate.asMaster().replicate(1));
+  inf.deploy(vmTemplate.asWorker().replicate(2));
+
+  return inf;
+}
+
+module.exports = infraGetter;
+`;
+
+      checkInfrastructure(answers, expInfraFile);
     });
   });
 });
