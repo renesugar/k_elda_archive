@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const path = require('path');
-const os = require('os');
 const execSync = require('child_process').execSync;
 const exit = require('process').exit;
 
@@ -44,27 +43,6 @@ function createFileFromTemplate(templateLocation, context, destination) {
 }
 
 /**
-  * Given a file path, recursively create all directories in the path.
-  * This function assumes that the passed in path is to a file, not a directory.
-  *
-  * @param {string} filePath The complete file path for which to create
-  *  directories.
-  * @return {void}
-  */
-function makeDirPath(filePath) {
-  const lastSlash = filePath.lastIndexOf(path.sep);
-  const directories = filePath.slice(0, lastSlash);
-  const fullPath = path.join(os.homedir(), directories);
-
-  fsExtra.mkdirp(fullPath, (err) => {
-    if (err) {
-      throw new Error(
-        `failed to create credentials file in ${fullPath}: ${err}`);
-    }
-  });
-}
-
-/**
   * Create an SSH key pair in the default Quilt SSH key location. Will throw
   * an error if the key creation fails.
   *
@@ -97,7 +75,12 @@ function writeProviderCreds(provider, answers) {
   }
 
   const credentialsDest = provider.getCredsPath();
-  makeDirPath(provider.getCredsPath());
+  fsExtra.mkdirp(path.dirname(credentialsDest), (err) => {
+    if (err) {
+      throw new Error(
+        `failed to create credentials file in ${credentialsDest}: ${err}`);
+    }
+  });
 
   if (provider.credsTemplate !== undefined) {
     const templateFile = path.join(templateDir, provider.getCredsTemplate());
