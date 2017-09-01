@@ -116,7 +116,8 @@ func TestEngine(t *testing.T) {
 
 	// This function checks whether there is a one-to-one mapping for each machine
 	// in `slice` to a provider in `providers`.
-	assertProvidersInSlice := func(slice db.MachineSlice, providers []db.Provider) {
+	assertProvidersInSlice := func(
+		slice db.MachineSlice, providers []db.ProviderName) {
 		for _, p := range providers {
 			found := false
 			for _, m := range slice {
@@ -141,8 +142,8 @@ func TestEngine(t *testing.T) {
 		},
 	}, "")
 	masters, workers = selectMachines(conn)
-	assertProvidersInSlice(masters, []db.Provider{db.Amazon, db.Vagrant})
-	assertProvidersInSlice(workers, []db.Provider{db.Amazon, db.Google})
+	assertProvidersInSlice(masters, []db.ProviderName{db.Amazon, db.Vagrant})
+	assertProvidersInSlice(workers, []db.ProviderName{db.Amazon, db.Google})
 
 	/* Test that machines with different providers don't match. */
 	updateStitch(t, conn, stitch.Stitch{
@@ -152,7 +153,7 @@ func TestEngine(t *testing.T) {
 		},
 	}, "")
 	masters, _ = selectMachines(conn)
-	assertProvidersInSlice(masters, []db.Provider{db.Amazon})
+	assertProvidersInSlice(masters, []db.ProviderName{db.Amazon})
 }
 
 func TestAdminKey(t *testing.T) {

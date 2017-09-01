@@ -19,7 +19,8 @@ type Description struct {
 
 // ChooseSize returns an acceptable machine size for the given provider that fits the
 // provided ram, cpu, and price constraints.
-func ChooseSize(provider db.Provider, ram, cpu stitch.Range, maxPrice float64) string {
+func ChooseSize(provider db.ProviderName, ram, cpu stitch.Range,
+	maxPrice float64) string {
 	switch provider {
 	case db.Amazon:
 		return chooseBestSize(amazonDescriptions, ram, cpu, maxPrice)

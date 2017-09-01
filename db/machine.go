@@ -14,7 +14,7 @@ type Machine struct {
 	/* Populated by the policy engine. */
 	StitchID    string
 	Role        Role
-	Provider    Provider
+	Provider    ProviderName
 	Region      string
 	Size        string
 	DiskSize    int

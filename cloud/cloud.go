@@ -37,7 +37,7 @@ type provider interface {
 var c = counter.New("Cloud")
 
 type launchLoc struct {
-	provider db.Provider
+	provider db.ProviderName
 	region   string
 }
 
@@ -500,7 +500,7 @@ func groupByLoc(machines []db.Machine) map[launchLoc][]db.Machine {
 	return machineMap
 }
 
-func newProviderImpl(p db.Provider, namespace, region string) (provider, error) {
+func newProviderImpl(p db.ProviderName, namespace, region string) (provider, error) {
 	switch p {
 	case db.Amazon:
 		return amazon.New(namespace, region)
@@ -515,7 +515,7 @@ func newProviderImpl(p db.Provider, namespace, region string) (provider, error) 
 	}
 }
 
-func validRegionsImpl(p db.Provider) []string {
+func validRegionsImpl(p db.ProviderName) []string {
 	switch p {
 	case db.Amazon:
 		return amazon.Regions

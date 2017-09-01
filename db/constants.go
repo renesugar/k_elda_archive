@@ -50,33 +50,34 @@ func PBToRole(p pb.MinionConfig_Role) Role {
 	}
 }
 
-// A Provider implements a cloud interface on which machines may be instantiated.
-type Provider string
+// ProviderName describes one of the supported cloud providers. The strings
+// enumerated below must exactly match the name provided by users' JavaScript.
+type ProviderName string
 
 const (
-	// Amazon implements amazon EC2.
-	Amazon Provider = "Amazon"
+	// Amazon implements Amazon EC2.
+	Amazon ProviderName = "Amazon"
 
 	// Google implements Google Cloud Engine.
-	Google Provider = "Google"
+	Google ProviderName = "Google"
 
 	// DigitalOcean implements Digital Ocean Droplets.
-	DigitalOcean Provider = "DigitalOcean"
+	DigitalOcean ProviderName = "DigitalOcean"
 
 	// Vagrant implements local virtual machines.
-	Vagrant Provider = "Vagrant"
+	Vagrant ProviderName = "Vagrant"
 )
 
 // AllProviders lists all of the providers that Quilt supports.
-var AllProviders = []Provider{
+var AllProviders = []ProviderName{
 	Amazon,
 	Google,
 	DigitalOcean,
 	Vagrant,
 }
 
-// ParseProvider returns the Provider represented by 'name' or an error.
-func ParseProvider(name string) (Provider, error) {
+// ParseProvider returns the ProviderName represented by 'name' or an error.
+func ParseProvider(name string) (ProviderName, error) {
 	for _, provider := range AllProviders {
 		if string(provider) == name {
 			return provider, nil

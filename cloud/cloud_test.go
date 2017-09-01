@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var FakeAmazon db.Provider = "FakeAmazon"
-var FakeVagrant db.Provider = "FakeVagrant"
+var FakeAmazon db.ProviderName = "FakeAmazon"
+var FakeVagrant db.ProviderName = "FakeVagrant"
 var testRegion = "Fake region"
 
 type fakeProvider struct {
@@ -32,7 +32,7 @@ type fakeProvider struct {
 	listError error
 }
 
-func fakeValidRegions(p db.Provider) []string {
+func fakeValidRegions(p db.ProviderName) []string {
 	return []string{testRegion}
 }
 
@@ -116,7 +116,7 @@ func TestPanicBadProvider(t *testing.T) {
 		assert.NotNil(t, r)
 		db.AllProviders = temp
 	}()
-	db.AllProviders = []db.Provider{FakeAmazon}
+	db.AllProviders = []db.ProviderName{FakeAmazon}
 	conn := db.New()
 	newCloud(conn, "test")
 }
@@ -373,7 +373,7 @@ func TestSync(t *testing.T) {
 		updateIPs []ipRequest
 	}
 
-	checkSync := func(clst *cloud, provider db.Provider, region string,
+	checkSync := func(clst *cloud, provider db.ProviderName, region string,
 		expected assertion) {
 
 		clst.runOnce()
@@ -870,7 +870,8 @@ func setNamespace(conn db.Conn, ns string) {
 
 func mock() {
 	var instantiatedProviders []fakeProvider
-	newProvider = func(p db.Provider, namespace, region string) (provider, error) {
+	newProvider = func(p db.ProviderName, namespace,
+		region string) (provider, error) {
 		ret := fakeProvider{
 			namespace: namespace,
 			machines:  make(map[string]db.Machine),
@@ -883,7 +884,7 @@ func mock() {
 	}
 
 	validRegions = fakeValidRegions
-	db.AllProviders = []db.Provider{FakeAmazon, FakeVagrant}
+	db.AllProviders = []db.ProviderName{FakeAmazon, FakeVagrant}
 	getMachineRole = func(ip string) db.Role {
 		for _, prvdr := range instantiatedProviders {
 			if role, ok := prvdr.roles[ip]; ok {
