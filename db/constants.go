@@ -67,7 +67,8 @@ const (
 	Vagrant Provider = "Vagrant"
 )
 
-var allProviders = []Provider{
+// AllProviders lists all of the providers that Quilt supports.
+var AllProviders = []Provider{
 	Amazon,
 	Google,
 	DigitalOcean,
@@ -76,13 +77,13 @@ var allProviders = []Provider{
 
 // ParseProvider returns the Provider represented by 'name' or an error.
 func ParseProvider(name string) (Provider, error) {
-	for _, provider := range allProviders {
+	for _, provider := range AllProviders {
 		if string(provider) == name {
 			return provider, nil
 		}
 	}
 	return "", fmt.Errorf("provider %s not supported (supported "+
-		"providers: %v)", name, allProviders)
+		"providers: %v)", name, AllProviders)
 }
 
 // ParseRole returns the Role represented by the string 'role', or an error.

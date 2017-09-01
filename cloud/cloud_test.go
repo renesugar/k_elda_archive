@@ -110,13 +110,13 @@ func newTestCloud(namespace string) *cloud {
 }
 
 func TestPanicBadProvider(t *testing.T) {
-	temp := allProviders
+	temp := db.AllProviders
 	defer func() {
 		r := recover()
 		assert.NotNil(t, r)
-		allProviders = temp
+		db.AllProviders = temp
 	}()
-	allProviders = []db.Provider{FakeAmazon}
+	db.AllProviders = []db.Provider{FakeAmazon}
 	conn := db.New()
 	newCloud(conn, "test")
 }
@@ -774,7 +774,7 @@ func TestMultiRegionDeploy(t *testing.T) {
 	clst.conn.Txn(db.MachineTable,
 		db.BlueprintTable).Run(func(view db.Database) error {
 
-		for _, p := range allProviders {
+		for _, p := range db.AllProviders {
 			for _, r := range validRegions(p) {
 				m := view.InsertMachine()
 				m.Provider = p
@@ -883,7 +883,7 @@ func mock() {
 	}
 
 	validRegions = fakeValidRegions
-	allProviders = []db.Provider{FakeAmazon, FakeVagrant}
+	db.AllProviders = []db.Provider{FakeAmazon, FakeVagrant}
 	getMachineRole = func(ip string) db.Role {
 		for _, prvdr := range instantiatedProviders {
 			if role, ok := prvdr.roles[ip]; ok {

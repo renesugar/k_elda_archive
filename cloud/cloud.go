@@ -34,9 +34,6 @@ type provider interface {
 	UpdateFloatingIPs([]db.Machine) error
 }
 
-// Store the providers in a variable so we can change it in the tests
-var allProviders = []db.Provider{db.Amazon, db.DigitalOcean, db.Google, db.Vagrant}
-
 var c = counter.New("Cloud")
 
 type launchLoc struct {
@@ -103,7 +100,7 @@ func newCloud(conn db.Conn, namespace string) *cloud {
 		providers: make(map[launchLoc]provider),
 	}
 
-	for _, p := range allProviders {
+	for _, p := range db.AllProviders {
 		for _, r := range validRegions(p) {
 			if _, err := cld.getProvider(launchLoc{p, r}); err != nil {
 				log.Debugf("Failed to connect to provider %s in %s: %s",

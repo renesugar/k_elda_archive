@@ -17,19 +17,9 @@ func TestParseProvider(t *testing.T) {
 	assert.Equal(t, expErr, err)
 
 	// Verify that the correct provider is returned for all supported providers.
-	tests := []struct {
-		input       string
-		expProvider Provider
-	}{
-		{string(Amazon), Amazon},
-		{string(Google), Google},
-		{string(DigitalOcean), DigitalOcean},
-		{string(Vagrant), Vagrant},
-	}
-
-	for _, test := range tests {
-		actualProvider, actualErr := ParseProvider(test.input)
-		assert.NoError(t, actualErr)
-		assert.Equal(t, test.expProvider, actualProvider)
+	for _, provider := range AllProviders {
+		actualProvider, err := ParseProvider(string(provider))
+		assert.NoError(t, err)
+		assert.Equal(t, provider, actualProvider)
 	}
 }
