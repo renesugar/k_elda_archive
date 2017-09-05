@@ -17,7 +17,7 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 		    ./stitch/bindings.js.go
 
 JS_LINT_COMMAND = node_modules/eslint/bin/eslint.js \
-                  stitch/ quilt-tester/ quiltctl/command/init/ util/
+                  stitch/ quilt-tester/ cli/command/init/ util/
 REPO = quilt
 DOCKER = docker
 SHELL := /bin/bash
@@ -66,8 +66,8 @@ COV_SKIP= /api/client/mocks \
 	  /minion/pprofile \
 	  /minion/supervisor/images \
 	  /quilt-tester/% \
-	  /quiltctl/ssh/mocks \
-	  /quiltctl/testutils \
+	  /cli/ssh/mocks \
+	  /cli/testutils \
 	  /scripts \
 	  /scripts/blueprints-tester \
 	  /scripts/blueprints-tester/tests \

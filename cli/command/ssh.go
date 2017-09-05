@@ -12,8 +12,8 @@ import (
 
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/api/util"
+	"github.com/quilt/quilt/cli/ssh"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/quiltctl/ssh"
 	quiltUtil "github.com/quilt/quilt/util"
 )
 

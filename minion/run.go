@@ -8,6 +8,7 @@ import (
 
 	"github.com/quilt/quilt/api"
 	apiServer "github.com/quilt/quilt/api/server"
+	"github.com/quilt/quilt/cli/command/credentials"
 	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
@@ -19,7 +20,6 @@ import (
 	"github.com/quilt/quilt/minion/registry"
 	"github.com/quilt/quilt/minion/scheduler"
 	"github.com/quilt/quilt/minion/supervisor"
-	"github.com/quilt/quilt/quiltctl/command/credentials"
 	"github.com/quilt/quilt/util"
 
 	log "github.com/Sirupsen/logrus"

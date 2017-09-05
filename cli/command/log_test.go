@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/quilt/quilt/api/client/mocks"
+	"github.com/quilt/quilt/cli/ssh"
+	mockSSH "github.com/quilt/quilt/cli/ssh/mocks"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/quiltctl/ssh"
-	mockSSH "github.com/quilt/quilt/quiltctl/ssh/mocks"
 )
 
 func checkLogParsing(t *testing.T, args []string, exp Log, expErr error) {

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/quilt/quilt/cli/command/credentials"
 	"github.com/quilt/quilt/connection/credentials/tls"
-	"github.com/quilt/quilt/quiltctl/command/credentials"
 	"github.com/quilt/quilt/util"
 
 	"github.com/spf13/afero"

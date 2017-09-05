@@ -40,7 +40,7 @@ type server struct {
 	clientCreds connection.Credentials
 }
 
-// Run starts a server that responds to `quiltctl` connections. It runs on both
+// Run starts a server that responds to connections from the CLI. It runs on both
 // the daemon and on the minion. The server provides various client-relevant
 // methods, such as starting deployments, and querying the state of the system.
 // This is in contrast to the minion server (minion/pb/pb.proto), which facilitates

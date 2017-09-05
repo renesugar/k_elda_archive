@@ -5,8 +5,8 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/cli/command/credentials"
 	"github.com/quilt/quilt/connection"
-	"github.com/quilt/quilt/quiltctl/command/credentials"
 )
 
 type connectionFlags struct {

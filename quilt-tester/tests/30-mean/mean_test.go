@@ -26,7 +26,7 @@ type Response struct {
 func TestMean(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
-		t.Fatal("couldn't get quiltctl client")
+		t.Fatal("couldn't get api client")
 	}
 	defer clnt.Close()
 

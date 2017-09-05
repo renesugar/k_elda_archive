@@ -20,7 +20,7 @@ import (
 func TestElasticsearch(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
-		t.Fatalf("couldn't get quiltctl client: %s", err)
+		t.Fatalf("couldn't get api client: %s", err)
 	}
 	defer clnt.Close()
 

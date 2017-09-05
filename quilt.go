@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/quilt/quilt/quiltctl"
+	"github.com/quilt/quilt/cli"
 	"github.com/quilt/quilt/util"
 
 	"google.golang.org/grpc/grpclog"
@@ -72,8 +72,8 @@ func main() {
 	}
 
 	subcommand := flag.Arg(0)
-	if quiltctl.HasSubcommand(subcommand) {
-		quiltctl.Run(subcommand, flag.Args()[1:])
+	if cli.HasSubcommand(subcommand) {
+		cli.Run(subcommand, flag.Args()[1:])
 	} else {
 		usage()
 	}

@@ -14,9 +14,9 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
+	"github.com/quilt/quilt/cli/ssh"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/supervisor/images"
-	"github.com/quilt/quilt/quiltctl/ssh"
 	"github.com/quilt/quilt/util"
 )
 

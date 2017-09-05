@@ -1,4 +1,4 @@
-package quiltctl
+package cli
 
 import (
 	"flag"

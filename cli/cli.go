@@ -1,10 +1,10 @@
-package quiltctl
+package cli
 
 import (
 	"flag"
 	"os"
 
-	"github.com/quilt/quilt/quiltctl/command"
+	"github.com/quilt/quilt/cli/command"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -28,7 +28,7 @@ var commands = map[string]command.SubCommand{
 	"counters":   &command.Counters{},
 }
 
-// Run parses and runs the quiltctl subcommand given the command line arguments.
+// Run parses and runs the cli subcommand given the command line arguments.
 func Run(cmdName string, args []string) {
 	cmd, err := parseSubcommand(cmdName, commands[cmdName], args)
 	if err != nil {
@@ -53,7 +53,7 @@ func Run(cmdName string, args []string) {
 	os.Exit(exitCode)
 }
 
-// HasSubcommand returns true if quiltctl has a subcommand for the given name.
+// HasSubcommand returns true if there is a subcommand for the given name.
 func HasSubcommand(name string) bool {
 	_, ok := commands[name]
 	return ok

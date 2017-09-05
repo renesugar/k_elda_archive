@@ -43,7 +43,7 @@ func (iCmd *Init) AfterRun() error {
 
 // Run executes the Nodejs initializer that prompts the user.
 func (iCmd *Init) Run() int {
-	// Assumes `quiltctl/command/init/intializer.js` was installed in the path
+	// Assumes `cli/command/init/intializer.js` was installed in the path
 	// somewhere as `quilt-initializer.js`. This is done automatically for users by
 	// npm when installed.
 	cmd := exec.Command("quilt-initializer.js")

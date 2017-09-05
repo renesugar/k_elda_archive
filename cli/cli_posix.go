@@ -1,8 +1,8 @@
 // +build !windows
 
-package quiltctl
+package cli
 
-import "github.com/quilt/quilt/quiltctl/command"
+import "github.com/quilt/quilt/cli/command"
 
 func init() {
 	commands["minion"] = command.NewMinionCommand()

@@ -10,12 +10,12 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/quilt/quilt/api/server"
+	"github.com/quilt/quilt/cli/command/credentials"
 	"github.com/quilt/quilt/cloud"
 	"github.com/quilt/quilt/connection/credentials/tls"
 	tlsIO "github.com/quilt/quilt/connection/credentials/tls/io"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/engine"
-	"github.com/quilt/quilt/quiltctl/command/credentials"
 	"github.com/quilt/quilt/util"
 	"github.com/quilt/quilt/version"
 

@@ -32,7 +32,7 @@ type testResult struct {
 func TestBandwidth(t *testing.T) {
 	clnt, err := client.New(api.DefaultSocket, credentials.Insecure{})
 	if err != nil {
-		t.Fatalf("couldn't get quiltctl client: %s", err.Error())
+		t.Fatalf("couldn't get api client: %s", err.Error())
 	}
 	defer clnt.Close()
 
