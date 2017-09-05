@@ -58,13 +58,13 @@ const (
 	Amazon Provider = "Amazon"
 
 	// Google implements Google Cloud Engine.
-	Google = "Google"
+	Google Provider = "Google"
 
 	// DigitalOcean implements Digital Ocean Droplets.
-	DigitalOcean = "DigitalOcean"
+	DigitalOcean Provider = "DigitalOcean"
 
 	// Vagrant implements local virtual machines.
-	Vagrant = "Vagrant"
+	Vagrant Provider = "Vagrant"
 )
 
 var allProviders = []Provider{

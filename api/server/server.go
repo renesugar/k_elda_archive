@@ -222,7 +222,7 @@ func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 
 	// XXX: Remove this error when the Vagrant provider is done.
 	for _, machine := range stitch.Machines {
-		if machine.Provider == db.Vagrant {
+		if machine.Provider == string(db.Vagrant) {
 			err = errors.New("The Vagrant provider is still in development." +
 				" The blueprint will continue to run, but" +
 				" there may be some errors.")
