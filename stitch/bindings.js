@@ -553,11 +553,39 @@ function getBoolean(argName, arg) {
 }
 
 /**
- * Constructs a machine object.
+ * Creates a new Machine object, which represents a machine to be deployed.
  * @constructor
  *
- * @param {Object.<string, string>} optionalArgs - Optional arguments that
+ * @example <caption>Create a template Machine on Amazon, and then use the
+ * template to create a master and 2 workers.</caption>
+ * const baseMachine = new Machine({provider: 'Amazon'});
+ * const master = baseMachine.asMaster();
+ * const workers = baseMachine.asWorker().replicate(2);
+ *
+ * @param {Object.<string, string>} [optionalArgs] - Optional arguments that
  *   modify the machine.
+ * @param {string} [optionalArgs.provider] - The cloud provider that the machine
+ *   should be launched in. Accepted values are Amazon, DigitalOcean, Google,
+ *   and Vagrant. This argument is optional, but the provider attribute of the
+ *   machine must be set before it is deployed.
+ * @param {string} [optionalArgs.role] - The role the machine will run as
+ *   (accepted value are Master and Worker). A Machine's role must be set before
+ *   it can be deployed.  This argument is not required, so that users can
+ *   create a template to use for all machines in the cluster;
+ *   {@link Machine#asWorker} and {@link Machine#asMaster} can be called on the
+ *   template to create a machine with the appropriate role, as in the example.
+ * @param {string} [optionalArgs.region] - The region the machine will run-in
+ *   (provider-specific; e.g., for Amazon, this could be 'us-west-2').
+ * @param {string} [optionalArgs.size] - The instance type (provider-specific).
+ * @param {Range|int} [optionalArgs.cpu] - The desired number of CPUs.
+ * @param {Range|int} [optionalArgs.ram] - The desired amount of RAM in GiB.
+ * @param {int} [optionalArgs.diskSize] - The desired amount of disk space in GB.
+ * @param {string} [optionalArgs.floatingIp] - A reserved IP to associate with
+ *   the machine.
+ * @param {string[]} [optionalArgs.sshKeys] - Public keys to allow to login to
+ *   the machine.
+ * @param {boolean} [optionalArgs.preemptible=false] - Whether the machine
+ *   should be preemptible. Only supported on the Amazon provider.
  */
 function Machine(optionalArgs) {
   this._refID = uniqueID();
@@ -593,10 +621,16 @@ Machine.prototype.withRole = function machineWithRole(role) {
   return copy;
 };
 
+/**
+ * @returns {Machine} A new machine with role Worker.
+ */
 Machine.prototype.asWorker = function machineAsWorker() {
   return this.withRole('Worker');
 };
 
+/**
+ * @returns {Machine} A new machine with role Master.
+ */
 Machine.prototype.asMaster = function machineAsMaster() {
   return this.withRole('Master');
 };
