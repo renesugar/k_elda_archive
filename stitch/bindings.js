@@ -13,7 +13,7 @@ const githubCache = {};
 /**
  * Gets the public key associated with a github username.
  * @param {string} user - The GitHub username.
- * @return {string} The SSH key.
+ * @returns {string} The SSH key.
  */
 function githubKeys(user) {
   if (user in githubCache) {
@@ -44,7 +44,7 @@ const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
  * @private
  *
  * @param {string} infraName - The name of the infrastructure.
- * @return {string} The absolute path to the infrastructure file.
+ * @returns {string} The absolute path to the infrastructure file.
  */
 function getInfraPath(infraName) {
   return path.join(infraDirectory, `${infraName}.js`);
@@ -57,7 +57,7 @@ function getInfraPath(infraName) {
  *
  * @param {string} name - The name of the infrastructure, as passed to
  *   `quilt init`.
- * @return {Deployment} A deployment object representing the infrastructure.
+ * @returns {Deployment} A deployment object representing the infrastructure.
  */
 function baseInfrastructure(name = 'default') {
   if (typeof name !== 'string') {
@@ -93,7 +93,7 @@ let uniqueIDCounter = 0;
  * Overwrites the deployment object with a new one.
  *
  * @param {Object} deploymentOpts - Options for the new deployment object.
- * @return {Deployment} A deployment object.
+ * @returns {Deployment} A deployment object.
  */
 function createDeployment(deploymentOpts) {
   global._quiltDeployment = new Deployment(deploymentOpts);
@@ -125,7 +125,7 @@ function Deployment(opts) {
 
 /**
  * @private
- * @return {integer} A globally unique integer ID.
+ * @returns {integer} A globally unique integer ID.
  */
 function uniqueID() {
   uniqueIDCounter += 1;
@@ -170,7 +170,7 @@ function setQuiltIDs(objs) {
  * @private
  *
  * @param {string} str - The string to be hashed.
- * @return {string} The hash.
+ * @returns {string} The hash.
  */
 function hash(str) {
   const shaSum = crypto.createHash('sha1');
@@ -313,7 +313,7 @@ LoadBalancer.prototype.deploy = function lbDeploy(deployment) {
  *   connections to this load balancer.
  * @param {int|Port|PortRange} portRange - The ports on which containers can
  *   open connections.
- * @return {void}
+ * @returns {void}
  */
 LoadBalancer.prototype.allowFrom = function lbAllowFrom(srcArg, portRange) {
   let src;
@@ -446,7 +446,7 @@ function boxRange(x) {
  *
  * @param {string} argName - The name of the number (for logging).
  * @param {number} arg - The number that might be undefined.
- * @return {number} Zero if `arg` is not defined, and otherwise ensures that
+ * @returns {number} Zero if `arg` is not defined, and otherwise ensures that
  *   `arg` is a number and then returns it.
  */
 function getNumber(argName, arg) {
@@ -465,7 +465,7 @@ function getNumber(argName, arg) {
  *
  * @param {string} argName - The name of the string (for logging).
  * @param {string} arg - The arg that might be undefined.
- * @return {string} An empty string if `arg` is not defined, and otherwise
+ * @returns {string} An empty string if `arg` is not defined, and otherwise
  *   ensures that `arg` is a string and then returns it.
  */
 function getString(argName, arg) {
@@ -482,7 +482,7 @@ function getString(argName, arg) {
  * @private
  * @param {string} argName - The name of `arg` (for logging).
  * @param {Object.<string, string>} arg - The map of strings.
- * @return {Object.<string, string>} An empty object if `arg` is not defined,
+ * @returns {Object.<string, string>} An empty object if `arg` is not defined,
  *   and otherwise ensures that `arg` is an object with string keys and values
  *   and then returns it.
  */
@@ -513,7 +513,7 @@ function getStringMap(argName, arg) {
  *
  * @param {string} argName - The name of `arg` (for logging).
  * @param {string[]} arg - The array of strings.
- * @return {string[]} Returns an empty array if `arg` is not
+ * @returns {string[]} Returns an empty array if `arg` is not
  *   defined, and otherwise ensures that `arg` is an array of strings and then
  *   returns it.
  */
@@ -539,7 +539,7 @@ function getStringArray(argName, arg) {
  * @private
  * @param {string} argName - The name of `arg` (for logging).
  * @param {boolean} arg - The boolean that might be undefined.
- * @return {boolean} False if `arg` is not defined, and otherwise ensures
+ * @returns {boolean} False if `arg` is not defined, and otherwise ensures
  *   that `arg` is a boolean and then returns it.
  */
 function getBoolean(argName, arg) {
@@ -817,7 +817,7 @@ Container.prototype.withEnv = function containerWithEnv(env) {
  * @param {Object.<string, string>} fileMap - Text files to be installed on
  *   the container before it starts.  Uses the same format as the
  *   filepathToContent argument to the {@link Container} constructor.
- * @return {Container} A new container that is identical to this one, except
+ * @returns {Container} A new container that is identical to this one, except
  *   that filepathToContent is set to the given mappng.
  */
 Container.prototype.withFiles = function containerWithFiles(fileMap) {
@@ -1005,7 +1005,7 @@ class Connectable {
    *
    * @param {Container} src - The container that can initiate connections.
    * @param {int|Port|PortRange} port - The ports to allow traffic on.
-   * @return {void}
+   * @returns {void}
    */
   allowFrom(src, port) { // eslint-disable-line
     throw new Error('not implemented');
@@ -1017,7 +1017,7 @@ class Connectable {
  * @private
  *
  * @param {object} x - The object to check
- * @return {boolean} Whether x can be connected to
+ * @returns {boolean} Whether x can be connected to
  */
 function isConnectable(x) {
   return typeof (x.allowFrom) === 'function';
@@ -1033,7 +1033,7 @@ function isConnectable(x) {
  *   Examples of connectable objects are Containers, LoadBalancers, publicInternet,
  *   and user-defined objects that implement allowFrom.
  * @param {int|Port|PortRange} port - The ports that traffic is allowed on.
- * @return {void}
+ * @returns {void}
  */
 function allow(src, dst, port) {
   boxConnectable(dst).forEach((c) => {
