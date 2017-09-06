@@ -627,10 +627,36 @@ Machine.prototype.hash = function machineHash() {
 
 /**
  * Creates a Docker Image.
+ *
+ * If two images with the same name but different Dockerfiles are referenced, an
+ * error will be thrown.
+ *
  * @constructor
  *
- * @param {string} name - The name of the docker image.
- * @param {string} dockerfile - The string contents of the Docker file that
+ * @example <caption>Create an image that uses the nginx image stored on
+ * Docker Hub.</caption>
+ * const image = new Image('nginx');
+ *
+ * @example <caption>Create an image that uses the etcd image stored at
+ * quay.io.</caption>
+ * const image = new Image('quay.io/coreos/etcd');
+ *
+ * @example <caption>Create an Image named my-image-name that's built on top of
+ * the nginx image, and additionally includes the Git repository at
+ * github.com/my/web/repo cloned into /web_root.</caption>
+ * const image = new Image('my-image-name',
+ *   'FROM nginx\n' +
+ *   'RUN cd /web_root && git clone github.com/my/web_repo');
+ *
+ * @example <caption>Create an image named my-inage-name that's built using a
+ * Dockerfile saved locally at 'Dockerfile'.</caption>
+ * const container = new Image('my-image-name', fs.readFileSync('./Dockerfile'));
+ *
+ * @param {string} name - The name to use for the Docker image, or if no
+ *   Dockerfile is specified, the repository to get the image from. The repository
+ *   can be a full URL (e.g., quay.io/coreos/etcd) or the name of an image in
+ *   Docker Hub (e.g., nginx or nginx:1.13.3).
+ * @param {string} [dockerfile] - The string contents of the Dockerfile that
  *   constructs the Image.
  */
 function Image(name, dockerfile) {
@@ -643,13 +669,40 @@ Image.prototype.clone = function imageClone() {
 };
 
 /**
- * Creates a new Container.
+ * Creates a new Container, which represents a container to be deployed.
+ *
+ * If a Container uses a custom image (e.g., the image is created by reading
+ * in a local Dockerfile), Quilt tracks the Dockerfile that was used to create
+ * that image.  If the Dockerfile is changed and the blueprint is re-run,
+ * the image will be re-built and all containers that use the image will be
+ * re-started with the new image.
  *
  * @constructor
  * @implements {Connectable}
  *
+ * @example <caption>Create a Container with hostname myApp that uses the nginx
+ * image on Docker Hub, and that includes a file located at /etc/myconf with
+ * contents foo.</caption>
+ * const container = new Container(
+ *   'myApp', 'nginx', {filepathToContent: {'/etc/myconf': 'foo'}});
+ *
  * @param {string} hostnamePrefix - The network hostname of the container.
- * @param {string} image - The image the container will boot.
+ * @param {Image|string} image - An {@link Image} that the container should
+ *   boot, or a string with the name of a Docker image (that exists in
+ *   Docker Hub) that the container should boot.
+ * @param {Object} [optionalArgs] - Additional, named, optional arguments.
+ * @param {string} [optionalArgs.command] - The command to use when starting
+ *   the container.
+ * @param {Object.<string, string>} [optionalArgs.env] - Environment variables
+ *   to set in the booted container.  The key is the name of the environment
+ *   variable.
+ * @param {Object.<string, string>} [optionalArgs.filepathToContent] - Text
+ *   files to be installed on the container before it starts.  The key is
+ *   the path on the container where the text file should be installed, and
+ *   the value is the contents of the text file. If the file content specified
+ *   by this argument changes and the blueprint is re-run, Quilt will re-start
+ *   the container using the new files.  Files are installed with permissions
+ *   0644 and parent directories are automatically created.
  */
 function Container(hostnamePrefix, image, {
   command = [],
@@ -716,12 +769,32 @@ Container.prototype.withEnv = function containerWithEnv(env) {
   return cloned;
 };
 
+/**
+ * Creates a new container that replaces the mapping of filepaths to filecontent
+ * with the given mapping.
+ *
+ * @example <caption>Create a container with hostname haproxy and using an
+ * image named haproxyImage that has a file at path /etc/myconf containing the
+ * text foo.</caption>
+ * const c = new Container('haproxy', haproxyImage).withFiles({
+ *   '/etc/myconf': 'foo'
+ * });
+ *
+ * @param {Object.<string, string>} fileMap - Text files to be installed on
+ *   the container before it starts.  Uses the same format as the
+ *   filepathToContent argument to the {@link Container} constructor.
+ * @return {Container} A new container that is identical to this one, except
+ *   that filepathToContent is set to the given mappng.
+ */
 Container.prototype.withFiles = function containerWithFiles(fileMap) {
   const cloned = this.clone();
   cloned.filepathToContent = fileMap;
   return cloned;
 };
 
+/**
+ * @returns {string} The container's hostname.
+ */
 Container.prototype.getHostname = function containerGetHostname() {
   return `${this.hostname}.q`;
 };
