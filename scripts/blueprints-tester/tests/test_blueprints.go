@@ -27,6 +27,37 @@ func run(name string, args ...string) error {
 	return nil
 }
 
+// TestExampleBlueprints tests that all blueprints in the examples directory compile.
+func TestExampleBlueprints() error {
+	// Use absolute rather than relative paths, so that the Chdir command below works
+	// regardless of the starting directory.
+	absolutePath, err := filepath.Abs("../../examples/*/*.js")
+	if err != nil {
+		return err
+	}
+
+	blueprints, err := filepath.Glob(absolutePath)
+	if err != nil {
+		return err
+	}
+
+	for _, blueprint := range blueprints {
+		log.Infof("Testing %s", blueprint)
+
+		// Change into the directory of the blueprint in order to install
+		// dependencies.
+		os.Chdir(filepath.Dir(blueprint))
+		if err = run("npm", "install", "."); err != nil {
+			return err
+		}
+
+		if err = tryRunBlueprint(blueprint); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // TestCIBlueprints checks that the listed quilt-tester blueprints compile.
 func TestCIBlueprints() error {
 	// Make the working directory the root of the Quilt repo so that the following
