@@ -67,7 +67,7 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf, tlsDir string) {
 	// Block until the credentials are in place on the local filesystem. We
 	// can't simply fail if the first read fails because the daemon might still
 	// be generating and copying keys onto the local filesystem. The key
-	// installation is handled by SyncCredentials in cluster/credentials.go.
+	// installation is handled by SyncCredentials in cloud/credentials.go.
 	var creds connection.Credentials
 	err := util.BackoffWaitFor(func() bool {
 		var err error

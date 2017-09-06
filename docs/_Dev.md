@@ -111,7 +111,7 @@ image, and not the default Quilt minion image.  To do that, follow these steps:
 
 1. Create a new empty repository on your favorite registry -
 [docker hub](https://hub.docker.com/) for example.
-2. Modify `quiltImage` in [cloudcfg.go](../cluster/cloudcfg/cloudcfg.go) to
+2. Modify `quiltImage` in [cfg.go](../cloud/cfg/cfg.go) to
 point to your repo.
 3. Modify `Version` in [version.go](../version/version.go) to be "latest".
 This ensures that you will be using the most recent version of the minion
@@ -158,7 +158,7 @@ correctly. No commits should break the code, even if they "fix it" later.
 Commit messages should be wrapped to 80 characters and begin with a title of
 the form `<Area>: <Title>`.  The title should be capitalized, but not end
 with a period.  For example, `provider: Move the provider interfaces into the
-cluster directory` is a good title. When possible, the title should fit in
+cloud directory` is a good title. When possible, the title should fit in
 50 characters.
 
 All but the most trivial of commits should have a brief paragraph below the
@@ -250,12 +250,12 @@ the desired state of the system. It does so by computing a diff of the config
  and the current state stored in the database. After identifying the
 differences, `engine` determines the least disruptive way to update the
 database to the correct state, and then performs these updates. Notice that the
-`engine` only updates the database, not the actual remote system - `cluster`
+`engine` only updates the database, not the actual remote system - `cloud`
 takes care of that.
 
-The `cluster` takes care of making the state of your system equal to the state
-of the database. `cluster` continuously checks for updates to the database, and
-whenever the state changes, `cluster` boots or terminates VMs in you system to
+The `cloud` takes care of making the state of your system equal to the state
+of the database. `cloud` continuously checks for updates to the database, and
+whenever the state changes, `cloud` boots or terminates VMs in you system to
 reflect the changes in the `db`.
 
 Now that VMs are running, the `minion` container will take care of starting the
@@ -269,7 +269,7 @@ remote system always agree on the state of the system.
 
 ### Quilt Remote
 
-As described above, `cluster` is responsible for booting VMs. On boot, each VM
+As described above, `cloud` is responsible for booting VMs. On boot, each VM
 runs docker and a `minion`. The VM is furthermore assigned a role - either
 `worker` or `master` - which determines what tasks it will carry out. The
 `master` minion is responsible for control related tasks, whereas the `worker`
