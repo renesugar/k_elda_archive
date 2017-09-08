@@ -156,7 +156,10 @@ e5b1839d2bea    Master    Amazon      us-west-1    t2.micro              disconn
 e2401c348c78    Worker    Amazon      us-west-1    t2.micro              disconnected
 ```
 
-Your output will look similar to the output above.  This output means that Quilt
+Your output will look similar to the output above (note that you may get an
+error that begins "unable to query connetions: rpc error" when you first run
+`quilt show`; this error is benign and can occur while the machines are
+booting).  The output above means that Quilt
 has launched two machines, one as a master and one as a worker, in Amazon.  Both
 machines are disconnected, because they're still being initialized. When a
 machine is fully booted and configured, it will be marked as connected.
