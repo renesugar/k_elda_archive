@@ -11,7 +11,7 @@ import (
 type Blueprint struct {
 	ID int
 
-	blueprint.Blueprint
+	blueprint.Blueprint `rowStringer:"omit"`
 }
 
 // InsertBlueprint creates a new Blueprint and interts it into 'db'.
