@@ -146,10 +146,8 @@ $ quilt run ./main.js
 ```
 
 This command tells the daemon to launch the machines and containers described in
-`main.js`.  It will return immediately, but if you return to the `daemon`
-window, you'll see some things starting to happen.  The best way to see what's
-happening is to return to the window where you typed `quilt run`, and now
-use Quilt's `show` command to list everything that's running:
+`main.js`.  It will return immediately, because the `daemon` process does the
+heavy lifting.  To see what's happening, use Quilt's `show` command:
 
 ```console
 $ quilt show
