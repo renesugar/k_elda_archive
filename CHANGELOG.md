@@ -3,6 +3,15 @@ Quilt Change Log
 
 Up Next
 -------------
+
+Release 0.3.0
+-------------
+
+Release 0.3.0 changes the way that containers are deployed. `Container`s can now
+be deployed directly without wrapping them in a `LoadBalancer` (previously known
+as `Service`). Many of the methods previously defined on `Service` (such as
+`allowFrom` and `placeOn`) have been migrated to `Container` methods.
+
 - Don't use the image cache on the Quilt master when building custom
 Dockerfiles. This is necessary to fetch updates when Dockerfiles are
 non-deterministic and rely on pulling data from the network.
