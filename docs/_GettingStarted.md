@@ -187,7 +187,7 @@ and isolated from one another. This helps to keep your application secure by
 preventing all access except for what you explicitly specify.
 In order to make the Nginx container accessible
 from the public internet,
-[`nginx/main.js`](https://github.com/quilt/nginx/blob/master/main.js) explicitly
+[`nginx/app.js`](https://github.com/quilt/nginx/blob/master/app.js) explicitly
 opens port 80 on the Nginx container to the outside world:
 
 ```javascript
