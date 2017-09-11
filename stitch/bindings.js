@@ -9,6 +9,7 @@ const os = require('os');
 const fs = require('fs');
 
 const githubCache = {};
+const objectHasKey = Object.prototype.hasOwnProperty;
 
 /**
  * Gets the public key associated with a github username.
@@ -115,6 +116,8 @@ function Deployment(deploymentOpts = {}) {
   this.maxPrice = getNumber('maxPrice', deploymentOpts.maxPrice);
   this.namespace = deploymentOpts.namespace || 'default-namespace';
   this.adminACL = getStringArray('adminACL', deploymentOpts.adminACL);
+
+  checkExtraKeys(deploymentOpts, this);
 
   this.machines = [];
   this.containers = new Set();
@@ -439,6 +442,39 @@ function boxRange(x) {
 }
 
 /**
+  * Throws an error if the first object contains any keys that do not appear in
+  * the second object.
+  * This function is useful for checking if the user passed invalid options to
+  * functions that take optional arguments. Namely, since all valid user given
+  * optional arguments are added as properties of the new object, any key
+  * that appears in the optional argument but not as a property of the object
+  * must be an unexpected optional argument.
+  * @private
+  *
+  * @param {Object} opts - The Object to check for redundant keys.
+  * @param {Object} obj - The object to compare against.
+  * @returns {void}
+  * @throws Throws an error if redundant keys are found in `opts`.
+  */
+function checkExtraKeys(opts, obj) {
+  // Sometimes, prototype constructors are called internally by Quilt. In these
+  // cases, an existing object is passed as the optional argument, and the
+  // optional argument thus contains not just the keys passed by the user, but
+  // also the keys Quilt set on the object, as well as all the prototype
+  // methods. Since we only want to check the optional arguments passed by the
+  // user, we skip all calls internally from Quilt (indicated by having the
+  // refID set in the options).
+  if (objectHasKey.call(opts, '_refID')) { return; }
+
+  const extras = Object.keys(opts).filter(key => !objectHasKey.call(obj, key));
+
+  if (extras.length > 0) {
+    throw new Error('Unrecognized keys passed to ' +
+      `${obj.constructor.name} constructor: ${extras}`);
+  }
+}
+
+/**
  * Forces `arg` to be a number, even if it's undefined.
  * @private
  *
@@ -598,6 +634,8 @@ function Machine(optionalArgs) {
   this.cpu = boxRange(optionalArgs.cpu);
   this.ram = boxRange(optionalArgs.ram);
   this.preemptible = getBoolean('preemptible', optionalArgs.preemptible);
+
+  checkExtraKeys(optionalArgs, this);
 }
 
 Machine.prototype.deploy = function machineDeploy(deployment) {
@@ -763,6 +801,8 @@ function Container(hostnamePrefix, image, optionalArgs = {}) {
   this.env = _.clone(this.env);
   this.filepathToContent = _.clone(this.filepathToContent);
   this.image = this.image.clone();
+
+  checkExtraKeys(optionalArgs, this);
 
   // When generating the Quilt deployment JSON object, these placements must
   // be converted using Container.getPlacementsWithID.

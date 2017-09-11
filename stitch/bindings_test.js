@@ -82,6 +82,13 @@ describe('Bindings', () => {
         sshKeys: ['key1', 'key2'],
       }]);
     });
+    it('errors when passed invalid optional arguments', () => {
+      expect(() => new Machine({ badArg: 'foo' })).to
+        .throw('Unrecognized keys passed to Machine constructor: badArg');
+      expect(() => new Machine({
+        badArg: 'foo', provider: 'Amazon', alsoBad: 'bar' }))
+        .to.throw('Unrecognized keys passed to Machine constructor: ');
+    });
     it('hash independent of SSH keys', () => {
       deployment.deploy([new Machine({
         role: 'Worker',
@@ -179,6 +186,13 @@ describe('Bindings', () => {
         env: {},
         filepathToContent: {},
       }]);
+    });
+    it('errors when passed invalid optional arguments', () => {
+      expect(() => new Container('host', 'image', { badArg: 'foo' })).to
+        .throw('Unrecognized keys passed to Container constructor: badArg');
+      expect(() => new Container('host', 'image',
+        { badArg: 'foo', command: [], alsoBad: 'bar' }))
+        .to.throw('Unrecognized keys passed to Container constructor: ');
     });
     it('containers are not duplicated', () => {
       const container = new Container('host', 'image');
@@ -695,6 +709,10 @@ describe('Bindings', () => {
   describe('Create Deployment', () => {
     it('no args', () => {
       expect(createDeployment).to.not.throw();
+    });
+    it('should error when given invalid arguments', () => {
+      expect(() => createDeployment({ badArg: 'foo' }))
+        .to.throw('Unrecognized keys passed to Deployment constructor: badArg');
     });
   });
   describe('Query', () => {

@@ -3,6 +3,8 @@ Quilt Change Log
 
 Up Next
 -------------
+- Check for unexpected keys in the optional argument passed to the Machine,
+Container, and Deployment constructors.
 
 Release 0.3.0
 -------------
