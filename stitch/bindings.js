@@ -736,10 +736,7 @@ Image.prototype.clone = function imageClone() {
  *   the container using the new files.  Files are installed with permissions
  *   0644 and parent directories are automatically created.
  */
-function Container(hostnamePrefix, image, {
-  command = [],
-  env = {},
-  filepathToContent = {} } = {}) {
+function Container(hostnamePrefix, image, optionalArgs = {}) {
   // refID is used to distinguish deployments with multiple references to the
   // same container, and deployments with multiple containers with the exact
   // same attributes.
@@ -756,10 +753,10 @@ function Container(hostnamePrefix, image, {
 
   this.hostnamePrefix = getString('hostnamePrefix', hostnamePrefix);
   this.hostname = uniqueHostname(this.hostnamePrefix);
-  this.command = getStringArray('command', command);
-  this.env = getStringMap('env', env);
+  this.command = getStringArray('command', optionalArgs.command);
+  this.env = getStringMap('env', optionalArgs.env);
   this.filepathToContent = getStringMap('filepathToContent',
-    filepathToContent);
+    optionalArgs.filepathToContent);
 
   // Don't allow callers to modify the arguments by reference.
   this.command = _.clone(this.command);
