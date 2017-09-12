@@ -71,7 +71,7 @@ code. We currently use protoc v3. On a Mac with homebrew, you can install protoc
 using:
 
 ```console
-$ brew install --devel protobuf
+$ brew install protobuf
 ```
 
 On other operating systems you can directly download the protoc binary
