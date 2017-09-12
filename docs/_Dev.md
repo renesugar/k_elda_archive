@@ -77,12 +77,6 @@ $ brew install protobuf
 On other operating systems you can directly download the protoc binary
 [here](https://github.com/google/protobuf/releases), and then add it to your `$PATH`.
 
-You'll also need to install protobuf go bindings:
-
-```console
-$ go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
-```
-
 To generate the protobufs simply call:
 
 ```console
