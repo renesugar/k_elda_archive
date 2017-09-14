@@ -6,6 +6,8 @@ import (
 	"os/exec"
 
 	"github.com/quilt/quilt/util"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // Init represents an Init command.
@@ -46,11 +48,24 @@ func (iCmd *Init) Run() int {
 	// Assumes `cli/command/init/intializer.js` was installed in the path
 	// somewhere as `quilt-initializer.js`. This is done automatically for users by
 	// npm when installed.
-	cmd := exec.Command("quilt-initializer.js")
+	executable := "quilt-initializer.js"
+	cmd := exec.Command(executable)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+
+	if _, err := exec.LookPath(executable); err != nil {
+		log.Errorf("%s: Make sure that "+
+			"cli/command/init/intializer.js is installed in your $PATH as "+
+			"%s. This is done automatically with "+
+			"`npm install -g @quilt/install`, but if you're running Quilt "+
+			"from source, you must set up the symlink manually. You can "+
+			"do this by executing `ln -s <ABS_PATH_TO_QUILT_SOURCE>/"+
+			"cli/command/init/initializer.js /usr/local/bin/%s`",
+			err, executable, executable)
+		return 1
+	}
 
 	if err := cmd.Run(); err != nil {
 		return 1
