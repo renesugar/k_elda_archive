@@ -674,6 +674,40 @@ describe('Bindings', () => {
       deployment.deploy(new Container('host', new Image('img', 'dk2')));
       expect(deploy).to.throw('img has differing Dockerfiles');
     });
+    it('machines with same regions/providers', () => {
+      deployment.deploy([new Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }), new Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      })]);
+      expect(deploy).to.not.throw();
+    });
+    it('machines with different regions', () => {
+      deployment.deploy([new Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }), new Machine({
+        provider: 'Amazon',
+        region: 'us-east-2',
+      })]);
+      expect(deploy).to.throw('All machines must have the same provider and region. '
+        + 'Found providers \'Amazon\' in region \'us-west-2\' and \'Amazon\' in '
+        + 'region \'us-east-2\'.');
+    });
+    it('machines with different providers', () => {
+      deployment.deploy([new Machine({
+        provider: 'Amazon',
+        region: '',
+      }), new Machine({
+        provider: 'DigitalOcean',
+        region: '',
+      })]);
+      expect(deploy).to.throw('All machines must have the same provider and region. '
+        + 'Found providers \'Amazon\' in region \'\' and \'DigitalOcean\' in '
+        + 'region \'\'.');
+    });
   });
   describe('Custom Deploy', () => {
     it('basic', () => {

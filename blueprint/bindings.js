@@ -258,6 +258,18 @@ function vet(deployment) {
     }
     dockerfiles[name] = c.image.dockerfile;
   });
+
+  // Check to make sure all machines have the same region and provider.
+  let lastMachine;
+  deployment.machines.forEach((m) => {
+    if (lastMachine !== undefined &&
+      (lastMachine.region !== m.region || lastMachine.provider !== m.provider)) {
+      throw new Error('All machines must have the same provider and region. '
+        + `Found providers '${lastMachine.provider}' in region '${lastMachine.region}' `
+        + `and '${m.provider}' in region '${m.region}'.`);
+    }
+    lastMachine = m;
+  });
 }
 
 // deploy adds an object, or list of objects, to the deployment.
