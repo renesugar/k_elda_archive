@@ -61,9 +61,24 @@ the one above, you're all set.  If it instead returns someplace else, e.g.,
 
 ### Building Quilt
 
-To build quilt, run `go install` in the Quilt directory. To do things beyond
+To build Quilt, run `go install` in the Quilt directory. To do things beyond
 basic build and install, several additional build tools are required.  These
 can be installed with the `make go-get` target.
+
+If you're developing the the @quilt/quilt package, you must also tell Node.js
+to use your local development copy of the Quilt JavaScript bindings by running:
+
+```console
+$ npm link .
+```
+in the directory that contains your local Quilt source files. For each blueprint
+that uses the Quilt JavaScript bindings, you must also run:
+
+```console
+$ npm link @quilt/quilt
+```
+
+in the directory that contains the blueprint JavaScript files.
 
 ### Protobufs
 If you change any of the proto files, you'll need to regenerate the protobuf
