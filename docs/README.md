@@ -6,16 +6,24 @@ docs. We do not recommend directly browing the Markdown files, because the
 links are designed to work properly for the HTML version of the page, and
 will not work correctly in the Markdown version.
 
-If you're a developer and you'd like to build the docs, you'll first need
-to install a few other tools. The docs are built (by compiling the Markdown
-files here into a single HTML file) using Quilt's
-[Slate fork](https://github.com/quilt/slate). The README in that repository
-includes detailed installation instructions. After completing the
-installation described there, you can use the `docs` build target in the
-Quilt root directory: 
+If you're a developer and you'd like to build the docs, run `make` in this
+directory:
 
 ```console
-$ make docs
+$ make
 ```
 
+This command will clone two other repositories into the `build` folder:
+one with our JSDoc template, which helps to compile the JSDoc in the Quilt
+JavaScript into HTML; and a second with Slate, which combines the Markdown
+files here and the JSDoc HTML into a single HTML page.  Slate requires
+Ruby and bundler, so you will need to install those if you don't already
+have them; e.g., using Homebrew:
 
+```console
+$ brew install ruby
+$ gem install bundler # gem is Ruby's equivalent of make.
+```
+
+For more information about Slate and its dependencies, refer to the
+[our Slate fork](https://github.com/quilt/slate).
