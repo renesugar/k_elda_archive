@@ -2,7 +2,7 @@ package command
 
 import (
 	"flag"
-	"github.com/quilt/quilt/inspect"
+	"github.com/quilt/quilt/cli/command/inspect"
 )
 
 // Inspect contains the options for inspecting Stitches.
