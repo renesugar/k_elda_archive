@@ -122,7 +122,7 @@ golint: scripts/format/format
 			golint -min_confidence .25 -set_exit_status $$package || EXIT_CODE=1; \
 		fi \
 	done ; \
-	find . \( -path ./vendor -or -path ./node_modules -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error || EXIT_CODE=1; \
+	find . \( -path ./vendor -or -path */node_modules/* -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error || EXIT_CODE=1; \
 	ineffassign . || EXIT_CODE=1; \
 	exit $$EXIT_CODE
 	# Run gofmt
