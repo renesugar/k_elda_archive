@@ -212,20 +212,17 @@ Pull requests are reviewed by one person: either by a committer, if the code was
 submitted by a non-committer, or by a non-committer otherwise. You do not
 need to choose a reviewer yourself; [quilt-bot](https://github.com/quilt-bot)
 will randomly select a reviewer from the appropriate group. Once the reviewer
-has approved the pull request, a committer will merge it.
-
-Once the patch has been approved by the first reviewer, quilt-bot will assign a
-committer to do a second (sometimes cursory) review. The committer will
-either merge the patch, provide feedback, or if a great deal of work is
-still needed, punt the patch back to the original reviewer.
+has approved the pull request, a committer will merge it. If the reviewer
+requests changes, leave a comment in the PR once you've implemented the changes,
+so that the reviewer knows that the PR is ready for another look.
 
 It should be noted that the code
 review assignment is just a suggestion. If a another contributor, or member of
 the public for that matter, happens to do a detailed review and provide a `+1`
 then the assigned reviewer is relieved of their responsibility.  If you're not
-the assigned reviewer, but would like to do the code review, it may be polite
-to comment in the PR to that effect so the assigned reviewer knows they need
-not review the patch.
+the assigned reviewer, but would like to do the code review, please comment in
+the PR to that effect so the assigned reviewer knows they need not review the
+patch.
 
 We expect patches to go through multiple rounds of code review, each involving
 multiple changes to the code.  After each round of review, the original author
