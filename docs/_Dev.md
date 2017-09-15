@@ -159,16 +159,28 @@ development workflows.   Changes are submitted using the Github Pull Request
 System and, after appropriate review, fast-forwarded into master.
 See [Submitting Patches](#submitting-patches) for details.
 
-### Coding Style
+### Go Coding Style
 The coding style is as defined by the `gofmt` tool: whatever transformations it
-makes on a piece of code are considered, by definition, the correct style.  In
-addition, `golint`, `go vet`, and `go test` should pass without warning on all
-changes.  An easy way to check these requirements is to run `make lint check`
-on each patch before submitting a pull request. Running `make format` will fix
-many (but not all) formatting errors.
+makes on a piece of code are considered, by definition, the correct style.
+Unlike official go style, in Quilt lines should be wrapped to 89 characters. To
+make sure that your code is properly formatted, run:
 
-Unlike official go style, in Quilt lines should be wrapped to 89 characters.
-This requirement is checked by `make lint`.
+```console
+$ make golint
+```
+
+Running `make format` will fix many (but not all) formatting errors.
+
+### JavaScript Coding Style
+
+Quilt uses the AirBnb JavaScript style guide. To make sure that your JavaScript
+code is properly formatted, run:
+
+```console
+$ make jslint
+```
+
+### Git Commits
 
 The fundamental unit of work in the Quilt project is the git commit.  Each
 commit should be a coherent whole that implements one idea completely and
