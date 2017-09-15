@@ -215,12 +215,6 @@ a new patch in the series.  Changes _should not_ be simply tacked on to the end
 of the series as tweaks to be squashed in later -- at all stages the PRs should
 be ready to merge without reorganizing commits.
 
-## The Quilt Daemon
-Two processes need to be running for blueprints to be enforced:  `quilt daemon` and
-`quilt run`. `quilt daemon` does the heavy lifting -- it's responsible for enforcing
-blueprints.  `quilt run` is responsible for compiling blueprints and sending them to
-the daemon to be enforced.
-
 ## Code Structure
 Quilt is structured around a central database (`db`) that stores information about
 the current state of the system. This information is used both by the global
