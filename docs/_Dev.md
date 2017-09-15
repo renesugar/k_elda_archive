@@ -1,6 +1,6 @@
 # Developing Quilt
 
-## Developer Setup
+## Setup
 
 ### Install Go
 
@@ -42,44 +42,6 @@ The Go language is opinionated about the directory structure of code, and if
 you don't put Quilt in the expected location, you'll run into errors when you
 use Go to compile Quilt.</aside>
 
-Note that if you've previously installed Quilt with npm, there will be
-another Quilt binary installed on your machine (that was downloaded during the
-npm installation).  If you want to develop Quilt,
-you probably want to make sure that when you run `quilt`, the version you're
-developing (that was compiled from the Go code) gets run, and not the Quilt
-release that was downloaded from npm. Check that this is the case:
-
-```console
-$ which quilt
-/Users/kay/gowork/bin/quilt
-```
-
-If running `which quilt` results in a path that includes your `$GOPATH$`, like
-the one above, you're all set.  If it instead returns someplace else, e.g.,
-`/usr/local/bin/quilt`, you'll need to fix your `$PATH` variable so that
-`$GOPATH/bin` comes first.
-
-### Building Quilt
-
-To build Quilt, run `go install` in the Quilt directory. To do things beyond
-basic build and install, several additional build tools are required.  These
-can be installed with the `make go-get` target.
-
-If you're developing the the @quilt/quilt package, you must also tell Node.js
-to use your local development copy of the Quilt JavaScript bindings by running:
-
-```console
-$ npm link .
-```
-in the directory that contains your local Quilt source files. For each blueprint
-that uses the Quilt JavaScript bindings, you must also run:
-
-```console
-$ npm link @quilt/quilt
-```
-
-in the directory that contains the blueprint JavaScript files.
-
 ### Protobufs
 If you change any of the proto files, you'll need to regenerate the protobuf
 code. We currently use protoc v3. On a Mac with homebrew, you can install protoc v3
@@ -112,6 +74,76 @@ To update a dependency:
 
 ```console
 $ govendor update +vendor
+```
+
+## Building and Testing
+
+### Building and Testing the Go Code
+
+To build Quilt, run `go install` in the Quilt directory.  To do things beyond
+basic build and install, several additional build tools are required.  These
+can be installed with the `make go-get` target.
+
+Note that if you've previously installed Quilt with npm, there will be
+another Quilt binary installed on your machine (that was downloaded during the
+npm installation).  If you want to develop Quilt,
+you probably want to make sure that when you run `quilt`, the version you're
+developing (that was compiled from the Go code) gets run, and not the Quilt
+release that was downloaded from npm. Check that this is the case:
+
+```console
+$ which quilt
+/Users/kay/gowork/bin/quilt
+```
+
+If running `which quilt` results in a path that includes your `$GOPATH$`, like
+the one above, you're all set.  If it instead returns someplace else, e.g.,
+`/usr/local/bin/quilt`, you'll need to fix your `$PATH` variable so that
+`$GOPATH/bin` comes first.
+
+To run the `go` tests, use the `gocheck` Make target in the root directory:
+
+```console
+$ make gocheck
+```
+
+If you'd like to run the tests in just one package, e.g., the tests in the
+`engine` package, use `go test` with the package name:
+
+```console
+$ go test github.com/quilt/quilt/engine
+```
+
+### Building and Testing the JavaScript Code
+
+To run the JavaScript code, you'll need to use `npm` to install Quilt's
+dependencies:
+
+```console
+$ npm install .
+```
+
+If you're developing the @quilt/quilt package, you must also tell Node.js
+to use your local development copy of the Quilt JavaScript bindings (when you
+use Quilt to run blueprints) by running:
+
+```console
+$ npm link .
+```
+
+in the directory that contains your local Quilt source files. For each blueprint
+that uses the Quilt JavaScript bindings, you must also run:
+
+```console
+$ npm link @quilt/quilt
+```
+
+in the directory that contains the blueprint JavaScript files.
+
+To run the JavaScript tests for `bindings.js`, use the `jscheck` build target:
+
+```console
+$ make jscheck
 ```
 
 ## Contributing Code
