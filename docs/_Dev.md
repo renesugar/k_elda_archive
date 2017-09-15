@@ -114,29 +114,6 @@ To update a dependency:
 $ govendor update +vendor
 ```
 
-### Developing the Minion
-Whenever you develop code in `minion`, make sure you run your personal minion
-image, and not the default Quilt minion image.  To do that, follow these steps:
-
-1. Create a new empty repository on your favorite registry -
-[docker hub](https://hub.docker.com/) for example.
-2. Modify `quiltImage` in [cfg.go](../cloud/cfg/cfg.go) to
-point to your repo.
-3. Modify `Version` in [version.go](../version/version.go) to be "latest".
-This ensures that you will be using the most recent version of the minion
-image that you are pushing up to your registry.
-4. Create a `.mk` file (for example: `local.mk`) to override variables
-defined in [Makefile](../Makefile). Set `REPO` to your own repository
-(for example: `REPO = sample_repo`) inside the `.mk` file you created.
-5. Create the docker image: `make docker-build-quilt`
-   * Docker for Mac and Windows is in beta. See the
-   [docs](https://docs.docker.com/) for install instructions.
-6. Sign in to your image registry using `docker login`.
-7. Push your image: `make docker-push-quilt`.
-
-After the above setup, you're good to go - just remember to build and push your
-image first, whenever you want to run the `minion` with your latest changes.
-
 ## Contributing Code
 
 We highly encourage contributions to Quilt from the Open Source community!
@@ -286,3 +263,27 @@ While it is possible to boot multiple `master` VMs, there is only one effective
 `master` at any given time. The remaining `master` VMs simply perform as
 backups in case the leading `master` fails.
 
+## Developing the Minion
+
+If you're developing code in `minion`, you'll need to do some extra setup to
+test your new code.  To make Quilt run your local version of the minion image,
+and not the default Quilt minion image, follow these steps:
+
+1. Create a new empty repository on your favorite registry -
+[docker hub](https://hub.docker.com/) for example.
+2. Modify `quiltImage` in [cfg.go](../cloud/cfg/cfg.go) to
+point to your repo.
+3. Modify `Version` in [version.go](../version/version.go) to be "latest".
+This ensures that you will be using the most recent version of the minion
+image that you are pushing up to your registry.
+4. Create a `.mk` file (for example: `local.mk`) to override variables
+defined in [Makefile](../Makefile). Set `REPO` to your own repository
+(for example: `REPO = sample_repo`) inside the `.mk` file you created.
+5. Create the docker image: `make docker-build-quilt`
+   * Docker for Mac and Windows is in beta. See the
+   [docs](https://docs.docker.com/) for install instructions.
+6. Sign in to your image registry using `docker login`.
+7. Push your image: `make docker-push-quilt`.
+
+After the above setup, you're good to go - just remember to build and push your
+image first, whenever you want to run the `minion` with your latest changes.
