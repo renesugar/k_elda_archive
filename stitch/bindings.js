@@ -1,5 +1,5 @@
 /* eslint require-jsdoc: [1] valid-jsdoc: [1] */
-/* eslint-disable no-underscore-dangle */
+/* eslint no-underscore-dangle: "off" */
 const crypto = require('crypto');
 const request = require('sync-request');
 const stringify = require('json-stable-stringify');
