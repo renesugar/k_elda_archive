@@ -48,7 +48,7 @@ func makeGraphviz(graph Graph) string {
 }
 
 // Graphviz generates a specification for the graphviz program that visualizes the
-// communication graph of a stitch.
+// communication graph of a blueprint.
 func graphviz(outputFormat string, slug string, dot string) {
 	f, err := util.AppFs.Create(slug + ".dot")
 	if err != nil {

@@ -19,7 +19,7 @@ Dependencies:
  - easy-graph (install Graph::Easy from cpan)
  - graphviz (install from your favorite package manager)`
 
-// Inspect contains the options for inspecting Stitches.
+// Inspect contains the options for inspecting Blueprints.
 type Inspect struct {
 	configPath string
 	outputType string
@@ -59,7 +59,7 @@ func (iCmd *Inspect) AfterRun() error {
 	return nil
 }
 
-// Run inspects the provided Stitch.
+// Run inspects the provided Blueprint.
 func (iCmd *Inspect) Run() int {
 	bp, err := blueprint.FromFile(iCmd.configPath)
 	if err != nil {

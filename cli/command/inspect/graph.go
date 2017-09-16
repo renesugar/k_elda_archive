@@ -24,7 +24,7 @@ type Graph struct {
 	Nodes map[string]Node
 }
 
-// New queries the Stitch to create a Graph structure.
+// New queries the Blueprint to create a Graph structure.
 func New(bp blueprint.Blueprint) (Graph, error) {
 	g := Graph{
 		Nodes: map[string]Node{},

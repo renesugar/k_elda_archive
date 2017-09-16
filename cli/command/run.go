@@ -67,7 +67,7 @@ var errNoBlueprint = errors.New("no blueprint")
 
 var compile = blueprint.FromFile
 
-// Run starts the run for the provided Stitch.
+// Run starts the run for the provided Blueprint.
 func (rCmd *Run) Run() int {
 	compiled, err := compile(rCmd.blueprint)
 	if err != nil {

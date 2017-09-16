@@ -3,7 +3,7 @@
 ## TLS
 Quilt uses [grpc](http://www.grpc.io/) for communication with the daemon and
 deployed clusters. Functionality exposed through `grpc` include deploying new
-Stitches and querying deployment information. Thus, TLS should be enabled for
+blueprints and querying deployment information. Thus, TLS should be enabled for
 all non-experimental deployments. It is currently disabled by default.
 
 ### Quickstart
