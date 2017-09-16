@@ -40,7 +40,7 @@ func TestStopContainer(t *testing.T) {
 
 		passed = true
 		for _, m := range machines {
-			containersRaw, err := exec.Command("quilt", "ssh", m.StitchID,
+			containersRaw, err := exec.Command("quilt", "ssh", m.BlueprintID,
 				"docker", "ps", "--format", "{{.Names}}").Output()
 			if err != nil {
 				passed = false
@@ -49,14 +49,14 @@ func TestStopContainer(t *testing.T) {
 			}
 
 			containersStr := strings.TrimSpace(string(containersRaw))
-			fmt.Printf("Containers on machine %s:\n", m.StitchID)
+			fmt.Printf("Containers on machine %s:\n", m.BlueprintID)
 			fmt.Println(string(containersRaw))
 
 			names := strings.Split(containersStr, "\n")
 			if len(filterQuiltContainers(names)) > 0 {
 				passed = false
 				t.Errorf("machine %s has unexpected containers",
-					m.StitchID)
+					m.BlueprintID)
 			}
 		}
 

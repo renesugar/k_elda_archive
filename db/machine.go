@@ -12,7 +12,7 @@ type Machine struct {
 	ID int //Database ID
 
 	/* Populated by the policy engine. */
-	StitchID    string
+	BlueprintID string
 	Role        Role
 	Provider    ProviderName
 	Region      string
@@ -83,8 +83,8 @@ func (m Machine) getID() int {
 func (m Machine) String() string {
 	var tags []string
 
-	if m.StitchID != "" {
-		tags = append(tags, m.StitchID)
+	if m.BlueprintID != "" {
+		tags = append(tags, m.BlueprintID)
 	}
 
 	if m.Role != "" {

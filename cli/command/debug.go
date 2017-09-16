@@ -298,7 +298,7 @@ func machinesToTargets(machines []db.Machine) []logTarget {
 		t := logTarget{
 			ip:       m.PublicIP,
 			dir:      machineDir,
-			stitchID: m.StitchID,
+			stitchID: m.BlueprintID,
 			cmds:     append(machineCmds, roleCmds...),
 		}
 		targets = append(targets, t)

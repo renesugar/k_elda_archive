@@ -225,15 +225,15 @@ func TestSort(t *testing.T) {
 		})
 		assert.Equal(t, 3, len(machines))
 
-		machines[0].StitchID = ""
+		machines[0].BlueprintID = ""
 		view.Commit(machines[0])
 
-		machines[2].StitchID = ""
+		machines[2].BlueprintID = ""
 		machines[2].PublicIP = "a"
 		machines[2].PrivateIP = "b"
 		view.Commit(machines[2])
 
-		machines[1].StitchID = ""
+		machines[1].BlueprintID = ""
 		machines[1].PrivateIP = "c"
 		view.Commit(machines[1])
 

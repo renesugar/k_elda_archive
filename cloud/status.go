@@ -61,10 +61,10 @@ func status(m db.Machine) (string, bool) {
 
 func setStatuses(conn db.Conn, machines []db.Machine, status string) {
 	for _, m := range machines {
-		if err := setStatus(conn, m.StitchID, status); err != nil {
+		if err := setStatus(conn, m.BlueprintID, status); err != nil {
 			log.WithFields(log.Fields{
 				"error":   err,
-				"machine": m.StitchID,
+				"machine": m.BlueprintID,
 				"status":  status,
 			}).Warn("Failed to update status of machine")
 		}
@@ -74,7 +74,7 @@ func setStatuses(conn db.Conn, machines []db.Machine, status string) {
 func setStatus(conn db.Conn, id string, status string) error {
 	return conn.Txn(db.MachineTable).Run(func(view db.Database) error {
 		matchingMachines := view.SelectFromMachine(func(m db.Machine) bool {
-			return m.StitchID == id
+			return m.BlueprintID == id
 		})
 		switch len(matchingMachines) {
 		case 1:

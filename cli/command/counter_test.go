@@ -62,7 +62,7 @@ func TestRunQueryMinion(t *testing.T) {
 
 	// Test we error when QueryMinionCounters fails.
 	mock.On("QueryMachines").Return(
-		[]db.Machine{{StitchID: "minion", PublicIP: "host"}}, nil)
+		[]db.Machine{{BlueprintID: "minion", PublicIP: "host"}}, nil)
 	mock.On("QueryMinionCounters", "host").Once().Return(nil, assert.AnError)
 	assert.NotZero(t, counters.Run())
 
