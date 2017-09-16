@@ -29,12 +29,12 @@ func Run(conn db.Conn, adminKey string) {
 func updateTxn(view db.Database, adminKey string) error {
 	c.Inc("Update")
 
-	blueprint, err := view.GetBlueprint()
+	bp, err := view.GetBlueprint()
 	if err != nil {
 		return err
 	}
 
-	machineTxn(view, blueprint.Blueprint, adminKey)
+	machineTxn(view, bp.Blueprint, adminKey)
 	return nil
 }
 

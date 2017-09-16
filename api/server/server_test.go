@@ -202,16 +202,16 @@ func TestDeploy(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	var blueprint db.Blueprint
+	var bp db.Blueprint
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		blueprint, err = view.GetBlueprint()
+		bp, err = view.GetBlueprint()
 		assert.NoError(t, err)
 		return nil
 	})
 
 	exp, err := stitch.FromJSON(createMachineDeployment)
 	assert.NoError(t, err)
-	assert.Equal(t, exp, blueprint.Blueprint)
+	assert.Equal(t, exp, bp.Blueprint)
 }
 
 func TestVagrantDeployment(t *testing.T) {
@@ -236,16 +236,16 @@ func TestVagrantDeployment(t *testing.T) {
 
 	assert.Error(t, err, vagrantErrMsg)
 
-	var blueprint db.Blueprint
+	var bp db.Blueprint
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		blueprint, err = view.GetBlueprint()
+		bp, err = view.GetBlueprint()
 		assert.NoError(t, err)
 		return nil
 	})
 
 	exp, err := stitch.FromJSON(vagrantDeployment)
 	assert.NoError(t, err)
-	assert.Equal(t, exp, blueprint.Blueprint)
+	assert.Equal(t, exp, bp.Blueprint)
 }
 
 func TestUpdateLeaderContainerAttrs(t *testing.T) {

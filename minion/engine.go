@@ -8,8 +8,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-func updatePolicy(view db.Database, blueprint string) {
-	compiled, err := stitch.FromJSON(blueprint)
+func updatePolicy(view db.Database, bp string) {
+	compiled, err := stitch.FromJSON(bp)
 	if err != nil {
 		log.WithError(err).Warn("Invalid blueprint.")
 		return
@@ -78,11 +78,11 @@ func portPlacements(connections []db.Connection, containers []db.Container) (
 	return placements
 }
 
-func updatePlacements(view db.Database, blueprint stitch.Blueprint) {
+func updatePlacements(view db.Database, bp stitch.Blueprint) {
 	connections := view.SelectFromConnection(nil)
 	containers := view.SelectFromContainer(nil)
 	placements := db.PlacementSlice(portPlacements(connections, containers))
-	for _, sp := range blueprint.Placements {
+	for _, sp := range bp.Placements {
 		placements = append(placements, db.Placement{
 			TargetContainer: sp.TargetContainerID,
 			Exclusive:       sp.Exclusive,
@@ -115,10 +115,10 @@ func updatePlacements(view db.Database, blueprint stitch.Blueprint) {
 	}
 }
 
-func updateLoadBalancers(view db.Database, blueprint stitch.Blueprint) {
-	var blueprintLoadBalancers db.LoadBalancerSlice
-	for _, lb := range blueprint.LoadBalancers {
-		blueprintLoadBalancers = append(blueprintLoadBalancers, db.LoadBalancer{
+func updateLoadBalancers(view db.Database, bp stitch.Blueprint) {
+	var bpLoadBalancers db.LoadBalancerSlice
+	for _, lb := range bp.LoadBalancers {
+		bpLoadBalancers = append(bpLoadBalancers, db.LoadBalancer{
 			Name:      lb.Name,
 			Hostnames: lb.Hostnames,
 		})
@@ -129,7 +129,7 @@ func updateLoadBalancers(view db.Database, blueprint stitch.Blueprint) {
 	}
 
 	dbLoadBalancers := db.LoadBalancerSlice(view.SelectFromLoadBalancer(nil))
-	pairs, toAdd, toRemove := join.HashJoin(blueprintLoadBalancers, dbLoadBalancers,
+	pairs, toAdd, toRemove := join.HashJoin(bpLoadBalancers, dbLoadBalancers,
 		key, key)
 
 	for _, intf := range toRemove {
@@ -142,18 +142,18 @@ func updateLoadBalancers(view db.Database, blueprint stitch.Blueprint) {
 
 	for _, pair := range pairs {
 		dbLoadBalancer := pair.R.(db.LoadBalancer)
-		blueprintLoadBalancer := pair.L.(db.LoadBalancer)
+		bpLoadBalancer := pair.L.(db.LoadBalancer)
 
 		// Modify the original database load balancer so that we preserve
 		// whatever IP the load balancer might have already been allocated.
-		dbLoadBalancer.Name = blueprintLoadBalancer.Name
-		dbLoadBalancer.Hostnames = blueprintLoadBalancer.Hostnames
+		dbLoadBalancer.Name = bpLoadBalancer.Name
+		dbLoadBalancer.Hostnames = bpLoadBalancer.Hostnames
 		view.Commit(dbLoadBalancer)
 	}
 }
 
-func updateConnections(view db.Database, blueprint stitch.Blueprint) {
-	scs := stitch.ConnectionSlice(blueprint.Connections)
+func updateConnections(view db.Database, bp stitch.Blueprint) {
+	scs := stitch.ConnectionSlice(bp.Connections)
 
 	// Setup connections to load balanced containers. Load balancing works by
 	// rewriting the load balancer IPs to the IP address of one of the load
@@ -161,7 +161,7 @@ func updateConnections(view db.Database, blueprint stitch.Blueprint) {
 	// balancer IP address is insufficient -- the container must also be able
 	// to communicate directly with the containers behind the load balancer.
 	loadBalancers := map[string]stitch.LoadBalancer{}
-	for _, lb := range blueprint.LoadBalancers {
+	for _, lb := range bp.LoadBalancers {
 		loadBalancers[lb.Name] = lb
 	}
 
@@ -216,9 +216,9 @@ func updateConnections(view db.Database, blueprint stitch.Blueprint) {
 	}
 }
 
-func queryContainers(blueprint stitch.Blueprint) []db.Container {
+func queryContainers(bp stitch.Blueprint) []db.Container {
 	containers := map[string]*db.Container{}
-	for _, c := range blueprint.Containers {
+	for _, c := range bp.Containers {
 		containers[c.Hostname] = &db.Container{
 			BlueprintID:       c.ID,
 			Command:           c.Command,
@@ -238,12 +238,12 @@ func queryContainers(blueprint stitch.Blueprint) []db.Container {
 	return ret
 }
 
-func updateContainers(view db.Database, blueprint stitch.Blueprint) {
+func updateContainers(view db.Database, bp stitch.Blueprint) {
 	key := func(val interface{}) interface{} {
 		return val.(db.Container).BlueprintID
 	}
 
-	pairs, news, dbcs := join.HashJoin(db.ContainerSlice(queryContainers(blueprint)),
+	pairs, news, dbcs := join.HashJoin(db.ContainerSlice(queryContainers(bp)),
 		db.ContainerSlice(view.SelectFromContainer(nil)), key, key)
 
 	for _, dbc := range dbcs {
@@ -269,7 +269,7 @@ func updateContainers(view db.Database, blueprint stitch.Blueprint) {
 	}
 }
 
-func updateImages(view db.Database, blueprint stitch.Blueprint) {
+func updateImages(view db.Database, bp stitch.Blueprint) {
 	dbImageKey := func(intf interface{}) interface{} {
 		return stitch.Image{
 			Name:       intf.(db.Image).Name,
@@ -277,7 +277,7 @@ func updateImages(view db.Database, blueprint stitch.Blueprint) {
 		}
 	}
 
-	blueprintImages := stitchImageSlice(queryImages(blueprint))
+	blueprintImages := stitchImageSlice(queryImages(bp))
 	dbImages := db.ImageSlice(view.SelectFromImage(nil))
 	_, toAdd, toRemove := join.HashJoin(blueprintImages, dbImages, nil, dbImageKey)
 
@@ -293,9 +293,9 @@ func updateImages(view db.Database, blueprint stitch.Blueprint) {
 	}
 }
 
-func queryImages(blueprint stitch.Blueprint) (images []stitch.Image) {
+func queryImages(bp stitch.Blueprint) (images []stitch.Image) {
 	addedImages := map[stitch.Image]struct{}{}
-	for _, c := range blueprint.Containers {
+	for _, c := range bp.Containers {
 		_, addedImage := addedImages[c.Image]
 		if c.Image.Dockerfile == "" || addedImage {
 			continue

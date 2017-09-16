@@ -207,13 +207,13 @@ func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 	}
 
 	err = s.conn.Txn(db.BlueprintTable).Run(func(view db.Database) error {
-		blueprint, err := view.GetBlueprint()
+		bp, err := view.GetBlueprint()
 		if err != nil {
-			blueprint = view.InsertBlueprint()
+			bp = view.InsertBlueprint()
 		}
 
-		blueprint.Blueprint = newBlueprint
-		view.Commit(blueprint)
+		bp.Blueprint = newBlueprint
+		view.Commit(bp)
 		return nil
 	})
 	if err != nil {

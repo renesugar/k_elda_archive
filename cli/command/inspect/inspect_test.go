@@ -22,7 +22,7 @@ func TestStripExtension(t *testing.T) {
 	}
 }
 
-// The expected graphviz graph returned by inspect when run on `testStitch`.
+// The expected graphviz graph returned by inspect when run on `bp` in TestViz.
 const expGraph = `strict digraph {
     "a";
     "b";
@@ -44,7 +44,7 @@ func isGraphEqual(a, b string) bool {
 func TestViz(t *testing.T) {
 	t.Parallel()
 
-	blueprint := stitch.Blueprint{
+	bp := stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "a",
@@ -68,7 +68,7 @@ func TestViz(t *testing.T) {
 		},
 	}
 
-	graph, err := New(blueprint)
+	graph, err := New(bp)
 	if err != nil {
 		panic(err)
 	}

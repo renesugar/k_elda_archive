@@ -12,8 +12,8 @@ import (
 	"github.com/quilt/quilt/stitch"
 )
 
-func tryRunBlueprint(blueprint string) error {
-	_, err := stitch.FromFile(blueprint)
+func tryRunBlueprint(bp string) error {
+	_, err := stitch.FromFile(bp)
 	return err
 }
 
@@ -41,17 +41,17 @@ func TestExampleBlueprints() error {
 		return err
 	}
 
-	for _, blueprint := range blueprints {
-		log.Infof("Testing %s", blueprint)
+	for _, bp := range blueprints {
+		log.Infof("Testing %s", bp)
 
 		// Change into the directory of the blueprint in order to install
 		// dependencies.
-		os.Chdir(filepath.Dir(blueprint))
+		os.Chdir(filepath.Dir(bp))
 		if err = run("npm", "install", "."); err != nil {
 			return err
 		}
 
-		if err = tryRunBlueprint(blueprint); err != nil {
+		if err = tryRunBlueprint(bp); err != nil {
 			return err
 		}
 	}
@@ -73,9 +73,9 @@ func TestCIBlueprints() error {
 		return err
 	}
 
-	for _, blueprint := range blueprints {
-		log.Infof("Testing %s", blueprint)
-		if err := tryRunBlueprint("./" + blueprint); err != nil {
+	for _, bp := range blueprints {
+		log.Infof("Testing %s", bp)
+		if err := tryRunBlueprint("./" + bp); err != nil {
 			return err
 		}
 	}

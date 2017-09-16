@@ -25,20 +25,20 @@ type Graph struct {
 }
 
 // New queries the Stitch to create a Graph structure.
-func New(blueprint stitch.Blueprint) (Graph, error) {
+func New(bp stitch.Blueprint) (Graph, error) {
 	g := Graph{
 		Nodes: map[string]Node{},
 	}
 
-	for _, c := range blueprint.Containers {
+	for _, c := range bp.Containers {
 		g.addNode(c.Hostname)
 	}
-	for _, lb := range blueprint.LoadBalancers {
+	for _, lb := range bp.LoadBalancers {
 		g.addNode(lb.Name)
 	}
 	g.addNode(stitch.PublicInternetLabel)
 
-	for _, conn := range blueprint.Connections {
+	for _, conn := range bp.Connections {
 		err := g.addConnection(conn.From, conn.To)
 		if err != nil {
 			return Graph{}, err

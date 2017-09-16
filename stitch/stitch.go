@@ -142,12 +142,12 @@ func FromFile(filename string) (Blueprint, error) {
 }
 
 // FromJSON gets a Stitch handle from the deployment representation.
-func FromJSON(jsonStr string) (blueprint Blueprint, err error) {
-	err = json.Unmarshal([]byte(jsonStr), &blueprint)
+func FromJSON(jsonStr string) (bp Blueprint, err error) {
+	err = json.Unmarshal([]byte(jsonStr), &bp)
 	if err != nil {
 		err = fmt.Errorf("unable to parse blueprint: %s", err)
 	}
-	return blueprint, err
+	return bp, err
 }
 
 // String returns the Stitch in its deployment representation.

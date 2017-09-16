@@ -61,13 +61,13 @@ func (iCmd *Inspect) AfterRun() error {
 
 // Run inspects the provided Stitch.
 func (iCmd *Inspect) Run() int {
-	blueprint, err := stitch.FromFile(iCmd.configPath)
+	bp, err := stitch.FromFile(iCmd.configPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 
-	graph, err := New(blueprint)
+	graph, err := New(bp)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
