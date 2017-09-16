@@ -45,10 +45,10 @@ type Debug struct {
 }
 
 type logTarget struct {
-	ip       string
-	dir      string
-	stitchID string
-	cmds     []logCmd
+	ip          string
+	dir         string
+	blueprintID string
+	cmds        []logCmd
 }
 
 type logCmd struct {
@@ -238,7 +238,7 @@ func (dCmd Debug) downloadLogs(targets []logTarget) int {
 	}
 
 	for _, t := range targets {
-		path := filepath.Join(rootDir, t.dir, t.stitchID)
+		path := filepath.Join(rootDir, t.dir, t.blueprintID)
 		if err := util.Mkdir(path, 0755); err != nil {
 			errno++
 			log.Error(err)
@@ -254,13 +254,13 @@ func (dCmd Debug) downloadLogs(targets []logTarget) int {
 
 		for _, cmd := range t.cmds {
 			log.Debugf("Downloading log '%s' for target %s", cmd.name,
-				t.stitchID)
+				t.blueprintID)
 
 			result, err := conn.CombinedOutput(cmd.cmd)
 			if err != nil {
 				log.WithError(err).WithField("output", string(result)).
 					Errorf("Failed to get log '%s' from target %s",
-						cmd.name, t.stitchID)
+						cmd.name, t.blueprintID)
 				errno++
 				continue
 			}
@@ -296,10 +296,10 @@ func machinesToTargets(machines []db.Machine) []logTarget {
 		}
 
 		t := logTarget{
-			ip:       m.PublicIP,
-			dir:      machineDir,
-			stitchID: m.BlueprintID,
-			cmds:     append(machineCmds, roleCmds...),
+			ip:          m.PublicIP,
+			dir:         machineDir,
+			blueprintID: m.BlueprintID,
+			cmds:        append(machineCmds, roleCmds...),
 		}
 		targets = append(targets, t)
 	}
@@ -320,10 +320,10 @@ func containersToTargets(containers []db.Container, ips map[string]string) []log
 		}
 
 		t := logTarget{
-			ip:       ip,
-			dir:      containerDir,
-			stitchID: c.BlueprintID,
-			cmds:     nil,
+			ip:          ip,
+			dir:         containerDir,
+			blueprintID: c.BlueprintID,
+			cmds:        nil,
 		}
 		for _, cmd := range containerCmds {
 			cmd.cmd = fmt.Sprintf(cmd.cmd, c.DockerID)
@@ -348,21 +348,21 @@ func filterTargets(targets []logTarget, ids []string) ([]logTarget, error) {
 }
 
 func findTarget(targets []logTarget, id string) (logTarget, error) {
-	choice := logTarget{stitchID: ""}
+	choice := logTarget{blueprintID: ""}
 	for _, t := range targets {
-		if len(id) > len(t.stitchID) || t.stitchID[:len(id)] != id {
+		if len(id) > len(t.blueprintID) || t.blueprintID[:len(id)] != id {
 			continue
 		}
 
-		if choice.stitchID != "" {
-			return logTarget{}, fmt.Errorf("ambiguous stitchIDs %s and %s",
-				choice.stitchID, t.stitchID)
+		if choice.blueprintID != "" {
+			return logTarget{}, fmt.Errorf("ambiguous blueprintIDs %s and %s",
+				choice.blueprintID, t.blueprintID)
 		}
 		choice = t
 	}
 
-	if choice.stitchID == "" {
-		return logTarget{}, fmt.Errorf("no target with stitchID %s", id)
+	if choice.blueprintID == "" {
+		return logTarget{}, fmt.Errorf("no target with blueprintID %s", id)
 	}
 
 	return choice, nil
