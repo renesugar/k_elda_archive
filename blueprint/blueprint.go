@@ -96,10 +96,10 @@ type Range struct {
 // network.
 const PublicInternetLabel = "public"
 
-// Accepts returns true if `x` is within the range specified by `stitchr` (include),
-// or if no max is specified and `x` is larger than `stitchr.min`.
-func (stitchr Range) Accepts(x float64) bool {
-	return stitchr.Min <= x && (stitchr.Max == 0 || x <= stitchr.Max)
+// Accepts returns true if `x` is within the range specified by `blueprintr` (include),
+// or if no max is specified and `x` is larger than `blueprintr.min`.
+func (blueprintr Range) Accepts(x float64) bool {
+	return blueprintr.Min <= x && (blueprintr.Max == 0 || x <= blueprintr.Max)
 }
 
 var lookPath = exec.LookPath
@@ -151,8 +151,8 @@ func FromJSON(jsonStr string) (bp Blueprint, err error) {
 }
 
 // String returns the Blueprint in its deployment representation.
-func (stitch Blueprint) String() string {
-	jsonBytes, err := json.Marshal(stitch)
+func (bp Blueprint) String() string {
+	jsonBytes, err := json.Marshal(bp)
 	if err != nil {
 		panic(err)
 	}
