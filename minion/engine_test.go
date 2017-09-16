@@ -18,10 +18,10 @@ func TestContainerTxn(t *testing.T) {
 	conn := db.New()
 	trigg := conn.Trigger(db.ContainerTable).C
 
-	testContainerTxn(t, conn, stitch.Stitch{})
+	testContainerTxn(t, conn, stitch.Blueprint{})
 	assert.False(t, fired(trigg))
 
-	stc := stitch.Stitch{
+	bp := stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "foo",
@@ -39,13 +39,13 @@ func TestContainerTxn(t *testing.T) {
 			},
 		},
 	}
-	testContainerTxn(t, conn, stc)
+	testContainerTxn(t, conn, bp)
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stc)
+	testContainerTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Stitch{
+	testContainerTxn(t, conn, stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "foo",
@@ -78,7 +78,7 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Stitch{
+	testContainerTxn(t, conn, stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "foo",
@@ -111,7 +111,7 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Stitch{
+	testContainerTxn(t, conn, stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "foo",
@@ -144,7 +144,7 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Stitch{
+	testContainerTxn(t, conn, stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "foo",
@@ -171,7 +171,7 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Stitch{
+	testContainerTxn(t, conn, stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "foo",
@@ -190,7 +190,7 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	stc = stitch.Stitch{
+	bp = stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "foo",
@@ -225,22 +225,22 @@ func TestContainerTxn(t *testing.T) {
 			},
 		},
 	}
-	testContainerTxn(t, conn, stc)
+	testContainerTxn(t, conn, bp)
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stc)
+	testContainerTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 }
 
-func testContainerTxn(t *testing.T, conn db.Conn, stc stitch.Stitch) {
+func testContainerTxn(t *testing.T, conn db.Conn, bp stitch.Blueprint) {
 	var containers []db.Container
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		updatePolicy(view, stc.String())
+		updatePolicy(view, bp.String())
 		containers = view.SelectFromContainer(nil)
 		return nil
 	})
 
-	for _, e := range queryContainers(stc) {
+	for _, e := range queryContainers(bp) {
 		found := false
 		for i, c := range containers {
 			if e.BlueprintID == c.BlueprintID {
@@ -260,58 +260,58 @@ func TestConnectionTxn(t *testing.T) {
 	conn := db.New()
 	trigg := conn.Trigger(db.ConnectionTable).C
 
-	testConnectionTxn(t, conn, stitch.Stitch{})
+	testConnectionTxn(t, conn, stitch.Blueprint{})
 	assert.False(t, fired(trigg))
 
-	stc := stitch.Stitch{
+	bp := stitch.Blueprint{
 		Connections: []stitch.Connection{
 			{From: "a", To: "a", MinPort: 80, MaxPort: 80},
 		},
 	}
-	testConnectionTxn(t, conn, stc)
+	testConnectionTxn(t, conn, bp)
 	assert.True(t, fired(trigg))
 
-	testConnectionTxn(t, conn, stc)
+	testConnectionTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 
-	stc.Connections = []stitch.Connection{
+	bp.Connections = []stitch.Connection{
 		{From: "a", To: "a", MinPort: 90, MaxPort: 90},
 	}
-	testConnectionTxn(t, conn, stc)
+	testConnectionTxn(t, conn, bp)
 	assert.True(t, fired(trigg))
 
-	testConnectionTxn(t, conn, stc)
+	testConnectionTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 
-	stc.Connections = []stitch.Connection{
+	bp.Connections = []stitch.Connection{
 		{From: "b", To: "a", MinPort: 90, MaxPort: 90},
 		{From: "b", To: "c", MinPort: 90, MaxPort: 90},
 		{From: "b", To: "a", MinPort: 100, MaxPort: 100},
 		{From: "c", To: "a", MinPort: 101, MaxPort: 101},
 	}
-	testConnectionTxn(t, conn, stc)
+	testConnectionTxn(t, conn, bp)
 	assert.True(t, fired(trigg))
 
-	testConnectionTxn(t, conn, stc)
+	testConnectionTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 
-	stc.Connections = nil
-	testConnectionTxn(t, conn, stc)
+	bp.Connections = nil
+	testConnectionTxn(t, conn, bp)
 	assert.True(t, fired(trigg))
 
-	testConnectionTxn(t, conn, stc)
+	testConnectionTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 }
 
-func testConnectionTxn(t *testing.T, conn db.Conn, stc stitch.Stitch) {
+func testConnectionTxn(t *testing.T, conn db.Conn, bp stitch.Blueprint) {
 	var connections []db.Connection
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		updatePolicy(view, stc.String())
+		updatePolicy(view, bp.String())
 		connections = view.SelectFromConnection(nil)
 		return nil
 	})
 
-	exp := stc.Connections
+	exp := bp.Connections
 	for _, e := range exp {
 		found := false
 		for i, c := range connections {
@@ -342,10 +342,10 @@ func fired(c chan struct{}) bool {
 
 func TestPlacementTxn(t *testing.T) {
 	conn := db.New()
-	checkPlacement := func(stc stitch.Stitch, exp ...db.Placement) {
+	checkPlacement := func(bp stitch.Blueprint, exp ...db.Placement) {
 		var actual db.PlacementSlice
 		conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-			updatePolicy(view, stc.String())
+			updatePolicy(view, bp.String())
 			actual = db.PlacementSlice(view.SelectFromPlacement(nil))
 			return nil
 		})
@@ -377,7 +377,7 @@ func TestPlacementTxn(t *testing.T) {
 	fooID := "fooID"
 	barID := "barID"
 	bazID := "bazID"
-	stc := stitch.Stitch{
+	bp := stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: fooHostname,
@@ -398,10 +398,10 @@ func TestPlacementTxn(t *testing.T) {
 	}
 
 	// Machine placement
-	stc.Placements = []stitch.Placement{
+	bp.Placements = []stitch.Placement{
 		{TargetContainerID: "foo", Exclusive: false, Size: "m4.large"},
 	}
-	checkPlacement(stc,
+	checkPlacement(bp,
 		db.Placement{
 			TargetContainer: "foo",
 			Exclusive:       false,
@@ -410,16 +410,16 @@ func TestPlacementTxn(t *testing.T) {
 	)
 
 	// Port placement
-	stc.Placements = nil
-	stc.Connections = []stitch.Connection{
+	bp.Placements = nil
+	bp.Connections = []stitch.Connection{
 		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 80,
 			MaxPort: 80},
 		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 81,
 			MaxPort: 81},
 	}
-	checkPlacement(stc)
+	checkPlacement(bp)
 
-	stc.Connections = []stitch.Connection{
+	bp.Connections = []stitch.Connection{
 		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 80,
 			MaxPort: 80},
 		{From: stitch.PublicInternetLabel, To: barHostname, MinPort: 80,
@@ -429,7 +429,7 @@ func TestPlacementTxn(t *testing.T) {
 		{From: stitch.PublicInternetLabel, To: bazHostname, MinPort: 81,
 			MaxPort: 81},
 	}
-	checkPlacement(stc,
+	checkPlacement(bp,
 		db.Placement{
 			TargetContainer: fooID,
 			OtherContainer:  barID,
@@ -443,10 +443,10 @@ func TestPlacementTxn(t *testing.T) {
 	)
 }
 
-func checkImage(t *testing.T, conn db.Conn, stc stitch.Stitch, exp ...db.Image) {
+func checkImage(t *testing.T, conn db.Conn, bp stitch.Blueprint, exp ...db.Image) {
 	var images []db.Image
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		updatePolicy(view, stc.String())
+		updatePolicy(view, bp.String())
 		images = view.SelectFromImage(nil)
 		return nil
 	})
@@ -466,7 +466,7 @@ func TestImageTxn(t *testing.T) {
 	t.Parallel()
 
 	// Regular image that isn't built by Quilt.
-	checkImage(t, db.New(), stitch.Stitch{
+	checkImage(t, db.New(), stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				ID:    "475c40d6070969839ba0f88f7a9bd0cc7936aa30",
@@ -476,7 +476,7 @@ func TestImageTxn(t *testing.T) {
 	})
 
 	conn := db.New()
-	checkImage(t, conn, stitch.Stitch{
+	checkImage(t, conn, stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				ID:    "96189e4ea36c80171fd842ccc4c3438d06061991",
@@ -515,7 +515,7 @@ func TestImageTxn(t *testing.T) {
 		view.Commit(img)
 		return nil
 	})
-	checkImage(t, conn, stitch.Stitch{
+	checkImage(t, conn, stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				ID:    "96189e4ea36c80171fd842ccc4c3438d06061991",
@@ -539,11 +539,11 @@ func TestImageTxn(t *testing.T) {
 	)
 }
 
-func checkLoadBalancer(t *testing.T, conn db.Conn, stc stitch.Stitch,
+func checkLoadBalancer(t *testing.T, conn db.Conn, bp stitch.Blueprint,
 	exp ...db.LoadBalancer) {
 	var loadBalancers []db.LoadBalancer
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		updatePolicy(view, stc.String())
+		updatePolicy(view, bp.String())
 		loadBalancers = view.SelectFromLoadBalancer(nil)
 		return nil
 	})
@@ -571,7 +571,7 @@ func TestLoadBalancerTxn(t *testing.T) {
 	hostnamesA := []string{"a", "aa"}
 
 	// Insert a load balancer into an empty db.
-	checkLoadBalancer(t, conn, stitch.Stitch{
+	checkLoadBalancer(t, conn, stitch.Blueprint{
 		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name:      loadBalancerA,
@@ -595,7 +595,7 @@ func TestLoadBalancerTxn(t *testing.T) {
 	})
 
 	hostnamesANew := []string{"a", "aa", "aaa"}
-	checkLoadBalancer(t, conn, stitch.Stitch{
+	checkLoadBalancer(t, conn, stitch.Blueprint{
 		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name:      loadBalancerA,
@@ -612,7 +612,7 @@ func TestLoadBalancerTxn(t *testing.T) {
 	// different one is inserted.
 	loadBalancerB := "loadBalancerB"
 	hostnamesB := []string{"b", "bb"}
-	checkLoadBalancer(t, conn, stitch.Stitch{
+	checkLoadBalancer(t, conn, stitch.Blueprint{
 		LoadBalancers: []stitch.LoadBalancer{
 			{
 				Name:      loadBalancerB,

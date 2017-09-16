@@ -187,8 +187,8 @@ func TestPromptsUser(t *testing.T) {
 		confirm = oldConfirm
 	}()
 
-	compile = func(path string) (stitch.Stitch, error) {
-		return stitch.Stitch{}, nil
+	compile = func(path string) (stitch.Blueprint, error) {
+		return stitch.Blueprint{}, nil
 	}
 
 	util.AppFs = afero.NewMemMapFs()
@@ -199,7 +199,7 @@ func TestPromptsUser(t *testing.T) {
 
 		c := new(clientMock.Client)
 		c.On("QueryBlueprints").Return([]db.Blueprint{{
-			Stitch: stitch.Stitch{Namespace: "old"},
+			Blueprint: stitch.Blueprint{Namespace: "old"},
 		}}, nil)
 		c.On("Deploy", "{}").Return(nil)
 

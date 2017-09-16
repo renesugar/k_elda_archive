@@ -11,7 +11,7 @@ import (
 type Blueprint struct {
 	ID int
 
-	stitch.Stitch
+	stitch.Blueprint
 }
 
 // InsertBlueprint creates a new Blueprint and interts it into 'db'.

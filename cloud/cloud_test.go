@@ -600,13 +600,13 @@ func TestGetACLs(t *testing.T) {
 
 	// A blueprint with local, shouldn't have it added a second time.
 	acls = cld.getACLs(db.Blueprint{
-		Stitch: stitch.Stitch{AdminACL: []string{"local"}},
+		Blueprint: stitch.Blueprint{AdminACL: []string{"local"}},
 	}, nil)
 	assert.Equal(t, exp, acls)
 
 	// Connections that aren't to or from public, shouldn't affect the acls.
 	acls = cld.getACLs(db.Blueprint{
-		Stitch: stitch.Stitch{
+		Blueprint: stitch.Blueprint{
 			Connections: []stitch.Connection{{
 				From:    "foo",
 				To:      "bar",
@@ -619,7 +619,7 @@ func TestGetACLs(t *testing.T) {
 
 	// Connections from public create an ACL.
 	acls = cld.getACLs(db.Blueprint{
-		Stitch: stitch.Stitch{
+		Blueprint: stitch.Blueprint{
 			Connections: []stitch.Connection{{
 				From:    stitch.PublicInternetLabel,
 				To:      "bar",

@@ -194,12 +194,12 @@ func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 		return nil, errDaemonOnlyRPC
 	}
 
-	stitch, err := stitch.FromJSON(deployReq.Deployment)
+	newBlueprint, err := stitch.FromJSON(deployReq.Deployment)
 	if err != nil {
 		return &pb.DeployReply{}, err
 	}
 
-	for _, c := range stitch.Containers {
+	for _, c := range newBlueprint.Containers {
 		if _, err := reference.ParseAnyReference(c.Image.Name); err != nil {
 			return &pb.DeployReply{}, fmt.Errorf("could not parse "+
 				"container image %s: %s", c.Image.Name, err.Error())
@@ -212,7 +212,7 @@ func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 			blueprint = view.InsertBlueprint()
 		}
 
-		blueprint.Stitch = stitch
+		blueprint.Blueprint = newBlueprint
 		view.Commit(blueprint)
 		return nil
 	})
@@ -221,7 +221,7 @@ func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 	}
 
 	// XXX: Remove this error when the Vagrant provider is done.
-	for _, machine := range stitch.Machines {
+	for _, machine := range newBlueprint.Machines {
 		if machine.Provider == string(db.Vagrant) {
 			err = errors.New("The Vagrant provider is still in development." +
 				" The blueprint will continue to run, but" +

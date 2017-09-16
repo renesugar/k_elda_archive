@@ -25,7 +25,7 @@ type Graph struct {
 }
 
 // New queries the Stitch to create a Graph structure.
-func New(blueprint stitch.Stitch) (Graph, error) {
+func New(blueprint stitch.Blueprint) (Graph, error) {
 	g := Graph{
 		Nodes: map[string]Node{},
 	}

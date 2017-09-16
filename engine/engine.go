@@ -34,7 +34,7 @@ func updateTxn(view db.Database, adminKey string) error {
 		return err
 	}
 
-	machineTxn(view, blueprint.Stitch, adminKey)
+	machineTxn(view, blueprint.Blueprint, adminKey)
 	return nil
 }
 
@@ -106,7 +106,7 @@ func toDBMachine(machines []stitch.Machine, maxPrice float64,
 	return dbMachines
 }
 
-func machineTxn(view db.Database, stitch stitch.Stitch, adminKey string) {
+func machineTxn(view db.Database, stitch stitch.Blueprint, adminKey string) {
 	// XXX: How best to deal with machines that don't specify enough information?
 	maxPrice := stitch.MaxPrice
 	stitchMachines := toDBMachine(stitch.Machines, maxPrice, adminKey)

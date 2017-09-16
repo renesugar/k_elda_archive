@@ -78,7 +78,7 @@ func portPlacements(connections []db.Connection, containers []db.Container) (
 	return placements
 }
 
-func updatePlacements(view db.Database, blueprint stitch.Stitch) {
+func updatePlacements(view db.Database, blueprint stitch.Blueprint) {
 	connections := view.SelectFromConnection(nil)
 	containers := view.SelectFromContainer(nil)
 	placements := db.PlacementSlice(portPlacements(connections, containers))
@@ -115,7 +115,7 @@ func updatePlacements(view db.Database, blueprint stitch.Stitch) {
 	}
 }
 
-func updateLoadBalancers(view db.Database, blueprint stitch.Stitch) {
+func updateLoadBalancers(view db.Database, blueprint stitch.Blueprint) {
 	var blueprintLoadBalancers db.LoadBalancerSlice
 	for _, lb := range blueprint.LoadBalancers {
 		blueprintLoadBalancers = append(blueprintLoadBalancers, db.LoadBalancer{
@@ -152,7 +152,7 @@ func updateLoadBalancers(view db.Database, blueprint stitch.Stitch) {
 	}
 }
 
-func updateConnections(view db.Database, blueprint stitch.Stitch) {
+func updateConnections(view db.Database, blueprint stitch.Blueprint) {
 	scs := stitch.ConnectionSlice(blueprint.Connections)
 
 	// Setup connections to load balanced containers. Load balancing works by
@@ -216,7 +216,7 @@ func updateConnections(view db.Database, blueprint stitch.Stitch) {
 	}
 }
 
-func queryContainers(blueprint stitch.Stitch) []db.Container {
+func queryContainers(blueprint stitch.Blueprint) []db.Container {
 	containers := map[string]*db.Container{}
 	for _, c := range blueprint.Containers {
 		containers[c.Hostname] = &db.Container{
@@ -238,7 +238,7 @@ func queryContainers(blueprint stitch.Stitch) []db.Container {
 	return ret
 }
 
-func updateContainers(view db.Database, blueprint stitch.Stitch) {
+func updateContainers(view db.Database, blueprint stitch.Blueprint) {
 	key := func(val interface{}) interface{} {
 		return val.(db.Container).BlueprintID
 	}
@@ -269,7 +269,7 @@ func updateContainers(view db.Database, blueprint stitch.Stitch) {
 	}
 }
 
-func updateImages(view db.Database, blueprint stitch.Stitch) {
+func updateImages(view db.Database, blueprint stitch.Blueprint) {
 	dbImageKey := func(intf interface{}) interface{} {
 		return stitch.Image{
 			Name:       intf.(db.Image).Name,
@@ -293,7 +293,7 @@ func updateImages(view db.Database, blueprint stitch.Stitch) {
 	}
 }
 
-func queryImages(blueprint stitch.Stitch) (images []stitch.Image) {
+func queryImages(blueprint stitch.Blueprint) (images []stitch.Image) {
 	addedImages := map[stitch.Image]struct{}{}
 	for _, c := range blueprint.Containers {
 		_, addedImage := addedImages[c.Image]

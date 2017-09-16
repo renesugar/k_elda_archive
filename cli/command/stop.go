@@ -55,7 +55,7 @@ func (sCmd *Stop) Parse(args []string) error {
 
 // Run stops the given namespace.
 func (sCmd *Stop) Run() int {
-	newCluster := stitch.Stitch{
+	newCluster := stitch.Blueprint{
 		Namespace: sCmd.namespace,
 	}
 	if sCmd.namespace == "" || sCmd.onlyContainers {

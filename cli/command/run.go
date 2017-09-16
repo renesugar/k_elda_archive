@@ -116,16 +116,16 @@ func (rCmd *Run) Run() int {
 	return 0
 }
 
-func getCurrentDeployment(c client.Client) (stitch.Stitch, error) {
+func getCurrentDeployment(c client.Client) (stitch.Blueprint, error) {
 	blueprints, err := c.QueryBlueprints()
 	if err != nil {
-		return stitch.Stitch{}, err
+		return stitch.Blueprint{}, err
 	}
 	switch len(blueprints) {
 	case 0:
-		return stitch.Stitch{}, errNoBlueprint
+		return stitch.Blueprint{}, errNoBlueprint
 	case 1:
-		return blueprints[0].Stitch, nil
+		return blueprints[0].Blueprint, nil
 	default:
 		panic("unreached")
 	}

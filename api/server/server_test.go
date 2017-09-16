@@ -211,7 +211,7 @@ func TestDeploy(t *testing.T) {
 
 	exp, err := stitch.FromJSON(createMachineDeployment)
 	assert.NoError(t, err)
-	assert.Equal(t, exp, blueprint.Stitch)
+	assert.Equal(t, exp, blueprint.Blueprint)
 }
 
 func TestVagrantDeployment(t *testing.T) {
@@ -245,7 +245,7 @@ func TestVagrantDeployment(t *testing.T) {
 
 	exp, err := stitch.FromJSON(vagrantDeployment)
 	assert.NoError(t, err)
-	assert.Equal(t, exp, blueprint.Stitch)
+	assert.Equal(t, exp, blueprint.Blueprint)
 }
 
 func TestUpdateLeaderContainerAttrs(t *testing.T) {

@@ -89,7 +89,7 @@ func RunOnce(conn db.Conn) {
 		})
 
 		bp, _ := view.GetBlueprint()
-		blueprint = bp.Stitch.String()
+		blueprint = bp.Blueprint.String()
 
 		return nil
 	})

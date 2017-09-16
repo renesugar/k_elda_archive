@@ -44,7 +44,7 @@ func isGraphEqual(a, b string) bool {
 func TestViz(t *testing.T) {
 	t.Parallel()
 
-	blueprint := stitch.Stitch{
+	blueprint := stitch.Blueprint{
 		Containers: []stitch.Container{
 			{
 				Hostname: "a",
