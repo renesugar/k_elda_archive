@@ -221,12 +221,12 @@ func TestPromptsUser(t *testing.T) {
 func TestRunFlags(t *testing.T) {
 	t.Parallel()
 
-	expStitch := "blueprint"
-	checkRunParsing(t, []string{"-blueprint", expStitch},
-		Run{blueprint: expStitch}, nil)
-	checkRunParsing(t, []string{expStitch}, Run{blueprint: expStitch}, nil)
-	checkRunParsing(t, []string{"-f", expStitch},
-		Run{force: true, blueprint: expStitch}, nil)
+	expBlueprint := "blueprint"
+	checkRunParsing(t, []string{"-blueprint", expBlueprint},
+		Run{blueprint: expBlueprint}, nil)
+	checkRunParsing(t, []string{expBlueprint}, Run{blueprint: expBlueprint}, nil)
+	checkRunParsing(t, []string{"-f", expBlueprint},
+		Run{force: true, blueprint: expBlueprint}, nil)
 	checkRunParsing(t, []string{}, Run{}, errors.New("no blueprint specified"))
 }
 
