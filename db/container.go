@@ -17,7 +17,7 @@ type Container struct {
 	IP                string            `json:",omitempty"`
 	Minion            string            `json:",omitempty"`
 	EndpointID        string            `json:",omitempty"`
-	StitchID          string            `json:",omitempty"`
+	BlueprintID       string            `json:",omitempty"`
 	DockerID          string            `json:",omitempty"`
 	Status            string            `json:",omitempty"`
 	Command           []string          `json:",omitempty"`
@@ -85,8 +85,8 @@ func (c Container) String() string {
 		tags = append(tags, fmt.Sprintf("Minion: %s", c.Minion))
 	}
 
-	if c.StitchID != "" {
-		tags = append(tags, fmt.Sprintf("StitchID: %s", c.StitchID))
+	if c.BlueprintID != "" {
+		tags = append(tags, fmt.Sprintf("BlueprintID: %s", c.BlueprintID))
 	}
 
 	if c.IP != "" {
@@ -113,7 +113,7 @@ func (c Container) String() string {
 }
 
 func (c Container) less(r row) bool {
-	return c.StitchID < r.(Container).StitchID
+	return c.BlueprintID < r.(Container).BlueprintID
 }
 
 // Less implements less than for sort.Interface.

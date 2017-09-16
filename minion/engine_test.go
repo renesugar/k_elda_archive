@@ -243,7 +243,7 @@ func testContainerTxn(t *testing.T, conn db.Conn, stc stitch.Stitch) {
 	for _, e := range queryContainers(stc) {
 		found := false
 		for i, c := range containers {
-			if e.StitchID == c.StitchID {
+			if e.BlueprintID == c.BlueprintID {
 				containers = append(containers[:i], containers[i+1:]...)
 				found = true
 				break

@@ -46,14 +46,14 @@ func TestCleanup(t *testing.T) {
 
 	containers := []db.Container{
 		{
-			ID:       1,
-			StitchID: "1",
-			Minion:   "1",
+			ID:          1,
+			BlueprintID: "1",
+			Minion:      "1",
 		},
 		{
-			ID:       2,
-			StitchID: "2",
-			Minion:   "1",
+			ID:          2,
+			BlueprintID: "2",
+			Minion:      "1",
 		},
 	}
 
@@ -87,9 +87,9 @@ func TestCleanup(t *testing.T) {
 
 	expUnassigned := []*db.Container{
 		{
-			ID:       1,
-			StitchID: "1",
-			Minion:   "",
+			ID:          1,
+			BlueprintID: "1",
+			Minion:      "",
 		},
 	}
 	assert.Equal(t, expUnassigned, ctx.unassigned)
@@ -103,19 +103,19 @@ func TestCleanupContainerRule(t *testing.T) {
 
 	containers := []db.Container{
 		{
-			ID:       1,
-			StitchID: "1",
-			Minion:   "1",
+			ID:          1,
+			BlueprintID: "1",
+			Minion:      "1",
 		},
 		{
-			ID:       2,
-			StitchID: "2",
-			Minion:   "1",
+			ID:          2,
+			BlueprintID: "2",
+			Minion:      "1",
 		},
 		{
-			ID:       3,
-			StitchID: "3",
-			Minion:   "2",
+			ID:          3,
+			BlueprintID: "3",
+			Minion:      "2",
 		},
 	}
 
@@ -201,16 +201,16 @@ func TestPlaceUnassigned(t *testing.T) {
 	}
 	containers := []db.Container{
 		{
-			ID:       1,
-			StitchID: "1",
+			ID:          1,
+			BlueprintID: "1",
 		},
 		{
-			ID:       2,
-			StitchID: "2",
+			ID:          2,
+			BlueprintID: "2",
 		},
 		{
-			ID:       3,
-			StitchID: "3",
+			ID:          3,
+			BlueprintID: "3",
 		},
 	}
 	placements := []db.Placement{
@@ -347,7 +347,7 @@ func TestMakeContext(t *testing.T) {
 func TestValidPlacementTwoWay(t *testing.T) {
 	t.Parallel()
 
-	dbc := &db.Container{ID: 1, StitchID: "red"}
+	dbc := &db.Container{ID: 1, BlueprintID: "red"}
 	m := minion{
 		db.Minion{
 			PrivateIP: "1.2.3.4",
@@ -355,10 +355,10 @@ func TestValidPlacementTwoWay(t *testing.T) {
 			Size:      "Size",
 			Region:    "Region",
 		},
-		[]*db.Container{{ID: 2, StitchID: "blue"}},
+		[]*db.Container{{ID: 2, BlueprintID: "blue"}},
 	}
 
-	dbc1 := &db.Container{ID: 4, StitchID: "blue"}
+	dbc1 := &db.Container{ID: 4, BlueprintID: "blue"}
 	m1 := minion{
 		db.Minion{
 			PrivateIP: "1.2.3.4",
@@ -366,7 +366,7 @@ func TestValidPlacementTwoWay(t *testing.T) {
 			Size:      "Size",
 			Region:    "Region",
 		},
-		[]*db.Container{{ID: 3, StitchID: "red"}},
+		[]*db.Container{{ID: 3, BlueprintID: "red"}},
 	}
 
 	constraints := []db.Placement{
@@ -390,8 +390,8 @@ func TestValidPlacementTwoWay(t *testing.T) {
 			testCase.dbc)
 		if res {
 			t.Fatalf("Succeeded with bad placement: %s on %s",
-				testCase.dbc.StitchID,
-				testCase.m.containers[0].StitchID)
+				testCase.dbc.BlueprintID,
+				testCase.m.containers[0].BlueprintID)
 		}
 	}
 }
@@ -400,8 +400,8 @@ func TestValidPlacementContainer(t *testing.T) {
 	t.Parallel()
 
 	dbc := &db.Container{
-		ID:       1,
-		StitchID: "red",
+		ID:          1,
+		BlueprintID: "red",
 	}
 
 	m := minion{}
@@ -412,12 +412,12 @@ func TestValidPlacementContainer(t *testing.T) {
 	m.containers = []*db.Container{
 		dbc,
 		{
-			ID:       2,
-			StitchID: "blue",
+			ID:          2,
+			BlueprintID: "blue",
 		},
 		{
-			ID:       3,
-			StitchID: "yellow",
+			ID:          3,
+			BlueprintID: "yellow",
 		},
 	}
 
@@ -482,7 +482,7 @@ func TestValidPlacementMachine(t *testing.T) {
 	var constraints []db.Placement
 
 	dbc := &db.Container{
-		StitchID: "red",
+		BlueprintID: "red",
 	}
 
 	m := minion{}
@@ -629,8 +629,8 @@ func TestValidPlacementMachine(t *testing.T) {
 }
 
 func TestSort(t *testing.T) {
-	a := &db.Container{Image: "1", StitchID: "1"}
-	b := &db.Container{Image: "1", StitchID: "2"}
+	a := &db.Container{Image: "1", BlueprintID: "1"}
+	b := &db.Container{Image: "1", BlueprintID: "2"}
 	c := &db.Container{Image: "2", Command: []string{"1", "2"}}
 	d := &db.Container{Image: "2", Command: []string{"3", "4"}}
 

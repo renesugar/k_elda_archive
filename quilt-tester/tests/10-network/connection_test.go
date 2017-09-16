@@ -78,7 +78,7 @@ func (tester connectionTester) pingAll(container db.Container) []pingResult {
 			defer wg.Done()
 			for hostname := range pingRequests {
 				startTime := time.Now()
-				_, err := ping(container.StitchID, hostname)
+				_, err := ping(container.BlueprintID, hostname)
 				pingResultsChan <- pingResult{
 					target:    hostname,
 					reachable: err == nil,

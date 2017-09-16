@@ -94,9 +94,9 @@ func TestQueryContainersDaemon(t *testing.T) {
 		case api.RemoteAddress("9.9.9.9"):
 			mc := new(mocks.Client)
 			mc.On("QueryContainers").Return([]db.Container{{
-				StitchID: "onWorker",
-				Image:    "shouldIgnore",
-				DockerID: "dockerID",
+				BlueprintID: "onWorker",
+				Image:       "shouldIgnore",
+				DockerID:    "dockerID",
 			}}, nil)
 			mc.On("Close").Return(nil)
 			return mc, nil
@@ -110,11 +110,11 @@ func TestQueryContainersDaemon(t *testing.T) {
 		client.Client, error) {
 		mc := new(mocks.Client)
 		mc.On("QueryContainers").Return([]db.Container{{
-			StitchID: "notScheduled",
-			Image:    "notScheduled",
+			BlueprintID: "notScheduled",
+			Image:       "notScheduled",
 		}, {
-			StitchID: "onWorker",
-			Image:    "onWorker",
+			BlueprintID: "onWorker",
+			Image:       "onWorker",
 		}}, nil)
 		mc.On("Close").Return(nil)
 		return mc, nil
@@ -130,8 +130,8 @@ func TestQueryContainersDaemon(t *testing.T) {
 		return nil
 	})
 
-	exp := `[{"StitchID":"notScheduled","Created":"0001-01-01T00:00:00Z",` +
-		`"Image":"notScheduled"},{"StitchID":"onWorker",` +
+	exp := `[{"BlueprintID":"notScheduled","Created":"0001-01-01T00:00:00Z",` +
+		`"Image":"notScheduled"},{"BlueprintID":"onWorker",` +
 		`"DockerID":"dockerID","Created":"0001-01-01T00:00:00Z",` +
 		`"Image":"onWorker"}]`
 	checkQuery(t, server{conn, true, nil}, db.ContainerTable, exp)
@@ -255,15 +255,15 @@ func TestUpdateLeaderContainerAttrs(t *testing.T) {
 
 	lContainers := []db.Container{
 		{
-			StitchID: "1",
+			BlueprintID: "1",
 		},
 	}
 
 	wContainers := []db.Container{
 		{
-			StitchID: "1",
-			Created:  created,
-			Status:   "running",
+			BlueprintID: "1",
+			Created:     created,
+			Status:      "running",
 		},
 	}
 
@@ -274,7 +274,7 @@ func TestUpdateLeaderContainerAttrs(t *testing.T) {
 
 	// Test container in leader, not in worker.
 	newContainer := db.Container{
-		StitchID: "2",
+		BlueprintID: "2",
 	}
 	lContainers = append(lContainers, newContainer)
 	expect = append(expect, newContainer)
@@ -295,11 +295,11 @@ func TestUpdateLeaderContainerAttrs(t *testing.T) {
 	assert.Equal(t, expect, result)
 
 	// Test a deployed Dockerfile.
-	lContainers = []db.Container{{StitchID: "1", Image: "image"}}
+	lContainers = []db.Container{{BlueprintID: "1", Image: "image"}}
 	wContainers = []db.Container{
-		{StitchID: "1", Image: "8.8.8.8/image", Created: created},
+		{BlueprintID: "1", Image: "8.8.8.8/image", Created: created},
 	}
-	expect = []db.Container{{StitchID: "1", Image: "image", Created: created}}
+	expect = []db.Container{{BlueprintID: "1", Image: "image", Created: created}}
 	result = updateLeaderContainerAttrs(lContainers, wContainers)
 	assert.Equal(t, expect, result)
 }

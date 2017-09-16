@@ -322,7 +322,7 @@ func containersToTargets(containers []db.Container, ips map[string]string) []log
 		t := logTarget{
 			ip:       ip,
 			dir:      containerDir,
-			stitchID: c.StitchID,
+			stitchID: c.BlueprintID,
 			cmds:     nil,
 		}
 		for _, cmd := range containerCmds {

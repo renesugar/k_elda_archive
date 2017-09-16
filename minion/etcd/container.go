@@ -87,7 +87,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 		return struct {
 			Hostname          string
 			IP                string
-			StitchID          string
+			BlueprintID       string
 			Image             string
 			ImageID           string
 			Command           string
@@ -96,7 +96,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 		}{
 			Hostname:          dbc.Hostname,
 			IP:                dbc.IP,
-			StitchID:          dbc.StitchID,
+			BlueprintID:       dbc.BlueprintID,
 			Image:             dbc.Image,
 			ImageID:           dbc.ImageID,
 			Command:           fmt.Sprintf("%v", dbc.Command),
@@ -124,7 +124,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 
 		dbc.IP = edbc.IP
 		dbc.Minion = edbc.Minion
-		dbc.StitchID = edbc.StitchID
+		dbc.BlueprintID = edbc.BlueprintID
 		dbc.Image = edbc.Image
 		dbc.ImageID = edbc.ImageID
 		dbc.Command = edbc.Command

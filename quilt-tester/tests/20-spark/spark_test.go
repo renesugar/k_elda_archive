@@ -32,12 +32,12 @@ func TestCalculatesPI(t *testing.T) {
 	var id string
 	for _, dbc := range containers {
 		if strings.Join(dbc.Command, " ") == "run master" {
-			id = dbc.StitchID
+			id = dbc.BlueprintID
 			break
 		}
 	}
 	if id == "" {
-		t.Fatal("unable to find StitchID of Spark master")
+		t.Fatal("unable to find BlueprintID of Spark master")
 	}
 
 	// The Spark job takes some time to complete, so we wait for the appropriate

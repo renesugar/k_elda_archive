@@ -86,18 +86,18 @@ func TestMakeIPContext(t *testing.T) {
 		// A container with an IP address.
 		dbc := view.InsertContainer()
 		dbc.IP = "10.0.0.2"
-		dbc.StitchID = "1"
+		dbc.BlueprintID = "1"
 		view.Commit(dbc)
 
 		// A container without an IP address.
 		dbc = view.InsertContainer()
-		dbc.StitchID = "2"
+		dbc.BlueprintID = "2"
 		view.Commit(dbc)
 
 		// A container with an IP in a blacklisted subnet.
 		dbc = view.InsertContainer()
 		dbc.IP = "10.0.2.1"
-		dbc.StitchID = "3"
+		dbc.BlueprintID = "3"
 		view.Commit(dbc)
 
 		// A load balancer with an IP address.
@@ -134,8 +134,10 @@ func TestMakeIPContext(t *testing.T) {
 	}, ctx.reserved)
 
 	assert.Len(t, ctx.unassignedContainers, 2)
-	assert.Contains(t, ctx.unassignedContainers, db.Container{ID: 2, StitchID: "2"})
-	assert.Contains(t, ctx.unassignedContainers, db.Container{ID: 3, StitchID: "3"})
+	assert.Contains(t, ctx.unassignedContainers,
+		db.Container{ID: 2, BlueprintID: "2"})
+	assert.Contains(t, ctx.unassignedContainers,
+		db.Container{ID: 3, BlueprintID: "3"})
 
 	assert.Len(t, ctx.unassignedLoadBalancers, 2)
 	assert.Contains(t, ctx.unassignedLoadBalancers,
@@ -151,11 +153,11 @@ func TestAllocateContainerIPs(t *testing.T) {
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		dbc := view.InsertContainer()
 		dbc.IP = "10.0.0.2"
-		dbc.StitchID = "1"
+		dbc.BlueprintID = "1"
 		view.Commit(dbc)
 
 		dbc = view.InsertContainer()
-		dbc.StitchID = "2"
+		dbc.BlueprintID = "2"
 		view.Commit(dbc)
 
 		ctx := ipContext{
@@ -173,10 +175,10 @@ func TestAllocateContainerIPs(t *testing.T) {
 
 	dbc := dbcs[0]
 	dbc.ID = 0
-	assert.Equal(t, db.Container{IP: "10.0.0.2", StitchID: "1"}, dbc)
+	assert.Equal(t, db.Container{IP: "10.0.0.2", BlueprintID: "1"}, dbc)
 
 	dbc = dbcs[1]
-	assert.Equal(t, "2", dbc.StitchID)
+	assert.Equal(t, "2", dbc.BlueprintID)
 	assert.True(t, ipdef.QuiltSubnet.Contains(net.ParseIP(dbc.IP)))
 }
 

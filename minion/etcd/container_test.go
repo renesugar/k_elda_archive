@@ -33,7 +33,7 @@ func TestRunContainerOnce(t *testing.T) {
 		dbc.Hostname = "host"
 		dbc.IP = "10.0.0.2"
 		dbc.Minion = "1.2.3.4"
-		dbc.StitchID = "12"
+		dbc.BlueprintID = "12"
 		dbc.Image = "ubuntu"
 		dbc.Command = []string{"1", "2", "3"}
 		dbc.Env = map[string]string{"red": "pill", "blue": "pill"}
@@ -52,7 +52,7 @@ func TestRunContainerOnce(t *testing.T) {
     {
         "IP": "10.0.0.2",
         "Minion": "1.2.3.4",
-        "StitchID": "12",
+        "BlueprintID": "12",
         "Command": [
             "1",
             "2",
@@ -89,7 +89,7 @@ func TestRunContainerOnce(t *testing.T) {
 
 	expDBC := db.Container{
 		IP:                "10.0.0.2",
-		StitchID:          "12",
+		BlueprintID:       "12",
 		Minion:            "1.2.3.4",
 		Image:             "ubuntu",
 		Command:           []string{"1", "2", "3"},
@@ -163,7 +163,7 @@ func TestRunContainerOnceWithDockerfile(t *testing.T) {
 		dbc := view.InsertContainer()
 		dbc.IP = "10.0.0.2"
 		dbc.Minion = "1.2.3.4"
-		dbc.StitchID = "12"
+		dbc.BlueprintID = "12"
 		dbc.Image = "custom"
 		dbc.Dockerfile = "dockerfile"
 		view.Commit(dbc)
@@ -181,7 +181,7 @@ func TestRunContainerOnceWithDockerfile(t *testing.T) {
     {
         "IP": "10.0.0.2",
         "Minion": "1.2.3.4",
-        "StitchID": "12",
+        "BlueprintID": "12",
         "Created": "0001-01-01T00:00:00Z",
         "Image": "leader:5000/custom"
     }

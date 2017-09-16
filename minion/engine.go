@@ -50,7 +50,7 @@ func portPlacements(connections []db.Connection, containers []db.Container) (
 
 		// XXX: Public connections do not currently support ranges, so we can
 		// safely consider just the MinPort.
-		ports[conn.MinPort] = append(ports[conn.MinPort], toContainer.StitchID)
+		ports[conn.MinPort] = append(ports[conn.MinPort], toContainer.BlueprintID)
 	}
 
 	// Create placement rules for all combinations of containers that listen on
@@ -220,7 +220,7 @@ func queryContainers(blueprint stitch.Stitch) []db.Container {
 	containers := map[string]*db.Container{}
 	for _, c := range blueprint.Containers {
 		containers[c.Hostname] = &db.Container{
-			StitchID:          c.ID,
+			BlueprintID:       c.ID,
 			Command:           c.Command,
 			Env:               c.Env,
 			FilepathToContent: c.FilepathToContent,
@@ -240,7 +240,7 @@ func queryContainers(blueprint stitch.Stitch) []db.Container {
 
 func updateContainers(view db.Database, blueprint stitch.Stitch) {
 	key := func(val interface{}) interface{} {
-		return val.(db.Container).StitchID
+		return val.(db.Container).BlueprintID
 	}
 
 	pairs, news, dbcs := join.HashJoin(db.ContainerSlice(queryContainers(blueprint)),
@@ -263,7 +263,7 @@ func updateContainers(view db.Database, blueprint stitch.Stitch) {
 		dbc.Dockerfile = newc.Dockerfile
 		dbc.Env = newc.Env
 		dbc.FilepathToContent = newc.FilepathToContent
-		dbc.StitchID = newc.StitchID
+		dbc.BlueprintID = newc.BlueprintID
 		dbc.Hostname = newc.Hostname
 		view.Commit(dbc)
 	}

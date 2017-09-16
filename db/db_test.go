@@ -401,16 +401,16 @@ func TestStringer(t *testing.T) {
 
 func TestSliceHelpers(t *testing.T) {
 	containers := []Container{
-		{StitchID: "3"},
-		{StitchID: "5"},
-		{StitchID: "5"},
-		{StitchID: "1"},
+		{BlueprintID: "3"},
+		{BlueprintID: "5"},
+		{BlueprintID: "5"},
+		{BlueprintID: "1"},
 	}
 	expected := []Container{
-		{StitchID: "1"},
-		{StitchID: "3"},
-		{StitchID: "5"},
-		{StitchID: "5"},
+		{BlueprintID: "1"},
+		{BlueprintID: "3"},
+		{BlueprintID: "5"},
+		{BlueprintID: "5"},
 	}
 
 	sort.Sort(ContainerSlice(containers))

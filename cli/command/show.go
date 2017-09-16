@@ -218,7 +218,8 @@ func writeContainers(fd io.Writer, containers []db.Container, machines []db.Mach
 			publicIP := publicIPStr(idMachineMap[machineID], publicPorts)
 
 			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\t%v\n",
-				util.ShortUUID(dbc.StitchID), util.ShortUUID(machineID),
+				util.ShortUUID(dbc.BlueprintID),
+				util.ShortUUID(machineID),
 				container, dbc.Hostname, status, created, publicIP)
 		}
 	}

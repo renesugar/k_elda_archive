@@ -38,7 +38,7 @@ func TestRedis(t *testing.T) {
 	var redisMasterID string
 	for _, c := range containers {
 		if c.Hostname == masterHostname {
-			redisMasterID = c.StitchID
+			redisMasterID = c.BlueprintID
 			break
 		}
 	}

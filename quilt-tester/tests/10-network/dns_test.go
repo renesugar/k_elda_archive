@@ -56,7 +56,7 @@ type lookupResult struct {
 	cmdTime  commandTime
 }
 
-// Resolve all hostnames on the container with the given StitchID. Parallelize
+// Resolve all hostnames on the container with the given BlueprintID. Parallelize
 // over the hostnames.
 func (tester dnsTester) lookupAll(container db.Container) []lookupResult {
 	lookupResultsChan := make(chan lookupResult, len(tester.hostnameIPMap))
@@ -70,7 +70,7 @@ func (tester dnsTester) lookupAll(container db.Container) []lookupResult {
 			defer wg.Done()
 			for hostname := range lookupRequests {
 				startTime := time.Now()
-				ip, err := lookup(container.StitchID, hostname)
+				ip, err := lookup(container.BlueprintID, hostname)
 				lookupResultsChan <- lookupResult{hostname, ip, err,
 					commandTime{startTime, time.Now()}}
 			}

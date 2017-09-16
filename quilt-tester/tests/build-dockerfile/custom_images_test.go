@@ -41,10 +41,10 @@ func TestCustomImages(t *testing.T) {
 			continue
 		}
 
-		dockerfileID, imageID, err := getContainerInfo(c.StitchID)
+		dockerfileID, imageID, err := getContainerInfo(c.BlueprintID)
 		if err != nil {
 			t.Fatalf("couldn't get container info for %s: %s",
-				c.StitchID, err)
+				c.BlueprintID, err)
 		}
 
 		dockerfileToImages[dockerfileID] = append(
@@ -96,14 +96,14 @@ func checkImageCounts(machines []db.Machine, dockerfileCounts map[string]int) er
 	return nil
 }
 
-func getContainerInfo(stitchID string) (string, string, error) {
+func getContainerInfo(blueprintID string) (string, string, error) {
 	dockerfileID, err := exec.Command(
-		"quilt", "ssh", stitchID, "cat /dockerfile-id").CombinedOutput()
+		"quilt", "ssh", blueprintID, "cat /dockerfile-id").CombinedOutput()
 	if err != nil {
 		return "", "", err
 	}
 	imageID, err := exec.Command(
-		"quilt", "ssh", stitchID, "cat /image-id").CombinedOutput()
+		"quilt", "ssh", blueprintID, "cat /image-id").CombinedOutput()
 	return strings.TrimSpace(string(dockerfileID)),
 		strings.TrimSpace(string(imageID)),
 		err

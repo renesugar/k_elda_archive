@@ -91,7 +91,7 @@ func testContainers(t *testing.T, tester testerIntf, containers []db.Container) 
 			for c := range testChan {
 				for _, err := range tester.test(c) {
 					if err != nil {
-						t.Errorf("%s: %s", c.StitchID, err)
+						t.Errorf("%s: %s", c.BlueprintID, err)
 					}
 				}
 			}

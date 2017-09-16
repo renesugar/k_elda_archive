@@ -11,8 +11,8 @@ import (
 func TestGetContainer(t *testing.T) {
 	t.Parallel()
 
-	a := db.Container{StitchID: "4567"}
-	b := db.Container{StitchID: "432"}
+	a := db.Container{BlueprintID: "4567"}
+	b := db.Container{BlueprintID: "432"}
 
 	res, err := GetContainer([]db.Container{a, b}, "4567")
 	assert.Nil(t, err)
@@ -35,8 +35,8 @@ func TestGetContainer(t *testing.T) {
 	assert.Equal(t, b, res)
 
 	_, err = GetContainer([]db.Container{a, b}, "4")
-	assert.EqualError(t, err, `ambiguous stitchIDs 4567 and 432`)
+	assert.EqualError(t, err, `ambiguous blueprintIDs 4567 and 432`)
 
 	_, err = GetContainer([]db.Container{a, b}, "1")
-	assert.EqualError(t, err, `no container with stitchID "1"`)
+	assert.EqualError(t, err, `no container with blueprintID "1"`)
 }

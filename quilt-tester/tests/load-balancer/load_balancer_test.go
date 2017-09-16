@@ -37,7 +37,7 @@ func TestLoadBalancer(t *testing.T) {
 	var fetcherID string
 	for _, c := range containers {
 		if c.Image == fetcherImage {
-			fetcherID = c.StitchID
+			fetcherID = c.BlueprintID
 			break
 		}
 	}

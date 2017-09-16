@@ -301,16 +301,16 @@ func queryWorkers(machines []db.Machine, creds connection.Credentials) (
 func updateLeaderContainerAttrs(lContainers []db.Container, wContainers []db.Container) (
 	allContainers []db.Container) {
 
-	// Map StitchID to db.Container for a hash join.
+	// Map BlueprintID to db.Container for a hash join.
 	cMap := make(map[string]db.Container)
 	for _, wc := range wContainers {
-		cMap[wc.StitchID] = wc
+		cMap[wc.BlueprintID] = wc
 	}
 
 	// If we are able to match a worker container to a leader container, then we
 	// copy the worker-only attributes to the leader view.
 	for _, lc := range lContainers {
-		if wc, ok := cMap[lc.StitchID]; ok {
+		if wc, ok := cMap[lc.BlueprintID]; ok {
 			lc.Created = wc.Created
 			lc.DockerID = wc.DockerID
 			lc.Status = wc.Status

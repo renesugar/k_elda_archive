@@ -195,9 +195,11 @@ func TestSSH(t *testing.T) {
 				target:     "tgt",
 			},
 			machines: []db.Machine{{PrivateIP: "priv", PublicIP: "host"}},
-			containers: []db.Container{
-				{Minion: "priv", StitchID: "tgt", DockerID: "dockerID"},
-			},
+			containers: []db.Container{{
+				Minion:      "priv",
+				BlueprintID: "tgt",
+				DockerID:    "dockerID",
+			}},
 			expAllocatePTY: true,
 			expHost:        "host",
 			expRunArgs:     "docker exec -it dockerID sh",
@@ -210,9 +212,11 @@ func TestSSH(t *testing.T) {
 				args:       []string{"foo", "bar"},
 			},
 			machines: []db.Machine{{PrivateIP: "priv", PublicIP: "host"}},
-			containers: []db.Container{
-				{Minion: "priv", StitchID: "tgt", DockerID: "dockerID"},
-			},
+			containers: []db.Container{{
+				Minion:      "priv",
+				BlueprintID: "tgt",
+				DockerID:    "dockerID",
+			}},
 			expHost:    "host",
 			expRunArgs: "docker exec  dockerID foo bar",
 		},
@@ -225,9 +229,11 @@ func TestSSH(t *testing.T) {
 				allocatePTY: true,
 			},
 			machines: []db.Machine{{PrivateIP: "priv", PublicIP: "host"}},
-			containers: []db.Container{
-				{Minion: "priv", StitchID: "tgt", DockerID: "dockerID"},
-			},
+			containers: []db.Container{{
+				Minion:      "priv",
+				BlueprintID: "tgt",
+				DockerID:    "dockerID",
+			}},
 			expAllocatePTY: true,
 			expHost:        "host",
 			expRunArgs:     "docker exec -it dockerID foo bar",
@@ -266,7 +272,7 @@ func TestSSH(t *testing.T) {
 func TestAmbiguousID(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("QueryMachines").Return([]db.Machine{{StitchID: "foo"}}, nil)
-	mockClient.On("QueryContainers").Return([]db.Container{{StitchID: "foo"}}, nil)
+	mockClient.On("QueryContainers").Return([]db.Container{{BlueprintID: "foo"}}, nil)
 	mockClient.On("Close").Return(nil)
 
 	testCmd := SSH{
@@ -279,7 +285,7 @@ func TestAmbiguousID(t *testing.T) {
 func TestNoMatch(t *testing.T) {
 	mockClient := new(mocks.Client)
 	mockClient.On("QueryMachines").Return([]db.Machine{{StitchID: "foo"}}, nil)
-	mockClient.On("QueryContainers").Return([]db.Container{{StitchID: "foo"}}, nil)
+	mockClient.On("QueryContainers").Return([]db.Container{{BlueprintID: "foo"}}, nil)
 	mockClient.On("Close").Return(nil)
 
 	testCmd := SSH{
@@ -340,7 +346,7 @@ func (err mockExitError) ExitStatus() int {
 
 func TestSSHScheduledContainer(t *testing.T) {
 	mockClient := &mocks.Client{}
-	mockClient.On("QueryContainers").Return([]db.Container{{StitchID: "foo"}}, nil)
+	mockClient.On("QueryContainers").Return([]db.Container{{BlueprintID: "foo"}}, nil)
 	mockClient.On("QueryMachines").Return(nil, nil)
 	mockClient.On("Close").Return(nil)
 

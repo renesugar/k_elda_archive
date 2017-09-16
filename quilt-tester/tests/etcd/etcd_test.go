@@ -33,8 +33,8 @@ func test(t *testing.T, containers []db.Container) {
 			continue
 		}
 
-		fmt.Printf("Checking etcd health from %s\n", c.StitchID)
-		out, err := exec.Command("quilt", "ssh", c.StitchID,
+		fmt.Printf("Checking etcd health from %s\n", c.BlueprintID)
+		out, err := exec.Command("quilt", "ssh", c.BlueprintID,
 			"etcdctl", "cluster-health").CombinedOutput()
 		fmt.Println(string(out))
 		if err != nil || !strings.Contains(string(out), "cluster is healthy") {

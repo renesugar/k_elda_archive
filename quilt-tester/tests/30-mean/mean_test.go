@@ -58,7 +58,7 @@ func TestMean(t *testing.T) {
 
 func logContainers(t *testing.T, containers []db.Container) {
 	for _, c := range containers {
-		out, err := exec.Command("quilt", "logs", c.StitchID).CombinedOutput()
+		out, err := exec.Command("quilt", "logs", c.BlueprintID).CombinedOutput()
 		if err != nil {
 			t.Errorf("Failed to log %s: %s", c, err)
 			continue
@@ -78,7 +78,7 @@ func getPublicIPs(t *testing.T, machines []db.Machine,
 		if strings.Contains(c.Image, "haproxy") {
 			ip, ok := minionIPMap[c.Minion]
 			if !ok {
-				t.Fatalf("HAProxy with no public IP: %s", c.StitchID)
+				t.Fatalf("HAProxy with no public IP: %s", c.BlueprintID)
 			}
 			publicIPs = append(publicIPs, ip)
 		}

@@ -102,10 +102,10 @@ func canBeColocated(constraint db.Placement, toPlace db.Container,
 	}
 
 	for _, p := range peers {
-		toPlaceIsTarget := toPlace.StitchID == constraint.TargetContainer
-		peerIsTarget := p.StitchID == constraint.TargetContainer
-		toPlaceIsOther := toPlace.StitchID == constraint.OtherContainer
-		peerIsOther := p.StitchID == constraint.OtherContainer
+		toPlaceIsTarget := toPlace.BlueprintID == constraint.TargetContainer
+		peerIsTarget := p.BlueprintID == constraint.TargetContainer
+		toPlaceIsOther := toPlace.BlueprintID == constraint.OtherContainer
+		peerIsOther := p.BlueprintID == constraint.OtherContainer
 		if (toPlaceIsTarget && peerIsOther) || (peerIsTarget && toPlaceIsOther) {
 			return false
 		}
@@ -123,7 +123,7 @@ func validPlacement(constraints []db.Placement, m minion, peers []*db.Container,
 			}
 		}
 
-		if dbc.StitchID != constraint.TargetContainer {
+		if dbc.BlueprintID != constraint.TargetContainer {
 			continue
 		}
 
@@ -250,7 +250,7 @@ func (s dbcSlice) Less(i, j int) bool {
 	case !util.StrSliceEqual(s[i].Command, s[j].Command):
 		return fmt.Sprintf("%s", s[i].Command) < fmt.Sprintf("%s", s[j].Command)
 	default:
-		return s[i].StitchID < s[j].StitchID
+		return s[i].BlueprintID < s[j].BlueprintID
 	}
 }
 

@@ -47,14 +47,14 @@ func test(t *testing.T, containers []db.Container, connections []db.Connection) 
 	for _, c := range containers {
 		_, shouldPass := connected[c.Hostname]
 
-		fmt.Printf("Fetching %s from container %s\n", testHost, c.StitchID)
+		fmt.Printf("Fetching %s from container %s\n", testHost, c.BlueprintID)
 		if shouldPass {
 			fmt.Println(".. It should not fail")
 		} else {
 			fmt.Println(".. It should fail")
 		}
 
-		out, err := exec.Command("quilt", "ssh", c.StitchID,
+		out, err := exec.Command("quilt", "ssh", c.BlueprintID,
 			"wget", "-T", "2", "-O", "-", testHost).CombinedOutput()
 
 		errored := err != nil

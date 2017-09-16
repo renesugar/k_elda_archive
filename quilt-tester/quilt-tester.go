@@ -327,7 +327,7 @@ func waitForContainers(blueprintPath string) error {
 		key := func(tgtIntf, actualIntf interface{}) int {
 			tgt := tgtIntf.(stitch.Container)
 			actual := actualIntf.(db.Container)
-			if tgt.ID == actual.StitchID && !actual.Created.IsZero() {
+			if tgt.ID == actual.BlueprintID && !actual.Created.IsZero() {
 				return 0
 			}
 			return -1
