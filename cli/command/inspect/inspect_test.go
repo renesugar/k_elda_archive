@@ -79,9 +79,10 @@ func TestViz(t *testing.T) {
 	}
 }
 
-func TestMainArgErr(t *testing.T) {
+func TestParse(t *testing.T) {
 	t.Parallel()
 
-	exitCode := Main([]string{"test.js"})
-	assert.NotZero(t, exitCode)
+	cmd := &Inspect{}
+	assert.Error(t, cmd.Parse([]string{"test.js"}), "")
+	assert.Error(t, cmd.Parse([]string{"test.js", "not_a_format"}), "")
 }

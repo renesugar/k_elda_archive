@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/quilt/quilt/cli/command"
+	"github.com/quilt/quilt/cli/command/inspect"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -12,7 +13,7 @@ import (
 // Note the `minion` command is in quiltctl_posix.go as it only runs on posix systems.
 var commands = map[string]command.SubCommand{
 	"daemon":  command.NewDaemonCommand(),
-	"inspect": &command.Inspect{},
+	"inspect": &inspect.Inspect{},
 	"logs":    command.NewLogCommand(),
 
 	"ps":   command.NewShowCommand(),
