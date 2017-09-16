@@ -5,6 +5,8 @@ Up Next
 -------------
 - Check for unexpected keys in the optional argument passed to the Machine,
 Container, and Deployment constructors.
+- Rename StitchID to BlueprintID in the database. This is an internal
+API-breaking change (it changes the API between internal Quilt components).
 
 Release 0.3.0
 -------------
