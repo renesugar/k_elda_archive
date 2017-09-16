@@ -367,7 +367,7 @@ describe('Bindings', () => {
     const env = { foo: 'bar' };
     const filepathToContent = { qux: 'quuz' };
     it('with*', () => {
-      // The stitch ID is different than the Container created with the
+      // The blueprint ID is different than the Container created with the
       // constructor because the hostname ID increases with each with*
       // call.
       const id = 'f5c3e0fa3843e6fa149289d476f507831a45654d';

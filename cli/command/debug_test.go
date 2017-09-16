@@ -246,7 +246,7 @@ func TestDebug(t *testing.T) {
 				workerMachineFiles(debugFolder, "4"),
 				daemonFiles(debugFolder)),
 		},
-		// Check that we can get logs by specific stitch ids
+		// Check that we can get logs by specific blueprint ids
 		{
 			cmd: Debug{
 				tar: false,
@@ -273,7 +273,7 @@ func TestDebug(t *testing.T) {
 				containerFiles(debugFolder, "5"),
 				daemonFiles(debugFolder)),
 		},
-		// Check that we can get logs by specific stitch ids in arbitrary order
+		// Check that we can get logs by specific blueprint ids in arbitrary order
 		{
 			cmd: Debug{
 				tar: false,
@@ -300,7 +300,7 @@ func TestDebug(t *testing.T) {
 				containerFiles(debugFolder, "2"),
 				daemonFiles(debugFolder)),
 		},
-		// Check that we error on arbitrary stitch IDs.
+		// Check that we error on arbitrary blueprint IDs.
 		{
 			cmd: Debug{
 				tar: false,
@@ -323,7 +323,7 @@ func TestDebug(t *testing.T) {
 			expSSH:    false,
 			expReturn: 1,
 		},
-		// Check that we error on non-existent stitch IDs.
+		// Check that we error on non-existent blueprint IDs.
 		{
 			cmd: Debug{
 				tar: false,

@@ -322,7 +322,7 @@ func waitForContainers(blueprintPath string) error {
 			return false
 		}
 
-		// Only match containers that have the same stitch ID, and have been
+		// Only match containers that have the same blueprint ID, and have been
 		// booted.
 		key := func(tgtIntf, actualIntf interface{}) int {
 			tgt := tgtIntf.(stitch.Container)
