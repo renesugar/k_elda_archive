@@ -116,9 +116,9 @@ func updatePlacements(view db.Database, blueprint stitch.Stitch) {
 }
 
 func updateLoadBalancers(view db.Database, blueprint stitch.Stitch) {
-	var stitchLoadBalancers db.LoadBalancerSlice
+	var blueprintLoadBalancers db.LoadBalancerSlice
 	for _, lb := range blueprint.LoadBalancers {
-		stitchLoadBalancers = append(stitchLoadBalancers, db.LoadBalancer{
+		blueprintLoadBalancers = append(blueprintLoadBalancers, db.LoadBalancer{
 			Name:      lb.Name,
 			Hostnames: lb.Hostnames,
 		})
@@ -129,7 +129,7 @@ func updateLoadBalancers(view db.Database, blueprint stitch.Stitch) {
 	}
 
 	dbLoadBalancers := db.LoadBalancerSlice(view.SelectFromLoadBalancer(nil))
-	pairs, toAdd, toRemove := join.HashJoin(stitchLoadBalancers, dbLoadBalancers,
+	pairs, toAdd, toRemove := join.HashJoin(blueprintLoadBalancers, dbLoadBalancers,
 		key, key)
 
 	for _, intf := range toRemove {
@@ -142,12 +142,12 @@ func updateLoadBalancers(view db.Database, blueprint stitch.Stitch) {
 
 	for _, pair := range pairs {
 		dbLoadBalancer := pair.R.(db.LoadBalancer)
-		stitchLoadBalancer := pair.L.(db.LoadBalancer)
+		blueprintLoadBalancer := pair.L.(db.LoadBalancer)
 
 		// Modify the original database load balancer so that we preserve
 		// whatever IP the load balancer might have already been allocated.
-		dbLoadBalancer.Name = stitchLoadBalancer.Name
-		dbLoadBalancer.Hostnames = stitchLoadBalancer.Hostnames
+		dbLoadBalancer.Name = blueprintLoadBalancer.Name
+		dbLoadBalancer.Hostnames = blueprintLoadBalancer.Hostnames
 		view.Commit(dbLoadBalancer)
 	}
 }
@@ -192,24 +192,26 @@ func updateConnections(view db.Database, blueprint stitch.Stitch) {
 	}
 
 	vcs := view.SelectFromConnection(nil)
-	pairs, stitches, dbcs := join.HashJoin(scs, db.ConnectionSlice(vcs), nil, dbcKey)
+	pairs, blueprints, dbcs := join.HashJoin(
+		scs, db.ConnectionSlice(vcs), nil, dbcKey)
 
 	for _, dbc := range dbcs {
 		view.Remove(dbc.(db.Connection))
 	}
 
-	for _, stitchc := range stitches {
-		pairs = append(pairs, join.Pair{L: stitchc, R: view.InsertConnection()})
+	for _, blueprintc := range blueprints {
+		pairs = append(pairs,
+			join.Pair{L: blueprintc, R: view.InsertConnection()})
 	}
 
 	for _, pair := range pairs {
-		stitchc := pair.L.(stitch.Connection)
+		blueprintc := pair.L.(stitch.Connection)
 		dbc := pair.R.(db.Connection)
 
-		dbc.From = stitchc.From
-		dbc.To = stitchc.To
-		dbc.MinPort = stitchc.MinPort
-		dbc.MaxPort = stitchc.MaxPort
+		dbc.From = blueprintc.From
+		dbc.To = blueprintc.To
+		dbc.MinPort = blueprintc.MinPort
+		dbc.MaxPort = blueprintc.MaxPort
 		view.Commit(dbc)
 	}
 }
