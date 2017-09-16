@@ -13,8 +13,7 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 		    ./minion/ovsdb/mocks/Client.go \
 		    ./minion/pb/pb.pb.go \
 		    ./node_modules/% \
-		    ./quilt-tester/tests/zookeeper/vendor/% \
-		    ./stitch/bindings.js.go
+		    ./quilt-tester/tests/zookeeper/vendor/%
 
 JS_LINT_COMMAND = node_modules/eslint/bin/eslint.js \
                   examples/ \
