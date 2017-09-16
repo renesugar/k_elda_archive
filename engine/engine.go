@@ -1,11 +1,11 @@
 package engine
 
 import (
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/cloud"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 
 	log "github.com/Sirupsen/logrus"
@@ -16,7 +16,7 @@ var defaultDiskSize = 32
 
 var c = counter.New("Engine")
 
-// Run updates the database in response to stitch changes in the blueprint table.
+// Run updates the database in response to changes in the blueprint table.
 func Run(conn db.Conn, adminKey string) {
 	for range conn.TriggerTick(30, db.BlueprintTable, db.MachineTable).C {
 		conn.Txn(db.BlueprintTable, db.MachineTable).Run(
@@ -43,7 +43,7 @@ func updateTxn(view db.Database, adminKey string) error {
 // Specifically, it sets the role of the db.Machine, the size (which may depend
 // on RAM and CPU constraints), and the provider.
 // Additionally, it skips machines with invalid roles, sizes or providers.
-func toDBMachine(machines []stitch.Machine, maxPrice float64,
+func toDBMachine(machines []blueprint.Machine, maxPrice float64,
 	adminKey string) []db.Machine {
 
 	var hasMaster, hasWorker bool
@@ -106,7 +106,7 @@ func toDBMachine(machines []stitch.Machine, maxPrice float64,
 	return dbMachines
 }
 
-func machineTxn(view db.Database, stitch stitch.Blueprint, adminKey string) {
+func machineTxn(view db.Database, stitch blueprint.Blueprint, adminKey string) {
 	// XXX: How best to deal with machines that don't specify enough information?
 	maxPrice := stitch.MaxPrice
 	stitchMachines := toDBMachine(stitch.Machines, maxPrice, adminKey)

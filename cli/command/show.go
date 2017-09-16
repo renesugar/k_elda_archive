@@ -11,8 +11,8 @@ import (
 	"time"
 
 	units "github.com/docker/go-units"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 )
 
@@ -147,7 +147,7 @@ func writeContainers(fd io.Writer, containers []db.Container, machines []db.Mach
 
 	hostnamePublicPorts := map[string][]string{}
 	for _, c := range connections {
-		if c.From != stitch.PublicInternetLabel {
+		if c.From != blueprint.PublicInternetLabel {
 			continue
 		}
 

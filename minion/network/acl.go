@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/minion/ovsdb"
-	"github.com/quilt/quilt/stitch"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -48,8 +48,8 @@ func updateACLs(ovsdbClient ovsdb.Client, connections []db.Connection,
 	})
 
 	for _, conn := range connections {
-		if conn.From == stitch.PublicInternetLabel ||
-			conn.To == stitch.PublicInternetLabel {
+		if conn.From == blueprint.PublicInternetLabel ||
+			conn.To == blueprint.PublicInternetLabel {
 			continue
 		}
 

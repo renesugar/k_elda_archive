@@ -16,10 +16,10 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 )
 
@@ -305,7 +305,7 @@ func (ts *testSuite) run() error {
 }
 
 func waitForContainers(blueprintPath string) error {
-	stc, err := stitch.FromFile(blueprintPath)
+	stc, err := blueprint.FromFile(blueprintPath)
 	if err != nil {
 		return err
 	}
@@ -325,7 +325,7 @@ func waitForContainers(blueprintPath string) error {
 		// Only match containers that have the same blueprint ID, and have been
 		// booted.
 		key := func(tgtIntf, actualIntf interface{}) int {
-			tgt := tgtIntf.(stitch.Container)
+			tgt := tgtIntf.(blueprint.Container)
 			actual := actualIntf.(db.Container)
 			if tgt.ID == actual.BlueprintID && !actual.Created.IsZero() {
 				return 0

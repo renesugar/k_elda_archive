@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	clientMock "github.com/quilt/quilt/api/client/mocks"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 )
 
@@ -187,8 +187,8 @@ func TestPromptsUser(t *testing.T) {
 		confirm = oldConfirm
 	}()
 
-	compile = func(path string) (stitch.Blueprint, error) {
-		return stitch.Blueprint{}, nil
+	compile = func(path string) (blueprint.Blueprint, error) {
+		return blueprint.Blueprint{}, nil
 	}
 
 	util.AppFs = afero.NewMemMapFs()
@@ -199,7 +199,7 @@ func TestPromptsUser(t *testing.T) {
 
 		c := new(clientMock.Client)
 		c.On("QueryBlueprints").Return([]db.Blueprint{{
-			Blueprint: stitch.Blueprint{Namespace: "old"},
+			Blueprint: blueprint.Blueprint{Namespace: "old"},
 		}}, nil)
 		c.On("Deploy", "{}").Return(nil)
 

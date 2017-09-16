@@ -4,14 +4,14 @@ import (
 	"errors"
 	"log"
 
-	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/blueprint"
 )
 
 // A Blueprint that Quilt is attempting to implement.
 type Blueprint struct {
 	ID int
 
-	stitch.Blueprint
+	blueprint.Blueprint
 }
 
 // InsertBlueprint creates a new Blueprint and interts it into 'db'.

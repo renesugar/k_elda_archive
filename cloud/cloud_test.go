@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/cloud/acl"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
-	"github.com/quilt/quilt/stitch"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -600,14 +600,14 @@ func TestGetACLs(t *testing.T) {
 
 	// A blueprint with local, shouldn't have it added a second time.
 	acls = cld.getACLs(db.Blueprint{
-		Blueprint: stitch.Blueprint{AdminACL: []string{"local"}},
+		Blueprint: blueprint.Blueprint{AdminACL: []string{"local"}},
 	}, nil)
 	assert.Equal(t, exp, acls)
 
 	// Connections that aren't to or from public, shouldn't affect the acls.
 	acls = cld.getACLs(db.Blueprint{
-		Blueprint: stitch.Blueprint{
-			Connections: []stitch.Connection{{
+		Blueprint: blueprint.Blueprint{
+			Connections: []blueprint.Connection{{
 				From:    "foo",
 				To:      "bar",
 				MinPort: 5,
@@ -619,9 +619,9 @@ func TestGetACLs(t *testing.T) {
 
 	// Connections from public create an ACL.
 	acls = cld.getACLs(db.Blueprint{
-		Blueprint: stitch.Blueprint{
-			Connections: []stitch.Connection{{
-				From:    stitch.PublicInternetLabel,
+		Blueprint: blueprint.Blueprint{
+			Connections: []blueprint.Connection{{
+				From:    blueprint.PublicInternetLabel,
 				To:      "bar",
 				MinPort: 1,
 				MaxPort: 2,

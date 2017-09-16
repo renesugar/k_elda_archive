@@ -7,13 +7,13 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/minion/docker"
 	"github.com/quilt/quilt/minion/ipdef"
 	"github.com/quilt/quilt/minion/network/openflow"
 	"github.com/quilt/quilt/minion/network/plugin"
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 )
 
@@ -222,8 +222,8 @@ func openflowContainers(dbcs []db.Container,
 	fromPubPorts := map[string][]int{}
 	toPubPorts := map[string][]int{}
 	for _, conn := range conns {
-		if conn.From != stitch.PublicInternetLabel &&
-			conn.To != stitch.PublicInternetLabel {
+		if conn.From != blueprint.PublicInternetLabel &&
+			conn.To != blueprint.PublicInternetLabel {
 			continue
 		}
 
@@ -234,12 +234,12 @@ func openflowContainers(dbcs []db.Container,
 			continue
 		}
 
-		if conn.From == stitch.PublicInternetLabel {
+		if conn.From == blueprint.PublicInternetLabel {
 			fromPubPorts[conn.To] = append(fromPubPorts[conn.To],
 				conn.MinPort)
 		}
 
-		if conn.To == stitch.PublicInternetLabel {
+		if conn.To == blueprint.PublicInternetLabel {
 			toPubPorts[conn.From] = append(toPubPorts[conn.From],
 				conn.MinPort)
 		}

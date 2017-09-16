@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
-	"github.com/quilt/quilt/stitch"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,19 +18,19 @@ func TestContainerTxn(t *testing.T) {
 	conn := db.New()
 	trigg := conn.Trigger(db.ContainerTable).C
 
-	testContainerTxn(t, conn, stitch.Blueprint{})
+	testContainerTxn(t, conn, blueprint.Blueprint{})
 	assert.False(t, fired(trigg))
 
-	bp := stitch.Blueprint{
-		Containers: []stitch.Container{
+	bp := blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: "foo",
 				ID:       "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 				Command:  []string{"tail"},
 			},
 		},
-		LoadBalancers: []stitch.LoadBalancer{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name: "a",
 				Hostnames: []string{
@@ -45,22 +45,22 @@ func TestContainerTxn(t *testing.T) {
 	testContainerTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Blueprint{
-		Containers: []stitch.Container{
+	testContainerTxn(t, conn, blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: "foo",
 				ID:       "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 				Command:  []string{"tail"},
 			},
 			{
 				Hostname: "bar",
 				ID:       "6e24c8cbeb63dbffcc82730d01b439e2f5085f59",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 				Command:  []string{"tail"},
 			},
 		},
-		LoadBalancers: []stitch.LoadBalancer{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name: "b",
 				Hostnames: []string{
@@ -78,22 +78,22 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Blueprint{
-		Containers: []stitch.Container{
+	testContainerTxn(t, conn, blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: "foo",
 				ID:       "0b8a2ed7d14d78a388375025223b05d072bbaec3",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 				Command:  []string{"cat"},
 			},
 			{
 				Hostname: "bar",
 				ID:       "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 				Command:  []string{"tail"},
 			},
 		},
-		LoadBalancers: []stitch.LoadBalancer{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name: "b",
 				Hostnames: []string{
@@ -111,22 +111,22 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Blueprint{
-		Containers: []stitch.Container{
+	testContainerTxn(t, conn, blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: "foo",
 				ID:       "7a6244b8d2bfa10ee2fcbe6836a0519e116aee31",
-				Image:    stitch.Image{Name: "ubuntu"},
+				Image:    blueprint.Image{Name: "ubuntu"},
 				Command:  []string{"cat"},
 			},
 			{
 				Hostname: "bar",
 				ID:       "f133411ac23f45342a7b8b89bbe5e9efd0e711e5",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 				Command:  []string{"tail"},
 			},
 		},
-		LoadBalancers: []stitch.LoadBalancer{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name: "b",
 				Hostnames: []string{
@@ -144,22 +144,22 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Blueprint{
-		Containers: []stitch.Container{
+	testContainerTxn(t, conn, blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: "foo",
 				ID:       "0b8a2ed7d14d78a388375025223b05d072bbaec3",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 				Command:  []string{"cat"},
 			},
 			{
 				Hostname: "bar",
 				ID:       "d1c9f501efd7a348e54388358c5fe29690fb147d",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 				Command:  []string{"cat"},
 			},
 		},
-		LoadBalancers: []stitch.LoadBalancer{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name: "a",
 				Hostnames: []string{
@@ -171,15 +171,15 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	testContainerTxn(t, conn, stitch.Blueprint{
-		Containers: []stitch.Container{
+	testContainerTxn(t, conn, blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: "foo",
 				ID:       "018e4ee517d85640d9bf0adb4579d2ac9bd358af",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 			},
 		},
-		LoadBalancers: []stitch.LoadBalancer{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name: "a",
 				Hostnames: []string{
@@ -190,20 +190,20 @@ func TestContainerTxn(t *testing.T) {
 	})
 	assert.True(t, fired(trigg))
 
-	bp = stitch.Blueprint{
-		Containers: []stitch.Container{
+	bp = blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: "foo",
 				ID:       "018e4ee517d85640d9bf0adb4579d2ac9bd358af",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 			},
 			{
 				Hostname: "bar",
 				ID:       "ac4693f0b7fc17aa0e885aa03dc8f7cd6017f496",
-				Image:    stitch.Image{Name: "alpine"},
+				Image:    blueprint.Image{Name: "alpine"},
 			},
 		},
-		LoadBalancers: []stitch.LoadBalancer{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name: "b",
 				Hostnames: []string{
@@ -232,7 +232,7 @@ func TestContainerTxn(t *testing.T) {
 	assert.False(t, fired(trigg))
 }
 
-func testContainerTxn(t *testing.T, conn db.Conn, bp stitch.Blueprint) {
+func testContainerTxn(t *testing.T, conn db.Conn, bp blueprint.Blueprint) {
 	var containers []db.Container
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		updatePolicy(view, bp.String())
@@ -260,11 +260,11 @@ func TestConnectionTxn(t *testing.T) {
 	conn := db.New()
 	trigg := conn.Trigger(db.ConnectionTable).C
 
-	testConnectionTxn(t, conn, stitch.Blueprint{})
+	testConnectionTxn(t, conn, blueprint.Blueprint{})
 	assert.False(t, fired(trigg))
 
-	bp := stitch.Blueprint{
-		Connections: []stitch.Connection{
+	bp := blueprint.Blueprint{
+		Connections: []blueprint.Connection{
 			{From: "a", To: "a", MinPort: 80, MaxPort: 80},
 		},
 	}
@@ -274,7 +274,7 @@ func TestConnectionTxn(t *testing.T) {
 	testConnectionTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 
-	bp.Connections = []stitch.Connection{
+	bp.Connections = []blueprint.Connection{
 		{From: "a", To: "a", MinPort: 90, MaxPort: 90},
 	}
 	testConnectionTxn(t, conn, bp)
@@ -283,7 +283,7 @@ func TestConnectionTxn(t *testing.T) {
 	testConnectionTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
 
-	bp.Connections = []stitch.Connection{
+	bp.Connections = []blueprint.Connection{
 		{From: "b", To: "a", MinPort: 90, MaxPort: 90},
 		{From: "b", To: "c", MinPort: 90, MaxPort: 90},
 		{From: "b", To: "a", MinPort: 100, MaxPort: 100},
@@ -303,7 +303,7 @@ func TestConnectionTxn(t *testing.T) {
 	assert.False(t, fired(trigg))
 }
 
-func testConnectionTxn(t *testing.T, conn db.Conn, bp stitch.Blueprint) {
+func testConnectionTxn(t *testing.T, conn db.Conn, bp blueprint.Blueprint) {
 	var connections []db.Connection
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		updatePolicy(view, bp.String())
@@ -342,7 +342,7 @@ func fired(c chan struct{}) bool {
 
 func TestPlacementTxn(t *testing.T) {
 	conn := db.New()
-	checkPlacement := func(bp stitch.Blueprint, exp ...db.Placement) {
+	checkPlacement := func(bp blueprint.Blueprint, exp ...db.Placement) {
 		var actual db.PlacementSlice
 		conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 			updatePolicy(view, bp.String())
@@ -377,28 +377,28 @@ func TestPlacementTxn(t *testing.T) {
 	fooID := "fooID"
 	barID := "barID"
 	bazID := "bazID"
-	bp := stitch.Blueprint{
-		Containers: []stitch.Container{
+	bp := blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: fooHostname,
 				ID:       fooID,
-				Image:    stitch.Image{Name: "foo"},
+				Image:    blueprint.Image{Name: "foo"},
 			},
 			{
 				Hostname: barHostname,
 				ID:       barID,
-				Image:    stitch.Image{Name: "bar"},
+				Image:    blueprint.Image{Name: "bar"},
 			},
 			{
 				Hostname: bazHostname,
 				ID:       bazID,
-				Image:    stitch.Image{Name: "baz"},
+				Image:    blueprint.Image{Name: "baz"},
 			},
 		},
 	}
 
 	// Machine placement
-	bp.Placements = []stitch.Placement{
+	bp.Placements = []blueprint.Placement{
 		{TargetContainerID: "foo", Exclusive: false, Size: "m4.large"},
 	}
 	checkPlacement(bp,
@@ -411,22 +411,22 @@ func TestPlacementTxn(t *testing.T) {
 
 	// Port placement
 	bp.Placements = nil
-	bp.Connections = []stitch.Connection{
-		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 80,
+	bp.Connections = []blueprint.Connection{
+		{From: blueprint.PublicInternetLabel, To: fooHostname, MinPort: 80,
 			MaxPort: 80},
-		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 81,
+		{From: blueprint.PublicInternetLabel, To: fooHostname, MinPort: 81,
 			MaxPort: 81},
 	}
 	checkPlacement(bp)
 
-	bp.Connections = []stitch.Connection{
-		{From: stitch.PublicInternetLabel, To: fooHostname, MinPort: 80,
+	bp.Connections = []blueprint.Connection{
+		{From: blueprint.PublicInternetLabel, To: fooHostname, MinPort: 80,
 			MaxPort: 80},
-		{From: stitch.PublicInternetLabel, To: barHostname, MinPort: 80,
+		{From: blueprint.PublicInternetLabel, To: barHostname, MinPort: 80,
 			MaxPort: 80},
-		{From: stitch.PublicInternetLabel, To: barHostname, MinPort: 81,
+		{From: blueprint.PublicInternetLabel, To: barHostname, MinPort: 81,
 			MaxPort: 81},
-		{From: stitch.PublicInternetLabel, To: bazHostname, MinPort: 81,
+		{From: blueprint.PublicInternetLabel, To: bazHostname, MinPort: 81,
 			MaxPort: 81},
 	}
 	checkPlacement(bp,
@@ -443,7 +443,7 @@ func TestPlacementTxn(t *testing.T) {
 	)
 }
 
-func checkImage(t *testing.T, conn db.Conn, bp stitch.Blueprint, exp ...db.Image) {
+func checkImage(t *testing.T, conn db.Conn, bp blueprint.Blueprint, exp ...db.Image) {
 	var images []db.Image
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		updatePolicy(view, bp.String())
@@ -466,33 +466,33 @@ func TestImageTxn(t *testing.T) {
 	t.Parallel()
 
 	// Regular image that isn't built by Quilt.
-	checkImage(t, db.New(), stitch.Blueprint{
-		Containers: []stitch.Container{
+	checkImage(t, db.New(), blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				ID:    "475c40d6070969839ba0f88f7a9bd0cc7936aa30",
-				Image: stitch.Image{Name: "image"},
+				Image: blueprint.Image{Name: "image"},
 			},
 		},
 	})
 
 	conn := db.New()
-	checkImage(t, conn, stitch.Blueprint{
-		Containers: []stitch.Container{
+	checkImage(t, conn, blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				ID:    "96189e4ea36c80171fd842ccc4c3438d06061991",
-				Image: stitch.Image{Name: "a", Dockerfile: "1"},
+				Image: blueprint.Image{Name: "a", Dockerfile: "1"},
 			},
 			{
 				ID:    "c51d206a1414f1fadf5020e5db35feee91410f79",
-				Image: stitch.Image{Name: "a", Dockerfile: "1"},
+				Image: blueprint.Image{Name: "a", Dockerfile: "1"},
 			},
 			{
 				ID:    "ede1e03efba48e66be3e51aabe03ec77d9f9def9",
-				Image: stitch.Image{Name: "b", Dockerfile: "1"},
+				Image: blueprint.Image{Name: "b", Dockerfile: "1"},
 			},
 			{
 				ID:    "133c61c61ef4b49ea26717efe0f0468d455fd317",
-				Image: stitch.Image{Name: "c"},
+				Image: blueprint.Image{Name: "c"},
 			},
 		},
 	},
@@ -515,15 +515,15 @@ func TestImageTxn(t *testing.T) {
 		view.Commit(img)
 		return nil
 	})
-	checkImage(t, conn, stitch.Blueprint{
-		Containers: []stitch.Container{
+	checkImage(t, conn, blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				ID:    "96189e4ea36c80171fd842ccc4c3438d06061991",
-				Image: stitch.Image{Name: "a", Dockerfile: "1"},
+				Image: blueprint.Image{Name: "a", Dockerfile: "1"},
 			},
 			{
 				ID:    "18c2c81fb48a2a481af58ba5ad6da0e2b244f060",
-				Image: stitch.Image{Name: "b", Dockerfile: "2"},
+				Image: blueprint.Image{Name: "b", Dockerfile: "2"},
 			},
 		},
 	},
@@ -539,7 +539,7 @@ func TestImageTxn(t *testing.T) {
 	)
 }
 
-func checkLoadBalancer(t *testing.T, conn db.Conn, bp stitch.Blueprint,
+func checkLoadBalancer(t *testing.T, conn db.Conn, bp blueprint.Blueprint,
 	exp ...db.LoadBalancer) {
 	var loadBalancers []db.LoadBalancer
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
@@ -571,8 +571,8 @@ func TestLoadBalancerTxn(t *testing.T) {
 	hostnamesA := []string{"a", "aa"}
 
 	// Insert a load balancer into an empty db.
-	checkLoadBalancer(t, conn, stitch.Blueprint{
-		LoadBalancers: []stitch.LoadBalancer{
+	checkLoadBalancer(t, conn, blueprint.Blueprint{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name:      loadBalancerA,
 				Hostnames: hostnamesA,
@@ -595,8 +595,8 @@ func TestLoadBalancerTxn(t *testing.T) {
 	})
 
 	hostnamesANew := []string{"a", "aa", "aaa"}
-	checkLoadBalancer(t, conn, stitch.Blueprint{
-		LoadBalancers: []stitch.LoadBalancer{
+	checkLoadBalancer(t, conn, blueprint.Blueprint{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name:      loadBalancerA,
 				Hostnames: hostnamesANew,
@@ -612,8 +612,8 @@ func TestLoadBalancerTxn(t *testing.T) {
 	// different one is inserted.
 	loadBalancerB := "loadBalancerB"
 	hostnamesB := []string{"b", "bb"}
-	checkLoadBalancer(t, conn, stitch.Blueprint{
-		LoadBalancers: []stitch.LoadBalancer{
+	checkLoadBalancer(t, conn, blueprint.Blueprint{
+		LoadBalancers: []blueprint.LoadBalancer{
 			{
 				Name:      loadBalancerB,
 				Hostnames: hostnamesB,

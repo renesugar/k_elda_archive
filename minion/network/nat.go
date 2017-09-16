@@ -6,11 +6,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/minion/nl"
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 
 	log "github.com/Sirupsen/logrus"
@@ -199,7 +199,7 @@ func preroutingRules(publicInterface string, containers []db.Container,
 	// from the public internet.
 	portsFromWeb := make(map[string]map[int]struct{})
 	for _, conn := range connections {
-		if conn.From != stitch.PublicInternetLabel {
+		if conn.From != blueprint.PublicInternetLabel {
 			continue
 		}
 
@@ -233,7 +233,7 @@ func postroutingRules(publicInterface string, containers []db.Container,
 	// to the public internet.
 	portsToWeb := make(map[string]map[int]struct{})
 	for _, conn := range connections {
-		if conn.To != stitch.PublicInternetLabel {
+		if conn.To != blueprint.PublicInternetLabel {
 			continue
 		}
 

@@ -5,7 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/util"
 )
 
@@ -55,7 +55,7 @@ func (sCmd *Stop) Parse(args []string) error {
 
 // Run stops the given namespace.
 func (sCmd *Stop) Run() int {
-	newCluster := stitch.Blueprint{
+	newCluster := blueprint.Blueprint{
 		Namespace: sCmd.namespace,
 	}
 	if sCmd.namespace == "" || sCmd.onlyContainers {

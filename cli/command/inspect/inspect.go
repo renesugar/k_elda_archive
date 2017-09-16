@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/util"
 )
 
@@ -61,7 +61,7 @@ func (iCmd *Inspect) AfterRun() error {
 
 // Run inspects the provided Stitch.
 func (iCmd *Inspect) Run() int {
-	bp, err := stitch.FromFile(iCmd.configPath)
+	bp, err := blueprint.FromFile(iCmd.configPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

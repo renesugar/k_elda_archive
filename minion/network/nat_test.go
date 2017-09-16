@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/vishvananda/netlink"
 
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/ipdef"
 	"github.com/quilt/quilt/minion/network/mocks"
 	"github.com/quilt/quilt/minion/nl"
 	"github.com/quilt/quilt/minion/nl/nlmock"
-	"github.com/quilt/quilt/stitch"
 )
 
 func TestUpdateNATErrors(t *testing.T) {
@@ -66,18 +66,18 @@ func TestPreroutingRules(t *testing.T) {
 
 	connections := []db.Connection{
 		{
-			From:    stitch.PublicInternetLabel,
+			From:    blueprint.PublicInternetLabel,
 			To:      "red",
 			MinPort: 80,
 		},
 		{
-			From:    stitch.PublicInternetLabel,
+			From:    blueprint.PublicInternetLabel,
 			To:      "purple",
 			MinPort: 81,
 		},
 		{
 			From:    "yellow",
-			To:      stitch.PublicInternetLabel,
+			To:      blueprint.PublicInternetLabel,
 			MinPort: 80,
 		},
 	}
@@ -109,12 +109,12 @@ func TestPostroutingRules(t *testing.T) {
 	connections := []db.Connection{
 		{
 			From:    "red",
-			To:      stitch.PublicInternetLabel,
+			To:      blueprint.PublicInternetLabel,
 			MinPort: 80,
 		},
 		{
 			From:    "purple",
-			To:      stitch.PublicInternetLabel,
+			To:      blueprint.PublicInternetLabel,
 			MinPort: 81,
 		},
 	}

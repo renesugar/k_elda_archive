@@ -12,9 +12,9 @@ import (
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/api/client/mocks"
 	"github.com/quilt/quilt/api/pb"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/stitch"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -209,7 +209,7 @@ func TestDeploy(t *testing.T) {
 		return nil
 	})
 
-	exp, err := stitch.FromJSON(createMachineDeployment)
+	exp, err := blueprint.FromJSON(createMachineDeployment)
 	assert.NoError(t, err)
 	assert.Equal(t, exp, bp.Blueprint)
 }
@@ -243,7 +243,7 @@ func TestVagrantDeployment(t *testing.T) {
 		return nil
 	})
 
-	exp, err := stitch.FromJSON(vagrantDeployment)
+	exp, err := blueprint.FromJSON(vagrantDeployment)
 	assert.NoError(t, err)
 	assert.Equal(t, exp, bp.Blueprint)
 }

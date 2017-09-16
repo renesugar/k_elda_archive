@@ -12,11 +12,11 @@ import (
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/api/pb"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/connection"
 	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/version"
 
 	"github.com/docker/distribution/reference"
@@ -194,7 +194,7 @@ func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 		return nil, errDaemonOnlyRPC
 	}
 
-	newBlueprint, err := stitch.FromJSON(deployReq.Deployment)
+	newBlueprint, err := blueprint.FromJSON(deployReq.Deployment)
 	if err != nil {
 		return &pb.DeployReply{}, err
 	}

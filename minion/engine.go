@@ -1,15 +1,15 @@
 package minion
 
 import (
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
-	"github.com/quilt/quilt/stitch"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 func updatePolicy(view db.Database, bp string) {
-	compiled, err := stitch.FromJSON(bp)
+	compiled, err := blueprint.FromJSON(bp)
 	if err != nil {
 		log.WithError(err).Warn("Invalid blueprint.")
 		return
@@ -35,7 +35,7 @@ func portPlacements(connections []db.Connection, containers []db.Container) (
 
 	ports := make(map[int][]string)
 	for _, conn := range connections {
-		if conn.From != stitch.PublicInternetLabel {
+		if conn.From != blueprint.PublicInternetLabel {
 			continue
 		}
 
@@ -78,7 +78,7 @@ func portPlacements(connections []db.Connection, containers []db.Container) (
 	return placements
 }
 
-func updatePlacements(view db.Database, bp stitch.Blueprint) {
+func updatePlacements(view db.Database, bp blueprint.Blueprint) {
 	connections := view.SelectFromConnection(nil)
 	containers := view.SelectFromContainer(nil)
 	placements := db.PlacementSlice(portPlacements(connections, containers))
@@ -115,7 +115,7 @@ func updatePlacements(view db.Database, bp stitch.Blueprint) {
 	}
 }
 
-func updateLoadBalancers(view db.Database, bp stitch.Blueprint) {
+func updateLoadBalancers(view db.Database, bp blueprint.Blueprint) {
 	var bpLoadBalancers db.LoadBalancerSlice
 	for _, lb := range bp.LoadBalancers {
 		bpLoadBalancers = append(bpLoadBalancers, db.LoadBalancer{
@@ -152,15 +152,15 @@ func updateLoadBalancers(view db.Database, bp stitch.Blueprint) {
 	}
 }
 
-func updateConnections(view db.Database, bp stitch.Blueprint) {
-	scs := stitch.ConnectionSlice(bp.Connections)
+func updateConnections(view db.Database, bp blueprint.Blueprint) {
+	scs := blueprint.ConnectionSlice(bp.Connections)
 
 	// Setup connections to load balanced containers. Load balancing works by
 	// rewriting the load balancer IPs to the IP address of one of the load
 	// balanced containers. This means allowing connections only to the load
 	// balancer IP address is insufficient -- the container must also be able
 	// to communicate directly with the containers behind the load balancer.
-	loadBalancers := map[string]stitch.LoadBalancer{}
+	loadBalancers := map[string]blueprint.LoadBalancer{}
 	for _, lb := range bp.LoadBalancers {
 		loadBalancers[lb.Name] = lb
 	}
@@ -172,7 +172,7 @@ func updateConnections(view db.Database, bp stitch.Blueprint) {
 		}
 
 		for _, hostname := range lb.Hostnames {
-			scs = append(scs, stitch.Connection{
+			scs = append(scs, blueprint.Connection{
 				From:    c.From,
 				To:      hostname,
 				MinPort: c.MinPort,
@@ -183,7 +183,7 @@ func updateConnections(view db.Database, bp stitch.Blueprint) {
 
 	dbcKey := func(val interface{}) interface{} {
 		c := val.(db.Connection)
-		return stitch.Connection{
+		return blueprint.Connection{
 			From:    c.From,
 			To:      c.To,
 			MinPort: c.MinPort,
@@ -205,7 +205,7 @@ func updateConnections(view db.Database, bp stitch.Blueprint) {
 	}
 
 	for _, pair := range pairs {
-		blueprintc := pair.L.(stitch.Connection)
+		blueprintc := pair.L.(blueprint.Connection)
 		dbc := pair.R.(db.Connection)
 
 		dbc.From = blueprintc.From
@@ -216,7 +216,7 @@ func updateConnections(view db.Database, bp stitch.Blueprint) {
 	}
 }
 
-func queryContainers(bp stitch.Blueprint) []db.Container {
+func queryContainers(bp blueprint.Blueprint) []db.Container {
 	containers := map[string]*db.Container{}
 	for _, c := range bp.Containers {
 		containers[c.Hostname] = &db.Container{
@@ -238,7 +238,7 @@ func queryContainers(bp stitch.Blueprint) []db.Container {
 	return ret
 }
 
-func updateContainers(view db.Database, bp stitch.Blueprint) {
+func updateContainers(view db.Database, bp blueprint.Blueprint) {
 	key := func(val interface{}) interface{} {
 		return val.(db.Container).BlueprintID
 	}
@@ -269,9 +269,9 @@ func updateContainers(view db.Database, bp stitch.Blueprint) {
 	}
 }
 
-func updateImages(view db.Database, bp stitch.Blueprint) {
+func updateImages(view db.Database, bp blueprint.Blueprint) {
 	dbImageKey := func(intf interface{}) interface{} {
-		return stitch.Image{
+		return blueprint.Image{
 			Name:       intf.(db.Image).Name,
 			Dockerfile: intf.(db.Image).Dockerfile,
 		}
@@ -283,8 +283,8 @@ func updateImages(view db.Database, bp stitch.Blueprint) {
 
 	for _, intf := range toAdd {
 		im := view.InsertImage()
-		im.Name = intf.(stitch.Image).Name
-		im.Dockerfile = intf.(stitch.Image).Dockerfile
+		im.Name = intf.(blueprint.Image).Name
+		im.Dockerfile = intf.(blueprint.Image).Dockerfile
 		view.Commit(im)
 	}
 
@@ -293,8 +293,8 @@ func updateImages(view db.Database, bp stitch.Blueprint) {
 	}
 }
 
-func queryImages(bp stitch.Blueprint) (images []stitch.Image) {
-	addedImages := map[stitch.Image]struct{}{}
+func queryImages(bp blueprint.Blueprint) (images []blueprint.Image) {
+	addedImages := map[blueprint.Image]struct{}{}
 	for _, c := range bp.Containers {
 		_, addedImage := addedImages[c.Image]
 		if c.Image.Dockerfile == "" || addedImage {
@@ -307,7 +307,7 @@ func queryImages(bp stitch.Blueprint) (images []stitch.Image) {
 	return images
 }
 
-type stitchImageSlice []stitch.Image
+type stitchImageSlice []blueprint.Image
 
 func (slc stitchImageSlice) Get(ii int) interface{} {
 	return slc[ii]

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/cloud/acl"
 	"github.com/quilt/quilt/cloud/amazon"
 	"github.com/quilt/quilt/cloud/cfg"
@@ -17,7 +18,6 @@ import (
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
-	"github.com/quilt/quilt/stitch"
 	"github.com/quilt/quilt/util"
 )
 
@@ -327,7 +327,7 @@ func (cld cloud) getACLs(bp db.Blueprint, machines []db.Machine) map[acl.ACL]str
 	}
 
 	for _, conn := range bp.Connections {
-		if conn.From == stitch.PublicInternetLabel {
+		if conn.From == blueprint.PublicInternetLabel {
 			acl := acl.ACL{
 				CidrIP:  "0.0.0.0/0",
 				MinPort: conn.MinPort,

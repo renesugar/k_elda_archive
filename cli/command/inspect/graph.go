@@ -2,7 +2,7 @@ package inspect
 
 import (
 	"fmt"
-	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/blueprint"
 )
 
 // A Node in the communication Graph.
@@ -25,7 +25,7 @@ type Graph struct {
 }
 
 // New queries the Stitch to create a Graph structure.
-func New(bp stitch.Blueprint) (Graph, error) {
+func New(bp blueprint.Blueprint) (Graph, error) {
 	g := Graph{
 		Nodes: map[string]Node{},
 	}
@@ -36,7 +36,7 @@ func New(bp stitch.Blueprint) (Graph, error) {
 	for _, lb := range bp.LoadBalancers {
 		g.addNode(lb.Name)
 	}
-	g.addNode(stitch.PublicInternetLabel)
+	g.addNode(blueprint.PublicInternetLabel)
 
 	for _, conn := range bp.Connections {
 		err := g.addConnection(conn.From, conn.To)

@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/docker"
 	"github.com/quilt/quilt/minion/network/openflow"
-	"github.com/quilt/quilt/stitch"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -236,9 +236,9 @@ func TestSyncJoinScore(t *testing.T) {
 func TestOpenFlowContainers(t *testing.T) {
 	conns := []db.Connection{
 		{MinPort: 1, MaxPort: 1000},
-		{MinPort: 2, MaxPort: 2, From: stitch.PublicInternetLabel, To: "red"},
-		{MinPort: 3, MaxPort: 3, To: stitch.PublicInternetLabel, From: "red"},
-		{MinPort: 4, MaxPort: 4, To: stitch.PublicInternetLabel, From: "blue"}}
+		{MinPort: 2, MaxPort: 2, From: blueprint.PublicInternetLabel, To: "red"},
+		{MinPort: 3, MaxPort: 3, To: blueprint.PublicInternetLabel, From: "red"},
+		{MinPort: 4, MaxPort: 4, To: blueprint.PublicInternetLabel, From: "blue"}}
 
 	res := openflowContainers([]db.Container{
 		{EndpointID: "f", IP: "1.2.3.4", Hostname: "red"}},

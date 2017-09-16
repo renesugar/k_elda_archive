@@ -3,8 +3,8 @@ package machine
 import (
 	"fmt"
 
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/stitch"
 )
 
 // Description describes a VM type offered by a cloud provider.
@@ -19,7 +19,7 @@ type Description struct {
 
 // ChooseSize returns an acceptable machine size for the given provider that fits the
 // provided ram, cpu, and price constraints.
-func ChooseSize(provider db.ProviderName, ram, cpu stitch.Range,
+func ChooseSize(provider db.ProviderName, ram, cpu blueprint.Range,
 	maxPrice float64) string {
 	switch provider {
 	case db.Amazon:
@@ -35,7 +35,7 @@ func ChooseSize(provider db.ProviderName, ram, cpu stitch.Range,
 	}
 }
 
-func chooseBestSize(descriptions []Description, ram, cpu stitch.Range,
+func chooseBestSize(descriptions []Description, ram, cpu blueprint.Range,
 	maxPrice float64) string {
 	var best Description
 	for _, d := range descriptions {
@@ -51,7 +51,7 @@ func chooseBestSize(descriptions []Description, ram, cpu stitch.Range,
 	return ""
 }
 
-func vagrantSize(ramRange, cpuRange stitch.Range) string {
+func vagrantSize(ramRange, cpuRange blueprint.Range) string {
 	ram := ramRange.Min
 	if ram < 1 {
 		ram = 1

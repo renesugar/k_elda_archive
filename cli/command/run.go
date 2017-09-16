@@ -16,7 +16,7 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	"github.com/quilt/quilt/api/client"
-	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/util"
 )
 
@@ -65,7 +65,7 @@ func (rCmd *Run) Parse(args []string) error {
 
 var errNoBlueprint = errors.New("no blueprint")
 
-var compile = stitch.FromFile
+var compile = blueprint.FromFile
 
 // Run starts the run for the provided Stitch.
 func (rCmd *Run) Run() int {
@@ -116,14 +116,14 @@ func (rCmd *Run) Run() int {
 	return 0
 }
 
-func getCurrentDeployment(c client.Client) (stitch.Blueprint, error) {
+func getCurrentDeployment(c client.Client) (blueprint.Blueprint, error) {
 	blueprints, err := c.QueryBlueprints()
 	if err != nil {
-		return stitch.Blueprint{}, err
+		return blueprint.Blueprint{}, err
 	}
 	switch len(blueprints) {
 	case 0:
-		return stitch.Blueprint{}, errNoBlueprint
+		return blueprint.Blueprint{}, errNoBlueprint
 	case 1:
 		return blueprints[0].Blueprint, nil
 	default:

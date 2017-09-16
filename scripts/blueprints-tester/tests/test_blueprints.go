@@ -9,11 +9,11 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/blueprint"
 )
 
 func tryRunBlueprint(bp string) error {
-	_, err := stitch.FromFile(bp)
+	_, err := blueprint.FromFile(bp)
 	return err
 }
 

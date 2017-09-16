@@ -17,7 +17,7 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 
 JS_LINT_COMMAND = node_modules/eslint/bin/eslint.js \
                   examples/ \
-                  stitch/ \
+                  blueprint/ \
                   quilt-tester/ \
                   cli/command/init/ \
                   util/

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/util"
 )
 
@@ -133,7 +133,7 @@ func TestReadme() error {
 	for _, block := range blocks {
 		blueprintPath := filepath.Join(workDir, "readme_block.js")
 		util.WriteFile(blueprintPath, []byte(block), 0644)
-		if _, err := stitch.FromFile(blueprintPath); err != nil {
+		if _, err := blueprint.FromFile(blueprintPath); err != nil {
 			return err
 		}
 	}

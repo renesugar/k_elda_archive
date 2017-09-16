@@ -7,9 +7,9 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/stitch"
 )
 
 func TestOutboundPublic(t *testing.T) {
@@ -38,7 +38,7 @@ var testHost = fmt.Sprintf("google.com:%d", testPort)
 func test(t *testing.T, containers []db.Container, connections []db.Connection) {
 	connected := map[string]struct{}{}
 	for _, conn := range connections {
-		if conn.To == stitch.PublicInternetLabel &&
+		if conn.To == blueprint.PublicInternetLabel &&
 			inRange(testPort, conn.MinPort, conn.MaxPort) {
 			connected[conn.From] = struct{}{}
 		}

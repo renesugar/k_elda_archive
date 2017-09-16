@@ -1,4 +1,4 @@
-package stitch
+package blueprint
 
 import (
 	"encoding/json"
@@ -43,7 +43,7 @@ type Image struct {
 	Dockerfile string `json:",omitempty"`
 }
 
-// A Container may be instantiated in the stitch and queried by users.
+// A Container may be instantiated in the blueprint and queried by users.
 type Container struct {
 	ID                string            `json:",omitempty"`
 	Image             Image             `json:",omitempty"`
@@ -141,7 +141,7 @@ func FromFile(filename string) (Blueprint, error) {
 	return FromJSON(string(depl))
 }
 
-// FromJSON gets a Stitch handle from the deployment representation.
+// FromJSON gets a Blueprint handle from the deployment representation.
 func FromJSON(jsonStr string) (bp Blueprint, err error) {
 	err = json.Unmarshal([]byte(jsonStr), &bp)
 	if err != nil {
@@ -150,7 +150,7 @@ func FromJSON(jsonStr string) (bp Blueprint, err error) {
 	return bp, err
 }
 
-// String returns the Stitch in its deployment representation.
+// String returns the Blueprint in its deployment representation.
 func (stitch Blueprint) String() string {
 	jsonBytes, err := json.Marshal(stitch)
 	if err != nil {

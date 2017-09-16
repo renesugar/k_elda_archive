@@ -3,17 +3,17 @@ package engine
 import (
 	"testing"
 
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
-	"github.com/quilt/quilt/stitch"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEngine(t *testing.T) {
 	conn := db.New()
 
-	bp := stitch.Blueprint{
+	bp := blueprint.Blueprint{
 		Namespace: "namespace",
-		Machines: []stitch.Machine{
+		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "2"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "3"},
@@ -29,13 +29,13 @@ func TestEngine(t *testing.T) {
 
 	/* Verify master increase. */
 	bp.Machines = append(bp.Machines,
-		stitch.Machine{Provider: "Amazon", Size: "m4.large",
+		blueprint.Machine{Provider: "Amazon", Size: "m4.large",
 			Role: "Master", ID: "6"},
-		stitch.Machine{Provider: "Amazon", Size: "m4.large",
+		blueprint.Machine{Provider: "Amazon", Size: "m4.large",
 			Role: "Master", ID: "7"},
-		stitch.Machine{Provider: "Amazon", Size: "m4.large",
+		blueprint.Machine{Provider: "Amazon", Size: "m4.large",
 			Role: "Worker", ID: "8"},
-		stitch.Machine{Provider: "Amazon", Size: "m4.large",
+		blueprint.Machine{Provider: "Amazon", Size: "m4.large",
 			Role: "Worker", ID: "9"},
 	)
 
@@ -71,7 +71,7 @@ func TestEngine(t *testing.T) {
 	})
 
 	/* Also verify that masters and workers decrease properly. */
-	bp.Machines = []stitch.Machine{
+	bp.Machines = []blueprint.Machine{
 		{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 		{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "3"},
 	}
@@ -105,8 +105,8 @@ func TestEngine(t *testing.T) {
 	assert.Equal(t, "3", workers[0].PrivateIP)
 
 	/* Verify things go to zero. */
-	updateStitch(t, conn, stitch.Blueprint{
-		Machines: []stitch.Machine{
+	updateStitch(t, conn, blueprint.Blueprint{
+		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker"},
 		},
 	}, "")
@@ -133,8 +133,8 @@ func TestEngine(t *testing.T) {
 	}
 
 	/* Test mixed providers. */
-	updateStitch(t, conn, stitch.Blueprint{
-		Machines: []stitch.Machine{
+	updateStitch(t, conn, blueprint.Blueprint{
+		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 			{Provider: "Vagrant", Size: "v.large", Role: "Master", ID: "2"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "3"},
@@ -146,8 +146,8 @@ func TestEngine(t *testing.T) {
 	assertProvidersInSlice(workers, []db.ProviderName{db.Amazon, db.Google})
 
 	/* Test that machines with different providers don't match. */
-	updateStitch(t, conn, stitch.Blueprint{
-		Machines: []stitch.Machine{
+	updateStitch(t, conn, blueprint.Blueprint{
+		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "2"},
 		},
@@ -161,8 +161,8 @@ func TestAdminKey(t *testing.T) {
 
 	conn := db.New()
 
-	updateStitch(t, conn, stitch.Blueprint{
-		Machines: []stitch.Machine{
+	updateStitch(t, conn, blueprint.Blueprint{
+		Machines: []blueprint.Machine{
 			{
 				ID:       "1",
 				Provider: "Amazon",
@@ -184,8 +184,8 @@ func TestAdminKey(t *testing.T) {
 		assert.Equal(t, []string{"app", "admin"}, m.SSHKeys)
 	}
 
-	updateStitch(t, conn, stitch.Blueprint{
-		Machines: []stitch.Machine{
+	updateStitch(t, conn, blueprint.Blueprint{
+		Machines: []blueprint.Machine{
 			{
 				ID:       "1",
 				Provider: "Amazon",
@@ -211,8 +211,8 @@ func TestAdminKey(t *testing.T) {
 func TestSort(t *testing.T) {
 	conn := db.New()
 
-	updateStitch(t, conn, stitch.Blueprint{
-		Machines: []stitch.Machine{
+	updateStitch(t, conn, blueprint.Blueprint{
+		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
@@ -240,8 +240,8 @@ func TestSort(t *testing.T) {
 		return nil
 	})
 
-	updateStitch(t, conn, stitch.Blueprint{
-		Machines: []stitch.Machine{
+	updateStitch(t, conn, blueprint.Blueprint{
+		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker"},
@@ -274,7 +274,7 @@ func selectMachines(conn db.Conn) (masters, workers []db.Machine) {
 	return
 }
 
-func updateStitch(t *testing.T, conn db.Conn, newBlueprint stitch.Blueprint,
+func updateStitch(t *testing.T, conn db.Conn, newBlueprint blueprint.Blueprint,
 	adminKey string) {
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		bp, err := view.GetBlueprint()

@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/quilt/quilt/stitch"
+	"github.com/quilt/quilt/blueprint"
 )
 
 func TestStripExtension(t *testing.T) {
@@ -44,25 +44,25 @@ func isGraphEqual(a, b string) bool {
 func TestViz(t *testing.T) {
 	t.Parallel()
 
-	bp := stitch.Blueprint{
-		Containers: []stitch.Container{
+	bp := blueprint.Blueprint{
+		Containers: []blueprint.Container{
 			{
 				Hostname: "a",
 				ID:       "54be1283e837c6e40ac79709aca8cdb8ec5f31f5",
-				Image:    stitch.Image{Name: "ubuntu"},
+				Image:    blueprint.Image{Name: "ubuntu"},
 			},
 			{
 				Hostname: "b",
 				ID:       "3c1a5738512a43c3122608ab32dbf9f84a14e5f9",
-				Image:    stitch.Image{Name: "ubuntu"},
+				Image:    blueprint.Image{Name: "ubuntu"},
 			},
 			{
 				Hostname: "c",
 				ID:       "cb129f8a27df770b1dac70955c227a57bc5c4af6",
-				Image:    stitch.Image{Name: "ubuntu"},
+				Image:    blueprint.Image{Name: "ubuntu"},
 			},
 		},
-		Connections: []stitch.Connection{
+		Connections: []blueprint.Connection{
 			{From: "a", To: "b", MinPort: 22, MaxPort: 22},
 			{From: "b", To: "c", MinPort: 22, MaxPort: 22},
 		},

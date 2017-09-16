@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/ovsdb"
 	"github.com/quilt/quilt/minion/ovsdb/mocks"
-	"github.com/quilt/quilt/stitch"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -22,7 +22,7 @@ func TestUpdateACLs(t *testing.T) {
 
 	conns := []db.Connection{
 		{
-			From:    stitch.PublicInternetLabel,
+			From:    blueprint.PublicInternetLabel,
 			To:      "ignoreme",
 			MinPort: 80,
 			MaxPort: 80,

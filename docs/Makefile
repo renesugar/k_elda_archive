@@ -14,10 +14,10 @@ clean:
 	rm -rf build
 
 # Generate the JavaScript documentation by using jsdoc and Quilt's template.
-_jsdoc.erb: build/jsdoc_template ../stitch/
+_jsdoc.erb: build/jsdoc_template ../blueprint/
 	build/jsdoc_template/node_modules/.bin/jsdoc \
 		-t build/jsdoc_template/ \
-		$(abspath ${CURDIR}/../stitch/bindings.js) -d ./
+		$(abspath ${CURDIR}/../blueprint/bindings.js) -d ./
 
 build/jsdoc_template:
 	mkdir -p build && \
