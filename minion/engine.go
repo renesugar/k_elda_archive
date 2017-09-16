@@ -277,7 +277,7 @@ func updateImages(view db.Database, bp blueprint.Blueprint) {
 		}
 	}
 
-	blueprintImages := stitchImageSlice(queryImages(bp))
+	blueprintImages := blueprintImageSlice(queryImages(bp))
 	dbImages := db.ImageSlice(view.SelectFromImage(nil))
 	_, toAdd, toRemove := join.HashJoin(blueprintImages, dbImages, nil, dbImageKey)
 
@@ -307,12 +307,12 @@ func queryImages(bp blueprint.Blueprint) (images []blueprint.Image) {
 	return images
 }
 
-type stitchImageSlice []blueprint.Image
+type blueprintImageSlice []blueprint.Image
 
-func (slc stitchImageSlice) Get(ii int) interface{} {
+func (slc blueprintImageSlice) Get(ii int) interface{} {
 	return slc[ii]
 }
 
-func (slc stitchImageSlice) Len() int {
+func (slc blueprintImageSlice) Len() int {
 	return len(slc)
 }
