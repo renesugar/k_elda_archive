@@ -21,7 +21,7 @@ func TestEngine(t *testing.T) {
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "5"},
 		},
 	}
-	updateStitch(t, conn, bp, "")
+	updateBlueprint(t, conn, bp, "")
 
 	masters, workers := selectMachines(conn)
 	assert.Equal(t, 2, len(masters))
@@ -39,7 +39,7 @@ func TestEngine(t *testing.T) {
 			Role: "Worker", ID: "9"},
 	)
 
-	updateStitch(t, conn, bp, "")
+	updateBlueprint(t, conn, bp, "")
 	masters, workers = selectMachines(conn)
 	assert.Equal(t, 4, len(masters))
 	assert.Equal(t, 5, len(workers))
@@ -75,7 +75,7 @@ func TestEngine(t *testing.T) {
 		{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 		{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "3"},
 	}
-	updateStitch(t, conn, bp, "")
+	updateBlueprint(t, conn, bp, "")
 
 	masters, workers = selectMachines(conn)
 
@@ -91,7 +91,7 @@ func TestEngine(t *testing.T) {
 
 	/* Empty Namespace does nothing. */
 	bp.Namespace = ""
-	updateStitch(t, conn, bp, "")
+	updateBlueprint(t, conn, bp, "")
 	masters, workers = selectMachines(conn)
 
 	assert.Equal(t, 1, len(masters))
@@ -105,7 +105,7 @@ func TestEngine(t *testing.T) {
 	assert.Equal(t, "3", workers[0].PrivateIP)
 
 	/* Verify things go to zero. */
-	updateStitch(t, conn, blueprint.Blueprint{
+	updateBlueprint(t, conn, blueprint.Blueprint{
 		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker"},
 		},
@@ -133,7 +133,7 @@ func TestEngine(t *testing.T) {
 	}
 
 	/* Test mixed providers. */
-	updateStitch(t, conn, blueprint.Blueprint{
+	updateBlueprint(t, conn, blueprint.Blueprint{
 		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 			{Provider: "Vagrant", Size: "v.large", Role: "Master", ID: "2"},
@@ -146,7 +146,7 @@ func TestEngine(t *testing.T) {
 	assertProvidersInSlice(workers, []db.ProviderName{db.Amazon, db.Google})
 
 	/* Test that machines with different providers don't match. */
-	updateStitch(t, conn, blueprint.Blueprint{
+	updateBlueprint(t, conn, blueprint.Blueprint{
 		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master", ID: "1"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Worker", ID: "2"},
@@ -161,7 +161,7 @@ func TestAdminKey(t *testing.T) {
 
 	conn := db.New()
 
-	updateStitch(t, conn, blueprint.Blueprint{
+	updateBlueprint(t, conn, blueprint.Blueprint{
 		Machines: []blueprint.Machine{
 			{
 				ID:       "1",
@@ -184,7 +184,7 @@ func TestAdminKey(t *testing.T) {
 		assert.Equal(t, []string{"app", "admin"}, m.SSHKeys)
 	}
 
-	updateStitch(t, conn, blueprint.Blueprint{
+	updateBlueprint(t, conn, blueprint.Blueprint{
 		Machines: []blueprint.Machine{
 			{
 				ID:       "1",
@@ -211,7 +211,7 @@ func TestAdminKey(t *testing.T) {
 func TestSort(t *testing.T) {
 	conn := db.New()
 
-	updateStitch(t, conn, blueprint.Blueprint{
+	updateBlueprint(t, conn, blueprint.Blueprint{
 		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
@@ -240,7 +240,7 @@ func TestSort(t *testing.T) {
 		return nil
 	})
 
-	updateStitch(t, conn, blueprint.Blueprint{
+	updateBlueprint(t, conn, blueprint.Blueprint{
 		Machines: []blueprint.Machine{
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
 			{Provider: "Amazon", Size: "m4.large", Role: "Master"},
@@ -274,7 +274,7 @@ func selectMachines(conn db.Conn) (masters, workers []db.Machine) {
 	return
 }
 
-func updateStitch(t *testing.T, conn db.Conn, newBlueprint blueprint.Blueprint,
+func updateBlueprint(t *testing.T, conn db.Conn, newBlueprint blueprint.Blueprint,
 	adminKey string) {
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		bp, err := view.GetBlueprint()

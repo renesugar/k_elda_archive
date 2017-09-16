@@ -48,10 +48,10 @@ func toDBMachine(machines []blueprint.Machine, maxPrice float64,
 
 	var hasMaster, hasWorker bool
 	var dbMachines []db.Machine
-	for _, stitchm := range machines {
+	for _, blueprintm := range machines {
 		var m db.Machine
 
-		role, err := db.ParseRole(stitchm.Role)
+		role, err := db.ParseRole(blueprintm.Role)
 		if err != nil {
 			log.WithError(err).Error("Error parsing role.")
 			continue
@@ -61,17 +61,17 @@ func toDBMachine(machines []blueprint.Machine, maxPrice float64,
 		hasMaster = hasMaster || role == db.Master
 		hasWorker = hasWorker || role == db.Worker
 
-		p, err := db.ParseProvider(stitchm.Provider)
+		p, err := db.ParseProvider(blueprintm.Provider)
 		if err != nil {
 			log.WithError(err).Error("Error parsing provider.")
 			continue
 		}
 		m.Provider = p
-		m.Size = stitchm.Size
-		m.Preemptible = stitchm.Preemptible
+		m.Size = blueprintm.Size
+		m.Preemptible = blueprintm.Preemptible
 
 		if m.Size == "" {
-			m.Size = cloud.ChooseSize(p, stitchm.RAM, stitchm.CPU,
+			m.Size = cloud.ChooseSize(p, blueprintm.RAM, blueprintm.CPU,
 				maxPrice)
 			if m.Size == "" {
 				log.Errorf("No valid size for %v, skipping.", m)
@@ -79,19 +79,19 @@ func toDBMachine(machines []blueprint.Machine, maxPrice float64,
 			}
 		}
 
-		m.DiskSize = stitchm.DiskSize
+		m.DiskSize = blueprintm.DiskSize
 		if m.DiskSize == 0 {
 			m.DiskSize = defaultDiskSize
 		}
 
-		m.SSHKeys = stitchm.SSHKeys
+		m.SSHKeys = blueprintm.SSHKeys
 		if adminKey != "" {
 			m.SSHKeys = append(m.SSHKeys, adminKey)
 		}
 
-		m.BlueprintID = stitchm.ID
-		m.Region = stitchm.Region
-		m.FloatingIP = stitchm.FloatingIP
+		m.BlueprintID = blueprintm.ID
+		m.Region = blueprintm.Region
+		m.FloatingIP = blueprintm.FloatingIP
 		dbMachines = append(dbMachines, cloud.DefaultRegion(m))
 	}
 
@@ -106,35 +106,35 @@ func toDBMachine(machines []blueprint.Machine, maxPrice float64,
 	return dbMachines
 }
 
-func machineTxn(view db.Database, stitch blueprint.Blueprint, adminKey string) {
+func machineTxn(view db.Database, bp blueprint.Blueprint, adminKey string) {
 	// XXX: How best to deal with machines that don't specify enough information?
-	maxPrice := stitch.MaxPrice
-	stitchMachines := toDBMachine(stitch.Machines, maxPrice, adminKey)
+	maxPrice := bp.MaxPrice
+	blueprintMachines := toDBMachine(bp.Machines, maxPrice, adminKey)
 
 	dbMachines := view.SelectFromMachine(nil)
 
 	scoreFun := func(left, right interface{}) int {
-		stitchMachine := left.(db.Machine)
+		blueprintMachine := left.(db.Machine)
 		dbMachine := right.(db.Machine)
 
 		switch {
 		case dbMachine.BlueprintID != "" &&
-			dbMachine.BlueprintID != stitchMachine.BlueprintID:
+			dbMachine.BlueprintID != blueprintMachine.BlueprintID:
 			return -1
-		case dbMachine.Provider != stitchMachine.Provider:
+		case dbMachine.Provider != blueprintMachine.Provider:
 			return -1
-		case dbMachine.Region != stitchMachine.Region:
+		case dbMachine.Region != blueprintMachine.Region:
 			return -1
-		case dbMachine.Preemptible != stitchMachine.Preemptible:
+		case dbMachine.Preemptible != blueprintMachine.Preemptible:
 			return -1
-		case dbMachine.Size != "" && stitchMachine.Size != dbMachine.Size:
+		case dbMachine.Size != "" && blueprintMachine.Size != dbMachine.Size:
 			return -1
 		case dbMachine.FloatingIP != "" &&
-			dbMachine.FloatingIP != stitchMachine.FloatingIP:
+			dbMachine.FloatingIP != blueprintMachine.FloatingIP:
 			return -1
-		case dbMachine.Role != db.None && dbMachine.Role != stitchMachine.Role:
+		case dbMachine.Role != db.None && dbMachine.Role != blueprintMachine.Role:
 			return -1
-		case dbMachine.DiskSize != stitchMachine.DiskSize:
+		case dbMachine.DiskSize != blueprintMachine.DiskSize:
 			return -1
 		case dbMachine.PrivateIP == "":
 			return 2
@@ -145,7 +145,8 @@ func machineTxn(view db.Database, stitch blueprint.Blueprint, adminKey string) {
 		}
 	}
 
-	pairs, bootList, terminateList := join.Join(stitchMachines, dbMachines, scoreFun)
+	pairs, bootList, terminateList := join.Join(blueprintMachines, dbMachines,
+		scoreFun)
 
 	for _, toTerminate := range terminateList {
 		toTerminate := toTerminate.(db.Machine)
@@ -159,18 +160,18 @@ func machineTxn(view db.Database, stitch blueprint.Blueprint, adminKey string) {
 	}
 
 	for _, pair := range pairs {
-		stitchMachine := pair.L.(db.Machine)
+		blueprintMachine := pair.L.(db.Machine)
 		dbMachine := pair.R.(db.Machine)
 
-		dbMachine.BlueprintID = stitchMachine.BlueprintID
-		dbMachine.Role = stitchMachine.Role
-		dbMachine.Size = stitchMachine.Size
-		dbMachine.DiskSize = stitchMachine.DiskSize
-		dbMachine.Provider = stitchMachine.Provider
-		dbMachine.Region = stitchMachine.Region
-		dbMachine.SSHKeys = stitchMachine.SSHKeys
-		dbMachine.FloatingIP = stitchMachine.FloatingIP
-		dbMachine.Preemptible = stitchMachine.Preemptible
+		dbMachine.BlueprintID = blueprintMachine.BlueprintID
+		dbMachine.Role = blueprintMachine.Role
+		dbMachine.Size = blueprintMachine.Size
+		dbMachine.DiskSize = blueprintMachine.DiskSize
+		dbMachine.Provider = blueprintMachine.Provider
+		dbMachine.Region = blueprintMachine.Region
+		dbMachine.SSHKeys = blueprintMachine.SSHKeys
+		dbMachine.FloatingIP = blueprintMachine.FloatingIP
+		dbMachine.Preemptible = blueprintMachine.Preemptible
 		view.Commit(dbMachine)
 	}
 }
