@@ -206,7 +206,7 @@ func TestPromptsUser(t *testing.T) {
 		util.WriteFile("test.js", []byte(""), 0644)
 		runCmd := &Run{
 			connectionHelper: connectionHelper{client: c},
-			stitch:           "test.js",
+			blueprint:        "test.js",
 		}
 		runCmd.Run()
 
@@ -222,10 +222,11 @@ func TestRunFlags(t *testing.T) {
 	t.Parallel()
 
 	expStitch := "blueprint"
-	checkRunParsing(t, []string{"-stitch", expStitch}, Run{stitch: expStitch}, nil)
-	checkRunParsing(t, []string{expStitch}, Run{stitch: expStitch}, nil)
+	checkRunParsing(t, []string{"-blueprint", expStitch},
+		Run{blueprint: expStitch}, nil)
+	checkRunParsing(t, []string{expStitch}, Run{blueprint: expStitch}, nil)
 	checkRunParsing(t, []string{"-f", expStitch},
-		Run{force: true, stitch: expStitch}, nil)
+		Run{force: true, blueprint: expStitch}, nil)
 	checkRunParsing(t, []string{}, Run{}, errors.New("no blueprint specified"))
 }
 
@@ -242,6 +243,6 @@ func checkRunParsing(t *testing.T, args []string, expFlags Run, expErr error) {
 	}
 
 	assert.Nil(t, err)
-	assert.Equal(t, expFlags.stitch, runCmd.stitch)
+	assert.Equal(t, expFlags.blueprint, runCmd.blueprint)
 	assert.Equal(t, expFlags.force, runCmd.force)
 }
