@@ -73,8 +73,14 @@ function getInfraDeployment(infraPath) {
 
 /**
  * Returns a base infrastructure. The infrastructure can be deployed to simply
- * by calling .deploy() on the returned object.
+ * by calling .deploy() on the returned object. The base infrastructure itself
+ * is automatically deployed, so there is no need to .deploy() it.
  * The base infrastructure could be created with `quilt init`.
+ *
+ * @example <caption>Retrieve the base infrastructure called NAME, and deploy
+ * an nginx container on it.</caption>
+ * const inf = baseInfrastructure('NAME');
+ * inf.deploy(new Container('web', 'nginx'));
  *
  * @param {string} name - The name of the infrastructure, as passed to
  *   `quilt init`.
