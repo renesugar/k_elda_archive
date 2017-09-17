@@ -175,7 +175,7 @@ function run() {
 
 if (require.main === module) {
   console.log(`---------------------------------------------------------
-|   See docs at http://docs.quilt.io/#getting-started   |
+|   See docs at http://docs.quilt.io/#init   |
 ---------------------------------------------------------`);
   run();
 }
