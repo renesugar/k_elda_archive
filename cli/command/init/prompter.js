@@ -63,6 +63,22 @@ function getSizeDescriptions(provider) {
   return sizeDescriptions;
 }
 
+function questionWithHelp(question, helpstring) {
+  const newQuestion = Object.assign({}, question);
+
+  newQuestion.message = `(? for help) ${question.message}`;
+  newQuestion.validate = function validate(input) {
+    if (input === '?') {
+      return helpstring;
+    }
+    if (question.validate === undefined) {
+      return true;
+    }
+    return question.validate(input);
+  };
+  return newQuestion;
+}
+
 // User prompts.
 
 /**
@@ -73,12 +89,14 @@ function getSizeDescriptions(provider) {
   */
 function infraNamePrompt() {
   const questions = [
-    {
+    questionWithHelp({
       type: 'input',
       name: consts.name,
       message: 'Pick a name for your infrastructure:',
       default: 'default',
-    },
+    }, 'The infrastructure name is used in blueprints to retrieve the ' +
+      'infrastructure. E.g. if you choose the name \'aws-small\', then ' +
+      '`baseInfrastructure(\'aws-small\')` will return this infrastructure.'),
     {
       type: 'confirm',
       name: consts.infraOverwrite,
@@ -213,9 +231,13 @@ function credentialsPrompts(provider) {
   const keys = provider.getCredsKeys();
   const keyNames = Object.keys(keys);
 
+  const credsHelp = `Quilt needs access to your ${provider.getName()} ` +
+  'credientials in order to launch VMs in your account. See details at ' +
+  'http://docs.quilt.io/#cloud-provider-configuration';
+
   keyNames.forEach((keyName) => {
     questions.push(
-      {
+      questionWithHelp({
         type: 'input',
         name: keyName,
         message: `${keys[keyName]}:`,
@@ -223,13 +245,13 @@ function credentialsPrompts(provider) {
         // I.e. keys given exactly as they should appear in the credential file.
         when(answers) {
           return (keyName !== consts.inputCredsPath &&
-          (!keyExists || answers[consts.credsConfirmOverwrite]));
+            (!keyExists || answers[consts.credsConfirmOverwrite]));
         },
         filter(input) {
           return input.trim();
         },
-      },
-      {
+      }, credsHelp),
+      questionWithHelp({
         type: 'input',
         name: keyName,
         message: `${keys[keyName]}:`,
@@ -249,7 +271,7 @@ function credentialsPrompts(provider) {
         filter(input) {
           return path.resolve(input);
         },
-      });
+      }, credsHelp));
   });
   return inquirer.prompt(questions);
 }
@@ -354,7 +376,7 @@ function machineConfigPrompts(provider) {
   */
 function machineCountPrompts() {
   const questions = [
-    {
+    questionWithHelp({
       type: 'input',
       name: consts.masterCount,
       message: 'How many master VMs?',
@@ -362,8 +384,9 @@ function machineCountPrompts() {
       validate(input) {
         return isNumber(input);
       },
-    },
-    {
+    }, 'Master VMs are in charge of keeping your application running. Most ' +
+    'users just need 1, but more can be added for fault tolerance.'),
+    questionWithHelp({
       type: 'input',
       name: consts.workerCount,
       message: 'How many worker VMs?',
@@ -371,7 +394,8 @@ function machineCountPrompts() {
       validate(input) {
         return isNumber(input);
       },
-    },
+    }, 'Worker VMs run your application code. For small applications, 1 ' +
+    'worker is typically enough.'),
   ];
 
   return inquirer.prompt(questions);
