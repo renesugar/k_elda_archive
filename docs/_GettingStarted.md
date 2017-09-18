@@ -26,36 +26,44 @@ window to edit and run blueprints).
 $ quilt daemon
 ```
 
-## Configure A Cloud Provider
+## Configuring a Cloud Provider
+Quilt needs access to your cloud provider credentials in order to launch
+machines on your account. Before continuing, make sure you have an account
+with one of Quilt's supported cloud providers ([Google Cloud](https://cloud.google.com/),
+[Amazon EC2](https://aws.amazon.com/ec2/), or
+[DigitalOcean](https://www.digitalocean.com/)), and that you have located your
+credentials for this account.
 
-In order to run any applications with Quilt, you'll need to setup a cloud
-provider that Quilt will use to launch machines.  Quilt currently supports
-Amazon EC2, Digital Ocean, and Google Compute Engine; support for running
-locally with Vagrant is currently experimental.  Contact us if you're interested
-in a cloud provider that we don't yet support.
-
-Below, we describe how to setup Amazon EC2; refer to the
-[Cloud Providers](#cloud-provider-configuration) section if you'd like to setup
-a different cloud provider.
-
-### Amazon EC2
-
-For Amazon EC2, you'll first need to create an account with [Amazon Web
-Services](https://aws.amazon.com/ec2/) and then find your access credentials
-from the
+For Amazon EC2, you can create an account with [Amazon Web Services](https://aws.amazon.com/ec2/)
+and then find your access credentials from the
 [Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential)
 page in the AWS Management Console.
-Once you've done that, put your Amazon credentials in a file called
-`~/.aws/credentials`:
 
-```conf
-[default]
-aws_access_key_id = <YOUR_ID>
-aws_secret_access_key = <YOUR_SECRET_KEY>
+If you prefer to use another provider than Amazon EC2, check out
+[Cloud Provider Configuration](#cloud-provider-configuration). You'll need the
+credentials in the next step.
+
+## Creating an Infrastructure
+To run any applications with Quilt, you need to give Quilt access to your cloud
+provider account from the last step, and specify an infrastructure that Quilt
+should launch your application on. The easiest way to do this, is to run
+
+```console
+$ quilt init
 ```
 
-The file needs to appear exactly as above (including the `[default]` at the
-top), except with `<YOUR_ID>` and `<YOUR_SECRET_KEY>` filled in appropriately.
+The `quilt init` command will ask a number of questions, and then set up the
+provider and infrastructure based on the given answers. For the sake of this
+tutorial, make sure to use the name **`default`** for the infrastructure.
+Additionally, when choosing a machine instance size, keep in mind that some
+providers have a free tier for certain instance types.
+
+For more information about `quilt init`, see [the documentation](#init).
+
+It is also possible to use the
+[Quilt blueprint API](#quilt.js-api-documentation) to specify
+[`Machine`s](#Machine) directly in blueprints, but that's a topic for another
+time.
 
 ## Running Your First Quilt Blueprint
 
@@ -67,20 +75,8 @@ simple webpage. Start by downloading the blueprint using git:
 $ git clone https://github.com/quilt/nginx.git
 ```
 
-The blueprint is the `main.js` file in the nginx directory; take a look at this
-file if you'd like to see an example of what blueprints look like.  This
-blueprint will start one master and one worker machine on Amazon AWS, using
-t2.micro instances (which are in Amazon's
-[free tier](https://aws.amazon.com/free/), meaning that you can run them for
-a few hours for free if you're a new Amazon user).  Recall from [How Quilt Works](#how-quilt-works) that the
-master is responsible for managing the worker machines, and worker machines are
-used to run application containers.  In this case, the worker machine will
-serve the webpage in `index.html`.
-
-Note that if you decided
-above to setup a different cloud provider, you'll need to update the `Machine`
-in `main.js` to use the corresponding cloud provider (e.g., by changing
-`"Amazon"` to `"Google"`).
+The blueprint in `main.js` imports the `app.js` Nginx blueprint, and then
+deploys the Nginx app to the base infrastructure you created with `quilt init`.
 
 Before running anything, you'll need to download the JavaScript dependencies of
 the blueprint.  The Nginx blueprint depends on the `@quilt/quilt` module; more
