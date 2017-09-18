@@ -107,7 +107,7 @@ $ git clone https://github.com/quilt/nginx.git
 ```
 
 The blueprint is the `main.js` file in the nginx directory; take a look at this
-file if you'd like an to see an example of what blueprints look like.  This
+file if you'd like to see an example of what blueprints look like.  This
 blueprint will start one master and one worker machine on Amazon AWS, using
 t2.micro instances (which are in Amazon's
 [free tier](https://aws.amazon.com/free/), meaning that you can run them for
