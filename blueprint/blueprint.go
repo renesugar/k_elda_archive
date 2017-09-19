@@ -18,7 +18,6 @@ type Blueprint struct {
 	Machines      []Machine      `json:",omitempty"`
 
 	AdminACL  []string `json:",omitempty"`
-	MaxPrice  float64  `json:",omitempty"`
 	Namespace string   `json:",omitempty"`
 }
 

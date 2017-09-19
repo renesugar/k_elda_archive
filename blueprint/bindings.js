@@ -127,14 +127,12 @@ function createDeployment(deploymentOpts) {
  * @constructor
  *
  * @param {Object} deploymentOpts - An object containing options that can tweak
- *   the behavor of the namespace.  Options include: `maxPrice` which defines
- *   the price that should be bid in spot auctions for preemptible machines,
- *   `namespace` which instructs the deployment what namespace it should
- *   operate in, and `adminACL` which defines what network traffic should be
- *   allowed to access the deployment.
+ * the behavor of the namespace.  Options include: `namespace` which instructs 
+ * the deployment what namespace it should
+ * operate in, and `adminACL` which defines what network traffic should be
+ * allowed to access the deployment.
  */
 function Deployment(deploymentOpts = {}) {
-  this.maxPrice = getNumber('maxPrice', deploymentOpts.maxPrice);
   this.namespace = deploymentOpts.namespace || 'default-namespace';
   this.adminACL = getStringArray('adminACL', deploymentOpts.adminACL);
 
@@ -234,7 +232,6 @@ Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
 
     namespace: this.namespace,
     adminACL: this.adminACL,
-    maxPrice: this.maxPrice,
   };
   vet(quiltDeployment);
   return quiltDeployment;

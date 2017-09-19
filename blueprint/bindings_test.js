@@ -754,13 +754,6 @@ describe('Bindings', () => {
       expect(deployment.toQuiltRepresentation().namespace).to.equal(
         'default-namespace');
     });
-    it('max price', () => {
-      deployment = b.createDeployment({ maxPrice: 5 });
-      expect(deployment.toQuiltRepresentation().maxPrice).to.equal(5);
-    });
-    it('default max price', () => {
-      expect(deployment.toQuiltRepresentation().maxPrice).to.equal(0);
-    });
     it('admin ACL', () => {
       deployment = b.createDeployment({ adminACL: ['local'] });
       expect(deployment.toQuiltRepresentation().adminACL).to.eql(

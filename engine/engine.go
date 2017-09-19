@@ -43,8 +43,7 @@ func updateTxn(view db.Database, adminKey string) error {
 // Specifically, it sets the role of the db.Machine, the size (which may depend
 // on RAM and CPU constraints), and the provider.
 // Additionally, it skips machines with invalid roles, sizes or providers.
-func toDBMachine(machines []blueprint.Machine, maxPrice float64,
-	adminKey string) []db.Machine {
+func toDBMachine(machines []blueprint.Machine, adminKey string) []db.Machine {
 
 	var hasMaster, hasWorker bool
 	var dbMachines []db.Machine
@@ -71,8 +70,7 @@ func toDBMachine(machines []blueprint.Machine, maxPrice float64,
 		m.Preemptible = blueprintm.Preemptible
 
 		if m.Size == "" {
-			m.Size = cloud.ChooseSize(p, blueprintm.RAM, blueprintm.CPU,
-				maxPrice)
+			m.Size = cloud.ChooseSize(p, blueprintm.RAM, blueprintm.CPU)
 			if m.Size == "" {
 				log.Errorf("No valid size for %v, skipping.", m)
 				continue
@@ -108,8 +106,7 @@ func toDBMachine(machines []blueprint.Machine, maxPrice float64,
 
 func machineTxn(view db.Database, bp blueprint.Blueprint, adminKey string) {
 	// XXX: How best to deal with machines that don't specify enough information?
-	maxPrice := bp.MaxPrice
-	blueprintMachines := toDBMachine(bp.Machines, maxPrice, adminKey)
+	blueprintMachines := toDBMachine(bp.Machines, adminKey)
 
 	dbMachines := view.SelectFromMachine(nil)
 

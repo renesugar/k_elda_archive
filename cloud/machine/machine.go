@@ -19,15 +19,14 @@ type Description struct {
 
 // ChooseSize returns an acceptable machine size for the given provider that fits the
 // provided ram, cpu, and price constraints.
-func ChooseSize(provider db.ProviderName, ram, cpu blueprint.Range,
-	maxPrice float64) string {
+func ChooseSize(provider db.ProviderName, ram, cpu blueprint.Range) string {
 	switch provider {
 	case db.Amazon:
-		return chooseBestSize(amazonDescriptions, ram, cpu, maxPrice)
+		return chooseBestSize(amazonDescriptions, ram, cpu)
 	case db.DigitalOcean:
-		return chooseBestSize(digitalOceanDescriptions, ram, cpu, maxPrice)
+		return chooseBestSize(digitalOceanDescriptions, ram, cpu)
 	case db.Google:
-		return chooseBestSize(googleDescriptions, ram, cpu, maxPrice)
+		return chooseBestSize(googleDescriptions, ram, cpu)
 	case db.Vagrant:
 		return vagrantSize(ram, cpu)
 	default:
@@ -35,8 +34,7 @@ func ChooseSize(provider db.ProviderName, ram, cpu blueprint.Range,
 	}
 }
 
-func chooseBestSize(descriptions []Description, ram, cpu blueprint.Range,
-	maxPrice float64) string {
+func chooseBestSize(descriptions []Description, ram, cpu blueprint.Range) string {
 	var best Description
 	for _, d := range descriptions {
 		if ram.Accepts(d.RAM) &&
@@ -45,10 +43,7 @@ func chooseBestSize(descriptions []Description, ram, cpu blueprint.Range,
 			best = d
 		}
 	}
-	if maxPrice == 0 || best.Price <= maxPrice {
-		return best.Size
-	}
-	return ""
+	return best.Size
 }
 
 func vagrantSize(ramRange, cpuRange blueprint.Range) string {
