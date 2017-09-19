@@ -624,10 +624,29 @@ function getBoolean(argName, arg) {
  * @constructor
  *
  * @example <caption>Create a template Machine on Amazon, and then use the
- * template to create a master and 2 workers.</caption>
+ * template to create a master and 2 workers. This will use the default size
+ * and region for Amazon.</caption>
  * const baseMachine = new Machine({provider: 'Amazon'});
  * const master = baseMachine.asMaster();
  * const workers = baseMachine.asWorker().replicate(2);
+ *
+ * @example <caption>Create a worker machine with the 'n1-standard-1' size in
+ * GCE's 'us-east1-b' region.</caption>
+ * const googleWorker = new Machine({
+ *   provider: 'Google',
+ *   region: 'us-east1-b',
+ *   size: 'n1-standard-1',
+ *   role: 'Worker',
+ * });
+ *
+ * @example <caption>Create a DigitalOcean master droplet with the '512mb' size
+ * in the 'sfo1' zone.</caption>
+ * const googleWorker = new Machine({
+ *   provider: 'DigitalOcean',
+ *   region: 'sfo1',
+ *   size: '512mb',
+ *   role: 'Master',
+ * });
  *
  * @param {Object.<string, string>} [optionalArgs] - Optional arguments that
  *   modify the machine.

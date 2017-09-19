@@ -21,17 +21,6 @@ aws_secret_access_key = <YOUR_SECRET_KEY>
 The file needs to appear exactly as above (including the `[default]` at the
 top), except with `<YOUR_ID>` and `<YOUR_SECRET_KEY>` filled in appropriately.
 
-To deploy an `m3.medium` instance on Amazon EC2's `us-west-2` region as a
-`Worker`:
-
-```javascript
-deployment.deploy(new Machine({
-  provider: 'Amazon',
-  region: 'us-west-2',
-  size: 'm3.medium',
-  role: 'Worker'}));
-```
-
 ## DigitalOcean
 
 ### Basic Setup
@@ -44,17 +33,6 @@ calls needed to boot your deployment. To get and set up this token:
 
 2. Save the token in `~/.digitalocean/key` on the machine that will be running
    the Quilt daemon.
-
-Now, to deploy a DigitalOcean droplet in the `sfo1` zone of size `512mb` as a
-`Worker`:
-
-```javascript
-deployment.deploy(new Machine({
-  provider: 'DigitalOcean',
-  region: 'sfo1',
-  size: '512mb',
-  role: 'Worker'}));
-```
 
 ### Floating IPs
 
@@ -83,14 +61,3 @@ used to reserve IPs that Quilt can then assign to droplets.
    service account with the `Project -> Editor` role, and select the JSON output
    option. Copy the downloaded file to `~/.gce/quilt.json` on the machine from
    which you will be running the Quilt daemon.
-
-Now, to deploy a GCE machine in the `us-east1-b` zone of size
-`n1-standard-1` as a `Worker`:
-
-```javascript
-deployment.deploy(new Machine({
-  provider: 'Google',
-  region: 'us-east1-b',
-  size: 'n1-standard-1',
-  role: 'Worker'}));
-```
