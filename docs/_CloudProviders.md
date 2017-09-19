@@ -10,14 +10,21 @@ your credentials or use them for anything else than deploying your application.
 
 ## Amazon EC2
 
-### Basic Setup
+### Set Up Credentials
 1. If you don't already have an account with
    [Amazon Web Services](https://aws.amazon.com/ec2/), go ahead and create one.
 
 2. Get your access credentials from the [Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential)
    page in the AWS Management Console.
 
-3. Put your Amazon credentials in a file called `~/.aws/credentials`:
+3. Run `quilt init` on the machine that will be running the daemon, and pass
+  it your AWS credentials. The formatted credentials will be placed in
+  `~/.aws/credentials`.
+
+### Formatting Credentials
+While it is recommended to use `quilt init` to format the provider credentials,
+it is possible to manually create the credentials file in `~/.aws/credentials`
+on the machine that will be running the daemon:
 
 ```conf
 [default]
@@ -30,15 +37,15 @@ top), except with `<YOUR_ID>` and `<YOUR_SECRET_KEY>` filled in appropriately.
 
 ## DigitalOcean
 
-### Basic Setup
+### Set Up Credentials
 1. If you don't have a DigitalOcean account, go ahead and
    [create one](https://www.digitalocean.com/).
 
 2. Create a new token [here](https://cloud.digitalocean.com/settings/api/tokens).
    The token must have both read and write permissions.
 
-3. Save the token in `~/.digitalocean/key` on the machine that will be running
-  the Quilt daemon.
+3. Run `quilt init` on the machine that will be running the Quilt daemon, and
+   pass it your token. The token will be placed in `~/.digitalocean/key`.
 
 ### Floating IPs
 Unless there are already droplets running, DigitalOcean doesn't allow users to
@@ -48,7 +55,7 @@ used to reserve IPs that Quilt can then assign to droplets.
 
 ## Google Compute Engine
 
-### Basic Setup
+### Set Up Credentials
 1. If you don't have an account on Google Cloud Platform, go ahead and
    [create one](https://cloud.google.com/compute/).
 
@@ -66,5 +73,8 @@ used to reserve IPs that Quilt can then assign to droplets.
 4. Save the Credentials File: Go to `Credentials` on the left navbar (under `APIs
    & services`), and create credentials for a `Service account key`. Create a new
    service account with the `Project -> Editor` role, and select the JSON output
-   option. Copy the downloaded file to `~/.gce/quilt.json` on the machine from
-   which you will be running the Quilt daemon.
+   option.
+
+5. Run `quilt init` on the machine from which you will be running the Quilt
+  daemon, and give it the path to the downloaded JSON from step 3.
+  The credentials will be placed in `~/.gce/quilt.json`.
