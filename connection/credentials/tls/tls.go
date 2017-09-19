@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -38,9 +40,47 @@ func (tlsAuth TLS) ClientOpts() []grpc.DialOption {
 	return []grpc.DialOption{grpc.WithTransportCredentials(
 		credentials.NewTLS(&tls.Config{
 			Certificates: []tls.Certificate{tlsAuth.keyPair},
-			RootCAs:      tlsAuth.caPool,
+
+			// We use a custom VerifyPeerCertificate that only checks whether
+			// the certificate is signed by the expected CA, and ignores
+			// the server's hostname. This greatly simplifies the certificate
+			// generation logic because it doesn't need to account for IP
+			// address changes. This is safe to do because the client only
+			// trusts a single CA, and we have complete control over what
+			// certificates the CA signs.
+			InsecureSkipVerify:    true,
+			VerifyPeerCertificate: tlsAuth.verifySignedByCA,
 		}),
 	)}
+}
+
+// verifySignedByCA verifies that at least one certificate is signed by the
+// expected CA. It is different from the default implementation because it does
+// verify the peer's hostname.
+func (tlsAuth TLS) verifySignedByCA(rawCertsSlice [][]byte,
+	_ [][]*x509.Certificate) error {
+	var verifyErrors []string
+	for _, rawCerts := range rawCertsSlice {
+		parsedCerts, err := x509.ParseCertificates(rawCerts)
+		if err != nil {
+			verifyErrors = append(verifyErrors, err.Error())
+			continue
+		}
+
+		for _, cert := range parsedCerts {
+			_, err = cert.Verify(x509.VerifyOptions{
+				Roots: tlsAuth.caPool,
+			})
+			if err == nil {
+				return nil
+			}
+
+			verifyErrors = append(verifyErrors, err.Error())
+		}
+	}
+
+	return fmt.Errorf("failed to verify peer certificates: [%s]",
+		strings.Join(verifyErrors, ", "))
 }
 
 // New creates a TLS instance from the given CA and signed certificate and key.

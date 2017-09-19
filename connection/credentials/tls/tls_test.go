@@ -1,7 +1,11 @@
 package tls
 
 import (
+	"encoding/pem"
+	"net"
 	"testing"
+
+	"github.com/quilt/quilt/connection/credentials/tls/rsa"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -88,4 +92,44 @@ func TestFromFileSuccess(t *testing.T) {
 
 	_, err := New(ca, cert, key)
 	assert.NoError(t, err)
+}
+
+func TestVerifySignedByCA(t *testing.T) {
+	t.Parallel()
+
+	// Setup the fake client.
+	validCA, err := rsa.NewCertificateAuthority()
+	assert.NoError(t, err)
+
+	validClient, err := rsa.NewSigned(validCA, net.IP{0, 0, 0, 0})
+	assert.NoError(t, err)
+
+	tlsCred, err := New(validCA.CertString(), validClient.CertString(),
+		validClient.PrivateKeyString())
+	assert.NoError(t, err)
+
+	// Test that verification passes for servers with a certificate signed
+	// by the same CA.
+	validServer, err := rsa.NewSigned(validCA, net.IP{0, 0, 0, 0})
+	assert.NoError(t, err)
+	verifyErr := tryVerify(tlsCred, validServer.CertString())
+
+	// Test that verification fails for servers with a different CA.
+	otherCA, err := rsa.NewCertificateAuthority()
+	assert.NoError(t, err)
+
+	otherServer, err := rsa.NewSigned(otherCA, net.IP{0, 0, 0, 0})
+	assert.NoError(t, err)
+
+	verifyErr = tryVerify(tlsCred, otherServer.CertString())
+	assert.Error(t, verifyErr)
+	assert.Contains(t, verifyErr.Error(),
+		"x509: certificate signed by unknown authority")
+}
+
+// tryVerify attempts to verify the given PEM-encoded certificate against
+// the TLS credentials.
+func tryVerify(tlsCred TLS, cert string) error {
+	der, _ := pem.Decode([]byte(cert))
+	return tlsCred.verifySignedByCA([][]byte{der.Bytes}, nil)
 }
