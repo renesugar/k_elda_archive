@@ -648,6 +648,11 @@ describe('Bindings', () => {
       foo = new b.LoadBalancer('foo', []);
       deployment.deploy([foo]);
     });
+    it('should error when given namespace contains upper case letters', () => {
+      deployment = b.createDeployment({ namespace: 'BadNamespace' });
+      expect(deploy).to.throw('namespace "BadNamespace" contains ' +
+                  'uppercase letters. Namespaces must be lowercase.');
+    });
     it('connect from undeployed container', () => {
       foo.allowFrom(new b.Container('baz', 'image'), 80);
       expect(deploy).to.throw(
@@ -741,9 +746,9 @@ describe('Bindings', () => {
   });
   describe('Query', () => {
     it('namespace', () => {
-      deployment = b.createDeployment({ namespace: 'myNamespace' });
+      deployment = b.createDeployment({ namespace: 'mynamespace' });
       expect(deployment.toQuiltRepresentation().namespace).to.equal(
-        'myNamespace');
+        'mynamespace');
     });
     it('default namespace', () => {
       expect(deployment.toQuiltRepresentation().namespace).to.equal(

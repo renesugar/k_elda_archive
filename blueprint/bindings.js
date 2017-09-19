@@ -241,14 +241,18 @@ Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
 };
 
 /**
- * Checks if all referenced containers in connections and load balancers are
- * really deployed.
+ * Checks if the namespace is lower case, and if all referenced 
+ * containers in connections and load balancers are really deployed.
  * @private
  *
  * @param {Deployment} deployment - A deployment object.
  * @returns {void}
  */
 function vet(deployment) {
+  if (deployment.namespace !== deployment.namespace.toLowerCase()) {
+    throw new Error(`namespace "${deployment.namespace}" contains ` +
+                  'uppercase letters. Namespaces must be lowercase.');
+  }
   const lbHostnames = deployment.loadBalancers.map(l => l.name);
   const containerHostnames = deployment.containers.map(c => c.hostname);
   const hostnames = lbHostnames.concat(containerHostnames);
