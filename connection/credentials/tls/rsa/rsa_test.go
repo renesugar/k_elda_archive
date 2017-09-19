@@ -2,7 +2,6 @@ package rsa
 
 import (
 	"crypto/x509"
-	"net"
 	"testing"
 
 	"github.com/quilt/quilt/connection/credentials/tls"
@@ -54,6 +53,6 @@ func newCAAndSigned() (KeyPair, KeyPair, error) {
 		return KeyPair{}, KeyPair{}, err
 	}
 
-	signed, err := NewSigned(ca, net.IP{8, 8, 8, 8})
+	signed, err := NewSigned(ca)
 	return ca, signed, err
 }

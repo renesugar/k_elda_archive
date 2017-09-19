@@ -3,7 +3,6 @@ package cloud
 import (
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"time"
 
@@ -72,7 +71,7 @@ func generateAndInstallCerts(host string, dstDir string, sshKey ssh.Signer,
 
 	// Generate new certificates signed by the CA for use by the minion for all
 	// communication.
-	signed, err := rsa.NewSigned(ca, net.ParseIP(host))
+	signed, err := rsa.NewSigned(ca)
 	if err != nil {
 		log.WithError(err).WithField("host", host).
 			Error("Failed to generate certs. Retrying.")

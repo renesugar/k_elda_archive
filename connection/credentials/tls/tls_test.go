@@ -2,7 +2,6 @@ package tls
 
 import (
 	"encoding/pem"
-	"net"
 	"testing"
 
 	"github.com/quilt/quilt/connection/credentials/tls/rsa"
@@ -101,7 +100,7 @@ func TestVerifySignedByCA(t *testing.T) {
 	validCA, err := rsa.NewCertificateAuthority()
 	assert.NoError(t, err)
 
-	validClient, err := rsa.NewSigned(validCA, net.IP{0, 0, 0, 0})
+	validClient, err := rsa.NewSigned(validCA)
 	assert.NoError(t, err)
 
 	tlsCred, err := New(validCA.CertString(), validClient.CertString(),
@@ -110,7 +109,7 @@ func TestVerifySignedByCA(t *testing.T) {
 
 	// Test that verification passes for servers with a certificate signed
 	// by the same CA.
-	validServer, err := rsa.NewSigned(validCA, net.IP{0, 0, 0, 0})
+	validServer, err := rsa.NewSigned(validCA)
 	assert.NoError(t, err)
 	verifyErr := tryVerify(tlsCred, validServer.CertString())
 
@@ -118,7 +117,7 @@ func TestVerifySignedByCA(t *testing.T) {
 	otherCA, err := rsa.NewCertificateAuthority()
 	assert.NoError(t, err)
 
-	otherServer, err := rsa.NewSigned(otherCA, net.IP{0, 0, 0, 0})
+	otherServer, err := rsa.NewSigned(otherCA)
 	assert.NoError(t, err)
 
 	verifyErr = tryVerify(tlsCred, otherServer.CertString())

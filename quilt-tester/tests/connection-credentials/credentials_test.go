@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"testing"
 
@@ -98,7 +97,7 @@ func randomTLSCredentials() (tls.TLS, error) {
 		return tls.TLS{}, err
 	}
 
-	signed, err := rsa.NewSigned(ca, net.IP{0, 0, 0, 0})
+	signed, err := rsa.NewSigned(ca)
 	if err != nil {
 		return tls.TLS{}, err
 	}

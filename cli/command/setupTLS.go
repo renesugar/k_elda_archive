@@ -3,7 +3,6 @@ package command
 import (
 	"errors"
 	"flag"
-	"net"
 
 	tlsIO "github.com/quilt/quilt/connection/credentials/tls/io"
 	"github.com/quilt/quilt/connection/credentials/tls/rsa"
@@ -67,11 +66,8 @@ func (sCmd *SetupTLS) Run() int {
 	}
 
 	// Generate a signed certificate for use by the Daemon server, and client
-	// connections. We don't know what IP this certificate will be used on, and
-	// it doesn't matter (because the Daemon server listens on a Unix socket, and
-	// the host is ignored on client connections), so we arbitrarily create it
-	// for 0.0.0.0.
-	signed, err := rsa.NewSigned(ca, net.IP{0, 0, 0, 0})
+	// connections.
+	signed, err := rsa.NewSigned(ca)
 	if err != nil {
 		log.WithError(err).Error("Unable to create signed key pair")
 		return 1

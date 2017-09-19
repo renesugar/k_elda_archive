@@ -1,7 +1,6 @@
 package io
 
 import (
-	"net"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -40,7 +39,7 @@ func TestWriteAndReadMinionCerts(t *testing.T) {
 	ca, err := rsa.NewCertificateAuthority()
 	assert.NoError(t, err)
 
-	signed, err := rsa.NewSigned(ca, net.IP{0, 0, 0, 0})
+	signed, err := rsa.NewSigned(ca)
 	assert.NoError(t, err)
 
 	testDir := "/tls"
@@ -59,7 +58,7 @@ func TestReadDaemonCerts(t *testing.T) {
 	ca, err := rsa.NewCertificateAuthority()
 	assert.NoError(t, err)
 
-	signed, err := rsa.NewSigned(ca, net.IP{0, 0, 0, 0})
+	signed, err := rsa.NewSigned(ca)
 	assert.NoError(t, err)
 
 	testDir := "/tls"

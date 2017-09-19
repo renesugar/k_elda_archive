@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"net"
 	"time"
 )
 
@@ -104,9 +103,8 @@ func NewCertificateAuthority() (KeyPair, error) {
 	return KeyPair{key, cert}, err
 }
 
-// NewSigned generates a KeyPair signed by `signer`, and usable for the IP
-// address `host`.
-func NewSigned(signer KeyPair, host net.IP) (KeyPair, error) {
+// NewSigned generates a KeyPair signed by `signer`.
+func NewSigned(signer KeyPair) (KeyPair, error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return KeyPair{}, fmt.Errorf("create key: %s", err)
@@ -116,7 +114,6 @@ func NewSigned(signer KeyPair, host net.IP) (KeyPair, error) {
 	if err != nil {
 		return KeyPair{}, fmt.Errorf("create template: %s", err)
 	}
-	template.IPAddresses = []net.IP{host}
 	template.ExtKeyUsage = []x509.ExtKeyUsage{
 		x509.ExtKeyUsageClientAuth,
 		x509.ExtKeyUsageServerAuth,
