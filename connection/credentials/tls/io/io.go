@@ -93,7 +93,7 @@ func signedCertPath(dir string) string {
 	return filepath.Join(dir, signedCertFilename)
 }
 
-// signedCertPath defines where to write the private key for the signed certificate.
+// signedKeyPath defines where to write the private key for the signed certificate.
 func signedKeyPath(dir string) string {
 	return filepath.Join(dir, signedKeyFilename)
 }
