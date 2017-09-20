@@ -185,8 +185,18 @@ bd68:
 $ quilt ssh bd68
 ```
 
-Note that you don't need to type the whole ID; as long as you use a unique
-subset of it, Quilt will log in to the correct machine.
+To check the logs of the same container or VM, use `quilt logs`:
+
+```console
+$ quilt logs bd68
+```
+
+If you run `logs` on the nginx container for instance, you'll see that nginx
+logs a GET request for each time you access the website. This is not thrilling
+information, but the logs will come in handy if you ever encounter any errors.
+
+Note that you don't need to type the whole ID; as long as Quilt gets a unique
+prefix of the ID, it will log in to the correct machine.
 
 ## Changing the Website Content
 You may later decide that you'd like to change the contents of the simple
