@@ -28,6 +28,9 @@ func httpRequest(url string) (string, error) {
 	}
 
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return "", errors.New("non-200 response status code")
+	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
