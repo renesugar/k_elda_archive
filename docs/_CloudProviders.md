@@ -15,7 +15,8 @@ your credentials or use them for anything else than deploying your application.
    [Amazon Web Services](https://aws.amazon.com/ec2/), go ahead and create one.
 
 2. Get your access credentials from the [Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential)
-   page in the AWS Management Console.
+   page in the AWS Management Console. Choose "Access Keys" and then
+   "Create New Access Key."
 
 3. Run `quilt init` on the machine that will be running the daemon, and pass
   it your AWS credentials. The formatted credentials will be placed in

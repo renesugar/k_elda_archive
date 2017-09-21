@@ -17,13 +17,8 @@ Note that if installing as root, the `--unsafe-perm` flag is required:
 $ sudo npm install -g @quilt/install --unsafe-perm
 ```
 
-To check that this worked, try launching the Quilt daemon.  This is a
-long-running process, so it will not return (you'll need to use a new shell
-window to edit and run blueprints).
-
-```console
-$ quilt daemon
-```
+If Quilt was successfully installed, the `quilt` command should output a blurb
+about how to use the command:
 
 ## Configuring a Cloud Provider
 Quilt needs access to your cloud provider credentials in order to launch
@@ -34,13 +29,15 @@ with one of Quilt's supported cloud providers ([Google Cloud](https://cloud.goog
 credentials for this account.
 
 For Amazon EC2, you can create an account with [Amazon Web Services](https://aws.amazon.com/ec2/)
-and then find your access credentials from the
+and then find your "Access Keys" from the
 [Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential)
-page in the AWS Management Console.
+page in the AWS Management Console. If you don't have a key already, you should
+"Create New Access Key". In the next step, we'll use these credentials.
 
 If you prefer to use another provider than Amazon EC2, check out
-[Cloud Provider Configuration](#cloud-provider-configuration). You'll need the
-credentials in the next step.
+[Cloud Provider Configuration](#cloud-provider-configuration). Follow the
+instructions to find your credentials, but come back to this section before
+running `quilt init`.
 
 ## Creating an Infrastructure
 To run any applications with Quilt, you need to give Quilt access to your cloud
@@ -57,6 +54,9 @@ tutorial, make sure to use the name **`default`** for the infrastructure.
 Additionally, when choosing a machine instance size, keep in mind that some
 providers have a free tier for certain instance types.
 
+If you are unsure about how to answer any of the questions, the default
+values are appropriate for this tutorial.
+
 For more information about `quilt init`, see [the documentation](#init).
 
 It is also possible to use the
@@ -65,9 +65,9 @@ It is also possible to use the
 time.
 
 ## Getting the Blueprint
-This section will walk you through using Quilt to run Nginx, which is an
-open-source HTTP server.  In the example, we'll use Nginx to serve a
-simple webpage. Start by downloading the blueprint using git:
+This section will walk you through how to run Nginx (an open-source web server)
+using Quilt. In the example, we'll use Nginx to serve a simple webpage. Start by
+downloading the blueprint using git:
 
 ```console
 $ git clone https://github.com/quilt/nginx.git
@@ -94,15 +94,16 @@ $ quilt daemon
 ```
 
 The daemon is a long running process that periodically prints some log messages.
-Leave this running, and use a new terminal window to run the blueprint:
+Leave this running. In another terminal window, navigate to the `nginx`
+directory and run the blueprint:
 
 ```console
 $ quilt run ./main.js
 ```
 
-This command tells the daemon to launch the machines and containers described in
-`main.js`.  It will return immediately, because the `daemon` process does the
-heavy lifting.
+This command tells the daemon to launch the containers described in `main.js`
+on your `default` base infrastructure.  It will return immediately, because the
+`daemon` process does the heavy lifting.
 
 It takes a few minutes from you `quilt run` until the VMs and application are
 fully up and running. To see how things are progressing, use Quilt's `show`
@@ -169,10 +170,11 @@ from the public internet,
 opens port 80 on the Nginx container to the outside world:
 
 ```javascript
-webTier.allowFrom(publicInternet, 80);
+webTier.allowFrom(publicInternet, port);
 ```
 
 Without this line, the website wouldn't be accessible from the browser.
+You can change the value of the port variable to use a port other than 80.
 
 ## Debugging Applications with Quilt
 Once the containers are running, you might need to log in to change something
