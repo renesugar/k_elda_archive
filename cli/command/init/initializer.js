@@ -75,12 +75,12 @@ function writeProviderCreds(provider, answers) {
   }
 
   const credentialsDest = provider.getCredsPath();
-  fsExtra.mkdirp(path.dirname(credentialsDest), (err) => {
-    if (err) {
-      throw new Error(
-        `failed to create credentials file in ${credentialsDest}: ${err}`);
-    }
-  });
+  try {
+    fsExtra.mkdirpSync(path.dirname(credentialsDest));
+  } catch (err) {
+    throw new Error(
+      `failed to create credentials file in ${credentialsDest}: ${err}`);
+  }
 
   if (provider.credsTemplate !== undefined) {
     const templateFile = path.join(templateDir, provider.getCredsTemplate());
@@ -88,9 +88,7 @@ function writeProviderCreds(provider, answers) {
   } else {
     // We were given a file path instead of the keys themselves.
     const credentialsSrc = answers[consts.inputCredsPath];
-    fsExtra.copy(credentialsSrc, credentialsDest, (err) => {
-      if (err) throw err;
-    });
+    fsExtra.copySync(credentialsSrc, credentialsDest);
   }
 
   log(`Wrote credentials to ${credentialsDest}`);
@@ -135,9 +133,11 @@ function getSshKey(answers) {
   * @return {void}
   */
 function processAnswers(provider, answers) {
-  fsExtra.mkdirp(util.infraDirectory, (err) => {
-    if (err) throw new Error(`Failed to create ${util.infraDirectory}: ${err}`);
-  });
+  try {
+    fsExtra.mkdirpSync(util.infraDirectory);
+  } catch (err) {
+    throw new Error(`failed to create ${util.infraDirectory}: ${err}`);
+  }
 
   writeProviderCreds(provider, answers);
 

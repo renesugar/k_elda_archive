@@ -72,8 +72,8 @@ describe('Initializer', () => {
 
       const copySpy = sinon.spy();
       const fsExtraMock = {
-        copy: copySpy,
-        mkdirp: fsExtra.mkdirp,
+        copySync: copySpy,
+        mkdirpSync: fsExtra.mkdirpSync,
       };
       const revertFs = initializer.__set__('fsExtra', fsExtraMock);
 
@@ -188,7 +188,7 @@ describe('Initializer', () => {
 
     beforeEach(() => {
       const fsExtraMock = {
-        mkdirp: sinon.stub(),
+        mkdirpSync: sinon.stub(),
       };
 
       writeFileStub = sinon.stub();
