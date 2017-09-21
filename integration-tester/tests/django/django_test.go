@@ -6,7 +6,7 @@ import (
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/connection/credentials"
-	"github.com/quilt/quilt/quilt-tester/util"
+	"github.com/quilt/quilt/integration-tester/util"
 )
 
 func TestDjango(t *testing.T) {

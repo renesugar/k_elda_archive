@@ -13,12 +13,12 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 		    ./minion/ovsdb/mocks/Client.go \
 		    ./minion/pb/pb.pb.go \
 		    ./node_modules/% \
-		    ./quilt-tester/tests/zookeeper/vendor/%
+		    ./integration-tester/tests/zookeeper/vendor/%
 
 JS_LINT_COMMAND = node_modules/eslint/bin/eslint.js \
                   examples/ \
                   blueprint/ \
-                  quilt-tester/ \
+                  integration-tester/ \
                   cli/command/init/ \
                   util/
 REPO = quilt
@@ -33,7 +33,7 @@ install:
 
 gocheck:
 	govendor test $$(govendor list -no-status +local | \
-		grep -vE github.com/quilt/quilt/"quilt-tester|scripts")
+		grep -vE github.com/quilt/quilt/"integration-tester|scripts")
 
 jscheck:
 	npm test
@@ -68,7 +68,7 @@ COV_SKIP= /api/client/mocks \
 	  /minion/pb \
 	  /minion/pprofile \
 	  /minion/supervisor/images \
-	  /quilt-tester/% \
+	  /integration-tester/% \
 	  /cli/ssh/mocks \
 	  /cli/testutils \
 	  /scripts \

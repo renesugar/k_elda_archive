@@ -16,8 +16,7 @@ type JUnitReport struct {
 	TestResults []TestCase
 }
 
-// TestCase defines the XML output schema for a test case, i.e. a quilt-tester
-// test suite.
+// TestCase defines the XML output schema for a test suite run using integration-tester.
 type TestCase struct {
 	XMLName     xml.Name  `xml:"testcase"`
 	Name        string    `xml:"name,attr"`

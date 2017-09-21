@@ -58,11 +58,11 @@ func TestExampleBlueprints() error {
 	return nil
 }
 
-// TestCIBlueprints checks that the listed quilt-tester blueprints compile.
+// TestCIBlueprints checks that the blueprints in integration-tester/tests compile.
 func TestCIBlueprints() error {
-	// Make the working directory the root of the Quilt repo so that the following
-	// relative paths will work.
-	os.Chdir("../../quilt-tester")
+	// Make the working directory the root of the integration-tester so that the
+	// following relative paths will work.
+	os.Chdir("../../integration-tester")
 
 	if err := run("npm", "install", "."); err != nil {
 		return err
