@@ -42,25 +42,20 @@ function isNumber(input) {
 }
 
 /**
-  * Get user friendly descriptions for the instance types listed for the
-  * chosen provider in providers.json.
-  * The output map would have entries like {'small (m3.medium)': 'm3.medium'}
+  * Converts a map from friendly names to formal values into an array of objects
+  * compatible with the `choices` attribute of inquirer questions. For example,
+  * `{small: 't2.micro'}` would convert to
+  * `[{name: 'small (t2.micro)', value: 't2.micro'}].
   *
-  * @param {Provider} provider The chosen Provider.
-  * @return {Object.<string, string>} A map from the size description to the
-  *   corresponding size.
+  * @param {Object.<string, string>} info The data to make descriptions for.
+  * @return {Object.<string, string>[]} An array of {name, val} objects.
+  *
   */
-function getSizeDescriptions(provider) {
-  const sizeDescriptions = {};
-  const sizes = provider.getSizes();
-  const sizeCategories = Object.keys(sizes);
-
-  sizeCategories.forEach((category) => {
-    const size = sizes[category];
-    const description = `${category} (${size})`;
-    sizeDescriptions[description] = size;
+function getInquirerDescriptions(friendlyNameToValue) {
+  return Object.keys(friendlyNameToValue).map((friendlyName) => {
+    const formalValue = friendlyNameToValue[friendlyName];
+    return { name: `${friendlyName} (${formalValue})`, value: formalValue };
   });
-  return sizeDescriptions;
 }
 
 function questionWithHelp(question, helpstring) {
@@ -283,8 +278,10 @@ function credentialsPrompts(provider) {
   * @return {Promise} A promise that contains the user's answers.
   */
 function machineConfigPrompts(provider) {
-  const sizeChoices = getSizeDescriptions(provider);
-  sizeChoices[consts.other] = consts.other;
+  const regionChoices = getInquirerDescriptions(provider.getRegions());
+  const sizeChoices = getInquirerDescriptions(provider.getSizes());
+  sizeChoices.push({ name: consts.other, value: consts.other });
+
   const questions = [
     {
       type: 'confirm',
@@ -299,7 +296,7 @@ function machineConfigPrompts(provider) {
       type: 'list',
       name: consts.region,
       message: 'Which region do you want to deploy in?',
-      choices: provider.getRegions(),
+      choices: regionChoices,
       when() {
         return provider.regions !== undefined;
       },
@@ -318,12 +315,7 @@ function machineConfigPrompts(provider) {
       type: 'list',
       name: consts.size,
       message: 'Choose an instance:',
-      choices: Object.keys(sizeChoices),
-      filter(input) {
-        // The user's input will be something like 'small (m3.medium)', so we
-        // translate that into m3.medium, which we can put in the blueprint.
-        return sizeChoices[input];
-      },
+      choices: sizeChoices,
       when(answers) {
         return answers[consts.sizeType] === consts.instanceTypeSize;
       },

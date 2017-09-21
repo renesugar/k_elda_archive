@@ -36,10 +36,10 @@ describe('Provider', () => {
       "medium": "size2",
       "large": "size3"
     },
-    "regions": [
-      "reg1",
-      "reg2"
-    ],
+    "regions": {
+      "friendly1": "reg1",
+      "friendly2": "reg2"
+    },
     "hasPreemptible": true,
     "credsLocation": [".some", "file"]
   },
@@ -89,11 +89,14 @@ describe('Provider', () => {
 
   describe('getRegions()', () => {
     it('should return correct regions', () => {
-      expect(providerA.getRegions()).to.deep.equal(['reg1', 'reg2']);
+      expect(providerA.getRegions()).to.deep.equal({
+        friendly1: 'reg1',
+        friendly2: 'reg2',
+      });
     });
 
     it('should not break when there are no regions', () => {
-      expect(providerB.getRegions()).to.deep.equal([]);
+      expect(providerB.getRegions()).to.deep.equal({});
     });
   });
 

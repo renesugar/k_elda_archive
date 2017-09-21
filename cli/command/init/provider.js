@@ -90,12 +90,14 @@ class Provider {
   }
 
   /**
-    * Returns a list of supported regions for this provider.
+    * Returns an object with supported sizes for this provider. The keys are
+    * user friendly descriptions (e.g. 'N. California') of the region, and the
+    * values are the actual region names used by the provider (us-west-1).
     *
-    * @return {string[]}
+    * @return {Object.<string, string>}
     */
   getRegions() {
-    return this.regions || [];
+    return this.regions || {};
   }
 
   /**

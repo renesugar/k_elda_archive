@@ -6,11 +6,11 @@
       "medium": "m3.large",
       "large": "m3.xlarge"
     },
-    "regions": [
-      "ap-southeast-2",
-      "us-west-1",
-      "us-west-2"
-    ],
+    "regions": {
+      "Sydney": "ap-southeast-2",
+      "N. California": "us-west-1",
+      "Oregon": "us-west-2"
+    },
     "hasPreemptible": true,
     "credsLocation": [".aws", "credentials"]
   },
@@ -20,11 +20,11 @@
       "medium": "n1-standard-2",
       "large": "n1-standard-4"
     },
-    "regions": [
-      "us-central1-a",
-      "us-east1-b",
-      "europe-west1-b"
-    ],
+    "regions": {
+      "Iowa": "us-central1-a",
+      "South Carolina": "us-east1-b",
+      "Belgium": "europe-west1-b"
+    },
     "hasPreemptible": false,
     "credsLocation": [".gce", "quilt.json"]
   },
@@ -34,13 +34,13 @@
       "medium": "1gb",
       "large": "2gb"
     },
-    "regions": [
-      "nyc1",
-      "nyc2",
-      "lon1",
-      "sfo1",
-      "sfo2"
-    ],
+    "regions": {
+      "New York City 1": "nyc1",
+      "New York City 2": "nyc2",
+      "London": "lon1",
+      "San Francisco 1": "sfo1",
+      "San Francisco 2": "sfo2"
+    },
     "hasPreemptible": false,
     "credsLocation": [".digitalocean", "key"]
   },
