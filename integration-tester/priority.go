@@ -26,8 +26,10 @@ func (s byPriorityPrefix) Less(i, j int) bool {
 
 const defaultPriority = 50
 
-// getPriority extracts the priority from the filename in the form $PRIORITY-foo.
-// If no priority is specified, we return `defaultPriority`.
+// getPriority extracts the priority from the filename in the form $PRIORITY-foo,
+// where the priority represents the order in which tests should run (tests are
+// run in order of increasing priority). If no priority is specified, we return
+// `defaultPriority`.
 func getPriority(filename string) int {
 	dashIndex := strings.Index(filename, "-")
 	if dashIndex == -1 {
