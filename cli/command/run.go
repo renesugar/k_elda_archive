@@ -112,6 +112,8 @@ func (rCmd *Run) Run() int {
 		return 1
 	}
 
+	fmt.Println("Your blueprint is being deployed. " +
+		"Check its status with `quilt show`.")
 	log.Debug("Successfully started run")
 	return 0
 }
