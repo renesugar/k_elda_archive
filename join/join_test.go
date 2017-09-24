@@ -21,6 +21,22 @@ func TestJoin(t *testing.T) {
 	assert.Equal(t, []interface{}{12}, left)
 	assert.Equal(t, []interface{}{13}, right)
 	assert.Equal(t, []Pair{{10, 2}, {11, 1}}, pairs)
+
+	pairs, left, right = Join([]int{13, 14, 15}, []int{8, 9, 10, 11, 12}, score)
+	assert.Zero(t, len(left))
+	assert.Equal(t, []interface{}{8, 9}, right)
+	assert.Equal(t, []Pair{{13, 12}, {14, 11}, {15, 10}}, pairs)
+}
+
+func TestJoinNotGreedy(t *testing.T) {
+	score := func(left, right interface{}) int {
+		return right.(int) - left.(int)
+	}
+
+	pairs, left, right := Join([]int{10, 11, 12}, []int{11, 12, 13}, score)
+	assert.Zero(t, len(left))
+	assert.Zero(t, len(right))
+	assert.Equal(t, []Pair{{11, 11}, {12, 12}, {10, 13}}, pairs)
 }
 
 type JoinList []interface{}
@@ -95,5 +111,5 @@ func ExampleJoin() {
 	pairs, lonelyLefts, lonelyRights := Join(lefts, rights, score)
 
 	fmt.Println(pairs, lonelyLefts, lonelyRights)
-	// Output: [{a 0} {bc 2}] [def] [4]
+	// Output: [{bc 2} {a 0}] [def] [4]
 }

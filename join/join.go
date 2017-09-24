@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/quilt/quilt/counter"
+	"sort"
 )
 
 var c = counter.New("Join")
@@ -25,60 +26,89 @@ type Pair struct {
 //
 // Matches are made in accordance with the provided `score` function.  It takes a single
 // element from `lSlice`, and a single element from `rSlice`, and computes a score
-// suggesting their match preference.  The algorithm prefers to match pairs with the
-// the score closest to zero (inclusive). Negative scores are never matched.
+// representing the match priority.  The algorithm strictly prioritizes lower scoring
+// matches first, but negative scores are never matched. The algorithm does not minimize
+// the total score of all matches.
 func Join(lSlice, rSlice interface{}, score func(left, right interface{}) int) (
 	pairs []Pair, lonelyLefts, lonelyRights []interface{}) {
 	c.Inc("Join")
 
-	val := reflect.ValueOf(rSlice)
-	len := val.Len()
-	lonelyRights = make([]interface{}, 0, len)
-
-	for i := 0; i < len; i++ {
-		lonelyRights = append(lonelyRights, val.Index(i).Interface())
+	type scoredPair struct {
+		left  int
+		right int
+		score int
 	}
 
-	val = reflect.ValueOf(lSlice)
-	len = val.Len()
+	left := reflect.ValueOf(lSlice)
+	right := reflect.ValueOf(rSlice)
+	pairedLefts := map[int]struct{}{}
+	pairedRights := map[int]struct{}{}
 
-Outer:
-	for i := 0; i < len; i++ {
-		l := val.Index(i).Interface()
-		bestScore := -1
-		bestIndex := -1
-		for i, r := range lonelyRights {
-			s := score(l, r)
-			switch {
-			case s < 0:
+	scoredPairs := []scoredPair{}
+	pairs = []Pair{}
+
+	// Generate initial list of pairs.
+OuterPairing:
+	for i := 0; i < left.Len(); i++ {
+		for j := 0; j < right.Len(); j++ {
+			if _, ok := pairedRights[j]; ok {
 				continue
-			case s == 0:
-				pairs = append(pairs, Pair{l, r})
-				lonelyRights = sliceDel(lonelyRights, i)
-				continue Outer
-			case s < bestScore || bestScore < 0:
-				bestIndex = i
-				bestScore = s
+			}
+			lVal := left.Index(i).Interface()
+			rVal := right.Index(j).Interface()
+			score := score(lVal, rVal)
+			if score == 0 {
+				// Pair immediately.
+				pairs = append(pairs, Pair{lVal, rVal})
+				pairedLefts[i] = struct{}{}
+				pairedRights[j] = struct{}{}
+
+				continue OuterPairing
+			} else if score > 0 {
+				scoredPairs = append(scoredPairs,
+					scoredPair{i, j, score})
 			}
 		}
+	}
 
-		if bestIndex >= 0 {
-			pairs = append(pairs, Pair{l, lonelyRights[bestIndex]})
-			lonelyRights = sliceDel(lonelyRights, bestIndex)
-			continue Outer
+	// Sort and collect 'best' pairs.
+	sort.SliceStable(scoredPairs, func(i, j int) bool {
+		return scoredPairs[i].score < scoredPairs[j].score
+	})
+	for _, scoredPair := range scoredPairs {
+		if len(pairedLefts) == left.Len() || len(pairedRights) == right.Len() {
+			break
+		}
+		if _, ok := pairedLefts[scoredPair.left]; ok {
+			continue
+		}
+		if _, ok := pairedRights[scoredPair.right]; ok {
+			continue
 		}
 
-		lonelyLefts = append(lonelyLefts, l)
+		lVal := left.Index(scoredPair.left).Interface()
+		rVal := right.Index(scoredPair.right).Interface()
+		pairs = append(pairs, Pair{lVal, rVal})
+		pairedLefts[scoredPair.left] = struct{}{}
+		pairedRights[scoredPair.right] = struct{}{}
+	}
+
+	// Collect unpaired elements. Iterating over the original struct ensures
+	// that lonelyLefts/lonelyRights are returned in a consistent order.
+	lonelyLefts = make([]interface{}, 0, left.Len()-len(pairedLefts))
+	lonelyRights = make([]interface{}, 0, right.Len()-len(pairedRights))
+	for i := 0; i < left.Len(); i++ {
+		if _, ok := pairedLefts[i]; !ok {
+			lonelyLefts = append(lonelyLefts, left.Index(i).Interface())
+		}
+	}
+	for i := 0; i < right.Len(); i++ {
+		if _, ok := pairedRights[i]; !ok {
+			lonelyRights = append(lonelyRights, right.Index(i).Interface())
+		}
 	}
 
 	return pairs, lonelyLefts, lonelyRights
-}
-
-func sliceDel(slice []interface{}, i int) []interface{} {
-	l := len(slice)
-	slice[i] = slice[l-1]
-	slice[l-1] = nil // Allow garbage collection.
-	return slice[:l-1]
 }
 
 // List simply requires implementing types to allow access to their contained values by
