@@ -127,7 +127,7 @@ function createDeployment(deploymentOpts) {
  * @constructor
  *
  * @param {Object} deploymentOpts - An object containing options that can tweak
- * the behavor of the namespace.  Options include: `namespace` which instructs 
+ * the behavior of the namespace.  Options include: `namespace` which instructs
  * the deployment what namespace it should
  * operate in, and `adminACL` which defines what network traffic should be
  * allowed to access the deployment.
@@ -238,7 +238,7 @@ Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
 };
 
 /**
- * Checks if the namespace is lower case, and if all referenced 
+ * Checks if the namespace is lower case, and if all referenced
  * containers in connections and load balancers are really deployed.
  * @private
  *

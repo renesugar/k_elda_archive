@@ -109,7 +109,7 @@ func (sCmd SSH) Run() int {
 	}
 	sshClient, err := sCmd.sshGetter(host, sCmd.privateKey)
 	if err != nil {
-		log.WithError(err).Error("Failed to setup SSH connection")
+		log.WithError(err).Error("Failed to set up SSH connection")
 		return 1
 	}
 	defer sshClient.Close()
