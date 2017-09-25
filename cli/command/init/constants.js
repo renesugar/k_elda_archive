@@ -32,7 +32,7 @@ const credsConfirmOverwrite = 'confirmOverwrite';
 // SSH.
 const sshUseExistingKey = 'Use existing SSH key';
 const sshGenerateKey = 'Generate new SSH key pair';
-const skip = 'Skip';
+const skip = 'Skip (not recommended)';
 const sshKeyOption = 'sshKeyOption';
 const sshKeyPath = 'sshKeyPath';
 

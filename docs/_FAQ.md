@@ -4,6 +4,13 @@ This section includes answers to common questions about Quilt, and solutions
 to various issues.  If you run into an issue and can't find the answer here,
 don't hesitate to email us at [discuss@quilt.io](mailto:discuss@quilt.io).
 
+### What does Quilt use SSH keys for?
+Quilt `Machine`s optionally take one or more public SSH keys. It is strongly
+recommended to always provide at least one SSH key, as this will allow you
+to SSH into VMs and containers, and enables useful Quilt CLI commands like
+`quilt ssh` and `quilt logs` from any computer that holds a private SSH key
+matching the public key set on the `Machine`.
+
 ### I tried to `quilt run` a blueprint on Amazon and nothing seems to be working.
 
 If you're running a blueprint on AWS and the containers are not getting properly

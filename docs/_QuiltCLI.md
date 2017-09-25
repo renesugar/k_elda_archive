@@ -66,5 +66,6 @@ access to a credentials file on your machine. If there is no existing
 credentials file, `quilt init` helps create one with the correct format. See
 [Cloud Provider Configuration](#cloud-provider-configuration)
 for instructions on how to get your cloud provider credentials.
-* **SSH Keys**: An SSH key is required for SSH'ing into VMs and containers, and for
-executing a number of helpful Quilt CLI commands, such as `quilt logs`.
+* **SSH Keys**: An SSH key is required for SSHing into VMs and containers, and
+for executing a number of helpful Quilt CLI commands, such as `quilt logs`. It
+is recommended to add an SSH key to all `Machine`s.

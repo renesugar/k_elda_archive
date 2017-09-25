@@ -669,8 +669,8 @@ function getBoolean(argName, arg) {
  * @param {int} [optionalArgs.diskSize] - The desired amount of disk space in GB.
  * @param {string} [optionalArgs.floatingIp] - A reserved IP to associate with
  *   the machine.
- * @param {string[]} [optionalArgs.sshKeys] - Public keys to allow to login to
- *   the machine.
+ * @param {string[]} [optionalArgs.sshKeys] - Public keys to allow users to log
+ *   in to the machine and containers running on it.
  * @param {boolean} [optionalArgs.preemptible=false] - Whether the machine
  *   should be preemptible. Only supported on the Amazon provider.
  */
