@@ -30,6 +30,5 @@ func TestBlueprint(t *testing.T) {
 	assert.Equal(t, BlueprintTable, bps[0].tt())
 	assert.True(t, bps[0].less(Blueprint{ID: bps[0].ID + 1}))
 
-	assert.Equal(t, "Blueprint-1{Blueprint={\"Namespace\":\"test\"}}",
-		bps[0].String())
+	assert.Equal(t, "Blueprint-1{}", bps[0].String())
 }
