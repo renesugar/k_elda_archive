@@ -6,7 +6,7 @@ import (
 	"github.com/coreos/etcd/client"
 	"github.com/quilt/quilt/db"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Run synchronizes state in `conn` with the Etcd cluster.

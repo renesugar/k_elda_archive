@@ -4,12 +4,12 @@ import (
 	"errors"
 	"sync"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/quilt/quilt/cloud/acl"
 	"github.com/quilt/quilt/cloud/cfg"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 // The Provider object represents a connection to Vagrant.

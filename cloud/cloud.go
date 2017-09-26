@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/cloud/acl"
 	"github.com/quilt/quilt/cloud/amazon"
@@ -19,6 +18,7 @@ import (
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/util"
+	log "github.com/sirupsen/logrus"
 )
 
 type provider interface {

@@ -9,7 +9,7 @@ import (
 	"github.com/quilt/quilt/cli/ssh"
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Log is the structure for the `quilt logs` command.

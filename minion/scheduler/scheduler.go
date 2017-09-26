@@ -8,12 +8,12 @@ package scheduler
 import (
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/docker"
 	"github.com/quilt/quilt/minion/network/plugin"
 	"github.com/quilt/quilt/util"
+	log "github.com/sirupsen/logrus"
 )
 
 var c = counter.New("Scheduler")

@@ -11,8 +11,8 @@ import (
 
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
 	homedir "github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/terminal"

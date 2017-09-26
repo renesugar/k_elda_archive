@@ -13,7 +13,7 @@ import (
 	"github.com/quilt/quilt/util"
 	"github.com/quilt/quilt/version"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Minion contains the options for running the Quilt minion.

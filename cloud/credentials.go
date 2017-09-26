@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/pkg/sftp"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/afero/sftpfs"
 	"golang.org/x/crypto/ssh"

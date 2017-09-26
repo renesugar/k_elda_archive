@@ -5,7 +5,7 @@ import (
 
 	"github.com/quilt/quilt/db"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func TestCloudConfig(t *testing.T) {

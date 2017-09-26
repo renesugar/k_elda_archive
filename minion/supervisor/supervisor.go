@@ -10,7 +10,7 @@ import (
 	"github.com/quilt/quilt/minion/docker"
 	"github.com/quilt/quilt/minion/supervisor/images"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const ovsImage = "quilt/ovs"

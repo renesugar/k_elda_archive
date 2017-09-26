@@ -7,7 +7,7 @@ import (
 	"github.com/quilt/quilt/cli/command"
 	"github.com/quilt/quilt/cli/command/inspect"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Note the `minion` command is in quiltctl_posix.go as it only runs on posix systems.

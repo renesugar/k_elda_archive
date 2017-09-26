@@ -12,7 +12,7 @@ import (
 	"github.com/quilt/quilt/minion/ipdef"
 	"github.com/quilt/quilt/minion/ovsdb"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

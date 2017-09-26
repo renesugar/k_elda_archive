@@ -7,7 +7,7 @@ import (
 	"github.com/quilt/quilt/util"
 	"github.com/quilt/quilt/version"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Version prints the Quilt version information.

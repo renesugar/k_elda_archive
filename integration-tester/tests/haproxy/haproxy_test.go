@@ -11,7 +11,7 @@ import (
 	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 

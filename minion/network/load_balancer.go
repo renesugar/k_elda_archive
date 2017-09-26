@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"

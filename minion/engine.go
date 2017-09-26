@@ -5,7 +5,7 @@ import (
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/join"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func updatePolicy(view db.Database, bp string) {

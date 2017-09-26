@@ -9,7 +9,7 @@ import (
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/minion/ovsdb"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 type aclKey struct {

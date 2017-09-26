@@ -3,7 +3,7 @@ package command
 import (
 	"flag"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/util"

@@ -11,8 +11,8 @@ import (
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/minion/ipdef"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/miekg/dns"
+	log "github.com/sirupsen/logrus"
 )
 
 const dnsTTL = 60 // Seconds

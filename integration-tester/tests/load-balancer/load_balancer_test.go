@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/docker"

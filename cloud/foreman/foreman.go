@@ -14,7 +14,7 @@ import (
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/pb"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var minions map[string]*minion

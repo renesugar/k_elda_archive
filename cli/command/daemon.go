@@ -19,7 +19,7 @@ import (
 	"github.com/quilt/quilt/util"
 	"github.com/quilt/quilt/version"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Daemon contains the options for running the Quilt daemon.

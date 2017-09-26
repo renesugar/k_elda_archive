@@ -10,7 +10,7 @@ import (
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/ipdef"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 /* runUpdateIPs allocates IPs to containers and load balancers.

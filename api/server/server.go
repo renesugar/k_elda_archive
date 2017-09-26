@@ -22,7 +22,7 @@ import (
 	"github.com/docker/distribution/reference"
 	"golang.org/x/net/context"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var errDaemonOnlyRPC = errors.New("only defined on the daemon")

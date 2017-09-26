@@ -11,9 +11,9 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/fatih/color"
 	"github.com/pmezard/go-difflib/difflib"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/blueprint"

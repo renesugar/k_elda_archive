@@ -13,8 +13,8 @@ import (
 	"github.com/quilt/quilt/minion/ipdef"
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
 	dkc "github.com/fsouza/go-dockerclient"
+	log "github.com/sirupsen/logrus"
 )
 
 var pullCacheTimeout = time.Minute

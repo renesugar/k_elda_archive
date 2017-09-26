@@ -7,7 +7,7 @@ import (
 
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Init represents an Init command.

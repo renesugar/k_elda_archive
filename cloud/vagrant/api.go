@@ -10,9 +10,9 @@ import (
 	"strings"
 	"text/template"
 
-	log "github.com/Sirupsen/logrus"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/quilt/quilt/util"
+	log "github.com/sirupsen/logrus"
 )
 
 const inboundPublicInterface = "enp0s8"

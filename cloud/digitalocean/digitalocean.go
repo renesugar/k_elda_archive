@@ -21,7 +21,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // DefaultRegion is assigned to Machines without a specified region

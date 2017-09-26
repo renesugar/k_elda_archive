@@ -14,7 +14,7 @@ import (
 
 	"google.golang.org/grpc/grpclog"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var quiltCommands = "quilt [OPTIONS] COMMAND"

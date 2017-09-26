@@ -22,7 +22,7 @@ import (
 	"github.com/quilt/quilt/minion/supervisor"
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var c = counter.New("Minion")

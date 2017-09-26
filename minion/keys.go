@@ -7,7 +7,7 @@ import (
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const authorizedKeysFile = "/home/quilt/.ssh/authorized_keys"

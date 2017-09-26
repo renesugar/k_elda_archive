@@ -13,8 +13,8 @@ import (
 	"github.com/quilt/quilt/minion/nl"
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/coreos/go-iptables/iptables"
+	log "github.com/sirupsen/logrus"
 )
 
 // IPTables is an interface to *iptables.IPTables.

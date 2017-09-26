@@ -14,7 +14,7 @@ import (
 
 	dnet "github.com/docker/go-plugins-helpers/network"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

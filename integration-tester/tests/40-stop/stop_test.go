@@ -12,7 +12,7 @@ import (
 	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/minion/supervisor/images"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func TestStopContainer(t *testing.T) {

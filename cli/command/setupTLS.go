@@ -8,7 +8,7 @@ import (
 	"github.com/quilt/quilt/connection/credentials/tls/rsa"
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // SetupTLS contains the options for setting up Quilt TLS.

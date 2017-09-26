@@ -6,9 +6,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/coreos/etcd/client"
 	"github.com/quilt/quilt/counter"
+	log "github.com/sirupsen/logrus"
 )
 
 // A Store implements a consistent distributed key value store similar to Etcd.

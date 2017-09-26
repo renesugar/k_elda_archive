@@ -7,7 +7,7 @@ import (
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const electionTTL = 30

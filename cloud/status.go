@@ -7,7 +7,7 @@ import (
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func updateMachineStatuses(conn db.Conn) {

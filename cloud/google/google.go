@@ -17,8 +17,8 @@ import (
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/util"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 	compute "google.golang.org/api/compute/v1"
 )
 
