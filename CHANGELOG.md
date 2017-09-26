@@ -14,6 +14,8 @@ Container, and Deployment constructors.
 - Rename StitchID to BlueprintID in the database. This is an internal
 API-breaking change (it changes the API between internal Quilt components).
 - Fix TLS encryption for GRPC connections to machines that use floating IPs.
+- Support Node.js version 6 (previously, we had some code that failed unless
+users were running version 7 or later).
 
 Release 0.3.0
 -------------

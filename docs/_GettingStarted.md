@@ -1,9 +1,8 @@
 # Getting Started
 
 ## Installing Quilt
-Quilt relies on Node.js.  Start by downloading Node.js from the [Node.js
-download page](https://nodejs.org/en/download/).  We have only tested Quilt with
-Node version v7.10.0 and above.
+Quilt relies on Node.js version 6 or higher.  Start by downloading Node.js from
+the [Node.js download page](https://nodejs.org/en/download/).
 
 Next, use Node.js's package manager, `npm`, to install Quilt:
 
