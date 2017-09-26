@@ -110,7 +110,7 @@ check-blueprints: build-blueprints-tester
 lint: golint jslint misspell
 
 misspell:
-	find . \( -path ./vendor -or -path */node_modules/* -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error
+	find . \( -path ./vendor -or -path '*/node_modules/*' -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error
 
 jslint:
 	$(JS_LINT_COMMAND)
