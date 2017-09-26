@@ -11,8 +11,23 @@ to SSH into VMs and containers, and enables useful Quilt CLI commands like
 `quilt ssh` and `quilt logs` from any computer that holds a private SSH key
 matching the public key set on the `Machine`.
 
-### I tried to `quilt run` a blueprint on Amazon and nothing seems to be working.
+### Why can't I access my website?
+There are a few possible reasons:
 
+1. Check that you are accessing the `PUBLIC IP` of the container that's serving
+  the web application (and not the IP of another container or VM).
+2. Make sure that the container exposes a port to the public internet. If it
+  does, the `PUBLIC IP` will show a port number after the IP -- e.g.
+  `54.241.251.192:80`. This says that port 80 is exposed to the public internet
+  and thus that the application should be accessible from your (or any) browser.
+  If there is no port number, and you are using an imported blueprint, check if
+  the blueprint exports a function that will expose the application. If so, call
+  this function in your blueprint. If there is no such function, use `allowFrom`
+  and `publicInternet` in your blueprint to expose the desired port.
+3. When exposing a different port than `80`, make sure to paste both the
+  IP address _and_ the port number into the browser as `<IP>:<PORT>`.
+
+### I tried to `quilt run` a blueprint on Amazon and nothing seems to be working.
 If you're running a blueprint on AWS and the containers are not getting properly
 created, you may have an issue with your VPC (Virtual Private Cloud) settings
 on Amazon.  When this issue occurs, if you run `quilt show`, the machines will
