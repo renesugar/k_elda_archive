@@ -12,7 +12,7 @@ env:
         # because go is the main language for the build. This is a work-around
         # because Travis doesn't have built-in support multiple languages.
         - NODEJS_VERSION=6.9.0
-        - NODEJS_VERSION=7.10.0
+        - NODEJS_VERSION=8.5.0
 
 sudo: required
 
