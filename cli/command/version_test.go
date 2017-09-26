@@ -5,7 +5,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/kelda/kelda/api/client"
 	"github.com/kelda/kelda/api/client/mocks"
+	"github.com/kelda/kelda/connection"
+	"github.com/kelda/kelda/connection/tls"
 )
 
 func TestVersionFlags(t *testing.T) {
@@ -26,15 +29,20 @@ func TestGetDaemonVersion(t *testing.T) {
 	mockLocalClient := &mocks.Client{}
 	mockLocalClient.On("Version").Once().Return("mockVersion", nil)
 	mockLocalClient.On("Close").Return(nil)
-
-	vCmd := Version{
-		connectionHelper: connectionHelper{client: mockLocalClient},
+	mockGetter := func(_ string, _ connection.Credentials) (client.Client, error) {
+		return mockLocalClient, nil
+	}
+	mockCredsGetter := func(path string) (tls.TLS, error) {
+		return tls.TLS{}, nil
 	}
 
-	res := vCmd.Run()
-	assert.Zero(t, res)
+	vCmd := NewVersionCommand()
+
+	version, err := vCmd.fetchDaemonVersion(mockCredsGetter, mockGetter)
+	assert.Equal(t, "mockVersion", version)
+	assert.Nil(t, err)
 
 	mockLocalClient.On("Version").Return("", assert.AnError)
-	res = vCmd.Run()
-	assert.NotZero(t, res)
+	_, err = vCmd.fetchDaemonVersion(mockCredsGetter, mockGetter)
+	assert.NotNil(t, err)
 }
