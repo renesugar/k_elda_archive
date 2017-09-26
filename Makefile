@@ -129,9 +129,9 @@ golint: scripts/format/format
 	exit $$LINT_CODE
 
 	# Run gofmt
-	RESULT=`gofmt -s -l $(NOVENDOR)` && \
-	if [[ -n "$$RESULT"  ]] ; then \
-	    echo $$RESULT && \
+	RESULT=`gofmt -s -l $(NOVENDOR)` ; \
+	if [[ -n "$$RESULT" ]] ; then \
+	    echo $$RESULT ; \
 	    exit 1 ; \
 	fi
 
