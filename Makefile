@@ -117,21 +117,24 @@ jslint:
 
 golint: scripts/format/format
 	cd -P . && govendor vet +local
+	ineffassign .
+
 	# Run golint
-	EXIT_CODE=0; \
+	LINT_CODE=0; \
 	for package in $(PACKAGES) ; do \
 		if [[ $$package != *minion/pb* && $$package != *api/pb* ]] ; then \
-			golint -min_confidence .25 -set_exit_status $$package || EXIT_CODE=1; \
+			golint -min_confidence .25 -set_exit_status $$package || LINT_CODE=1; \
 		fi \
 	done ; \
-	ineffassign . || EXIT_CODE=1; \
-	exit $$EXIT_CODE
+	exit $$LINT_CODE
+
 	# Run gofmt
 	RESULT=`gofmt -s -l $(NOVENDOR)` && \
 	if [[ -n "$$RESULT"  ]] ; then \
 	    echo $$RESULT && \
 	    exit 1 ; \
 	fi
+
 	# Do some additional checks of the go code (e.g., for line length)
 	scripts/format/format $(filter-out $(LINE_LENGTH_EXCLUDE),$(NOVENDOR))
 
