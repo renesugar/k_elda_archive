@@ -107,7 +107,10 @@ check-blueprints: build-blueprints-tester
 # lint checks the format of all of our code. This command should not make any
 # changes to fix incorrect format; it should only check it. Code to update the
 # format should go under the format target.
-lint: golint jslint
+lint: golint jslint misspell
+
+misspell:
+	find . \( -path ./vendor -or -path */node_modules/* -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error
 
 jslint:
 	$(JS_LINT_COMMAND)
@@ -121,7 +124,6 @@ golint: scripts/format/format
 			golint -min_confidence .25 -set_exit_status $$package || EXIT_CODE=1; \
 		fi \
 	done ; \
-	find . \( -path ./vendor -or -path */node_modules/* -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error || EXIT_CODE=1; \
 	ineffassign . || EXIT_CODE=1; \
 	exit $$EXIT_CODE
 	# Run gofmt
