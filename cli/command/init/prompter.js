@@ -282,6 +282,14 @@ function machineConfigPrompts(provider) {
   const sizeChoices = getInquirerDescriptions(provider.getSizes());
   sizeChoices.push({ name: consts.other, value: consts.other });
 
+  const sizeOptions = [
+    {
+      name: `${consts.instanceTypeSize} (recommended)`,
+      value: consts.instanceTypeSize,
+    },
+    { name: consts.ramCpuSize },
+  ];
+
   const questions = [
     {
       type: 'confirm',
@@ -305,7 +313,7 @@ function machineConfigPrompts(provider) {
       type: 'list',
       name: consts.sizeType,
       message: 'How do you want to specify the size of your machine?',
-      choices: [consts.instanceTypeSize, consts.ramCpuSize],
+      choices: sizeOptions,
       when() {
         // If there are no instance types, just ask for RAM and CPU.
         return provider.sizes !== undefined;
@@ -332,7 +340,7 @@ function machineConfigPrompts(provider) {
         return answers[consts.size] === consts.other;
       },
     },
-    {
+    questionWithHelp({
       type: 'input',
       name: consts.cpu,
       message: 'How many CPUs do you want?',
@@ -343,8 +351,8 @@ function machineConfigPrompts(provider) {
       when(answers) {
         return answers[consts.sizeType] !== consts.instanceTypeSize;
       },
-    },
-    {
+    }, 'For small applications, 1 CPU is probably enough.'),
+    questionWithHelp({
       type: 'input',
       name: 'ram',
       message: 'How many GiB of RAM do you want?',
@@ -355,7 +363,7 @@ function machineConfigPrompts(provider) {
       when(answers) {
         return answers[consts.sizeType] !== consts.instanceTypeSize;
       },
-    },
+    }, 'For small applications, 2 GiB is a suitable choice.'),
   ];
 
   return inquirer.prompt(questions);
