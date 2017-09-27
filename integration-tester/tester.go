@@ -146,13 +146,14 @@ func (t *tester) generateTestSuites(testRoot string) error {
 
 func (t tester) run() error {
 	defer func() {
+		junitReport := newJUnitReport(t.testSuites)
 		if t.junitOut != "" {
-			writeJUnitReport(t.testSuites, t.junitOut)
+			writeJUnitReport(t.junitOut, junitReport)
 		}
 
 		failed := false
-		for _, suite := range t.testSuites {
-			if !suite.passed {
+		for _, result := range junitReport.TestResults {
+			if result.Failure != nil {
 				failed = true
 				break
 			}

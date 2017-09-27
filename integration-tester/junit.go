@@ -26,7 +26,7 @@ type TestCase struct {
 	Output      string    `xml:"system-out"`
 }
 
-func writeJUnitReport(tests []*testSuite, filename string) {
+func newJUnitReport(tests []*testSuite) JUnitReport {
 	report := JUnitReport{NumTests: len(tests)}
 	for _, t := range tests {
 		// Ignore test suites that are solely for setup, and do not test anything.
@@ -45,7 +45,10 @@ func writeJUnitReport(tests []*testSuite, filename string) {
 		}
 		report.TestResults = append(report.TestResults, junitResult)
 	}
+	return report
+}
 
+func writeJUnitReport(filename string, report JUnitReport) {
 	f, err := os.Create(filename)
 	if err != nil {
 		logrus.WithError(err).Errorf(
