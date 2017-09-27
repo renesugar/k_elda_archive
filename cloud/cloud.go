@@ -8,7 +8,6 @@ import (
 	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/cloud/acl"
 	"github.com/quilt/quilt/cloud/amazon"
-	"github.com/quilt/quilt/cloud/cfg"
 	"github.com/quilt/quilt/cloud/digitalocean"
 	"github.com/quilt/quilt/cloud/foreman"
 	"github.com/quilt/quilt/cloud/google"
@@ -49,8 +48,7 @@ var sleep = time.Sleep
 
 // Run continually checks 'conn' for cloud changes and recreates the cloud as
 // needed.
-func Run(conn db.Conn, creds connection.Credentials, minionTLSDir string) {
-	cfg.MinionTLSDir = minionTLSDir
+func Run(conn db.Conn, creds connection.Credentials) {
 	foreman.Credentials = creds
 
 	go updateMachineStatuses(conn)

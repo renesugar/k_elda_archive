@@ -18,20 +18,21 @@ func TestCloudConfig(t *testing.T) {
 		SSHKeys: []string{"a", "b"},
 		Role:    db.Master,
 	}, "")
-	exp := "(quilt/quilt:master) (a\nb) (--role \"Master\") (info) ()"
+	exp := "(quilt/quilt:master) (a\nb) (--role \"Master\") (info)" +
+		" (-v /home/quilt/.quilt/tls:/home/quilt/.quilt/tls:ro)"
 	if res != exp {
 		t.Errorf("res: %s\nexp: %s", res, exp)
 	}
 
 	log.SetLevel(log.DebugLevel)
 	ver = "1.2.3"
-	MinionTLSDir = "dir"
 	res = Ubuntu(db.Machine{
 		SSHKeys: []string{"a", "b"},
 		Role:    db.Worker,
 	}, "ib")
-	exp = "(quilt/quilt:1.2.3) (a\nb) (--role \"Worker\" --inbound-pub-intf \"ib\"" +
-		" --tls-dir \"dir\") (debug) (-v dir:dir:ro)"
+	exp = "(quilt/quilt:1.2.3) (a\nb) (--role \"Worker\"" +
+		" --inbound-pub-intf \"ib\") (debug)" +
+		" (-v /home/quilt/.quilt/tls:/home/quilt/.quilt/tls:ro)"
 	if res != exp {
 		t.Errorf("res: %s\nexp: %s", res, exp)
 	}

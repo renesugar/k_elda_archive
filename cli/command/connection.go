@@ -5,19 +5,17 @@ import (
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
-	"github.com/quilt/quilt/cli/command/credentials"
+	cliPath "github.com/quilt/quilt/cli/path"
 	"github.com/quilt/quilt/connection"
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
 )
 
 type connectionFlags struct {
-	host   string
-	tlsDir string
+	host string
 }
 
 func (cf *connectionFlags) InstallFlags(flags *flag.FlagSet) {
 	flags.StringVar(&cf.host, "H", api.DefaultSocket, "the host to connect to")
-	flags.StringVar(&cf.tlsDir, "tls-dir", "",
-		"the directory in which to lookup tls certs")
 }
 
 type connectionHelper struct {
@@ -29,7 +27,7 @@ type connectionHelper struct {
 
 func (ch *connectionHelper) BeforeRun() (err error) {
 	// Load the credentials that will be used by Quilt clients and servers.
-	ch.creds, err = credentials.Read(ch.tlsDir)
+	ch.creds, err = tlsIO.ReadCredentials(cliPath.DefaultTLSDir)
 	if err != nil {
 		return err
 	}

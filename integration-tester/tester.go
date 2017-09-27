@@ -14,11 +14,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/quilt/quilt/api"
-	"github.com/quilt/quilt/api/client"
 	"github.com/quilt/quilt/blueprint"
-	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
+	testerUtil "github.com/quilt/quilt/integration-tester/util"
 	"github.com/quilt/quilt/join"
 	"github.com/quilt/quilt/util"
 )
@@ -43,8 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	tlsDir := os.Getenv("TLS_DIR")
-	tester, err := newTester(namespace, tlsDir)
+	tester, err := newTester(namespace)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to create tester instance.")
 		os.Exit(1)
@@ -63,13 +60,11 @@ type tester struct {
 	testSuites  []*testSuite
 	initialized bool
 	namespace   string
-	tlsDir      string
 }
 
-func newTester(namespace, tlsDir string) (tester, error) {
+func newTester(namespace string) (tester, error) {
 	t := tester{
 		namespace: namespace,
-		tlsDir:    tlsDir,
 	}
 
 	testRoot := flag.String("testRoot", "",
@@ -182,7 +177,7 @@ func (t *tester) setup() error {
 	l := log.testerLogger
 
 	l.infoln("Starting the Quilt daemon.")
-	go runQuiltDaemon(t.tlsDir)
+	go runQuiltDaemon()
 
 	// Get blueprint dependencies.
 	l.infoln("Installing blueprint dependencies")
@@ -311,7 +306,7 @@ func waitForContainers(blueprintPath string) error {
 		return err
 	}
 
-	c, err := client.New(api.DefaultSocket, credentials.Insecure{})
+	c, err := testerUtil.GetDefaultDaemonClient()
 	if err != nil {
 		return err
 	}

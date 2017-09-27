@@ -7,9 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/quilt/quilt/api"
-	"github.com/quilt/quilt/api/client"
-	"github.com/quilt/quilt/connection/credentials"
+	"github.com/quilt/quilt/integration-tester/util"
 )
 
 const (
@@ -24,7 +22,7 @@ const (
 var connectedSlavesRegex = regexp.MustCompile(`connected_slaves:(\d+)`)
 
 func TestRedis(t *testing.T) {
-	clnt, err := client.New(api.DefaultSocket, credentials.Insecure{})
+	clnt, err := util.GetDefaultDaemonClient()
 	if err != nil {
 		t.Fatalf("couldn't get api client: %s", err)
 	}

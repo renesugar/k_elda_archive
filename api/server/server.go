@@ -14,7 +14,6 @@ import (
 	"github.com/quilt/quilt/api/pb"
 	"github.com/quilt/quilt/blueprint"
 	"github.com/quilt/quilt/connection"
-	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/version"
@@ -52,17 +51,7 @@ func Run(conn db.Conn, listenAddr string, runningOnDaemon bool,
 		return err
 	}
 
-	// Don't enforce TLS on inbound local connections. This way, users don't
-	// need to supply credentials when making local connections to the daemon
-	// (e.g. when running a spec). Instead, local connections should be secured
-	// using Unix permissions. Connections to the cluster (i.e. proxied
-	// connections) still need to use the proper credentials.
-	serverCreds := creds
-	if proto == "unix" {
-		serverCreds = credentials.Insecure{}
-	}
-
-	sock, s := connection.Server(proto, addr, serverCreds.ServerOpts())
+	sock, s := connection.Server(proto, addr, creds.ServerOpts())
 
 	// Cleanup the socket if we're interrupted.
 	sigc := make(chan os.Signal, 1)

@@ -8,8 +8,23 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/quilt/quilt/api"
+	"github.com/quilt/quilt/api/client"
+	cliPath "github.com/quilt/quilt/cli/path"
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
 	"github.com/quilt/quilt/db"
 )
+
+// GetDefaultDaemonClient gets an API client connected to the daemon on the
+// default socket with the default TLS credentials.
+func GetDefaultDaemonClient() (client.Client, error) {
+	creds, err := tlsIO.ReadCredentials(cliPath.DefaultTLSDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.New(api.DefaultSocket, creds)
+}
 
 // CheckPublicConnections test that HTTP GETs against all ports that are
 // connected to the public internet succeed.

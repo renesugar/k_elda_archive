@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/quilt/quilt/connection/credentials/tls/rsa"
+	"github.com/quilt/quilt/connection/tls/rsa"
 	"github.com/quilt/quilt/util"
 )
 

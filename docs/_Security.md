@@ -2,16 +2,16 @@
 
 ## TLS
 Quilt uses [grpc](http://www.grpc.io/) for communication with the daemon and
-deployed clusters. Functionality exposed through `grpc` include deploying new
-blueprints and querying deployment information. Thus, TLS should be enabled for
-all non-experimental deployments. It is currently disabled by default.
+deployed clusters. Functionality exposed through `grpc` includes deploying new
+blueprints and querying deployment information. All communication is
+automatically encrypted and verified using TLS.
 
 ### Quickstart
 Start the daemon. If credentials don't already exist, they will be
 automatically generated.
 
 ```console
-$ quilt daemon -tls-dir ~/.quilt/tls
+$ quilt daemon
 ```
 
 Use the other Quilt commands as normal.
@@ -27,12 +27,13 @@ CONTAINER       MACHINE         COMMAND                     HOSTNAME  STATUS    
 1daa461f0805    b92d625c6847    alpine tail -f /dev/null    alpine    running    24 seconds ago    52.53.170.129:8000
 ```
 
-However, trying to connect to a cluster with different credentials fails.
-This can be simulated by restarting the daemon and running the same blueprint,
-but with different TLS credentials. Note that the machines never connect.
+Only a user with access to the correct credentials can connect to the cluster.
+As an example of this, if you delete your credentials, restart the daemon, and
+run the same blueprint, you won't be able to connect to the machines:
 
 ```console
-$ quilt daemon -tls-dir ~/.quilt/other-credentials
+$ rm -rf ~/.quilt/tls
+$ quilt daemon
 $ quilt run ./example.js
 $ quilt show
 MACHINE         ROLE      PROVIDER    REGION       SIZE         PUBLIC IP        STATUS
@@ -40,20 +41,9 @@ MACHINE         ROLE      PROVIDER    REGION       SIZE         PUBLIC IP       
 b92d625c6847    Worker    Amazon      us-west-1    m3.medium    52.53.170.129    connecting
 ```
 
-Trying to connect in Insecure mode also fails. Note that the machines never connect.
-
-```console
-$ quilt daemon
-$ quilt run ./example.js
-$ quilt show
-MACHINE         ROLE      PROVIDER    REGION       SIZE         PUBLIC IP        STATUS
-8a0d2198229c    Master    Amazon      us-west-1    m3.medium    52.53.170.129    connecting
-b92d625c6847    Worker    Amazon      us-west-1    m3.medium    54.153.11.92     connecting
-```
-
-### tls-dir
-TLS is enabled with the `-tls-dir` option. The TLS directory should have the
-following structure when passed to `quilt daemon`:
+### TLS credentials
+`quilt daemon` autogenerates TLS credentials if necessary. They are stored in
+`~/.quilt/tls`. The directory structure is as follows:
 
 ```console
 $ tree ~/.quilt/tls
@@ -82,5 +72,5 @@ keys. A key can be specified from the filesystem using the
 For example,
 
 ```console
-$ quilt daemon -admin-ssh-private-key ~/.quilt/id_rsa -tls-dir ~/.quilt/tls
+$ quilt daemon -admin-ssh-private-key ~/.quilt/id_rsa
 ```

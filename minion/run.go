@@ -8,8 +8,8 @@ import (
 
 	"github.com/quilt/quilt/api"
 	apiServer "github.com/quilt/quilt/api/server"
-	"github.com/quilt/quilt/cli/command/credentials"
 	"github.com/quilt/quilt/connection"
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/minion/docker"
@@ -28,7 +28,7 @@ import (
 var c = counter.New("Minion")
 
 // Run blocks executing the minion.
-func Run(role db.Role, inboundPubIntf, outboundPubIntf, tlsDir string) {
+func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 	// XXX Uncomment the following line to run the profiler
 	//runProfiler(5 * time.Minute)
 
@@ -71,7 +71,7 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf, tlsDir string) {
 	var creds connection.Credentials
 	err := util.BackoffWaitFor(func() bool {
 		var err error
-		creds, err = credentials.Read(tlsDir)
+		creds, err = tlsIO.ReadCredentials(tlsIO.MinionTLSDir)
 		if err != nil {
 			log.WithError(err).Debug("TLS keys not ready yet")
 			return false

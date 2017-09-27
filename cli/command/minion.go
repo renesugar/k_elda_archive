@@ -84,6 +84,6 @@ func (mCmd *Minion) run() error {
 		return errors.New("no or improper role specified")
 	}
 
-	minion.Run(role, mCmd.inboundPubIntf, mCmd.outboundPubIntf, mCmd.tlsDir)
+	minion.Run(role, mCmd.inboundPubIntf, mCmd.outboundPubIntf)
 	return nil
 }

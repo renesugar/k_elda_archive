@@ -7,12 +7,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/quilt/quilt/connection/credentials/tls"
-	"github.com/quilt/quilt/connection/credentials/tls/rsa"
+	"github.com/quilt/quilt/connection/tls"
+	"github.com/quilt/quilt/connection/tls/rsa"
 	"github.com/quilt/quilt/util"
 )
 
 const (
+	// MinionTLSDir is the directory in which the daemon will place TLS
+	// credentials on cloud machines.
+	MinionTLSDir = "/home/quilt/.quilt/tls"
+
 	caCertFilename     = "certificate_authority.crt"
 	caKeyFilename      = "certificate_authority.key"
 	signedCertFilename = "quilt.crt"

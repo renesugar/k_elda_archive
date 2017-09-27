@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/template"
 
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/version"
 
@@ -19,9 +20,6 @@ const (
 // Allow mocking out for the unit tests.
 var ver = version.Version
 
-// MinionTLSDir is where minions should look for their TLS configuration on boot.
-var MinionTLSDir string
-
 // Ubuntu generates a cloud config file for the Ubuntu operating system with the
 // corresponding `version`.
 func Ubuntu(m db.Machine, inboundPublic string) string {
@@ -29,13 +27,10 @@ func Ubuntu(m db.Machine, inboundPublic string) string {
 
 	img := fmt.Sprintf("%s:%s", quiltImage, ver)
 
-	dockerOpts := ""
-	if MinionTLSDir != "" {
-		// Mount the TLSDir as a read-only host volume. This is necessary for
-		// the minion container to access the TLS certificates copied by
-		// the daemon onto the host machine.
-		dockerOpts = fmt.Sprintf("-v %[1]s:%[1]s:ro", MinionTLSDir)
-	}
+	// Mount the TLSDir as a read-only host volume. This is necessary for
+	// the minion container to access the TLS certificates copied by
+	// the daemon onto the host machine.
+	dockerOpts := fmt.Sprintf("-v %[1]s:%[1]s:ro", tlsIO.MinionTLSDir)
 
 	var cloudConfigBytes bytes.Buffer
 	err := t.Execute(&cloudConfigBytes, struct {
@@ -48,7 +43,7 @@ func Ubuntu(m db.Machine, inboundPublic string) string {
 		QuiltImage: img,
 		SSHKeys:    strings.Join(m.SSHKeys, "\n"),
 		LogLevel:   log.GetLevel().String(),
-		MinionOpts: minionOptions(m.Role, inboundPublic, MinionTLSDir),
+		MinionOpts: minionOptions(m.Role, inboundPublic),
 		DockerOpts: dockerOpts,
 	})
 	if err != nil {
@@ -58,16 +53,11 @@ func Ubuntu(m db.Machine, inboundPublic string) string {
 	return cloudConfigBytes.String()
 }
 
-func minionOptions(role db.Role, inboundPublic, tlsDir string) string {
+func minionOptions(role db.Role, inboundPublic string) string {
 	options := fmt.Sprintf("--role %q", role)
 
 	if inboundPublic != "" {
 		options += fmt.Sprintf(" --inbound-pub-intf %q", inboundPublic)
 	}
-
-	if tlsDir != "" {
-		options += fmt.Sprintf(" --tls-dir %q", tlsDir)
-	}
-
 	return options
 }

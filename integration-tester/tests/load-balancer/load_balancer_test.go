@@ -7,9 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/quilt/quilt/api"
-	"github.com/quilt/quilt/api/client"
-	"github.com/quilt/quilt/connection/credentials"
+	util "github.com/quilt/quilt/integration-tester/util"
 )
 
 const (
@@ -18,7 +16,7 @@ const (
 )
 
 func TestLoadBalancer(t *testing.T) {
-	c, err := client.New(api.DefaultSocket, credentials.Insecure{})
+	c, err := util.GetDefaultDaemonClient()
 	if err != nil {
 		t.Fatalf("couldn't get local client: %s", err)
 	}

@@ -3,13 +3,15 @@ package cloud
 import (
 	"crypto/rand"
 	goRSA "crypto/rsa"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/quilt/quilt/connection/credentials/tls/rsa"
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
+	"github.com/quilt/quilt/connection/tls/rsa"
 	"github.com/quilt/quilt/db"
 )
 
@@ -35,20 +37,21 @@ func TestSyncCredentials(t *testing.T) {
 	assert.NoError(t, err)
 
 	credentialedMachines := map[string]struct{}{}
-	syncCredentialsOnce("out", expSigner, ca,
+	syncCredentialsOnce(expSigner, ca,
 		[]db.Machine{{PublicIP: expHost}}, credentialedMachines)
 	assert.Len(t, credentialedMachines, 1)
 
 	aferoFs := afero.Afero{Fs: mockFs}
-	certBytes, err := aferoFs.ReadFile("out/quilt.crt")
+	certBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "quilt.crt"))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
 
-	keyBytes, err := aferoFs.ReadFile("out/quilt.key")
+	keyBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "quilt.key"))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, keyBytes)
 
-	caBytes, err := aferoFs.ReadFile("out/certificate_authority.crt")
+	caBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir,
+		"certificate_authority.crt"))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, caBytes)
 }
@@ -59,7 +62,7 @@ func TestSyncCredentialsSkip(t *testing.T) {
 
 	// Test that we skip machines that have not booted yet.
 	credentialedMachines := map[string]struct{}{}
-	syncCredentialsOnce("", nil, ca,
+	syncCredentialsOnce(nil, ca,
 		[]db.Machine{{Role: db.Worker}}, credentialedMachines)
 	assert.Empty(t, credentialedMachines, 0)
 
@@ -67,7 +70,7 @@ func TestSyncCredentialsSkip(t *testing.T) {
 	credentialedMachines = map[string]struct{}{
 		"8.8.8.8": {},
 	}
-	syncCredentialsOnce("", nil, ca, []db.Machine{
+	syncCredentialsOnce(nil, ca, []db.Machine{
 		{Role: db.Worker, PublicIP: "8.8.8.8"},
 	}, credentialedMachines)
 	assert.Len(t, credentialedMachines, 1)
@@ -77,7 +80,7 @@ func TestSyncCredentialsSkip(t *testing.T) {
 		return nil, assert.AnError
 	}
 	credentialedMachines = map[string]struct{}{}
-	syncCredentialsOnce("", nil, ca, []db.Machine{
+	syncCredentialsOnce(nil, ca, []db.Machine{
 		{Role: db.Worker, PublicIP: "8.8.8.8"},
 	}, credentialedMachines)
 	assert.Empty(t, credentialedMachines)

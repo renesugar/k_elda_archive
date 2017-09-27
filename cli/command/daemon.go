@@ -11,11 +11,10 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/quilt/quilt/api/server"
-	"github.com/quilt/quilt/cli/command/credentials"
+	cliPath "github.com/quilt/quilt/cli/path"
 	"github.com/quilt/quilt/cloud"
-	"github.com/quilt/quilt/connection/credentials/tls"
-	tlsIO "github.com/quilt/quilt/connection/credentials/tls/io"
-	"github.com/quilt/quilt/connection/credentials/tls/rsa"
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
+	"github.com/quilt/quilt/connection/tls/rsa"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/engine"
 	"github.com/quilt/quilt/util"
@@ -71,16 +70,15 @@ func (dCmd *Daemon) AfterRun() error {
 func (dCmd *Daemon) Run() int {
 	log.WithField("version", version.Version).Info("Starting Quilt daemon")
 
-	// If the specified TLS credential path does not exist, autogenerate
-	// credentials for the given path.
-	if dCmd.tlsDir != "" {
-		if _, err := util.Stat(dCmd.tlsDir); os.IsNotExist(err) {
-			log.WithField("path", dCmd.tlsDir).Info("Auto-generating TLS credentials")
-			if err := setupTLS(dCmd.tlsDir); err != nil {
-				log.WithError(err).WithField("path", dCmd.tlsDir).Error(
-					"TLS credential generation failed")
-				return 1
-			}
+	// If the TLS credentials do not exist, autogenerate credentials and write
+	// them to disk.
+	if _, err := util.Stat(cliPath.DefaultTLSDir); os.IsNotExist(err) {
+		log.Infof("TLS credentials not found in %s, so generating credentials "+
+			"and writing to disk", cliPath.DefaultTLSDir)
+		if err := setupTLS(cliPath.DefaultTLSDir); err != nil {
+			log.WithError(err).WithField("path", cliPath.DefaultTLSDir).Error(
+				"TLS credential generation failed")
+			return 1
 		}
 	}
 
@@ -93,11 +91,9 @@ func (dCmd *Daemon) Run() int {
 				"Failed to parse private key %s", dCmd.adminSSHPrivateKey)
 			return 1
 		}
-	}
-
-	if sshKey == nil && dCmd.tlsDir != "" {
-		log.Info("No admin key supplied, but TLS is enabled, which requires an " +
-			"admin SSH key to copy TLS credentials to the cluster. " +
+	} else {
+		log.Info("No admin key supplied, which is required " +
+			"to copy TLS credentials to the cluster. " +
 			"Auto-generating an in-memory key.")
 		var err error
 		sshKey, err = newSSHPrivateKey()
@@ -107,7 +103,7 @@ func (dCmd *Daemon) Run() int {
 		}
 	}
 
-	creds, err := credentials.Read(dCmd.tlsDir)
+	creds, err := tlsIO.ReadCredentials(cliPath.DefaultTLSDir)
 	if err != nil {
 		log.WithError(err).Error("Failed to parse TLS credentials")
 		return 1
@@ -117,20 +113,15 @@ func (dCmd *Daemon) Run() int {
 	go engine.Run(conn, getPublicKey(sshKey))
 	go server.Run(conn, dCmd.host, true, creds)
 
-	var minionTLSDir string
-	if _, isTLS := creds.(tls.TLS); isTLS {
-		minionTLSDir = "/home/quilt/.quilt/tls"
-
-		ca, err := tlsIO.ReadCA(dCmd.tlsDir)
-		if err != nil {
-			log.WithError(err).Error("Failed to parse certificate authority")
-			return 1
-		}
-
-		go cloud.SyncCredentials(conn, minionTLSDir, sshKey, ca)
+	ca, err := tlsIO.ReadCA(cliPath.DefaultTLSDir)
+	if err != nil {
+		log.WithError(err).WithField("path", cliPath.DefaultTLSDir).Error(
+			"Failed to parse certificate authority")
+		return 1
 	}
 
-	cloud.Run(conn, creds, minionTLSDir)
+	go cloud.SyncCredentials(conn, sshKey, ca)
+	cloud.Run(conn, creds)
 	return 0
 }
 

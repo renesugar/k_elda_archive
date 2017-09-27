@@ -7,9 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/quilt/quilt/api"
-	"github.com/quilt/quilt/api/client"
-	"github.com/quilt/quilt/connection/credentials"
+	"github.com/quilt/quilt/integration-tester/util"
 	"github.com/quilt/quilt/minion/supervisor/images"
 
 	log "github.com/sirupsen/logrus"
@@ -20,7 +18,7 @@ func TestStopContainer(t *testing.T) {
 		t.Fatalf("couldn't run stop command: %s", err.Error())
 	}
 
-	c, err := client.New(api.DefaultSocket, credentials.Insecure{})
+	c, err := util.GetDefaultDaemonClient()
 	if err != nil {
 		t.Fatalf("couldn't get api client: %s", err.Error())
 	}

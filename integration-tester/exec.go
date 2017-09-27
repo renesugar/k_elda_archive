@@ -10,9 +10,8 @@ import (
 	"time"
 
 	"github.com/quilt/quilt/api"
-	"github.com/quilt/quilt/api/client"
-	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
+	testerUtil "github.com/quilt/quilt/integration-tester/util"
 	"github.com/quilt/quilt/util"
 )
 
@@ -72,13 +71,10 @@ func runBlueprint(blueprint string) (string, string, error) {
 }
 
 // runQuiltDaemon starts the daemon.
-func runQuiltDaemon(tlsDir string) {
+func runQuiltDaemon() {
 	os.Remove(api.DefaultSocket[len("unix://"):])
 
 	args := []string{"-l", "debug", "daemon"}
-	if tlsDir != "" {
-		args = append(args, "-tls-dir", tlsDir)
-	}
 	cmd := exec.Command("quilt", args...)
 	execCmd(cmd, "QUILT")
 }
@@ -160,7 +156,7 @@ func scp(host string, source string, target string) error {
 }
 
 func queryMachines() ([]db.Machine, error) {
-	c, err := client.New(api.DefaultSocket, credentials.Insecure{})
+	c, err := testerUtil.GetDefaultDaemonClient()
 	if err != nil {
 		return []db.Machine{}, err
 	}

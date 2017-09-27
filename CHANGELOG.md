@@ -5,8 +5,9 @@ Up Next
 -------------
 - Fix a bug where `quilt setup-tls` would fail when writing to a directory whose
 parent does not exist.
-- Auto-generate TLS credentials when starting the daemon if the provided
-credentials don't exist.
+- Auto-generate TLS credentials when starting the daemon if the credentials in
+`~/.quilt/tls` don't already exist.
+- Always encrypt communication with the daemon.
 
 JavaScript API-breaking changes:
 - Remove the Container.replicate() method. Users should create multiple

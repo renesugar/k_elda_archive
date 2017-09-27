@@ -2,23 +2,37 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 
 	"github.com/quilt/quilt/api"
 	"github.com/quilt/quilt/api/client"
+	cliPath "github.com/quilt/quilt/cli/path"
 	"github.com/quilt/quilt/connection"
-	"github.com/quilt/quilt/connection/credentials"
-	"github.com/quilt/quilt/connection/credentials/tls"
-	tlsIO "github.com/quilt/quilt/connection/credentials/tls/io"
-	"github.com/quilt/quilt/connection/credentials/tls/rsa"
+	"github.com/quilt/quilt/connection/tls"
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
+	"github.com/quilt/quilt/connection/tls/rsa"
 	"github.com/quilt/quilt/db"
+	"github.com/quilt/quilt/integration-tester/util"
 )
 
+// insecureConnection defines connections with no authentication.
+type insecureConnection struct{}
+
+// ClientOpts returns the `DialOption`s necessary to setup an insecure client.
+func (insecure insecureConnection) ClientOpts() []grpc.DialOption {
+	return []grpc.DialOption{grpc.WithInsecure()}
+}
+
+// ServerOpts returns the `ServerOption`s necessary to setup an insecure server.
+func (insecure insecureConnection) ServerOpts() []grpc.ServerOption {
+	return nil
+}
+
 func TestCredentials(t *testing.T) {
-	localClient, err := client.New(api.DefaultSocket, credentials.Insecure{})
+	localClient, err := util.GetDefaultDaemonClient()
 	if err != nil {
 		t.Fatalf("Failed to get local client: %s", err)
 	}
@@ -29,38 +43,16 @@ func TestCredentials(t *testing.T) {
 		t.Fatalf("Failed to query machines: %s", err)
 	}
 
-	tlsDir := os.Getenv("TLS_DIR")
-	if tlsDir == "" {
-		testInsecure(t, machines)
-	} else {
-		testTLS(t, machines, tlsDir)
-	}
-}
-
-func testInsecure(t *testing.T, machines []db.Machine) {
-	// Test that an insecure connection succeeds.
-	fmt.Println("Connecting insecurely. It should succeed.")
-	assert.NoError(t, tryCredentials(machines, credentials.Insecure{}))
-
-	// Test that connecting using TLS fails.
-	fmt.Println("Connecting with TLS. It should fail.")
-	tlsCreds, err := randomTLSCredentials()
-	assert.NoError(t, err)
-	err = tryCredentials(machines, tlsCreds)
-	assert.EqualError(t, err, "tls: first record does not look like a TLS handshake")
-}
-
-func testTLS(t *testing.T, machines []db.Machine, tlsDir string) {
 	// Test that an insecure connection fails.
 	fmt.Println("Connecting insecurely. It should fail.")
-	err := tryCredentials(machines, credentials.Insecure{})
+	err = tryCredentials(machines, insecureConnection{})
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(),
 		"rpc error: code = Unavailable desc = transport is closing")
 
 	// Test that connecting with the TLS directory credentials succeeds.
 	fmt.Println("Connecting with the daemon's TLS directory. It should succeed.")
-	tlsCreds, err := tlsIO.ReadCredentials(tlsDir)
+	tlsCreds, err := tlsIO.ReadCredentials(cliPath.DefaultTLSDir)
 	assert.NoError(t, err)
 	err = tryCredentials(machines, tlsCreds)
 	assert.NoError(t, err)

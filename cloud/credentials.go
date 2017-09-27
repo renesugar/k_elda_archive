@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/afero/sftpfs"
 	"golang.org/x/crypto/ssh"
 
-	tlsIO "github.com/quilt/quilt/connection/credentials/tls/io"
-	"github.com/quilt/quilt/connection/credentials/tls/rsa"
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
+	"github.com/quilt/quilt/connection/tls/rsa"
 	"github.com/quilt/quilt/counter"
 	"github.com/quilt/quilt/db"
 )
@@ -31,15 +31,15 @@ var credentialsCounter = counter.New("Cloud Credentials")
 // the certificate from disk, it will continue to run with the old certificates.
 // This will not cause any interruption to connections as long as the same
 // certificate authority is used by the daemon.
-func SyncCredentials(conn db.Conn, dstDir string, sshKey ssh.Signer, ca rsa.KeyPair) {
+func SyncCredentials(conn db.Conn, sshKey ssh.Signer, ca rsa.KeyPair) {
 	credentialedMachines := map[string]struct{}{}
 	for range conn.TriggerTick(30, db.MachineTable).C {
 		machines := conn.SelectFromMachine(nil)
-		syncCredentialsOnce(dstDir, sshKey, ca, machines, credentialedMachines)
+		syncCredentialsOnce(sshKey, ca, machines, credentialedMachines)
 	}
 }
 
-func syncCredentialsOnce(dstDir string, sshKey ssh.Signer, ca rsa.KeyPair,
+func syncCredentialsOnce(sshKey ssh.Signer, ca rsa.KeyPair,
 	machines []db.Machine, credentialedMachines map[string]struct{}) {
 	credentialsCounter.Inc("Install to cluster")
 	for _, m := range machines {
@@ -49,7 +49,7 @@ func syncCredentialsOnce(dstDir string, sshKey ssh.Signer, ca rsa.KeyPair,
 		}
 
 		credentialsCounter.Inc("Install " + m.PublicIP)
-		if generateAndInstallCerts(m.PublicIP, dstDir, sshKey, ca) {
+		if generateAndInstallCerts(m.PublicIP, sshKey, ca) {
 			credentialedMachines[m.PublicIP] = struct{}{}
 		}
 	}
@@ -57,7 +57,7 @@ func syncCredentialsOnce(dstDir string, sshKey ssh.Signer, ca rsa.KeyPair,
 
 // generateAndInstallCerts attempts to generate a certificate key pair and install
 // it onto host. Returns whether it was successful.
-func generateAndInstallCerts(host string, dstDir string, sshKey ssh.Signer,
+func generateAndInstallCerts(host string, sshKey ssh.Signer,
 	ca rsa.KeyPair) bool {
 	fs, err := getSftpFs(host, sshKey)
 	if err != nil {
@@ -78,13 +78,13 @@ func generateAndInstallCerts(host string, dstDir string, sshKey ssh.Signer,
 		return false
 	}
 
-	if err := fs.MkdirAll(dstDir, 0755); err != nil {
+	if err := fs.MkdirAll(tlsIO.MinionTLSDir, 0755); err != nil {
 		log.WithError(err).WithField("host", host).Error(
 			"Failed to create TLS directory. Retrying.")
 		return false
 	}
 
-	for _, f := range tlsIO.MinionFiles(dstDir, ca, signed) {
+	for _, f := range tlsIO.MinionFiles(tlsIO.MinionTLSDir, ca, signed) {
 		if err := write(fs, f.Path, f.Content, f.Mode); err != nil {
 			log.WithFields(log.Fields{
 				"error": err,

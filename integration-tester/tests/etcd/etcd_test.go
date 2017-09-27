@@ -6,14 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/quilt/quilt/api"
-	"github.com/quilt/quilt/api/client"
-	"github.com/quilt/quilt/connection/credentials"
 	"github.com/quilt/quilt/db"
+	"github.com/quilt/quilt/integration-tester/util"
 )
 
 func TestEtcd(t *testing.T) {
-	clnt, err := client.New(api.DefaultSocket, credentials.Insecure{})
+	clnt, err := util.GetDefaultDaemonClient()
 	if err != nil {
 		t.Fatalf("couldn't get api client: %s", err)
 	}
