@@ -54,7 +54,7 @@ func (sCmd *SetupTLS) AfterRun() error {
 
 // Run creates the TLS configuration.
 func (sCmd *SetupTLS) Run() int {
-	if err := util.AppFs.Mkdir(sCmd.outDir, 0700); err != nil {
+	if err := util.AppFs.MkdirAll(sCmd.outDir, 0700); err != nil {
 		log.WithError(err).Error("Failed to create output directory")
 		return 1
 	}

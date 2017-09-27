@@ -3,6 +3,8 @@ Quilt Change Log
 
 Up Next
 -------------
+- Fix a bug where `quilt setup-tls` would fail when writing to a directory whose
+parent does not exist.
 
 JavaScript API-breaking changes:
 - Remove the Container.replicate() method. Users should create multiple
