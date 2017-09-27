@@ -163,7 +163,7 @@ func (t tester) run() error {
 			return
 		}
 
-		cleanupMachines(t.namespace)
+		stop(t.namespace)
 	}()
 
 	if err := t.setup(); err != nil {

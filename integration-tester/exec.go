@@ -168,14 +168,3 @@ func queryMachines() ([]db.Machine, error) {
 
 	return c.QueryMachines()
 }
-
-func cleanupMachines(namespace string) {
-	l := log.testerLogger
-
-	l.infoln("Cleaning up first with `quilt stop`.")
-	if _, _, err := stop(namespace); err != nil {
-		l.infoln("`quilt stop` errored.")
-		l.errorln(err.Error())
-	}
-	l.infoln("Done cleaning up.")
-}
