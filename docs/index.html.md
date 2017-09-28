@@ -20,6 +20,7 @@ includes:
   - Dev
   - Security
   - FAQ
+  - Feedback
 
 search: true
 ---
