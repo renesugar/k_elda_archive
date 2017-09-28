@@ -871,16 +871,6 @@ Container.prototype.clone = function containerClone() {
   return new Container(this.hostnamePrefix, this.image, this);
 };
 
-// Create n new Containers with the same attributes.
-Container.prototype.replicate = function containerReplicate(n) {
-  let i;
-  const res = [];
-  for (i = 0; i < n; i += 1) {
-    res.push(this.clone());
-  }
-  return res;
-};
-
 Container.prototype.setEnv = function containerSetEnv(key, val) {
   this.env[key] = val;
 };

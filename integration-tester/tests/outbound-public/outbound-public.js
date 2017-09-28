@@ -4,14 +4,21 @@ const infrastructure = require('../../config/infrastructure.js');
 const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
-const connected = new quilt.Container('outbound', 'alpine', {
-  command: ['tail', '-f', '/dev/null'],
-}).replicate(infrastructure.nWorker * 2);
+const connected = [];
+for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
+  connected.push(new quilt.Container('outbound', 'alpine', {
+    command: ['tail', '-f', '/dev/null'],
+  }));
+}
+
 quilt.publicInternet.allowFrom(connected, 80);
 
-const notConnected = new quilt.Container('ignoreme', 'alpine', {
-  command: ['tail', '-f', '/dev/null'],
-}).replicate(infrastructure.nWorker * 2);
+const notConnected = [];
+for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
+  notConnected.push(new quilt.Container('ignoreme', 'alpine', {
+    command: ['tail', '-f', '/dev/null'],
+  }));
+}
 
 deployment.deploy(connected);
 deployment.deploy(notConnected);

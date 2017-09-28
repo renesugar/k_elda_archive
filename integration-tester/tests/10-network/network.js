@@ -7,19 +7,30 @@ deployment.deploy(infrastructure);
 const image = 'alpine';
 const command = ['tail', '-f', '/dev/null'];
 
-const red = new quilt.Container('red', image, { command }).replicate(5);
-const blue = new quilt.Container('blue', image, { command }).replicate(5);
-const yellow = new quilt.Container('yellow', image, { command }).replicate(5);
+const redContainers = [];
+for (let i = 0; i < 5; i += 1) {
+  redContainers.push(new quilt.Container('red', image, { command }));
+}
 
-quilt.allow(red, blue, 80);
-quilt.allow(blue, red, 80);
-quilt.allow(red, yellow, 80);
-quilt.allow(blue, yellow, 80);
+const blueContainers = [];
+for (let i = 0; i < 5; i += 1) {
+  blueContainers.push(new quilt.Container('blue', image, { command }));
+}
 
-const redLB = new quilt.LoadBalancer('red-lb', red);
-redLB.allowFrom(blue, 80);
+const yellowContainers = [];
+for (let i = 0; i < 5; i += 1) {
+  yellowContainers.push(new quilt.Container('yellow', image, { command }));
+}
 
-deployment.deploy(red);
-deployment.deploy(yellow);
-deployment.deploy(blue);
+quilt.allow(redContainers, blueContainers, 80);
+quilt.allow(blueContainers, redContainers, 80);
+quilt.allow(redContainers, yellowContainers, 80);
+quilt.allow(blueContainers, yellowContainers, 80);
+
+const redLB = new quilt.LoadBalancer('red-lb', redContainers);
+redLB.allowFrom(blueContainers, 80);
+
+deployment.deploy(redContainers);
+deployment.deploy(yellowContainers);
+deployment.deploy(blueContainers);
 deployment.deploy(redLB);

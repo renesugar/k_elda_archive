@@ -45,8 +45,11 @@ Load balance traffic.
 
 [//]: # (b1)
 ```javascript
-let webGroup = web.replicate(3);
-let webLoadBalancer = new LoadBalancer('web-lb', webGroup); // A load balancer over 3 containers.
+let webContainers = [];
+for (i = 0; i < 3; i += 1) {
+  webContainers.push(new Container('web', 'someNodejsImage'));
+}
+let webLoadBalancer = new LoadBalancer('web-lb', webContainers); // A load balancer over 3 containers.
 ```
 
 Share and import blueprints via npm.
@@ -61,8 +64,8 @@ Set up a secure network.
 
 [//]: # (b1)
 ```javascript
-allow(publicInternet, webGroup, 80); // Open the webservers' port 80 to the public internet.
-redis.allowFrom(webGroup, redis.port); // Let the web app communicate with Redis.
+allow(publicInternet, webContainers, 80); // Open the webservers' port 80 to the public internet.
+redis.allowFrom(webContainers, redis.port); // Let the web app communicate with Redis.
 ```
 
 Deploy VMs on any [supported cloud provider](#deploy-quickly-on).

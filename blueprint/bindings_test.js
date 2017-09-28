@@ -299,55 +299,6 @@ describe('Bindings', () => {
         filepathToContent: {},
       }]);
     });
-    it('replicate', () => {
-      deployment.deploy(new b.Container('host', 'image', {
-        command: ['arg'],
-      }).replicate(2));
-      checkContainers([
-        {
-          id: 'aaf63faa86e552ec4ca75ab66e1b14a5993fa29d',
-          image: new b.Image('image'),
-          command: ['arg'],
-          hostname: 'host2',
-          env: {},
-          filepathToContent: {},
-        },
-        {
-          id: '339b2dafcb9fd3c17f01930b5c4782e8d7a9c1b8',
-          image: new b.Image('image'),
-          command: ['arg'],
-          hostname: 'host3',
-          env: {},
-          filepathToContent: {},
-        },
-      ]);
-    });
-    it('replicate independent', () => {
-      const repl = new b.Container('host', 'image', {
-        command: ['arg'],
-      }).replicate(2);
-      repl[0].env.foo = 'bar';
-      repl[0].command.push('changed');
-      deployment.deploy(repl);
-      checkContainers([
-        {
-          id: '339b2dafcb9fd3c17f01930b5c4782e8d7a9c1b8',
-          image: new b.Image('image'),
-          command: ['arg'],
-          hostname: 'host3',
-          env: {},
-          filepathToContent: {},
-        },
-        {
-          id: 'b318fc1c08ee0a8d74d99f8023112f323268e479',
-          image: new b.Image('image'),
-          command: ['arg', 'changed'],
-          env: { foo: 'bar' },
-          hostname: 'host2',
-          filepathToContent: {},
-        },
-      ]);
-    });
   });
 
   describe('Container attributes', () => {

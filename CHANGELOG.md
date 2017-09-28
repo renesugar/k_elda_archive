@@ -4,6 +4,10 @@ Quilt Change Log
 Up Next
 -------------
 
+JavaScript API-breaking changes:
+- Remove the Container.replicate() method. Users should create multiple
+containers by looping.
+
 Release 0.4.0
 -------------
 
