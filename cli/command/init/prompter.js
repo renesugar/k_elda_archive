@@ -61,7 +61,7 @@ function getInquirerDescriptions(friendlyNameToValue) {
 function questionWithHelp(question, helpstring) {
   const newQuestion = Object.assign({}, question);
 
-  newQuestion.message = `(? for help) ${question.message}`;
+  newQuestion.message = `(type ? for help) ${question.message}`;
   newQuestion.validate = function validate(input) {
     if (input === '?') {
       return helpstring;

@@ -156,6 +156,9 @@ function processAnswers(provider, answers) {
   const outputPath = util.infraPath(answers[consts.name]);
   createFileFromTemplate(infraTemplateFile, config, outputPath);
   log(`Created infrastructure in ${outputPath}`);
+  log('The base infrastructure has been created! Use ' +
+    `baseInfrastructure("${answers[consts.name]}") in your blueprint to ` +
+    'use this infrastructure.');
 }
 
 /**
