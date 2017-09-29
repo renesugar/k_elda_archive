@@ -175,22 +175,6 @@ few sections, but make sure to read the section on
 application</a> to avoid getting charged for any VMs that are left running.
 </aside>
 
-## Making the Application Publicly Accessible
-By default, Quilt-managed containers are disconnected from the public internet
-and isolated from one another. This helps to keep your application secure by
-preventing all access except for what you explicitly specify.
-In order to make the Nginx container accessible
-from the public internet,
-[`nginx/app.js`](https://github.com/quilt/nginx/blob/master/app.js) explicitly
-opens port 80 on the Nginx container to the outside world:
-
-```javascript
-webTier.allowFrom(publicInternet, port);
-```
-
-Without this line, the website wouldn't be accessible from the browser.
-You can change the value of the port variable to use a port other than 80.
-
 ## Debugging Applications with Quilt
 ### SSH
 Once the containers are running, you might need to log in to change something
