@@ -38,15 +38,14 @@ find your "Access Keys" on the
 page in the AWS Management Console, and "Create New Access Key" (or use an
 existing key, if you already have one).
 
-To use another provider than Amazon EC2, check out the [Cloud Provider Configuration](#cloud-provider-configuration)
-section. Follow the instructions to find your credentials, but skip the step
-that says to run `quilt init`. The next step of this tutorial will have you run
+Alternatively, follow the instructions for [Google Cloud](http://docs.quilt.io/#google-compute-engine)
+or [DigitalOcean](http://docs.quilt.io/#digitalocean), but **come back to this
+tutorial before running `quilt init`**. In the next step, you will run
 `quilt init` with some specific inputs.
 
 ## Creating an Infrastructure
-To run any applications with Quilt, you must give Quilt access to your cloud
-provider credentials, and specify the infrastructure Quilt should launch your
-application on. The easiest way to do this is to run
+To run any applications with Quilt, you must specify the infrastructure Quilt
+should launch your application on. The easiest way to do this is to run
 
 ```console
 $ quilt init
@@ -63,9 +62,9 @@ When answering the `quilt init` questions, keep these things in mind:
 * **Credentials**: Use the provider credentials from the previous section.
 * **Size**: When choosing a VM instance size, keep in mind that some
   providers have a free tier for certain instance types.
-* **SSH key**: Make sure to add an SSH key -- we'll need it in the debugging
-  section later. It doesn't matter whether you use an existing key or let
-  Quilt generate one.
+* **SSH key**: Make sure to add an SSH key -- we'll need it in [the debugging
+  section](#debugging-applications-with-quilt) later. It doesn't matter whether
+  you use an existing key or let Quilt generate one.
 * **Worker/Master**: For this tutorial, 1 worker and 1 master is enough.
 
 <aside class="notice">If you are unsure about how to answer any of the
@@ -92,13 +91,11 @@ The blueprint in `main.js` imports the `app.js` Nginx blueprint, and then
 deploys the Nginx app to the base infrastructure you created with `quilt init`.
 
 Before running anything, you'll need to download the JavaScript dependencies of
-the blueprint.  The Nginx blueprint depends on the `@quilt/quilt` module; more
-complicated blueprints may have other dependencies as well.
-
-Navigate to the `nginx` folder, and use `npm`, the Node.js package manager, to
-install all dependencies:
+the blueprint. Navigate to the `nginx` folder, and use `npm`, the Node.js
+package manager, to install all dependencies:
 
 ```console
+$ cd nginx
 $ npm install .
 ```
 
@@ -122,9 +119,9 @@ This command tells the daemon to launch the containers described in `main.js`
 on your `default` base infrastructure.  It will return immediately, because the
 `daemon` process does the heavy lifting.
 
-It takes a few minutes from you `quilt run` until the provider has booted the
-VMs, and the application is fully up and running. To see how things are
-progressing, use Quilt's `show` command:
+It takes a few minutes to boot and configure the VMs, and for the application to
+get up and running. To see how things are progressing, use Quilt's `show`
+command:
 
 ```console
 $ quilt show
@@ -143,9 +140,11 @@ one as a worker, in Amazon.  Both machines are `disconnected`, because they're
 still being initialized. When a machine is fully booted and configured, it will
 be marked as `connected` in the `STATUS` column.
 
+Wait a few minutes.
+
 ## Accessing the Web App
-After a few minutes, when the VMs and containers are up and running, the
-output of `show` will look something like this:
+When the VMs and containers are up and running, the output of `show` will look
+something like this:
 
 ```console
 $ quilt show
@@ -158,14 +157,12 @@ bd681b3d3af7    e2401c348c78    nginx:1.13     web_tier           running    Abo
 ```
 
 The bottom row lists the container that's running `nginx` -- that is, serving
-our website. The `nginx` deployment is relatively simple and has just one
-container, but a typical application running in Quilt will have many containers
-running (one for each part of the application; for example, a different
-application might require a second container that runs a database).
+our website. The website is ready when the `nginx` container's `STATUS` is
+`running`. Don't worry if the `STATUS` is empty for a a few minutes -- this is
+normal while things are starting up.
 
-The `PUBLIC IP` in the `nginx` row shows the address you can use to access the
-website. Simply copy-paste this IP address into your browser, and a site
-with "Hello, world!" text should appear.
+To access the website, simply copy-paste the `PUBLIC IP` address from the
+`nginx` row into your browser. A site with "Hello, world!" text should appear.
 
 This is all it takes to run an application on Quilt. The remainder of this
 tutorial will cover some of the things you might want to do after your
