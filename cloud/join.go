@@ -6,11 +6,7 @@ import (
 
 	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/cloud/acl"
-	"github.com/kelda/kelda/cloud/amazon"
-	"github.com/kelda/kelda/cloud/digitalocean"
 	"github.com/kelda/kelda/cloud/foreman"
-	"github.com/kelda/kelda/cloud/google"
-	"github.com/kelda/kelda/cloud/machine"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/join"
 
@@ -172,7 +168,7 @@ func machineScore(left, right interface{}) int {
 func (cld cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
 	var dbms []db.Machine
 	for _, bpm := range bpms {
-		region := defaultRegion(db.ProviderName(bpm.Provider), bpm.Region)
+		region := bpm.Region
 		if bpm.Provider != string(cld.providerName) || region != cld.region {
 			continue
 		}
@@ -194,14 +190,6 @@ func (cld cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
 			SSHKeys:     bpm.SSHKeys,
 		}
 
-		if dbm.Size == "" {
-			dbm.Size = machine.ChooseSize(dbm.Provider, bpm.RAM, bpm.CPU)
-			if dbm.Size == "" {
-				log.Warningf("No valid size for %v.", bpm)
-				continue
-			}
-		}
-
 		if dbm.DiskSize == 0 {
 			dbm.DiskSize = defaultDiskSize
 		}
@@ -213,25 +201,6 @@ func (cld cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
 		dbms = append(dbms, dbm)
 	}
 	return dbms
-}
-
-func defaultRegion(provider db.ProviderName, region string) string {
-	if region != "" {
-		return region
-	}
-
-	switch provider {
-	case db.Amazon:
-		return amazon.DefaultRegion
-	case db.DigitalOcean:
-		return digitalocean.DefaultRegion
-	case db.Google:
-		return google.DefaultRegion
-	case db.Vagrant:
-		return ""
-	default:
-		panic(fmt.Sprintf("Unknown Cloud Provider: %s", provider))
-	}
 }
 
 func connectionStatus(m db.Machine) string {

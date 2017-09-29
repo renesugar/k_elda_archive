@@ -76,8 +76,6 @@ type Machine struct {
 	Provider    string   `json:",omitempty"`
 	Role        string   `json:",omitempty"`
 	Size        string   `json:",omitempty"`
-	CPU         Range    `json:",omitempty"`
-	RAM         Range    `json:",omitempty"`
 	DiskSize    int      `json:",omitempty"`
 	Region      string   `json:",omitempty"`
 	SSHKeys     []string `json:",omitempty"`
@@ -85,21 +83,9 @@ type Machine struct {
 	Preemptible bool     `json:",omitempty"`
 }
 
-// A Range defines a range of acceptable values for a Machine attribute
-type Range struct {
-	Min float64 `json:",omitempty"`
-	Max float64 `json:",omitempty"`
-}
-
 // PublicInternetLabel is a magic label that allows connections to or from the public
 // network.
 const PublicInternetLabel = "public"
-
-// Accepts returns true if `x` is within the range specified by `blueprintr` (include),
-// or if no max is specified and `x` is larger than `blueprintr.min`.
-func (blueprintr Range) Accepts(x float64) bool {
-	return blueprintr.Min <= x && (blueprintr.Max == 0 || x <= blueprintr.Max)
-}
 
 var lookPath = exec.LookPath
 

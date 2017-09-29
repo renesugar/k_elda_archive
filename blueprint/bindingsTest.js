@@ -18,6 +18,22 @@ describe('Bindings', () => {
     deployment = new b.Deployment();
   });
 
+  const checkSizes = function checkSizes(description, ram, cpu,
+    expected) {
+    const dummyMachine = new b.Machine({
+      ram,
+      cpu,
+      provider: 'Amazon',
+      // Specify a placeholder size so that chooseBestSize isn't called
+      // when constructing the machine, and the test can instead call
+      // chooseBestSize with it's own machine descriptions, so we can
+      // test more specific and restricted cases.
+      size: 'm3.medium',
+    });
+    dummyMachine.chooseBestSize(description);
+    expect(dummyMachine.size).to.equal(expected);
+  };
+
   const checkMachines = function checkMachines(expected) {
     const { machines } = deployment.toQuiltRepresentation();
     expect(machines).to.have.lengthOf(expected.length)
@@ -48,7 +64,66 @@ describe('Bindings', () => {
       .and.containSubset(expected);
   };
 
+  const checkInRange = function checkInRange(min, max, value, expected) {
+    const range = new b.Range(min, max);
+    expect(range.inRange(value)).to.equal(expected);
+  };
+
+  describe('Range', () => {
+    it('both ends are specified', () => {
+      checkInRange(2, 4, 3, true);
+      checkInRange(2, 3, 4, false);
+    });
+    it('no max', () => {
+      checkInRange(2, 0, 3, true);
+      checkInRange(2, 0, 1, false);
+    });
+    it('range is one number', () => {
+      checkInRange(2, 2, 2, true);
+      checkInRange(2, 2, 3, false);
+    });
+    it('value is on boundary', () => {
+      checkInRange(2, 4, 4, true);
+      checkInRange(2, 4, 2, true);
+    });
+  });
+
   describe('Machine', () => {
+    describe('chooseBestSize', () => {
+      const testDescription = [{ Size: 'size1', Price: 2, RAM: 2, CPU: 2 }];
+      const testDescriptionsMultiple = [
+        { Size: 'size2', Price: 2, RAM: 8, CPU: 4 },
+        { Size: 'size3', Price: 1, RAM: 4, CPU: 4 },
+        { Size: 'size4', Price: 0.5, RAM: 3, CPU: 4 },
+      ];
+      it('all constraints specified', () => {
+        checkSizes(testDescription, new b.Range(1, 3), new b.Range(1, 3), 'size1');
+      });
+      it('no max', () => {
+        checkSizes(testDescription, new b.Range(1, 0), new b.Range(1, 0), 'size1');
+      });
+      it('exact match', () => {
+        checkSizes(testDescription, new b.Range(2, 2), new b.Range(2, 2), 'size1');
+      });
+      it('no match', () => {
+        checkSizes(testDescription, new b.Range(3, 3), new b.Range(2, 2), '');
+      });
+      it('multiple matches (should pick cheapest)', () => {
+        checkSizes(testDescriptionsMultiple, new b.Range(4, 0), new b.Range(3, 0),
+          'size3');
+      });
+      it('multiple matches (should pick cheapest)', () => {
+        checkSizes(testDescriptionsMultiple, new b.Range(0, 0), new b.Range(0, 0),
+          'size4');
+      });
+      it('one default range (should pick only on the specified range)',
+        () => {
+          checkSizes(testDescriptionsMultiple, new b.Range(4, 4), new b.Range(0, 0),
+            'size3');
+          checkSizes(testDescriptionsMultiple, new b.Range(3, 3), new b.Range(0, 0),
+            'size4');
+        });
+    });
     it('basic', () => {
       deployment.deploy([new b.Machine({
         role: 'Worker',
@@ -70,6 +145,99 @@ describe('Bindings', () => {
         ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key1', 'key2'],
+      }]);
+    });
+    it('chooses size when provided ram and cpu', () => {
+      deployment.deploy([new b.Machine({
+        role: 'Worker',
+        provider: 'Google',
+        cpu: new b.Range(2, 4),
+        ram: new b.Range(6, 8),
+        sshKeys: ['key1', 'key2'],
+      })]);
+      checkMachines([{
+        role: 'Worker',
+        provider: 'Google',
+        size: 'n1-standard-2',
+        cpu: new b.Range(2, 4),
+        ram: new b.Range(6, 8),
+      }]);
+    });
+    it('chooses size when neither ram nor cpu are provided', () => {
+      deployment.deploy([new b.Machine({
+        role: 'Master',
+        provider: 'Amazon',
+        sshKeys: ['key1', 'key2'],
+      })]);
+      checkMachines([{
+        role: 'Master',
+        provider: 'Amazon',
+        size: 'm3.medium',
+      }]);
+    });
+    it('chooses default region when region is not provided ' +
+       'for Google', () => {
+      deployment.deploy([new b.Machine({
+        role: 'Master',
+        provider: 'Google',
+        sshKeys: ['key1', 'key2'],
+      })]);
+      checkMachines([{
+        role: 'Master',
+        provider: 'Google',
+        region: 'us-east1-b',
+      }]);
+    });
+    it('chooses default region when region is not provided ' +
+       'for Amazon', () => {
+      deployment.deploy([new b.Machine({
+        role: 'Master',
+        provider: 'Amazon',
+        sshKeys: ['key1', 'key2'],
+      })]);
+      checkMachines([{
+        role: 'Master',
+        provider: 'Amazon',
+        region: 'us-west-1',
+      }]);
+    });
+    it('chooses default region when region is not provided ' +
+       'for DigitalOcean', () => {
+      deployment.deploy([new b.Machine({
+        role: 'Master',
+        provider: 'DigitalOcean',
+        sshKeys: ['key1', 'key2'],
+      })]);
+      checkMachines([{
+        role: 'Master',
+        provider: 'DigitalOcean',
+        region: 'sfo1',
+      }]);
+    });
+    it('uses empty string as region for Vagrant', () => {
+      deployment.deploy([new b.Machine({
+        role: 'Master',
+        provider: 'Vagrant',
+        sshKeys: ['key1', 'key2'],
+      })]);
+      checkMachines([{
+        role: 'Master',
+        provider: 'Vagrant',
+        region: '',
+      }]);
+    });
+    it('uses provided region when region is provided', () => {
+      deployment.deploy([new b.Machine({
+        role: 'Master',
+        provider: 'Amazon',
+        sshKeys: ['key1', 'key2'],
+        region: 'eu-west-1',
+      })]);
+      checkMachines([{
+        role: 'Master',
+        provider: 'Amazon',
+        size: 'm3.medium',
+        region: 'eu-west-1',
       }]);
     });
     it('errors when passed invalid optional arguments', () => {
@@ -107,12 +275,12 @@ describe('Bindings', () => {
       deployment.deploy(baseMachine.asMaster().replicate(2));
       checkMachines([
         {
-          id: '38f289007e41382ce4e2773508609674bac7df52',
+          id: '9217e915558ab1e77e4421f6e7faa214c42de6e2',
           role: 'Master',
           provider: 'Amazon',
         },
         {
-          id: 'e23719b2160e4b42c6bbca72567220833fac68da',
+          id: 'cb0fc44398aa0f311401d40f1eff25533953b365',
           role: 'Master',
           provider: 'Amazon',
         },
@@ -125,13 +293,13 @@ describe('Bindings', () => {
       deployment.deploy(machines);
       checkMachines([
         {
-          id: '38f289007e41382ce4e2773508609674bac7df52',
+          id: '9217e915558ab1e77e4421f6e7faa214c42de6e2',
           role: 'Master',
           provider: 'Amazon',
           sshKeys: ['key'],
         },
         {
-          id: 'e23719b2160e4b42c6bbca72567220833fac68da',
+          id: 'cb0fc44398aa0f311401d40f1eff25533953b365',
           role: 'Master',
           provider: 'Amazon',
         },
@@ -144,7 +312,7 @@ describe('Bindings', () => {
       });
       deployment.deploy(baseMachine.asMaster());
       checkMachines([{
-        id: 'bc2c5392f98b605e90007056e580a42c0c3f960d',
+        id: '39099b7442602dd8308cebe45f8e83088f15291c',
         role: 'Master',
         provider: 'Amazon',
         floatingIp: 'xxx.xxx.xxx.xxx',
@@ -157,7 +325,7 @@ describe('Bindings', () => {
         preemptible: true,
       }).asMaster());
       checkMachines([{
-        id: '893cfbfaccf6aa6e518f1757dadb07ffb936082f',
+        id: '27ec2ee9b1ff9d5d87470bc8d25efa63bcb0b43e',
         role: 'Master',
         provider: 'Amazon',
         preemptible: true,
@@ -663,8 +831,8 @@ describe('Bindings', () => {
         region: '',
       })]);
       expect(deploy).to.throw('All machines must have the same provider and region. '
-        + 'Found providers \'Amazon\' in region \'\' and \'DigitalOcean\' in '
-        + 'region \'\'.');
+        + 'Found providers \'Amazon\' in region \'us-west-1\' and \'DigitalOcean\' in '
+        + 'region \'sfo1\'.');
     });
   });
   describe('Deployment', () => {
@@ -700,12 +868,12 @@ describe('Bindings', () => {
         // The ID is included here because otherwise the containSubset function
         // used in checkMachines will return true, even if there is only one
         // worker and two masters in the actual output.
-        id: '581b4508454ed983d027d699777004feb5c28de3',
+        id: 'a1305bb64dcea38e12e152c59f07150765ad2c6f',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
       }, {
-        id: '2f822f1272e60e357b679cc520134dbc38d40daa',
+        id: '856af7c5cab0db7a2ecc692194840258a8ec81d1',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',

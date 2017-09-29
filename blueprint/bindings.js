@@ -9,6 +9,17 @@ const os = require('os');
 // Use `let` to enable mocking of `fs` in tests.
 let fs = require('fs'); // eslint-disable-line prefer-const
 
+const googleDescriptions = require('./googleDescriptions');
+const amazonDescriptions = require('./amazonDescriptions');
+const digitalOceanDescriptions = require('./digitalOceanDescriptions');
+
+const providerDefaultRegions = {
+  Amazon: 'us-west-1',
+  Google: 'us-east1-b',
+  DigitalOcean: 'sfo1',
+  Vagrant: '',
+};
+
 const githubCache = {};
 const objectHasKey = Object.prototype.hasOwnProperty;
 
@@ -672,6 +683,95 @@ function getBoolean(argName, arg) {
 }
 
 /**
+ * Sets the machine's size attribute to an instance size (e.g., m2.xlarge),
+ * based on the Machine's specified provider, region, and hardware. Throw
+ * an error if provider is not valid or given machine requirements cannot
+ * be satisfied by any size.
+ * @private
+ * @returns {void}
+ */
+Machine.prototype.chooseSize = function machineChooseSize() {
+  if (this.size !== '') return;
+  switch (this.provider) {
+    case 'Amazon':
+      this.chooseBestSize(amazonDescriptions.Descriptions);
+      break;
+    case 'DigitalOcean':
+      this.chooseBestSize(digitalOceanDescriptions.Descriptions);
+      break;
+    case 'Google':
+      this.chooseBestSize(googleDescriptions.Descriptions);
+      break;
+    case 'Vagrant':
+      this.vagrantSize();
+      break;
+    default:
+      throw new Error(`Unknown Cloud Provider: ${this.provider}`);
+  }
+  if (this.size === '') {
+    throw new Error(`No valid size for Machine ${stringify(this)}`);
+  }
+};
+
+/**
+ * Sets the machine's region using the default region of the specified provider
+ * Throw an error if provider is not valid or given machine requirements cannot
+ * be satisfied by any size.
+ * @private
+ * @returns {void}
+ */
+Machine.prototype.chooseRegion = function machineChooseRegion() {
+  if (this.region !== '') return;
+  if (this.provider in providerDefaultRegions) {
+    this.region = providerDefaultRegions[this.provider];
+  } else {
+    throw new Error(`Unknown Cloud Provider: ${this.provider}`);
+  }
+};
+
+/**
+ * Iterates through all the decriptions for a given provider, and returns
+ * the cheapest option that fits the user's requirements.
+ * @private
+ * @param {description[]} providerDescriptions - Array of descriptions of
+ *   a provider.
+ * @returns {string} The best size that fits the user's requirements if
+ *   provider is available in Quilt, otherwise throws an error.
+ */
+Machine.prototype.chooseBestSize = function machineChooseBestSize(
+  providerDescriptions) {
+  let bestSize = '';
+  let bestPrice = Infinity;
+  for (let i = 0; i < providerDescriptions.length; i += 1) {
+    const description = providerDescriptions[i];
+    if (this.ram.inRange(description.RAM) &&
+        this.cpu.inRange(description.CPU) &&
+        (bestSize === '' || description.Price < bestPrice)) {
+      bestSize = description.Size;
+      bestPrice = description.Price;
+    }
+  }
+  this.size = bestSize;
+};
+
+/**
+ * Rounds up RAM and CPU requirements to be at least one for Vagrant.
+ * @private
+ * @returns {string} The rounded up Vagrant size.
+ */
+Machine.prototype.vagrantSize = function machineVagrantSize() {
+  let ram = this.ram.min;
+  if (ram < 1) {
+    ram = 1;
+  }
+  let cpu = this.cpu.min;
+  if (cpu < 1) {
+    cpu = 1;
+  }
+  this.size = `${ram},${cpu}`;
+};
+
+/**
  * Creates a new Machine object, which represents a machine to be deployed.
  * @constructor
  *
@@ -740,6 +840,9 @@ function Machine(optionalArgs) {
   this.preemptible = getBoolean('preemptible', optionalArgs.preemptible);
 
   checkExtraKeys(optionalArgs, this);
+
+  this.chooseSize();
+  this.chooseRegion();
 }
 
 Machine.prototype.deploy = function machineDeploy(deployment) {
@@ -1202,6 +1305,16 @@ function Range(min, max) {
   this.min = min;
   this.max = max;
 }
+
+/**
+ * Checks whether x falls in the Range.
+ * @private
+ * @param {integer} x - The integer to check.
+ * @returns {boolean} True if x is in the Range, and False otherwise.
+ */
+Range.prototype.inRange = function inRange(x) {
+  return this.min <= x && (this.max === 0 || x <= this.max);
+};
 
 const PortRange = Range;
 

@@ -295,21 +295,6 @@ func TestDesiredACLs(t *testing.T) {
 	assert.Equal(t, exp, acls)
 }
 
-func TestDefaultRegion(t *testing.T) {
-	assert.Equal(t, "foo", defaultRegion("Amazon", "foo"))
-	assert.Equal(t, "us-west-1", defaultRegion("Amazon", ""))
-	assert.Equal(t, "sfo1", defaultRegion("DigitalOcean", ""))
-	assert.Equal(t, "us-east1-b", defaultRegion("Google", ""))
-	assert.Equal(t, "", defaultRegion("Vagrant", ""))
-
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Expected panic")
-		}
-	}()
-	defaultRegion("Panic", "")
-}
-
 func scrubID(dbms []db.Machine) (res []db.Machine) {
 	for _, dbm := range dbms {
 		dbm.ID = 0
