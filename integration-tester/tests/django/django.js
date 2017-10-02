@@ -9,6 +9,6 @@ deployment.deploy(infrastructure);
 
 const mongo = new Mongo(3);
 const django = new Django(3, 'quilt/django-polls', mongo);
-const proxy = haproxy.simpleLoadBalancer(django.cluster);
+const proxy = haproxy.simpleLoadBalancer(django.containers);
 proxy.allowFrom(quilt.publicInternet, 80);
 deployment.deploy([django, mongo, proxy]);
