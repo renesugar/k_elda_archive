@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "MIT",
   "dependencies": {
-    "@quilt/django": "quilt/django",
+    "@quilt/django": "quilt/django#35c183298ebbd9bd524837f15a48ee11a9efa770",
     "@quilt/elasticsearch": "quilt/elasticsearch",
     "@quilt/etcd": "quilt/etcd",
     "@quilt/haproxy": "quilt/haproxy",
