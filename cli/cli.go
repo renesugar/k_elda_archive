@@ -3,6 +3,7 @@ package cli
 import (
 	"flag"
 	"os"
+	"sort"
 
 	"github.com/kelda/kelda/cli/command"
 	"github.com/kelda/kelda/cli/command/inspect"
@@ -58,6 +59,16 @@ func Run(cmdName string, args []string) {
 func HasSubcommand(name string) bool {
 	_, ok := commands[name]
 	return ok
+}
+
+// GetSubcommands returns a slice containing the names of all subcommands
+func GetSubcommands() []string {
+	var result []string
+	for cmd := range commands {
+		result = append(result, cmd)
+	}
+	sort.Strings(result)
+	return result
 }
 
 func parseSubcommand(name string, cmd command.SubCommand, args []string) (

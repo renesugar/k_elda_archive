@@ -14,6 +14,7 @@ import (
 
 	"google.golang.org/grpc/grpclog"
 
+	"github.com/mitchellh/go-wordwrap"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,13 +26,10 @@ To see the help text for a given command:
 kelda COMMAND --help
 
 Commands:
-  counters, daemon, debug-logs, init, inspect, logs, minion, show, run, ssh,
-  stop, version`
+`
 
 func main() {
-	flag.Usage = func() {
-		util.PrintUsageString(keldaCommands, keldaExplanation, nil)
-	}
+	flag.Usage = printUsageString
 	var logLevelInfo = "logging level (debug, info, warn, error, fatal, or panic)"
 	var debugInfo = "turn on debug logging"
 
@@ -77,6 +75,17 @@ func main() {
 	} else {
 		usage()
 	}
+}
+
+// printUsageString generates and prints a usage string based off of the
+// subcommands defined in cli.go.
+func printUsageString() {
+	subcommands := strings.Join(cli.GetSubcommands(), ", ")
+	subcommands = wordwrap.WrapString(subcommands, 78)
+	subcommands = strings.Replace(subcommands, "\n", "\n  ", -1)
+
+	explanation := keldaExplanation + "  " + subcommands
+	util.PrintUsageString(keldaCommands, explanation, nil)
 }
 
 func usage() {
