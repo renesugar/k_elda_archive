@@ -9,6 +9,6 @@
       "no-use-before-define": ["error", {"functions": false, "classes": false}],
       "import/no-extraneous-dependencies":
         ["error", {"devDependencies": ["**/*test.js"]}],
-      "valid-jsdoc": ["error"]
+      "valid-jsdoc": ["error", {"prefer": {"return": "returns" }}]
     }
 }
