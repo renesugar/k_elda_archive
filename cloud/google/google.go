@@ -36,11 +36,6 @@ const ephemeralIPName = "External NAT"
 const floatingIPName = "Floating IP"
 
 const computeBaseURL string = "https://www.googleapis.com/compute/v1/projects"
-const (
-	// These are the various types of Operations that the GCE API returns
-	local = iota
-	global
-)
 
 // The Provider objects represents a connection to GCE.
 type Provider struct {
@@ -210,21 +205,15 @@ func (prvdr *Provider) wait(ids []string, shouldLive bool) error {
 
 // Blocking wait with a hardcoded timeout.
 //
-// Waits on operations, the type of which is indicated by 'domain'. All
-// operations must be of the same 'domain'
-func (prvdr *Provider) operationWait(ops []*compute.Operation, domain int) (err error) {
-	if domain != local && domain != global {
-		return fmt.Errorf("domain not recognized: %d", domain)
-	}
-
+// Waits for the given operations to all complete.
+func (prvdr *Provider) operationWait(ops []*compute.Operation) (err error) {
 	return util.BackoffWaitFor(func() bool {
 		for _, op := range ops {
 			var res *compute.Operation
-			switch domain {
-			case local:
+			if op.Zone != "" {
 				res, err = prvdr.GetZoneOperation(
 					path.Base(op.Zone), op.Name)
-			case global:
+			} else {
 				res, err = prvdr.GetGlobalOperation(op.Name)
 			}
 
@@ -429,7 +418,7 @@ func (prvdr *Provider) SetACLs(acls []acl.ACL) error {
 			}
 		}
 		if err := prvdr.operationWait(
-			[]*compute.Operation{op}, global); err != nil {
+			[]*compute.Operation{op}); err != nil {
 			return err
 		}
 	}
@@ -505,7 +494,7 @@ func (prvdr *Provider) getCreateFirewall(minPort int, maxPort int) (
 		return nil, err
 	}
 
-	if err := prvdr.operationWait([]*compute.Operation{op}, global); err != nil {
+	if err := prvdr.operationWait([]*compute.Operation{op}); err != nil {
 		return nil, err
 	}
 
@@ -597,7 +586,7 @@ func (prvdr *Provider) createNetwork() error {
 		return err
 	}
 
-	err = prvdr.operationWait([]*compute.Operation{op}, global)
+	err = prvdr.operationWait([]*compute.Operation{op})
 	if err != nil {
 		return err
 	}
@@ -623,7 +612,7 @@ func (prvdr *Provider) createInternalFirewall() error {
 		ops = append(ops, op)
 	}
 
-	return prvdr.operationWait(ops, global)
+	return prvdr.operationWait(ops)
 }
 
 func networkURL(networkName string) string {
