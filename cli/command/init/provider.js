@@ -69,32 +69,28 @@ class Provider {
   }
 
   /**
-    * Returns a map where the keys are the keys needed by this provider's
-    * credentials template, and the values are the user friendly descriptions.
-    *
-    * @return {Object.<string, string>}
+    * @return {Object.<string, string>} A map where the keys are the keys needed
+    *   by this provider's credentials template, and the values are the user friendly
+    *   descriptions.
     */
   getCredsKeys() {
     return this.credsKeys || {};
   }
 
   /**
-    * Returns an object with suggested sizes for this provider. The keys are
-    * user friendly descriptions (e.g. 'small') of the size, and the values are
-    * the actual size names used by the provider.
-    *
-    * @return {Object.<string, string>}
+    * @return {Object.<string, string>} An object with suggested sizes for this
+    *   provider. The keys are user friendly descriptions (e.g. 'small') of the
+    *   size, and the values are the actual size names used by the provider.
     */
   getSizes() {
     return this.sizes || {};
   }
 
   /**
-    * Returns an object with supported sizes for this provider. The keys are
-    * user friendly descriptions (e.g. 'N. California') of the region, and the
-    * values are the actual region names used by the provider (us-west-1).
-    *
-    * @return {Object.<string, string>}
+    * @return {Object.<string, string>} An object with supported sizes for this
+    * provider. The keys are user friendly descriptions (e.g. 'N. California')
+    * of the region, and the values are the actual region names used by the
+    * provider (us-west-1).
     */
   getRegions() {
     return this.regions || {};

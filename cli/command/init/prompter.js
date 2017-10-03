@@ -47,7 +47,7 @@ function isNumber(input) {
   * `{small: 't2.micro'}` would convert to
   * `[{name: 'small (t2.micro)', value: 't2.micro'}].
   *
-  * @param {Object.<string, string>} info The data to make descriptions for.
+  * @param {Object.<string, string>} friendlyNameToValue - The data to make descriptions for.
   * @return {Object.<string, string>[]} An array of {name, val} objects.
   *
   */

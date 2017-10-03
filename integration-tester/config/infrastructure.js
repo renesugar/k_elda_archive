@@ -2,6 +2,7 @@ const { Machine } = require('@quilt/quilt');
 
 /**
  * Handles deploying the necessary infrastructure to run the tests.
+ * @constructor
  * @param {number} nWorker Number of workers to use to run the tests
  */
 function MachineDeployer(nWorker) {
