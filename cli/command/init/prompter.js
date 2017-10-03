@@ -11,7 +11,7 @@ const Provider = require('./provider');
 /**
   * Return a list of all provider names as listed in providers.json.
   *
-  * @return {string[]} A list of provider names.
+  * @returns {string[]} A list of provider names.
   */
 function allProviders() {
   const providerFile = path.join(__dirname, 'providers.json');
@@ -21,7 +21,7 @@ function allProviders() {
 /**
   * Check if the Quilt SSH keys exists.
   *
-  * @return {boolean} True iff both the private and public Quilt SSH keys exist.
+  * @returns {boolean} True iff both the private and public Quilt SSH keys exist.
   */
 function quiltSshKeyExists() {
   return (fs.existsSync(consts.quiltSshKeyLocationPublic) &&
@@ -32,7 +32,7 @@ function quiltSshKeyExists() {
   * Throw an error if the input string does not contain a number.
   *
   * @param {string} input The string to check.
-  * @return {void}
+  * @returns {void}
   */
 function isNumber(input) {
   if (!(/^\d+$/.test(input))) {
@@ -48,7 +48,7 @@ function isNumber(input) {
   * `[{name: 'small (t2.micro)', value: 't2.micro'}].
   *
   * @param {Object.<string, string>} friendlyNameToValue - The data to make descriptions for.
-  * @return {Object.<string, string>[]} An array of {name, val} objects.
+  * @returns {Object.<string, string>[]} An array of {name, val} objects.
   *
   */
 function getInquirerDescriptions(friendlyNameToValue) {
@@ -80,7 +80,7 @@ function questionWithHelp(question, helpstring) {
   * Prompt the user for a valid infrastructure name. Users will use this name in
   * their blueprints to get the right infrastructure.
   *
-  * @return {Promise} A promise that contains the user's answers.
+  * @returns {Promise} A promise that contains the user's answers.
   */
 function infraNamePrompt() {
   const questions = [
@@ -108,7 +108,7 @@ function infraNamePrompt() {
   /**
     * Repeatedly prompt for a name until we get a valid answer.
     *
-    * @return {Promise} A promise that contains the user's answers
+    * @returns {Promise} A promise that contains the user's answers
     */
   function confirmIfOverwrite() {
     return inquirer.prompt(questions).then((answers) => {
@@ -124,7 +124,7 @@ function infraNamePrompt() {
 /**
   * Prompt the user for for their desired provider.
   *
-  * @return {Promise} A promise that contains the user's answer.
+  * @returns {Promise} A promise that contains the user's answer.
   */
 function getProviderPrompt() {
   const questions = [
@@ -145,7 +145,7 @@ function getProviderPrompt() {
   * Ask the user about SSH keys for the infrastructure.
   *
   * @param {Provider} provider The chosen provider.
-  * @return {Promise} A promise that contains the user's answers.
+  * @returns {Promise} A promise that contains the user's answers.
   */
 function sshKeyPrompts(provider) {
   if (!provider.requiresSsh) return { [consts.sshKeyOption]: consts.skip };
@@ -190,7 +190,7 @@ function sshKeyPrompts(provider) {
   * Ask the user about provider credentials.
   *
   * @param {Provider} provider The provider to set up credentials for.
-  * @return {Promise} A promise that contains the user's answers.
+  * @returns {Promise} A promise that contains the user's answers.
   */
 function credentialsPrompts(provider) {
   if (!provider.requiresCreds()) {
@@ -275,7 +275,7 @@ function credentialsPrompts(provider) {
   * Ask the user for machine configuration, such as size and region.
   *
   * @param {Provider} provider The provider chosen for this infrastructure.
-  * @return {Promise} A promise that contains the user's answers.
+  * @returns {Promise} A promise that contains the user's answers.
   */
 function machineConfigPrompts(provider) {
   const regionChoices = getInquirerDescriptions(provider.getRegions());
@@ -372,7 +372,7 @@ function machineConfigPrompts(provider) {
 /**
   * Ask for the desired number of machines.
   *
-  * @return {Promise} A promise that contains the user's answers.
+  * @returns {Promise} A promise that contains the user's answers.
   */
 function machineCountPrompts() {
   const questions = [
@@ -405,7 +405,7 @@ function machineCountPrompts() {
  * Prompt the user to get the information needed to create the new
  * infrastructure.
  *
- * @return {Promise} A promise that contains the user's answers.
+ * @returns {Promise} A promise that contains the user's answers.
  */
 function promptUser() {
   const answers = {};

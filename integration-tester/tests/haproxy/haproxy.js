@@ -7,7 +7,7 @@ const indexPath = '/usr/share/nginx/html/index.html';
 /**
  * Returns a new Container whose index file contains the given content.
  * @param {string} content - The contents to put in the container's index file.
- * @return {Container} - A container with given content in its index file.
+ * @returns {Container} - A container with given content in its index file.
  */
 function containerWithContent(content) {
   return new quilt.Container('web', 'nginx', {

@@ -59,7 +59,7 @@ function getInfraPath(infraName) {
  * @private
  *
  * @param {string} infraPath - Absolute path to the infrastructure blueprint.
- * @return {Deployment} - The Deployment exported by the infrastructure
+ * @returns {Deployment} - The Deployment exported by the infrastructure
  *  blueprint.
  */
 function getInfraDeployment(infraPath) {

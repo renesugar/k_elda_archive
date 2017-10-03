@@ -30,7 +30,7 @@ const infraTemplateFile = path.join(templateDir, 'inf_template');
   * @param {Object.<string, string>} context The context to apply to the
   *   template.
   * @param {string} destination The path to write the result to.
-  * @return {void}
+  * @returns {void}
   */
 function createFileFromTemplate(templateLocation, context, destination) {
   if (!fs.existsSync(templateLocation)) {
@@ -46,7 +46,7 @@ function createFileFromTemplate(templateLocation, context, destination) {
   * Create an SSH key pair in the default Quilt SSH key location. Will throw
   * an error if the key creation fails.
   *
-  * @return {void}
+  * @returns {void}
   */
 function sshGenerateKeyPair() {
   try {
@@ -65,7 +65,7 @@ function sshGenerateKeyPair() {
   *
   * @param {Provider} provider The chosen provider.
   * @param {Promise} answers A promise that contains the user's answers.
-  * @return {void}
+  * @returns {void}
   */
 function writeProviderCreds(provider, answers) {
   if (!provider.requiresCreds() ||
@@ -99,7 +99,7 @@ function writeProviderCreds(provider, answers) {
   * a newly Quilt-generated SSH key, or an existing SSH key at user-given path.
   *
   * @param {Promise} answers promise that contains the user's answers.
-  * @return {string} The relevant SSH key.
+  * @returns {string} The relevant SSH key.
   */
 function getSshKey(answers) {
   let keyPath;
@@ -130,7 +130,7 @@ function getSshKey(answers) {
   *
   * @param {Provider} provider The chosen provider.
   * @param {Promise} answers A promise that contains the user's answers.
-  * @return {void}
+  * @returns {void}
   */
 function processAnswers(provider, answers) {
   try {
@@ -163,7 +163,7 @@ function processAnswers(provider, answers) {
 
 /**
   * Get user input, and process the answers.
-  * @return {void}
+  * @returns {void}
   */
 function run() {
   prompter.promptUser()

@@ -62,14 +62,14 @@ class Provider {
   }
 
   /**
-    * @return {string} The name of this provider.
+    * @returns {string} The name of this provider.
     */
   getName() {
     return this.name;
   }
 
   /**
-    * @return {Object.<string, string>} A map where the keys are the keys needed
+    * @returns {Object.<string, string>} A map where the keys are the keys needed
     *   by this provider's credentials template, and the values are the user friendly
     *   descriptions.
     */
@@ -78,7 +78,7 @@ class Provider {
   }
 
   /**
-    * @return {Object.<string, string>} An object with suggested sizes for this
+    * @returns {Object.<string, string>} An object with suggested sizes for this
     *   provider. The keys are user friendly descriptions (e.g. 'small') of the
     *   size, and the values are the actual size names used by the provider.
     */
@@ -87,7 +87,7 @@ class Provider {
   }
 
   /**
-    * @return {Object.<string, string>} An object with supported sizes for this
+    * @returns {Object.<string, string>} An object with supported sizes for this
     * provider. The keys are user friendly descriptions (e.g. 'N. California')
     * of the region, and the values are the actual region names used by the
     * provider (us-west-1).
@@ -100,21 +100,21 @@ class Provider {
     * Returns the name of the file that contains the credentials template.
     * Note, this is only the file name, not the entire path.
     *
-    * @return {string} The file name.
+    * @returns {string} The file name.
     */
   getCredsTemplate() {
     return this.credsTemplate || '';
   }
 
   /**
-    * @return {boolean} True if this provider requires credentials, else false.
+    * @returns {boolean} True if this provider requires credentials, else false.
     */
   requiresCreds() {
     return this.credsLocation !== undefined;
   }
 
   /**
-    * @return {boolean} True if there exist credentials for this provider in
+    * @returns {boolean} True if there exist credentials for this provider in
     *   the default location, otherwise false.
     */
   credsExist() {
@@ -125,7 +125,7 @@ class Provider {
     * If the provider uses credentials, return the path where the credentials
     * should be.
     *
-    * @return {string} An absolute path to the credentials, if needed. Otherwise
+    * @returns {string} An absolute path to the credentials, if needed. Otherwise
     *   an empty string.
     */
   getCredsPath() {
