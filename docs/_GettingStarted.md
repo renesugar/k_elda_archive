@@ -87,7 +87,7 @@ downloading the blueprint using git:
 $ git clone https://github.com/quilt/nginx.git
 ```
 
-The blueprint in `main.js` imports the `app.js` Nginx blueprint, and then
+The blueprint in `nginxExample.js` imports the `nginx.js` Nginx blueprint, and then
 deploys the Nginx app to the base infrastructure you created with `quilt init`.
 
 Before running anything, you'll need to download the JavaScript dependencies of
@@ -112,12 +112,12 @@ Leave this running. In another terminal window, navigate to the `nginx`
 directory and run the blueprint:
 
 ```console
-$ quilt run ./main.js
+$ quilt run ./nginxExample.js
 ```
 
-This command tells the daemon to launch the containers described in `main.js`
-on your `default` base infrastructure.  It will return immediately, because the
-`daemon` process does the heavy lifting.
+This command tells the daemon to launch the containers described in
+`nginxExample.js` on your `default` base infrastructure.  It will return
+immediately, because the `daemon` process does the heavy lifting.
 
 It takes a few minutes to boot and configure the VMs, and for the application to
 get up and running. To see how things are progressing, use Quilt's `show`
@@ -215,7 +215,7 @@ can change the "Hello, World!" message).  Now, with the daemon still running,
 re-deploy the webpage with Quilt:
 
 ```console
-$ quilt run ./main.js
+$ quilt run ./nginxExample.js
 ```
 
 Quilt automatically detects the changes to the deployment, and will update it
