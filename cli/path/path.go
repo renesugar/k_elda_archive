@@ -14,4 +14,8 @@ var (
 
 	// DefaultTLSDir is the default location for users to store TLS credentials.
 	DefaultTLSDir = filepath.Join(quiltHome, "tls")
+
+	// DefaultSSHKeyPath is the default filepath where the private SSH key used
+	// to access Quilt will be stored.
+	DefaultSSHKeyPath = filepath.Join(quiltHome, "ssh_key")
 )

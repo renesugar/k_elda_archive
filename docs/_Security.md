@@ -62,15 +62,3 @@ Used for connecting to the cluster.
 Used for connecting to the cluster.
 
 Other files in the directory are ignored by Quilt.
-
-### admin-ssh-private-key
-The daemon installs keys using SFTP, so the daemon requires SSH access to the
-machines. By default, the daemon generates an in-memory key to use for distributing
-keys. A key can be specified from the filesystem using the
-`admin-ssh-private-key` flag.
-
-For example,
-
-```console
-$ quilt daemon -admin-ssh-private-key ~/.quilt/id_rsa
-```

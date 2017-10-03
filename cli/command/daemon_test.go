@@ -10,16 +10,6 @@ import (
 	"github.com/quilt/quilt/util"
 )
 
-func TestDaemonFlags(t *testing.T) {
-	t.Parallel()
-
-	cmd := NewDaemonCommand()
-	err := parseHelper(cmd, []string{"-admin-ssh-private-key", "admin"})
-
-	assert.NoError(t, err)
-	assert.Equal(t, "admin", cmd.adminSSHPrivateKey)
-}
-
 func TestParsePrivateKey(t *testing.T) {
 	util.AppFs = afero.NewMemMapFs()
 
@@ -88,5 +78,17 @@ func TestSetupTLS(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = tlsIO.ReadCredentials(tlsDir)
+	assert.NoError(t, err)
+}
+
+// Test that the generated file can be parsed.
+func TestSetupSSHKey(t *testing.T) {
+	util.AppFs = afero.NewMemMapFs()
+
+	keyPath := "ssh_key"
+	err := setupSSHKey(keyPath)
+	assert.NoError(t, err)
+
+	_, err = parseSSHPrivateKey(keyPath)
 	assert.NoError(t, err)
 }

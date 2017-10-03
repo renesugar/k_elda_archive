@@ -3,10 +3,13 @@ package command
 import (
 	"crypto/rand"
 	goRSA "crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"golang.org/x/crypto/ssh"
 
@@ -25,8 +28,6 @@ import (
 
 // Daemon contains the options for running the Quilt daemon.
 type Daemon struct {
-	adminSSHPrivateKey string
-
 	*connectionFlags
 }
 
@@ -43,9 +44,6 @@ var daemonExplanation = "Start the quilt daemon, which listens for quilt API req
 // InstallFlags sets up parsing for command line flags
 func (dCmd *Daemon) InstallFlags(flags *flag.FlagSet) {
 	dCmd.connectionFlags.InstallFlags(flags)
-	flags.StringVar(&dCmd.adminSSHPrivateKey, "admin-ssh-private-key", "",
-		"if specified, all machines will be configured to allow access from "+
-			"this private SSH key")
 	flags.Usage = func() {
 		util.PrintUsageString(daemonCommands, daemonExplanation, flags)
 	}
@@ -82,25 +80,20 @@ func (dCmd *Daemon) Run() int {
 		}
 	}
 
-	var sshKey ssh.Signer
-	if dCmd.adminSSHPrivateKey != "" {
-		var err error
-		sshKey, err = parseSSHPrivateKey(dCmd.adminSSHPrivateKey)
-		if err != nil {
-			log.WithError(err).Errorf(
-				"Failed to parse private key %s", dCmd.adminSSHPrivateKey)
+	if _, err := util.Stat(cliPath.DefaultSSHKeyPath); os.IsNotExist(err) {
+		log.WithField("path", cliPath.DefaultSSHKeyPath).Info(
+			"Auto-generating Quilt SSH key")
+		if err := setupSSHKey(cliPath.DefaultSSHKeyPath); err != nil {
+			log.WithError(err).Error("SSH key generation failed")
 			return 1
 		}
-	} else {
-		log.Info("No admin key supplied, which is required " +
-			"to copy TLS credentials to the cluster. " +
-			"Auto-generating an in-memory key.")
-		var err error
-		sshKey, err = newSSHPrivateKey()
-		if err != nil {
-			log.WithError(err).Error("Failed to generate SSH key")
-			return 1
-		}
+	}
+
+	sshKey, err := parseSSHPrivateKey(cliPath.DefaultSSHKeyPath)
+	if err != nil {
+		log.WithError(err).WithField("path", cliPath.DefaultSSHKeyPath).Error(
+			"Failed to parse private key")
+		return 1
 	}
 
 	creds, err := tlsIO.ReadCredentials(cliPath.DefaultTLSDir)
@@ -123,15 +116,6 @@ func (dCmd *Daemon) Run() int {
 	go cloud.SyncCredentials(conn, sshKey, ca)
 	cloud.Run(conn, creds)
 	return 0
-}
-
-func newSSHPrivateKey() (ssh.Signer, error) {
-	key, err := goRSA.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil, err
-	}
-
-	return ssh.NewSignerFromKey(key)
 }
 
 func parseSSHPrivateKey(path string) (ssh.Signer, error) {
@@ -175,5 +159,28 @@ func setupTLS(outDir string) error {
 		}
 	}
 
+	return nil
+}
+
+// setupSSHKey generates a new RSA key for use with SSH, and writes it to disk.
+func setupSSHKey(outPath string) error {
+	if err := util.AppFs.MkdirAll(filepath.Dir(outPath), 0700); err != nil {
+		return fmt.Errorf("failed to create output directory %s: %s",
+			outPath, err)
+	}
+
+	key, err := goRSA.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("failed to generate SSH key: %s", err)
+	}
+
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+	err = util.WriteFile(outPath, privateKeyPEM, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write to disk: %s", err)
+	}
 	return nil
 }
