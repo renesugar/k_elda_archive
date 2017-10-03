@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	cliPath "github.com/quilt/quilt/cli/path"
 	"github.com/quilt/quilt/util"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -43,10 +44,14 @@ func TestDefaultKeys(t *testing.T) {
 		}
 	}
 
+	err = util.AppFs.MkdirAll(filepath.Dir(cliPath.DefaultSSHKeyPath), 0600)
+	assert.NoError(t, err)
+
+	err = writeRandomKey(cliPath.DefaultSSHKeyPath, false)
+	assert.NoError(t, err)
+
 	signers := defaultSigners()
-	if len(signers) != 2 {
-		t.Errorf("Expected two default signers, but got %v", signers)
-	}
+	assert.Len(t, signers, 3)
 }
 
 func TestEncryptedKey(t *testing.T) {

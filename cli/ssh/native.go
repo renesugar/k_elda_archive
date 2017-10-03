@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 
+	cliPath "github.com/quilt/quilt/cli/path"
 	"github.com/quilt/quilt/util"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -45,8 +46,6 @@ func New(host string, keyPath string) (Client, error) {
 	return NativeClient{client}, err
 }
 
-var defaultKeys = []string{"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "quilt"}
-
 // Gets the signers for the default private key locations if possible
 func defaultSigners() []ssh.Signer {
 	var signers []ssh.Signer
@@ -65,9 +64,13 @@ func defaultSigners() []ssh.Signer {
 		return signers
 	}
 
-	sshDir := filepath.Join(dir, ".ssh")
-	for _, keyName := range defaultKeys {
-		identityPath := filepath.Join(sshDir, keyName)
+	pathsToTry := []string{cliPath.DefaultSSHKeyPath}
+	for _, keyName := range []string{"id_rsa", "id_dsa", "id_ecdsa",
+		"id_ed25519", "quilt"} {
+		pathsToTry = append(pathsToTry, filepath.Join(dir, ".ssh", keyName))
+	}
+
+	for _, identityPath := range pathsToTry {
 		key, err := signerFromFile(identityPath)
 		if err != nil {
 			if os.IsNotExist(err) {

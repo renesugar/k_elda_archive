@@ -8,6 +8,9 @@ parent does not exist.
 - Auto-generate TLS credentials when starting the daemon if the credentials in
 `~/.quilt/tls` don't already exist.
 - Always encrypt communication with the daemon.
+- Try using the Quilt-managed SSH key when connecting to machines. The
+Quilt-managed SSH key should work most of the time because the
+daemon automatically grants it access to the cluster.
 
 JavaScript API-breaking changes:
 - Remove the Container.replicate() method. Users should create multiple
