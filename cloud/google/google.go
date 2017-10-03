@@ -223,7 +223,7 @@ func (prvdr *Provider) operationWait(ops []*compute.Operation, domain int) (err 
 			switch domain {
 			case local:
 				res, err = prvdr.GetZoneOperation(
-					op.Zone, op.Name)
+					path.Base(op.Zone), op.Name)
 			case global:
 				res, err = prvdr.GetGlobalOperation(op.Name)
 			}
