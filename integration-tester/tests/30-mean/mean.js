@@ -17,9 +17,9 @@ const app = new Node({
   },
 });
 
-const proxy = haproxy.simpleLoadBalancer(app.cluster);
+const proxy = haproxy.simpleLoadBalancer(app.containers);
 
-mongo.allowFrom(app.cluster, mongo.port);
+mongo.allowFrom(app.containers, mongo.port);
 proxy.allowFrom(quilt.publicInternet, haproxy.exposedPort);
 
 deployment.deploy([app, mongo, proxy]);
