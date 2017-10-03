@@ -206,7 +206,7 @@ func (prvdr *Provider) wait(ids []string, shouldLive bool) error {
 // Blocking wait with a hardcoded timeout.
 //
 // Waits for the given operations to all complete.
-func (prvdr *Provider) operationWait(ops []*compute.Operation) (err error) {
+func (prvdr *Provider) operationWait(ops ...*compute.Operation) (err error) {
 	return util.BackoffWaitFor(func() bool {
 		for _, op := range ops {
 			var res *compute.Operation
@@ -417,8 +417,7 @@ func (prvdr *Provider) SetACLs(acls []acl.ACL) error {
 				return err
 			}
 		}
-		if err := prvdr.operationWait(
-			[]*compute.Operation{op}); err != nil {
+		if err := prvdr.operationWait(op); err != nil {
 			return err
 		}
 	}
@@ -494,7 +493,7 @@ func (prvdr *Provider) getCreateFirewall(minPort int, maxPort int) (
 		return nil, err
 	}
 
-	if err := prvdr.operationWait([]*compute.Operation{op}); err != nil {
+	if err := prvdr.operationWait(op); err != nil {
 		return nil, err
 	}
 
@@ -586,7 +585,7 @@ func (prvdr *Provider) createNetwork() error {
 		return err
 	}
 
-	err = prvdr.operationWait([]*compute.Operation{op})
+	err = prvdr.operationWait(op)
 	if err != nil {
 		return err
 	}
@@ -612,7 +611,7 @@ func (prvdr *Provider) createInternalFirewall() error {
 		ops = append(ops, op)
 	}
 
-	return prvdr.operationWait(ops)
+	return prvdr.operationWait(ops...)
 }
 
 func networkURL(networkName string) string {
