@@ -440,14 +440,24 @@ func (prvdr *Provider) UpdateFloatingIPs(machines []db.Machine) error {
 		if err != nil {
 			return err
 		}
-		_, err = prvdr.DeleteAccessConfig(prvdr.zone, m.CloudID,
+
+		// Google only supports one access config at a time, so we must wait
+		// for the existing access config to be removed before adding the new
+		// one.
+		op, err := prvdr.DeleteAccessConfig(prvdr.zone, m.CloudID,
 			accessConfig.Name, networkInterface.Name)
 		if err != nil {
 			return err
 		}
 
+		err = prvdr.operationWait(op)
+		if err != nil {
+			return errors.New(
+				"timed out waiting for access config to be removed")
+		}
+
 		// Add new network interface.
-		_, err = prvdr.AddAccessConfig(prvdr.zone, m.CloudID,
+		op, err = prvdr.AddAccessConfig(prvdr.zone, m.CloudID,
 			networkInterface.Name, &compute.AccessConfig{
 				Type: "ONE_TO_ONE_NAT",
 				Name: floatingIPName,
@@ -457,6 +467,12 @@ func (prvdr *Provider) UpdateFloatingIPs(machines []db.Machine) error {
 			})
 		if err != nil {
 			return err
+		}
+
+		err = prvdr.operationWait(op)
+		if err != nil {
+			return errors.New(
+				"timed out waiting for new access config to be assigned")
 		}
 	}
 

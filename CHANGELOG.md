@@ -11,6 +11,7 @@ parent does not exist.
 - Try using the Quilt-managed SSH key when connecting to machines. The
 Quilt-managed SSH key should work most of the time because the
 daemon automatically grants it access to the cluster.
+- Fix a bug where floating IPs would not get properly assigned in GCE.
 
 JavaScript API-breaking changes:
 - Remove the Container.replicate() method. Users should create multiple
