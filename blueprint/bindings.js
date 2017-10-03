@@ -1,4 +1,3 @@
-/* eslint require-jsdoc: [1] */
 /* eslint no-underscore-dangle: "off" */
 const crypto = require('crypto');
 const request = require('sync-request');
