@@ -20,5 +20,5 @@ for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
   }));
 }
 
-deployment.deploy(connected);
-deployment.deploy(notConnected);
+connected.forEach(connectedContainer => connectedContainer.deploy(deployment));
+notConnected.forEach(notConnectedContainer => notConnectedContainer.deploy(deployment));

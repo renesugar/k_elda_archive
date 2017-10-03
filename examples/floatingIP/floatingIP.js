@@ -9,7 +9,7 @@ const deployment = createDeployment({});
 const app = nginx.createContainer(80);
 
 app.placeOn({ floatingIp });
-deployment.deploy(app);
+app.deploy(deployment);
 
 const baseMachine = new Machine({
   provider: 'Amazon',

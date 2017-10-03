@@ -4,4 +4,5 @@ const infrastructure = require('../../config/infrastructure.js');
 
 const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
-deployment.deploy(new Elasticsearch(infrastructure.nWorker).allowFromPublic());
+const elasticsearch = new Elasticsearch(infrastructure.nWorker).allowFromPublic();
+elasticsearch.deploy(deployment);

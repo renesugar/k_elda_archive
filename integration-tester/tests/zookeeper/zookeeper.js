@@ -4,4 +4,5 @@ const infrastructure = require('../../config/infrastructure.js');
 
 const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
-deployment.deploy(new zookeeper.Zookeeper(infrastructure.nWorker * 2));
+const zk = new zookeeper.Zookeeper(infrastructure.nWorker * 2);
+zk.deploy(deployment);

@@ -4,4 +4,5 @@ const infrastructure = require('../../config/infrastructure.js');
 
 const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
-deployment.deploy(new etcd.Etcd(infrastructure.nWorker * 2));
+const etcdApp = new etcd.Etcd(infrastructure.nWorker * 2);
+etcdApp.deploy(deployment);

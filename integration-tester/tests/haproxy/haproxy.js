@@ -38,6 +38,6 @@ proxy.allowFrom(quilt.publicInternet, 80);
 const inf = quilt.createDeployment();
 
 inf.deploy(infrastructure);
-inf.deploy(serviceA);
-inf.deploy(serviceB);
-inf.deploy(proxy);
+serviceA.forEach(container => container.deploy(inf));
+serviceB.forEach(container => container.deploy(inf));
+proxy.deploy(inf);

@@ -11,7 +11,7 @@ for (let i = 0; i < 4; i += 1) {
         `I am container number ${i.toString()}\n`,
   }));
 }
-deployment.deploy(containers);
+containers.forEach(container => container.deploy(deployment));
 
 const fetcher = new quilt.Container('fetcher', 'alpine', {
   command: ['tail', '-f', '/dev/null'],
@@ -19,4 +19,5 @@ const fetcher = new quilt.Container('fetcher', 'alpine', {
 const loadBalanced = new quilt.LoadBalancer('loadBalanced', containers);
 loadBalanced.allowFrom(fetcher, 80);
 
-deployment.deploy([fetcher, loadBalanced]);
+fetcher.deploy(deployment);
+loadBalanced.deploy(deployment);

@@ -204,8 +204,8 @@ We've now defined a deployment with a master and worker machine.  Let's finally
 deploy the two containers on that infrastructure:
 
 ```javascript
-deployment.deploy(sql);
-deployment.deploy(lobsters);
+sql.deploy(deployment);
+lobsters.deploy(deployment);
 ```
     
 We're done!  Running the blueprint is now trivial.  With a quilt daemon running, run

@@ -167,7 +167,8 @@ describe('Bindings', () => {
 
   describe('Container', () => {
     it('basic', () => {
-      deployment.deploy(new b.Container('host', 'image'));
+      const container = new b.Container('host', 'image');
+      container.deploy(deployment);
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
         image: new b.Image('image'),
@@ -186,7 +187,8 @@ describe('Bindings', () => {
     });
     it('containers are not duplicated', () => {
       const container = new b.Container('host', 'image');
-      deployment.deploy([container, container]);
+      container.deploy(deployment);
+      container.deploy(deployment);
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
         image: new b.Image('image'),
@@ -197,9 +199,10 @@ describe('Bindings', () => {
       }]);
     });
     it('command', () => {
-      deployment.deploy(new b.Container('host', 'image', {
+      const container = new b.Container('host', 'image', {
         command: ['arg1', 'arg2'],
-      }));
+      });
+      container.deploy(deployment);
       checkContainers([{
         id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
         image: new b.Image('image'),
@@ -212,7 +215,7 @@ describe('Bindings', () => {
     it('env', () => {
       const c = new b.Container('host', 'image');
       c.env.foo = 'bar';
-      deployment.deploy(c);
+      c.deploy(deployment);
       checkContainers([{
         id: '299619d3fb4b89fd5cc822983bc3fbcced2f0a98',
         image: new b.Image('image'),
@@ -224,7 +227,7 @@ describe('Bindings', () => {
     });
     it('hostname', () => {
       const c = new b.Container('host', new b.Image('image'));
-      deployment.deploy(c);
+      c.deploy(deployment);
       expect(c.getHostname()).to.equal('host.q');
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
@@ -238,7 +241,8 @@ describe('Bindings', () => {
     it('repeated hostnames don\'t conflict', () => {
       const x = new b.Container('host', 'image');
       const y = new b.Container('host', 'image');
-      deployment.deploy([x, y]);
+      x.deploy(deployment);
+      y.deploy(deployment);
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
         image: new b.Image('image'),
@@ -281,15 +285,16 @@ describe('Bindings', () => {
     it('duplicate hostname causes error', () => {
       const x = new b.Container('host', 'image');
       x.hostname = 'host';
+      x.deploy(deployment);
       const y = new b.Container('host', 'image');
       y.hostname = 'host';
-      deployment.deploy([x, y]);
+      y.deploy(deployment);
       expect(() => deployment.toQuiltRepresentation()).to
         .throw('hostname "host" used multiple times');
     });
     it('image dockerfile', () => {
       const z = new b.Container('host', new b.Image('name', 'dockerfile'));
-      deployment.deploy(z);
+      z.deploy(deployment);
       checkContainers([{
         id: 'fbc9aedb5af0039b8cf09bca2ef5771467b44085',
         image: new b.Image('name', 'dockerfile'),
@@ -312,10 +317,11 @@ describe('Bindings', () => {
       // constructor because the hostname ID increases with each with*
       // call.
       const id = 'f5c3e0fa3843e6fa149289d476f507831a45654d';
-      deployment.deploy(new b.Container(hostname, image, {
+      const container = new b.Container(hostname, image, {
         command,
       }).withEnv(env)
-        .withFiles(filepathToContent));
+        .withFiles(filepathToContent);
+      container.deploy(deployment);
       checkContainers([{
         id,
         image,
@@ -327,9 +333,10 @@ describe('Bindings', () => {
     });
     it('constructor', () => {
       const id = '9f9d0c0868163eda5b4ad5861c9558f055508959';
-      deployment.deploy(new b.Container(hostname, image, {
+      const container = new b.Container(hostname, image, {
         command, env, filepathToContent,
-      }));
+      });
+      container.deploy(deployment);
       checkContainers([{
         id, hostname, image, command, env, filepathToContent,
       }]);
@@ -340,7 +347,7 @@ describe('Bindings', () => {
     let target;
     beforeEach(() => {
       target = new b.Container('host', 'image');
-      deployment.deploy(target);
+      target.deploy(deployment);
     });
     it('MachineRule size, region, provider', () => {
       target.placeOn({
@@ -381,18 +388,19 @@ describe('Bindings', () => {
   });
   describe('LoadBalancer', () => {
     it('basic', () => {
-      deployment.deploy(
-        new b.LoadBalancer('web_tier', [new b.Container('host', 'nginx')]));
+      const lb = new b.LoadBalancer('web_tier', [new b.Container('host', 'nginx')]);
+      lb.deploy(deployment);
       checkLoadBalancers([{
         name: 'web_tier',
         hostnames: ['host'],
       }]);
     });
     it('multiple containers', () => {
-      deployment.deploy(new b.LoadBalancer('web_tier', [
+      const lb = new b.LoadBalancer('web_tier', [
         new b.Container('host', 'nginx'),
         new b.Container('host', 'nginx'),
-      ]));
+      ]);
+      lb.deploy(deployment);
       checkLoadBalancers([{
         name: 'web_tier',
         hostnames: [
@@ -408,13 +416,13 @@ describe('Bindings', () => {
       for (let i = 0; i < 2; i += 1) {
         new b.Container('host', 'image'); // eslint-disable-line no-new
       }
-      deployment.deploy(new b.LoadBalancer('foo', [
-        new b.Container('host', 'image')]));
+      const lb = new b.LoadBalancer('foo', [new b.Container('host', 'image')]);
+      lb.deploy(deployment);
       for (let i = 0; i < 7; i += 1) {
         new b.Container('host', 'image'); // eslint-disable-line no-new
       }
-      deployment.deploy(new b.LoadBalancer('foo', [
-        new b.Container('host', 'image')]));
+      const lb2 = new b.LoadBalancer('foo', [new b.Container('host', 'image')]);
+      lb2.deploy(deployment);
       checkLoadBalancers([
         {
           name: 'foo',
@@ -437,9 +445,11 @@ describe('Bindings', () => {
     let fooLoadBalancer;
     beforeEach(() => {
       foo = new b.Container('foo', 'image');
+      foo.deploy(deployment);
       fooLoadBalancer = new b.LoadBalancer('fooLoadBalancer', [foo]);
       bar = new b.Container('bar', 'image');
-      deployment.deploy([foo, bar, fooLoadBalancer]);
+      bar.deploy(deployment);
+      fooLoadBalancer.deploy(deployment);
     });
     it('autobox port ranges', () => {
       bar.allowFrom(foo, 80);
@@ -537,9 +547,11 @@ describe('Bindings', () => {
       quxQuuzGroup = [qux, quuz];
       lb = new b.LoadBalancer('serv', [foo, bar, qux, quuz]);
 
-      deployment.deploy(fooBarGroup);
-      deployment.deploy(quxQuuzGroup);
-      deployment.deploy(lb);
+      foo.deploy(deployment);
+      bar.deploy(deployment);
+      qux.deploy(deployment);
+      quuz.deploy(deployment);
+      lb.deploy(deployment);
     });
 
     it('both src and dst are lists', () => {
@@ -597,7 +609,7 @@ describe('Bindings', () => {
     const deploy = () => deployment.toQuiltRepresentation();
     beforeEach(() => {
       foo = new b.LoadBalancer('foo', []);
-      deployment.deploy([foo]);
+      foo.deploy(deployment);
     });
     it('should error when given namespace contains upper case letters', () => {
       deployment = b.createDeployment({ namespace: 'BadNamespace' });
@@ -611,13 +623,13 @@ describe('Bindings', () => {
                 '"to":"foo"} references an undefined hostname: baz');
     });
     it('duplicate image', () => {
-      deployment.deploy(new b.Container('host', new b.Image('img', 'dk')));
-      deployment.deploy(new b.Container('host', new b.Image('img', 'dk')));
+      (new b.Container('host', new b.Image('img', 'dk'))).deploy(deployment);
+      (new b.Container('host', new b.Image('img', 'dk'))).deploy(deployment);
       expect(deploy).to.not.throw();
     });
     it('duplicate image with different Dockerfiles', () => {
-      deployment.deploy(new b.Container('host', new b.Image('img', 'dk')));
-      deployment.deploy(new b.Container('host', new b.Image('img', 'dk2')));
+      (new b.Container('host', new b.Image('img', 'dk'))).deploy(deployment);
+      (new b.Container('host', new b.Image('img', 'dk2'))).deploy(deployment);
       expect(deploy).to.throw('img has differing Dockerfiles');
     });
     it('machines with same regions/providers', () => {
@@ -653,37 +665,6 @@ describe('Bindings', () => {
       expect(deploy).to.throw('All machines must have the same provider and region. '
         + 'Found providers \'Amazon\' in region \'\' and \'DigitalOcean\' in '
         + 'region \'\'.');
-    });
-  });
-  describe('Custom Deploy', () => {
-    it('basic', () => {
-      deployment.deploy({
-        deploy(dep) {
-          dep.deploy([
-            new b.LoadBalancer('web_tier', [
-              new b.Container('host', 'nginx')]),
-            new b.LoadBalancer('web_tier2', [
-              new b.Container('host', 'nginx')]),
-          ]);
-        },
-      });
-      const { loadBalancers } = deployment.toQuiltRepresentation();
-      expect(loadBalancers).to.have.lengthOf(2)
-        .and.containSubset([
-          {
-            name: 'web_tier',
-            hostnames: ['host'],
-          },
-          {
-            name: 'web_tier2',
-            hostnames: ['host2'],
-          },
-        ]);
-    });
-    it('missing deploy', () => {
-      expect(() => deployment.deploy({})).to.throw(
-        'only objects that implement "deploy(deployment)" can be ' +
-                'deployed');
     });
   });
   describe('Create Deployment', () => {

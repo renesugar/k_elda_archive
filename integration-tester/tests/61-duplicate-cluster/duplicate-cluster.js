@@ -8,5 +8,5 @@ deployment.deploy(infrastructure);
 const sprk = new spark.Spark(1, 3);
 const sprk2 = new spark.Spark(1, 3);
 
-deployment.deploy(sprk);
-deployment.deploy(sprk2);
+sprk.deploy(deployment);
+sprk2.deploy(deployment);

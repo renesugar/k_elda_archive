@@ -11,7 +11,8 @@ for (let workerIndex = 0; workerIndex < infrastructure.nWorker; workerIndex += 1
     'RUN echo $(cat /dev/urandom | tr -dc \'a-zA-Z0-9\' | ' +
     'fold -w 32 | head -n 1) > /image-id');
   for (let containerIndex = 0; containerIndex < 2; containerIndex += 1) {
-    deployment.deploy(new quilt.Container(
-      'bar', image, { command: ['tail', '-f', '/dev/null'] }));
+    const container = new quilt.Container(
+      'bar', image, { command: ['tail', '-f', '/dev/null'] });
+    container.deploy(deployment);
   }
 }

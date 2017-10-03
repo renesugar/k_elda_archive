@@ -12,4 +12,4 @@ const sprk = new spark.Spark(1, infrastructure.nWorker - 1)
 
 const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
-deployment.deploy(sprk);
+sprk.deploy(deployment);

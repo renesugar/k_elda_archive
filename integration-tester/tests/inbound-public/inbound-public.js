@@ -7,6 +7,6 @@ const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
 for (let i = 0; i < infrastructure.nWorker; i += 1) {
-  deployment.deploy(nginx.createContainer(80));
-  deployment.deploy(nginx.createContainer(8000));
+  nginx.createContainer(80).deploy(deployment);
+  nginx.createContainer(8000).deploy(deployment);
 }

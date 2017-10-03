@@ -13,4 +13,4 @@ for (let i = 0; i < infrastructure.nWorker + 1; i += 1) {
   }));
 }
 quilt.allow(iperfs, iperfs, 5201);
-deployment.deploy(iperfs);
+iperfs.forEach(container => container.deploy(deployment));

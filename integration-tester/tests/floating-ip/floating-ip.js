@@ -38,4 +38,4 @@ aWorker.floatingIp = floatingIp;
 
 const nginxContainer = nginx.createContainer(80);
 nginxContainer.placeOn(aWorker);
-deployment.deploy(nginxContainer);
+nginxContainer.deploy(deployment);

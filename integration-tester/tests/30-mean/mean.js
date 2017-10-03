@@ -22,4 +22,6 @@ const proxy = haproxy.simpleLoadBalancer(app.containers);
 mongo.allowFrom(app.containers, mongo.port);
 proxy.allowFrom(quilt.publicInternet, haproxy.exposedPort);
 
-deployment.deploy([app, mongo, proxy]);
+app.deploy(deployment);
+mongo.deploy(deployment);
+proxy.deploy(deployment);

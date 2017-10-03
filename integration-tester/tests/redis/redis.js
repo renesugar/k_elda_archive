@@ -6,4 +6,4 @@ const deployment = quilt.createDeployment();
 deployment.deploy(infrastructure);
 
 const redis = new Redis(3, 'password');
-deployment.deploy(redis);
+redis.deploy(deployment);

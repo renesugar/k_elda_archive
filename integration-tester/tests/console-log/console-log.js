@@ -7,5 +7,7 @@ deployment.deploy(infrastructure);
 console.log('This should show up in the terminal.');
 console.warn('This too.');
 
-deployment.deploy(new quilt.Container('red', 'google/pause'));
-deployment.deploy(new quilt.Container('blue', 'google/pause'));
+const redContainer = new quilt.Container('red', 'google/pause');
+redContainer.deploy(deployment);
+const blueContainer = new quilt.Container('blue', 'google/pause');
+blueContainer.deploy(deployment);

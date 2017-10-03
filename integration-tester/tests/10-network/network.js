@@ -30,7 +30,7 @@ quilt.allow(blueContainers, yellowContainers, 80);
 const redLB = new quilt.LoadBalancer('red-lb', redContainers);
 redLB.allowFrom(blueContainers, 80);
 
-deployment.deploy(redContainers);
-deployment.deploy(yellowContainers);
-deployment.deploy(blueContainers);
-deployment.deploy(redLB);
+redContainers.forEach(container => container.deploy(deployment));
+yellowContainers.forEach(container => container.deploy(deployment));
+blueContainers.forEach(container => container.deploy(deployment));
+redLB.deploy(deployment);
