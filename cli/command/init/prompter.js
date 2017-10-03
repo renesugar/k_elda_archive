@@ -58,6 +58,15 @@ function getInquirerDescriptions(friendlyNameToValue) {
   });
 }
 
+/**
+ * @param {Object} question - An object with fields representing a question to
+ *   ask a user.
+ * @param {string} helpstring - The helpstring to show a user if they type '?' in
+ *   response to the question.
+ * @returns {Object} The given question, with a modified `message` that now suggests
+ *   using '?', and a modified `validate` function that will print the helpstring if
+ *   the user enters '?'.
+ */
 function questionWithHelp(question, helpstring) {
   const newQuestion = Object.assign({}, question);
 

@@ -218,6 +218,16 @@ describe('Initializer', () => {
       getSshKeyStub.resetBehavior();
     });
 
+    /**
+     * Verifies that inputting the given answers to 'quilt init' results
+     * in the given file describing the infrastructure.
+     *
+     * @param {Object} answers - Maps the name of a particular input to 'quilt init'
+     *   to the answer provided for that input.
+     * @param {string} expInfraFile - The file expected to be output by 'quilt init',
+     *   when the given answers are provided as input.
+     * @returns {void}
+     */
     function checkInfrastructure(answers, expInfraFile) {
       initializer.processAnswers(provider, answers);
       expect(getSshKeyStub.called).to.be.true;
