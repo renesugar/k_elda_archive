@@ -3,6 +3,9 @@
     "parserOptions": {
         "ecmaVersion": 6
     },
+    "plugins": [
+        "filenames"
+    ],
     "rules": {
       "no-console": "off",
       "import/no-unresolved": ["error", { "commonjs": false }],
@@ -10,6 +13,7 @@
       "import/no-extraneous-dependencies":
         ["error", {"devDependencies": ["**/*Test.js"]}],
       "valid-jsdoc": ["error", {"prefer": {"return": "returns" }}],
-      "require-jsdoc": ["error"]
+      "require-jsdoc": ["error"],
+      "filenames/match-regex": ["error", "^([a-z0-9]+)[A-Za-z0-9]*$", true]
     }
 }
