@@ -26,7 +26,7 @@ quilt COMMAND --help
 
 Commands:
   counters, daemon, debug-logs, init, inspect, logs, minion, show, run, ssh,
-  stop, version, setup-tls`
+  stop, version`
 
 func main() {
 	flag.Usage = func() {

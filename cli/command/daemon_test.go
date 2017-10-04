@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 
+	tlsIO "github.com/quilt/quilt/connection/tls/io"
 	"github.com/quilt/quilt/util"
 )
 
@@ -76,4 +77,16 @@ WEteRuQXq8oploci8N2U0C8zgKbH+fsKD6KeX/xI/EJ/8cktT0fLaA==
 	assert.Equal(t, pubKey, getPublicKey(parsedPrivKey))
 
 	assert.Equal(t, "", getPublicKey(nil))
+}
+
+// Test that the generated files can be parsed.
+func TestSetupTLS(t *testing.T) {
+	util.AppFs = afero.NewMemMapFs()
+
+	tlsDir := "tls"
+	err := setupTLS(tlsDir)
+	assert.NoError(t, err)
+
+	_, err = tlsIO.ReadCredentials(tlsDir)
+	assert.NoError(t, err)
 }

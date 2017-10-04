@@ -34,7 +34,6 @@ $ quilt COMMAND --help
 | `ssh`        | SSH into or execute a command in a machine or container.                                         |
 | `stop`       | Stop a deployment.                                                                               |
 | `version`    | Show the Quilt version information.                                                              |
-| `setup-tls`  | Create the files necessary for TLS-encrypted communication with Quilt.                           |
 
 ## Init
 The `quilt init` command is a simple way to create reusable infrastructure. The

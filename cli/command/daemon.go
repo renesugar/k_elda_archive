@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
+	"os"
 
 	"golang.org/x/crypto/ssh"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/quilt/quilt/cloud"
 	"github.com/quilt/quilt/connection/credentials/tls"
 	tlsIO "github.com/quilt/quilt/connection/credentials/tls/io"
+	"github.com/quilt/quilt/connection/credentials/tls/rsa"
 	"github.com/quilt/quilt/db"
 	"github.com/quilt/quilt/engine"
 	"github.com/quilt/quilt/util"
@@ -69,6 +71,19 @@ func (dCmd *Daemon) AfterRun() error {
 func (dCmd *Daemon) Run() int {
 	log.WithField("version", version.Version).Info("Starting Quilt daemon")
 
+	// If the specified TLS credential path does not exist, autogenerate
+	// credentials for the given path.
+	if dCmd.tlsDir != "" {
+		if _, err := util.Stat(dCmd.tlsDir); os.IsNotExist(err) {
+			log.WithField("path", dCmd.tlsDir).Info("Auto-generating TLS credentials")
+			if err := setupTLS(dCmd.tlsDir); err != nil {
+				log.WithError(err).WithField("path", dCmd.tlsDir).Error(
+					"TLS credential generation failed")
+				return 1
+			}
+		}
+	}
+
 	var sshKey ssh.Signer
 	if dCmd.adminSSHPrivateKey != "" {
 		var err error
@@ -94,8 +109,7 @@ func (dCmd *Daemon) Run() int {
 
 	creds, err := credentials.Read(dCmd.tlsDir)
 	if err != nil {
-		log.WithError(err).Error("Failed to parse credentials. " +
-			"Did you run `quilt setup-tls` to generate TLS credentials?")
+		log.WithError(err).Error("Failed to parse TLS credentials")
 		return 1
 	}
 
@@ -145,4 +159,30 @@ func getPublicKey(sshPrivKey ssh.Signer) string {
 	pubKey := base64.StdEncoding.EncodeToString(sshPrivKey.PublicKey().Marshal())
 	pubKeyType := sshPrivKey.PublicKey().Type()
 	return pubKeyType + " " + pubKey
+}
+
+func setupTLS(outDir string) error {
+	if err := util.AppFs.MkdirAll(outDir, 0700); err != nil {
+		return fmt.Errorf("failed to create output directory: %s", err)
+	}
+
+	ca, err := rsa.NewCertificateAuthority()
+	if err != nil {
+		return fmt.Errorf("failed to create CA: %s", err)
+	}
+
+	// Generate a signed certificate for use by the Daemon server, and client
+	// connections.
+	signed, err := rsa.NewSigned(ca)
+	if err != nil {
+		return fmt.Errorf("failed to create signed key pair: %s", err)
+	}
+
+	for _, f := range tlsIO.DaemonFiles(outDir, ca, signed) {
+		if err := util.WriteFile(f.Path, []byte(f.Content), f.Mode); err != nil {
+			return fmt.Errorf("failed to write file (%s): %s", f.Path, err)
+		}
+	}
+
+	return nil
 }

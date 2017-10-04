@@ -21,7 +21,6 @@ var commands = map[string]command.SubCommand{
 
 	"run":        command.NewRunCommand(),
 	"init":       &command.Init{},
-	"setup-tls":  &command.SetupTLS{},
 	"ssh":        command.NewSSHCommand(),
 	"stop":       command.NewStopCommand(),
 	"version":    command.NewVersionCommand(),
