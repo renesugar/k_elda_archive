@@ -38,7 +38,8 @@ func TestSyncCredentials(t *testing.T) {
 
 	credentialedMachines := map[string]struct{}{}
 	syncCredentialsOnce(expSigner, ca,
-		[]db.Machine{{PublicIP: expHost}}, credentialedMachines)
+		[]db.Machine{{PublicIP: expHost, PrivateIP: "9.9.9.9"}},
+		credentialedMachines)
 	assert.Len(t, credentialedMachines, 1)
 
 	aferoFs := afero.Afero{Fs: mockFs}

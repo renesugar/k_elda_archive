@@ -3,6 +3,7 @@ package cloud
 import (
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"time"
 
@@ -49,21 +50,21 @@ func syncCredentialsOnce(sshKey ssh.Signer, ca rsa.KeyPair,
 		}
 
 		credentialsCounter.Inc("Install " + m.PublicIP)
-		if generateAndInstallCerts(m.PublicIP, sshKey, ca) {
+		if generateAndInstallCerts(m, sshKey, ca) {
 			credentialedMachines[m.PublicIP] = struct{}{}
 		}
 	}
 }
 
 // generateAndInstallCerts attempts to generate a certificate key pair and install
-// it onto host. Returns whether it was successful.
-func generateAndInstallCerts(host string, sshKey ssh.Signer,
+// it onto the given machine. Returns whether it was successful.
+func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
 	ca rsa.KeyPair) bool {
-	fs, err := getSftpFs(host, sshKey)
+	fs, err := getSftpFs(machine.PublicIP, sshKey)
 	if err != nil {
 		// This error is probably benign because failures to SSH are expected
 		// while the machine is still booting.
-		log.WithError(err).WithField("host", host).
+		log.WithError(err).WithField("host", machine.PublicIP).
 			Debug("Failed to get SFTP client. Retrying.")
 		return false
 	}
@@ -71,15 +72,15 @@ func generateAndInstallCerts(host string, sshKey ssh.Signer,
 
 	// Generate new certificates signed by the CA for use by the minion for all
 	// communication.
-	signed, err := rsa.NewSigned(ca)
+	signed, err := rsa.NewSigned(ca, net.ParseIP(machine.PrivateIP))
 	if err != nil {
-		log.WithError(err).WithField("host", host).
+		log.WithError(err).WithField("host", machine.PublicIP).
 			Error("Failed to generate certs. Retrying.")
 		return false
 	}
 
 	if err := fs.MkdirAll(tlsIO.MinionTLSDir, 0755); err != nil {
-		log.WithError(err).WithField("host", host).Error(
+		log.WithError(err).WithField("host", machine.PublicIP).Error(
 			"Failed to create TLS directory. Retrying.")
 		return false
 	}
@@ -89,7 +90,7 @@ func generateAndInstallCerts(host string, sshKey ssh.Signer,
 			log.WithFields(log.Fields{
 				"error": err,
 				"path":  f.Path,
-				"host":  host,
+				"host":  machine.PublicIP,
 			}).Error("Failed to write file")
 			return false
 		}
