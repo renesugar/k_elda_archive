@@ -27,6 +27,9 @@ type Machine struct {
 
 	/* Populated by the cluster. */
 	Status string
+
+	// The public key that has been installed on this machine.
+	PublicKey string
 }
 
 const (

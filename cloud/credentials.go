@@ -24,7 +24,9 @@ var credentialsCounter = counter.New("Cloud Credentials")
 // SyncCredentials installs TLS certificates on all machines. It generates
 // the certificates using the given certificate authority, and copies them
 // over using the given ssh key. It only installs certificates once -- once
-// certificates are in place on a machine, they are left alone.
+// certificates are in place on a machine, they are left alone. SyncCredentials
+// also writes the installed signed certificate for each machine into the
+// database.
 // XXX: The logic to avoid overwriting existing certificates does not work
 // between restarts to the daemon. If a minion has been initialized with
 // certificates but the daemon restarts, it will overwrite the existing
@@ -33,42 +35,53 @@ var credentialsCounter = counter.New("Cloud Credentials")
 // This will not cause any interruption to connections as long as the same
 // certificate authority is used by the daemon.
 func SyncCredentials(conn db.Conn, sshKey ssh.Signer, ca rsa.KeyPair) {
-	credentialedMachines := map[string]struct{}{}
 	for range conn.TriggerTick(30, db.MachineTable).C {
-		machines := conn.SelectFromMachine(func(m db.Machine) bool {
-			return m.Status != db.Stopping && m.PublicIP != ""
-		})
-		syncCredentialsOnce(sshKey, ca, machines, credentialedMachines)
+		syncCredentialsOnce(conn, sshKey, ca)
 	}
 }
 
-func syncCredentialsOnce(sshKey ssh.Signer, ca rsa.KeyPair,
-	machines []db.Machine, credentialedMachines map[string]struct{}) {
+func syncCredentialsOnce(conn db.Conn, sshKey ssh.Signer, ca rsa.KeyPair) {
 	credentialsCounter.Inc("Install to cluster")
+
+	// Only attempt to install certificates on machines that are running, and
+	// that do not already have certificates.
+	machines := conn.SelectFromMachine(func(m db.Machine) bool {
+		return m.Status != db.Stopping && m.PublicIP != "" && m.PublicKey == ""
+	})
 	for _, m := range machines {
-		_, hasCreds := credentialedMachines[m.PublicIP]
-		if hasCreds {
+		credentialsCounter.Inc("Install " + m.PublicIP)
+		publicKey, ok := generateAndInstallCerts(m, sshKey, ca)
+		if !ok {
 			continue
 		}
 
-		credentialsCounter.Inc("Install " + m.PublicIP)
-		if generateAndInstallCerts(m, sshKey, ca) {
-			credentialedMachines[m.PublicIP] = struct{}{}
-		}
+		// Find the machine in the database that we just installed certs on,
+		// and update its row to reflect the installed certificate.
+		conn.Txn(db.MachineTable).Run(func(view db.Database) error {
+			for _, dbm := range view.SelectFromMachine(nil) {
+				if dbm.PrivateIP == m.PrivateIP {
+					dbm.PublicKey = publicKey
+					view.Commit(dbm)
+					break
+				}
+			}
+			return nil
+		})
 	}
 }
 
 // generateAndInstallCerts attempts to generate a certificate key pair and install
-// it onto the given machine. Returns whether it was successful.
+// it onto the given machine. Returns the public key of the installed
+// certificate, and whether it was successful.
 func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
-	ca rsa.KeyPair) bool {
+	ca rsa.KeyPair) (string, bool) {
 	fs, err := getSftpFs(machine.PublicIP, sshKey)
 	if err != nil {
 		// This error is probably benign because failures to SSH are expected
 		// while the machine is still booting.
 		log.WithError(err).WithField("host", machine.PublicIP).
 			Debug("Failed to get SFTP client. Retrying.")
-		return false
+		return "", false
 	}
 	defer fs.Close()
 
@@ -78,13 +91,13 @@ func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
 	if err != nil {
 		log.WithError(err).WithField("host", machine.PublicIP).
 			Error("Failed to generate certs. Retrying.")
-		return false
+		return "", false
 	}
 
 	if err := fs.MkdirAll(tlsIO.MinionTLSDir, 0755); err != nil {
 		log.WithError(err).WithField("host", machine.PublicIP).Error(
 			"Failed to create TLS directory. Retrying.")
-		return false
+		return "", false
 	}
 
 	for _, f := range tlsIO.MinionFiles(tlsIO.MinionTLSDir, ca, signed) {
@@ -94,11 +107,11 @@ func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
 				"path":  f.Path,
 				"host":  machine.PublicIP,
 			}).Error("Failed to write file")
-			return false
+			return "", false
 		}
 	}
 
-	return true
+	return signed.CertString(), true
 }
 
 func write(fs afero.Fs, path, contents string, mode os.FileMode) error {

@@ -102,10 +102,15 @@ func RunOnce(conn db.Conn) {
 	updateMinionMap(machines)
 	forEachMinion(updateConfig)
 
+	minionIPToPublicKey := map[string]string{}
 	var etcdIPs []string
 	for _, m := range minions {
 		if m.config.Role == pb.MinionConfig_MASTER && m.machine.PrivateIP != "" {
 			etcdIPs = append(etcdIPs, m.machine.PrivateIP)
+		}
+
+		if m.machine.PrivateIP != "" && m.machine.PublicKey != "" {
+			minionIPToPublicKey[m.machine.PrivateIP] = m.machine.PublicKey
 		}
 	}
 
@@ -116,14 +121,15 @@ func RunOnce(conn db.Conn) {
 		}
 
 		newConfig := pb.MinionConfig{
-			FloatingIP:     m.machine.FloatingIP,
-			PrivateIP:      m.machine.PrivateIP,
-			Blueprint:      blueprint,
-			Provider:       string(m.machine.Provider),
-			Size:           m.machine.Size,
-			Region:         m.machine.Region,
-			EtcdMembers:    etcdIPs,
-			AuthorizedKeys: m.machine.SSHKeys,
+			FloatingIP:          m.machine.FloatingIP,
+			PrivateIP:           m.machine.PrivateIP,
+			Blueprint:           blueprint,
+			Provider:            string(m.machine.Provider),
+			Size:                m.machine.Size,
+			Region:              m.machine.Region,
+			EtcdMembers:         etcdIPs,
+			AuthorizedKeys:      m.machine.SSHKeys,
+			MinionIPToPublicKey: minionIPToPublicKey,
 		}
 
 		if reflect.DeepEqual(newConfig, m.config) {

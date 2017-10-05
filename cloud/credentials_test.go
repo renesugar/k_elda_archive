@@ -26,6 +26,7 @@ func TestSyncCredentials(t *testing.T) {
 
 	expHost := "8.8.8.8"
 	mockFs := afero.NewMemMapFs()
+	conn := db.New()
 
 	getSftpFs = func(host string, signer ssh.Signer) (sftpFs, error) {
 		assert.Equal(t, expSigner, signer)
@@ -36,11 +37,14 @@ func TestSyncCredentials(t *testing.T) {
 	ca, err := rsa.NewCertificateAuthority()
 	assert.NoError(t, err)
 
-	credentialedMachines := map[string]struct{}{}
-	syncCredentialsOnce(expSigner, ca,
-		[]db.Machine{{PublicIP: expHost, PrivateIP: "9.9.9.9"}},
-		credentialedMachines)
-	assert.Len(t, credentialedMachines, 1)
+	conn.Txn(db.MachineTable).Run(func(view db.Database) error {
+		dbm := view.InsertMachine()
+		dbm.PublicIP = expHost
+		dbm.PrivateIP = "9.9.9.9"
+		view.Commit(dbm)
+		return nil
+	})
+	syncCredentialsOnce(conn, expSigner, ca)
 
 	aferoFs := afero.Afero{Fs: mockFs}
 	certBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "kelda.crt"))
@@ -55,30 +59,33 @@ func TestSyncCredentials(t *testing.T) {
 		"certificate_authority.crt"))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, caBytes)
+
+	// Ensure that the machine's public key got written to the database.
+	dbm := conn.SelectFromMachine(nil)[0]
+	assert.Equal(t, string(certBytes), dbm.PublicKey)
 }
 
-func TestSyncCredentialsSkip(t *testing.T) {
+func TestFailedToSSH(t *testing.T) {
 	ca, err := rsa.NewCertificateAuthority()
 	assert.NoError(t, err)
 
-	// Test that we skip machines that have already been setup.
-	credentialedMachines := map[string]struct{}{
-		"8.8.8.8": {},
-	}
-	syncCredentialsOnce(nil, ca, []db.Machine{
-		{Role: db.Worker, PublicIP: "8.8.8.8"},
-	}, credentialedMachines)
-	assert.Len(t, credentialedMachines, 1)
+	conn := db.New()
+	conn.Txn(db.MachineTable).Run(func(view db.Database) error {
+		dbm := view.InsertMachine()
+		dbm.PublicIP = "8.8.8.8"
+		dbm.PrivateIP = "9.9.9.9"
+		view.Commit(dbm)
+		return nil
+	})
 
-	// Test that if we fail to get an SFTP client, we bail.
 	getSftpFs = func(host string, _ ssh.Signer) (sftpFs, error) {
 		return nil, assert.AnError
 	}
-	credentialedMachines = map[string]struct{}{}
-	syncCredentialsOnce(nil, ca, []db.Machine{
-		{Role: db.Worker, PublicIP: "8.8.8.8"},
-	}, credentialedMachines)
-	assert.Empty(t, credentialedMachines)
+
+	syncCredentialsOnce(conn, nil, ca)
+	// The machine's PublicKey should not be set, because Kelda should have
+	// given up and not set the public key when getting an SFTP client failed.
+	assert.Empty(t, conn.SelectFromMachine(nil)[0].PublicKey)
 }
 
 type mockSFTPFs struct {

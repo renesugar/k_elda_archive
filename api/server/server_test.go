@@ -63,7 +63,7 @@ func TestQueryMachinesDaemon(t *testing.T) {
 	exp := `[{"ID":1,"Role":"Master","Provider":"Amazon",` +
 		`"Region":"","Size":"size","DiskSize":0,"SSHKeys":null,"FloatingIP":"",` +
 		`"Preemptible":false,"CloudID":"","PublicIP":"8.8.8.8",` +
-		`"PrivateIP":"9.9.9.9","Status":"connected"}]`
+		`"PrivateIP":"9.9.9.9","Status":"connected","PublicKey":""}]`
 
 	checkQuery(t, server{conn, true, nil}, db.MachineTable, exp)
 }
