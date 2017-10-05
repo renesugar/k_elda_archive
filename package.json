@@ -31,6 +31,6 @@
     "underscore": "^1.8.3"
   },
   "nyc": {
-    "exclude": "**/*_test.js"
+    "exclude": "**/*Test.js"
   }
 }

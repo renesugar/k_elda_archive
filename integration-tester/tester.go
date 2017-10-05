@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	infrastructureBlueprint = "./config/infrastructure-runner.js"
+	infrastructureBlueprint = "./config/infrastructureRunner.js"
 )
 
 // The global logger for this CI run.

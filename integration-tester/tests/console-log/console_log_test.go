@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-// This is run after integration-tester successfully runs console-log.js.
+// This is run after integration-tester successfully runs consoleLog.js.
 // XXX: Ideally, we would check that the expected output was actually
 // printed to stdout, but the current integration-tester testing structure
 // doesn't allow this file to see the output. The best we can do for now is

@@ -8,7 +8,7 @@
       "import/no-unresolved": ["error", { "commonjs": false }],
       "no-use-before-define": ["error", {"functions": false, "classes": false}],
       "import/no-extraneous-dependencies":
-        ["error", {"devDependencies": ["**/*test.js"]}],
+        ["error", {"devDependencies": ["**/*Test.js"]}],
       "valid-jsdoc": ["error", {"prefer": {"return": "returns" }}],
       "require-jsdoc": ["error"]
     }

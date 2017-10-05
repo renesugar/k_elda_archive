@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const inquirer = require('inquirer');
 const consts = require('./constants');
-const util = require('./init-util');
+const util = require('./initUtil');
 const Provider = require('./provider');
 
 

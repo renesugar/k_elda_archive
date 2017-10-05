@@ -17,7 +17,7 @@ const handlebars = require('handlebars');
 
 const prompter = require('./prompter');
 const consts = require('./constants');
-const util = require('./init-util');
+const util = require('./initUtil');
 
 const templateDir = path.join(__dirname, 'templates');
 const infraTemplateFile = path.join(templateDir, 'inf_template');

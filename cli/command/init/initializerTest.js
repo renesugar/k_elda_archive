@@ -10,7 +10,7 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 
 const consts = require('./constants');
-const util = require('./init-util');
+const util = require('./initUtil');
 
 const initializer = rewire('./initializer');
 const Provider = rewire('./provider');
