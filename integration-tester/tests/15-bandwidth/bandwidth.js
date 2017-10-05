@@ -1,7 +1,7 @@
 const quilt = require('@quilt/quilt');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = quilt.createDeployment();
+const deployment = new quilt.Deployment();
 deployment.deploy(infrastructure);
 
 // If we deploy nWorker+1 containers, at least one machine is guaranteed to run

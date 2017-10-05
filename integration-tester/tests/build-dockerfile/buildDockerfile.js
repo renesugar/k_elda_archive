@@ -1,7 +1,7 @@
 const quilt = require('@quilt/quilt');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = quilt.createDeployment();
+const deployment = new quilt.Deployment();
 deployment.deploy(infrastructure);
 
 for (let workerIndex = 0; workerIndex < infrastructure.nWorker; workerIndex += 1) {

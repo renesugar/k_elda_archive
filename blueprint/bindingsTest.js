@@ -15,7 +15,7 @@ describe('Bindings', () => {
   let deployment;
   beforeEach(() => {
     b.resetGlobals();
-    deployment = b.createDeployment();
+    deployment = new b.Deployment();
   });
 
   const checkMachines = function checkMachines(expected) {
@@ -612,7 +612,7 @@ describe('Bindings', () => {
       foo.deploy(deployment);
     });
     it('should error when given namespace contains upper case letters', () => {
-      deployment = b.createDeployment({ namespace: 'BadNamespace' });
+      deployment = new b.Deployment({ namespace: 'BadNamespace' });
       expect(deploy).to.throw('namespace "BadNamespace" contains ' +
                   'uppercase letters. Namespaces must be lowercase.');
     });
@@ -667,18 +667,18 @@ describe('Bindings', () => {
         + 'region \'\'.');
     });
   });
-  describe('Create Deployment', () => {
+  describe('Deployment', () => {
     it('no args', () => {
-      expect(b.createDeployment).to.not.throw();
+      expect(() => new b.Deployment()).to.not.throw();
     });
     it('should error when given invalid arguments', () => {
-      expect(() => b.createDeployment({ badArg: 'foo' }))
+      expect(() => new b.Deployment({ badArg: 'foo' }))
         .to.throw('Unrecognized keys passed to Deployment constructor: badArg');
     });
   });
   describe('Query', () => {
     it('namespace', () => {
-      deployment = b.createDeployment({ namespace: 'mynamespace' });
+      deployment = new b.Deployment({ namespace: 'mynamespace' });
       expect(deployment.toQuiltRepresentation().namespace).to.equal(
         'mynamespace');
     });
@@ -687,7 +687,7 @@ describe('Bindings', () => {
         'default-namespace');
     });
     it('admin ACL', () => {
-      deployment = b.createDeployment({ adminACL: ['local'] });
+      deployment = new b.Deployment({ adminACL: ['local'] });
       expect(deployment.toQuiltRepresentation().adminACL).to.eql(
         ['local']);
     });

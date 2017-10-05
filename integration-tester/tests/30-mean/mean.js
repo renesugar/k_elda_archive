@@ -4,7 +4,7 @@ const Mongo = require('@quilt/mongo');
 const Node = require('@quilt/nodejs');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = quilt.createDeployment();
+const deployment = new quilt.Deployment();
 deployment.deploy(infrastructure);
 
 const mongo = new Mongo(3);

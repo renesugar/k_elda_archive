@@ -35,7 +35,7 @@ const proxy = hap.withURLrouting({
 
 proxy.allowFrom(quilt.publicInternet, 80);
 
-const inf = quilt.createDeployment();
+const inf = new quilt.Deployment();
 
 inf.deploy(infrastructure);
 serviceA.forEach(container => container.deploy(inf));

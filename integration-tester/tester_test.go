@@ -39,7 +39,7 @@ func TestUpdateNamespace(t *testing.T) {
 
 	blueprintPath := "/test.blueprint"
 	err := overwrite(blueprintPath, `require("spark");
-var deployment = createDeployment({namespace: "replace"});
+var deployment = new Deployment({namespace: "replace"});
 deployment.deploy(new Machine({}));`)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
@@ -48,7 +48,7 @@ deployment.deploy(new Machine({}));`)
 
 	res, err := fileContents(blueprintPath)
 	exp := `require("spark");
-var deployment = createDeployment({namespace: "replace"});
+var deployment = new Deployment({namespace: "replace"});
 deployment.deploy(new Machine({}));; ` +
 		`require('@quilt/quilt').getDeployment().namespace = "test-namespace";`
 	if err != nil {

@@ -1,4 +1,4 @@
-const { createDeployment } = require('@quilt/quilt');
+const { Deployment } = require('@quilt/quilt');
 const infrastructure = require('./infrastructure.js');
 
-createDeployment({}).deploy(infrastructure);
+(new Deployment()).deploy(infrastructure);

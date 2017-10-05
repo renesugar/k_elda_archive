@@ -11,7 +11,7 @@ const providerToFloatingIp = {
   DigitalOcean: '138.68.203.188', // sfo1
 };
 
-const deployment = quilt.createDeployment();
+const deployment = new quilt.Deployment();
 deployment.deploy(infrastructure);
 
 // Find a worker machine to which we'll assign a floating IP.

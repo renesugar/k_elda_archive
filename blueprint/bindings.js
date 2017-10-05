@@ -97,7 +97,7 @@ function baseInfrastructure(name = 'default') {
   return getInfraDeployment(infraPath);
 }
 
-// The default deployment object. createDeployment overwrites this.
+// The default deployment object. The Deployment constructor overwrites this.
 global._quiltDeployment = new Deployment({});
 
 // The name used to refer to the public internet in the JSON description
@@ -112,12 +112,14 @@ let uniqueIDCounter = 0;
 /**
  * Overwrites the deployment object with a new one.
  *
+ * @deprecated This function is deprecated; users should transition to using
+ *   the Deployment constructor directly.
+ *
  * @param {Object} deploymentOpts - Options for the new deployment object.
  * @returns {Deployment} A deployment object.
  */
 function createDeployment(deploymentOpts) {
-  global._quiltDeployment = new Deployment(deploymentOpts);
-  return global._quiltDeployment;
+  return new Deployment(deploymentOpts);
 }
 
 /**
@@ -145,6 +147,8 @@ function Deployment(deploymentOpts = {}) {
   this.machines = [];
   this.containers = new Set();
   this.loadBalancers = [];
+
+  global._quiltDeployment = this;
 }
 
 /**

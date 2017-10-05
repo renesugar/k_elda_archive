@@ -3,7 +3,7 @@ const quilt = require('@quilt/quilt');
 const nginx = require('@quilt/nginx');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = quilt.createDeployment();
+const deployment = new quilt.Deployment();
 deployment.deploy(infrastructure);
 
 for (let i = 0; i < infrastructure.nWorker; i += 1) {

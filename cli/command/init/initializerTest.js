@@ -255,7 +255,7 @@ describe('Initializer', () => {
       };
 
       const expInfraFile = `function infraGetter(quilt) {
-  const inf = quilt.createDeployment({namespace: 'quilt-deployment'});
+  const inf = new quilt.Deployment({namespace: 'quilt-deployment'});
 
   var vmTemplate = new quilt.Machine({
     provider: 'provider',
@@ -291,7 +291,7 @@ module.exports = infraGetter;
       };
 
       const expInfraFile = `function infraGetter(quilt) {
-  const inf = quilt.createDeployment({namespace: 'quilt-deployment'});
+  const inf = new quilt.Deployment({namespace: 'quilt-deployment'});
 
   var vmTemplate = new quilt.Machine({
     provider: 'provider',

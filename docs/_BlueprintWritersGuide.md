@@ -195,7 +195,7 @@ containers, you must create a deployment object, which maintains state about the
 deployment.
 
 ```javascript
-const deployment = createDeployment();
+const deployment = new Deployment();
 deployment.deploy(baseMachine.asMaster());
 deployment.deploy(baseMachine.asWorker());
 ```

@@ -10,6 +10,6 @@ const sprk = new spark.Spark(1, infrastructure.nWorker - 1)
   .exposeUIToPublic()
   .job('run-example SparkPi');
 
-const deployment = quilt.createDeployment();
+const deployment = new quilt.Deployment();
 deployment.deploy(infrastructure);
 sprk.deploy(deployment);
