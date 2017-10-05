@@ -124,11 +124,17 @@ function createDeployment(deploymentOpts) {
  * Creates a new deployment object with the given options.
  * @constructor
  *
- * @param {Object} deploymentOpts - An object containing options that can tweak
- * the behavior of the namespace.  Options include: `namespace` which instructs
- * the deployment what namespace it should
- * operate in, and `adminACL` which defines what network traffic should be
- * allowed to access the deployment.
+ * @param {Object} [deploymentOpts] - Optional arguments to tweak the behavior
+ *   of the namespace.
+ * @param {string} [deploymentOpts.namespace=default-namespace] - The name of the
+ *   namespace that the blueprint should operate in.
+ * @param {string[]} [deploymentOpts.adminACL] - A list of IP addresses that are
+ *   allowed to access the deployed machines.  The IP of the machine where the
+ *   daemon is running is always allowed to access the machines. If you would like to allow
+ *   another machine to access the deployed machines (e.g., to SSH into a machine),
+ *   add its IP address here.  These IP addresses must be in CIDR notation; e.g.,
+ *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
+ *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
  */
 function Deployment(deploymentOpts = {}) {
   this.namespace = deploymentOpts.namespace || 'default-namespace';
