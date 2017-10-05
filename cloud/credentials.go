@@ -27,13 +27,6 @@ var credentialsCounter = counter.New("Cloud Credentials")
 // certificates are in place on a machine, they are left alone. SyncCredentials
 // also writes the installed signed certificate for each machine into the
 // database.
-// XXX: The logic to avoid overwriting existing certificates does not work
-// between restarts to the daemon. If a minion has been initialized with
-// certificates but the daemon restarts, it will overwrite the existing
-// certificate. However, because this code does not cause the minion to reload
-// the certificate from disk, it will continue to run with the old certificates.
-// This will not cause any interruption to connections as long as the same
-// certificate authority is used by the daemon.
 func SyncCredentials(conn db.Conn, sshKey ssh.Signer, ca rsa.KeyPair) {
 	for range conn.TriggerTick(30, db.MachineTable).C {
 		syncCredentialsOnce(conn, sshKey, ca)
@@ -71,8 +64,9 @@ func syncCredentialsOnce(conn db.Conn, sshKey ssh.Signer, ca rsa.KeyPair) {
 }
 
 // generateAndInstallCerts attempts to generate a certificate key pair and install
-// it onto the given machine. Returns the public key of the installed
-// certificate, and whether it was successful.
+// it onto the given machine. If a certificate was already installed, it simply
+// returns the contents of the previously installed certificate. Returns the
+// public key of the installed certificate, and whether it was successful.
 func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
 	ca rsa.KeyPair) (string, bool) {
 	fs, err := getSftpFs(machine.PublicIP, sshKey)
@@ -84,6 +78,17 @@ func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
 		return "", false
 	}
 	defer fs.Close()
+
+	certPath := tlsIO.SignedCertPath(tlsIO.MinionTLSDir)
+	if _, err := fs.Stat(certPath); err == nil {
+		existingCert, err := afero.Afero{Fs: fs}.ReadFile(certPath)
+		if err != nil {
+			log.WithError(err).WithField("host", machine.PublicIP).Error(
+				"Failed to read existing certificate")
+			return "", false
+		}
+		return string(existingCert), true
+	}
 
 	// Generate new certificates signed by the CA for use by the minion for all
 	// communication.

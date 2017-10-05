@@ -63,6 +63,44 @@ func TestSyncCredentials(t *testing.T) {
 	assert.Equal(t, string(certBytes), dbm.PublicKey)
 }
 
+func TestExistingCredentialsDontGetOverwritten(t *testing.T) {
+	conn := db.New()
+	mockFs := afero.NewMemMapFs()
+	aferoFs := afero.Afero{Fs: mockFs}
+	getSftpFs = func(_ string, _ ssh.Signer) (sftpFs, error) {
+		return mockSFTPFs{mockFs}, nil
+	}
+
+	existingCert := "existingCert"
+	err := aferoFs.WriteFile(
+		tlsIO.SignedCertPath(tlsIO.MinionTLSDir),
+		[]byte(existingCert),
+		0644)
+	assert.NoError(t, err)
+
+	ca, err := rsa.NewCertificateAuthority()
+	assert.NoError(t, err)
+
+	conn.Txn(db.MachineTable).Run(func(view db.Database) error {
+		dbm := view.InsertMachine()
+		dbm.PublicIP = "foo"
+		dbm.PrivateIP = "bar"
+		view.Commit(dbm)
+		return nil
+	})
+	syncCredentialsOnce(conn, nil, ca)
+
+	// Ensure that the existing public key got saved to the database.
+	dbm := conn.SelectFromMachine(nil)[0]
+	assert.Equal(t, existingCert, dbm.PublicKey)
+
+	// Ensure that the existing public key was not overwritten.
+	certOnMachine, err := aferoFs.ReadFile(
+		tlsIO.SignedCertPath(tlsIO.MinionTLSDir))
+	assert.NoError(t, err)
+	assert.Equal(t, existingCert, string(certOnMachine))
+}
+
 func TestFailedToSSH(t *testing.T) {
 	ca, err := rsa.NewCertificateAuthority()
 	assert.NoError(t, err)
