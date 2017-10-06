@@ -370,7 +370,7 @@ function LoadBalancer(name, containers) {
     throw new Error(`name must be a string; was ${stringify(name)}`);
   }
   this.name = uniqueHostname(name);
-  this.containers = boxContainers(containers);
+  this.containers = boxObjects(containers, Container);
 
   this.allowedInboundConnections = [];
 }
@@ -397,7 +397,7 @@ LoadBalancer.prototype.deploy = function lbDeploy(deployment) {
 LoadBalancer.prototype.allowFrom = function lbAllowFrom(srcArg, portRange) {
   let src;
   try {
-    src = boxContainers(srcArg);
+    src = boxObjects(srcArg, Container);
   } catch (err) {
     throw new Error('Load Balancers can only allow traffic from containers. ' +
           'Check that you\'re allowing connections from a Container ' +
@@ -420,7 +420,7 @@ const publicInternet = {
   allowFrom(srcArg, portRange) {
     let src;
     try {
-      src = boxContainers(srcArg);
+      src = boxObjects(srcArg, Container);
     } catch (err) {
       throw new Error('Only containers can connect to public. ' +
                 'Check that you\'re allowing connections from a Container or ' +
@@ -443,40 +443,44 @@ LoadBalancer.prototype.getQuiltConnections = function lbGetQuiltConnections() {
 };
 
 /**
- * Boxes a container into a list of containers, or do nothing if `x` is a list
- * of containers.
+ * Boxes an object into a list of objects, or does nothing if `x` is already
+ * a list of objects. Also checks that all items in the list are instances
+ * of `type`. This method is useful for validating arguments to functions.
  * @private
  *
- * @param {Container|Container[]} x - A container object, or a list of
- *   container objects.
- * @returns {Container[]} The resulting list of container objects.
+ * @param {Object|Object[]} x - An object or list of objects.
+ * @param {Object} type - A constructor (used to check whether `x` was constructed
+ *   using this constructor).
+ * @returns {Object[]} The resulting list of objects.
  */
-function boxContainers(x) {
-  if (x instanceof Container) {
+function boxObjects(x, type) {
+  if (x instanceof type) {
     return [x];
   }
 
-  assertContainerList(x);
+  assertArrayOfType(x, type);
   return x;
 }
 
 /**
- * Asserts that `containers` is an array of Container objects.
- * @private
+ * Checks that `array` is an array of `type` objects, and throws an
+ * error if it is not.
  *
- * @param {Container[]} containers - An array of container objects.
+ * @param {Object[]} array - An array of objects to check the type of.
+ * @param {Object} type - The constructor to check that all items in `array`
+ *   are types of.
  * @returns {void}
  */
-function assertContainerList(containers) {
-  if (!Array.isArray(containers)) {
-    throw new Error('not an array of Containers (was ' +
-            `${stringify(containers)})`);
+function assertArrayOfType(array, type) {
+  if (!Array.isArray(array)) {
+    throw new Error(`not an array of ${type.name}s (was ` +
+            `${stringify(array)})`);
   }
-  for (let i = 0; i < containers.length; i += 1) {
-    if (!(containers[i] instanceof Container)) {
-      throw new Error('not an array of Containers; item ' +
-                `at index ${i} (${stringify(containers[i])}) is not a ` +
-                'Container');
+  for (let i = 0; i < array.length; i += 1) {
+    if (!(array[i] instanceof type)) {
+      throw new Error(`not an array of ${type.name}s; item ` +
+                `at index ${i} (${stringify(array[i])}) is not a ` +
+                `${type.name}`);
     }
   }
 }
@@ -1009,7 +1013,7 @@ function containerAllowFrom(srcArg, portRange) {
 
   let src;
   try {
-    src = boxContainers(srcArg);
+    src = boxObjects(srcArg, Container);
   } catch (err) {
     throw new Error('Containers can only connect to other containers. ' +
             'Check that you\'re allowing connections from a container or ' +
