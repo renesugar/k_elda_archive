@@ -1,8 +1,7 @@
 const quilt = require('@quilt/quilt');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = new quilt.Deployment();
-deployment.deploy(infrastructure);
+const infra = infrastructure.createTestInfrastructure();
 
 // If we deploy nWorker+1 containers, at least one machine is guaranteed to run
 // two containers, and thus be able to test intra-machine bandwidth.
@@ -13,4 +12,4 @@ for (let i = 0; i < infrastructure.nWorker + 1; i += 1) {
   }));
 }
 quilt.allow(iperfs, iperfs, 5201);
-iperfs.forEach(container => container.deploy(deployment));
+iperfs.forEach(container => container.deploy(infra));

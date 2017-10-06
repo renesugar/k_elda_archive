@@ -1,8 +1,7 @@
 const quilt = require('@quilt/quilt');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = new quilt.Deployment();
-deployment.deploy(infrastructure);
+const infra = infrastructure.createTestInfrastructure();
 
 const connected = [];
 for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
@@ -20,5 +19,5 @@ for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
   }));
 }
 
-connected.forEach(connectedContainer => connectedContainer.deploy(deployment));
-notConnected.forEach(notConnectedContainer => notConnectedContainer.deploy(deployment));
+connected.forEach(connectedContainer => connectedContainer.deploy(infra));
+notConnected.forEach(notConnectedContainer => notConnectedContainer.deploy(infra));

@@ -1,8 +1,7 @@
 const quilt = require('@quilt/quilt');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = new quilt.Deployment();
-deployment.deploy(infrastructure);
+const infra = infrastructure.createTestInfrastructure();
 
 const containers = [];
 for (let i = 0; i < 4; i += 1) {
@@ -11,7 +10,7 @@ for (let i = 0; i < 4; i += 1) {
         `I am container number ${i.toString()}\n`,
   }));
 }
-containers.forEach(container => container.deploy(deployment));
+containers.forEach(container => container.deploy(infra));
 
 const fetcher = new quilt.Container('fetcher', 'alpine', {
   command: ['tail', '-f', '/dev/null'],
@@ -19,5 +18,5 @@ const fetcher = new quilt.Container('fetcher', 'alpine', {
 const loadBalanced = new quilt.LoadBalancer('loadBalanced', containers);
 loadBalanced.allowFrom(fetcher, 80);
 
-fetcher.deploy(deployment);
-loadBalanced.deploy(deployment);
+fetcher.deploy(infra);
+loadBalanced.deploy(infra);

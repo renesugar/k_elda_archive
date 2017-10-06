@@ -255,7 +255,6 @@ describe('Initializer', () => {
       };
 
       const expInfraFile = `function infraGetter(quilt) {
-  const inf = new quilt.Deployment({namespace: 'quilt-deployment'});
 
   var vmTemplate = new quilt.Machine({
     provider: 'provider',
@@ -265,10 +264,10 @@ describe('Initializer', () => {
     preemptible: true
   });
 
-  inf.deploy(vmTemplate.asMaster().replicate(1));
-  inf.deploy(vmTemplate.asWorker().replicate(2));
-
-  return inf;
+  return new quilt.Infrastructure(
+    vmTemplate.replicate(1),
+    vmTemplate.replicate(2),
+    {namespace: 'quilt-deployment'});
 }
 
 module.exports = infraGetter;
@@ -291,7 +290,6 @@ module.exports = infraGetter;
       };
 
       const expInfraFile = `function infraGetter(quilt) {
-  const inf = new quilt.Deployment({namespace: 'quilt-deployment'});
 
   var vmTemplate = new quilt.Machine({
     provider: 'provider',
@@ -301,10 +299,10 @@ module.exports = infraGetter;
     preemptible: true
   });
 
-  inf.deploy(vmTemplate.asMaster().replicate(1));
-  inf.deploy(vmTemplate.asWorker().replicate(2));
-
-  return inf;
+  return new quilt.Infrastructure(
+    vmTemplate.replicate(1),
+    vmTemplate.replicate(2),
+    {namespace: 'quilt-deployment'});
 }
 
 module.exports = infraGetter;

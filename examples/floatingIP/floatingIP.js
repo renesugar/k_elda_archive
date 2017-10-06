@@ -1,15 +1,9 @@
 // AWS: http://docs.aws.amazon.com/cli/latest/reference/ec2/allocate-address.html
 // Google: https://cloud.google.com/compute/docs/configure-instance-ip-addresses#reserve_new_static
-const { Deployment, Machine } = require('@quilt/quilt');
+const { Infrastructure, Machine } = require('@quilt/quilt');
 const nginx = require('@quilt/nginx');
 
 const floatingIp = 'xxx.xxx.xxx.xxx (CHANGE ME)';
-const deployment = new Deployment();
-
-const app = nginx.createContainer(80);
-
-app.placeOn({ floatingIp });
-app.deploy(deployment);
 
 const baseMachine = new Machine({
   provider: 'Amazon',
@@ -17,8 +11,12 @@ const baseMachine = new Machine({
   region: 'us-west-2',
   // sshKeys: githubKeys("GITHUB_USERNAME")
 });
+const workerMachine = baseMachine.clone();
+workerMachine.floatingIp = floatingIp;
 
-deployment.deploy(baseMachine.asMaster());
+const infra = new Infrastructure(baseMachine, workerMachine);
 
-baseMachine.floatingIp = floatingIp;
-deployment.deploy(baseMachine.asWorker());
+const app = nginx.createContainer(80);
+
+app.placeOn({ floatingIp });
+app.deploy(infra);

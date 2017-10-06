@@ -1,5 +1,4 @@
 function infraGetter(quilt) {
-  const inf = new quilt.Deployment({namespace: 'quilt-deployment'});
 
   var vmTemplate = new quilt.Machine({
     provider: '{{provider}}',
@@ -18,10 +17,10 @@ function infraGetter(quilt) {
     preemptible: {{preemptible}}
   });
 
-  inf.deploy(vmTemplate.asMaster().replicate({{masterCount}}));
-  inf.deploy(vmTemplate.asWorker().replicate({{workerCount}}));
-
-  return inf;
+  return new quilt.Infrastructure(
+    vmTemplate.replicate({{masterCount}}),
+    vmTemplate.replicate({{workerCount}}),
+    {namespace: 'quilt-deployment'});
 }
 
 module.exports = infraGetter;

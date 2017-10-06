@@ -4,8 +4,7 @@ const Mongo = require('@quilt/mongo');
 const Node = require('@quilt/nodejs');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = new quilt.Deployment();
-deployment.deploy(infrastructure);
+const infra = infrastructure.createTestInfrastructure();
 
 const mongo = new Mongo(3);
 const app = new Node({
@@ -22,6 +21,6 @@ const proxy = haproxy.simpleLoadBalancer(app.containers);
 mongo.allowFrom(app.containers, mongo.port);
 proxy.allowFrom(quilt.publicInternet, haproxy.exposedPort);
 
-app.deploy(deployment);
-mongo.deploy(deployment);
-proxy.deploy(deployment);
+app.deploy(infra);
+mongo.deploy(infra);
+proxy.deploy(infra);

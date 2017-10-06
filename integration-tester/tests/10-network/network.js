@@ -1,8 +1,7 @@
 const quilt = require('@quilt/quilt');
 const infrastructure = require('../../config/infrastructure.js');
 
-const deployment = new quilt.Deployment();
-deployment.deploy(infrastructure);
+const infra = infrastructure.createTestInfrastructure();
 
 const image = 'alpine';
 const command = ['tail', '-f', '/dev/null'];
@@ -30,7 +29,7 @@ quilt.allow(blueContainers, yellowContainers, 80);
 const redLB = new quilt.LoadBalancer('red-lb', redContainers);
 redLB.allowFrom(blueContainers, 80);
 
-redContainers.forEach(container => container.deploy(deployment));
-yellowContainers.forEach(container => container.deploy(deployment));
-blueContainers.forEach(container => container.deploy(deployment));
-redLB.deploy(deployment);
+redContainers.forEach(container => container.deploy(infra));
+yellowContainers.forEach(container => container.deploy(infra));
+blueContainers.forEach(container => container.deploy(infra));
+redLB.deploy(infra);

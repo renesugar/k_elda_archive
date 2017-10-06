@@ -188,24 +188,22 @@ public key "bar":
 let baseMachine = new Machine({provider: 'Amazon', sshKeys: ['ssh-rsa bar']});
 ```
     
-Now, using that base machine, we can deploy a master and a worker machine.  All
-quilt deployments must have one master, which keeps track of state for all of
-the machines in the cluster, and 0 or more workers.  To deploy machines and
-containers, you must create a deployment object, which maintains state about the
-deployment.
+Now, using that base machine, we can deploy a master and a worker machine using
+Quilt's `Infrastructure` constructor.  All infrastructures must have at least
+one master, which keeps track of state for all of the machines in the cluster,
+and at least one worker. The `Infrastructure` constructor accepts the master(s)
+and worker(s) as parameters:
 
 ```javascript
-const deployment = new Deployment();
-deployment.deploy(baseMachine.asMaster());
-deployment.deploy(baseMachine.asWorker());
+const infra = new Infrastructure(baseMachine, baseMachine);
 ```
 
-We've now defined a deployment with a master and worker machine.  Let's finally
-deploy the two containers on that infrastructure:
+We've now defined a infrastructure with a master and worker machine.  Let's
+finally deploy the two containers on that infrastructure:
 
 ```javascript
-sql.deploy(deployment);
-lobsters.deploy(deployment);
+sql.deploy(infra);
+lobsters.deploy(infra);
 ```
     
 We're done!  Running the blueprint is now trivial.  With a quilt daemon running, run
