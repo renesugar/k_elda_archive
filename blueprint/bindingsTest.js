@@ -676,6 +676,42 @@ describe('Bindings', () => {
         .to.throw('Unrecognized keys passed to Deployment constructor: badArg');
     });
   });
+  describe('Infrastructure', () => {
+    it('using Infrastructure constructor overwrites the default Deployment', () => {
+      const namespace = 'testing-namespace';
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+      const infra = new b.Infrastructure([machine], [machine], { namespace });
+      expect(infra.toQuiltRepresentation().namespace).to.equal(namespace);
+    });
+    it('master and worker machines added correctly', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+      deployment = new b.Infrastructure([machine], [machine, machine]);
+      checkMachines([{
+        role: 'Master',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }, {
+        // The ID is included here because otherwise the containSubset function
+        // used in checkMachines will return true, even if there is only one
+        // worker and two masters in the actual output.
+        id: '581b4508454ed983d027d699777004feb5c28de3',
+        role: 'Worker',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }, {
+        id: '2f822f1272e60e357b679cc520134dbc38d40daa',
+        role: 'Worker',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }]);
+    });
+  });
   describe('Query', () => {
     it('namespace', () => {
       deployment = new b.Deployment({ namespace: 'mynamespace' });

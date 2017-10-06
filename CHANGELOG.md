@@ -12,6 +12,9 @@ parent does not exist.
 Quilt-managed SSH key should work most of the time because the
 daemon automatically grants it access to the cluster.
 - Fix a bug where floating IPs would not get properly assigned in GCE.
+- Add Infrastructure class for deploying Quilt machines. createDeployment()
+and the Deployment class are now deprecated, and users should transition
+to using Infrastructure instead.
 
 JavaScript API-breaking changes:
 - Remove the Container.replicate() method. Users should create multiple

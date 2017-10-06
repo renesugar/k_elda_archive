@@ -12,6 +12,65 @@ let fs = require('fs'); // eslint-disable-line prefer-const
 const githubCache = {};
 const objectHasKey = Object.prototype.hasOwnProperty;
 
+class Deployment {
+  /**
+   * Creates a new deployment object with the given options.
+   * @deprecated Deployment is now deprecated in favor of {@link Infrastructure}.
+   * @constructor
+   *
+   * @param {Object} [deploymentOpts] - Optional arguments to tweak the behavior
+   *   of the namespace.
+   * @param {string} [deploymentOpts.namespace=default-namespace] - The name of the
+   *   namespace that the blueprint should operate in.
+   * @param {string[]} [deploymentOpts.adminACL] - A list of IP addresses that are
+   *   allowed to access the deployed machines.  The IP of the machine where the
+   *   daemon is running is always allowed to access the machines. If you would like to allow
+   *   another machine to access the deployed machines (e.g., to SSH into a machine),
+   *   add its IP address here.  These IP addresses must be in CIDR notation; e.g.,
+   *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
+   *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
+   */
+  constructor(deploymentOpts = {}) {
+    this.namespace = deploymentOpts.namespace || 'default-namespace';
+    this.adminACL = getStringArray('adminACL', deploymentOpts.adminACL);
+
+    checkExtraKeys(deploymentOpts, this);
+
+    this.machines = [];
+    this.containers = new Set();
+    this.loadBalancers = [];
+
+    global._quiltDeployment = this;
+  }
+}
+
+class Infrastructure extends Deployment {
+  /**
+   * Creates a new Infrastructure with the given options.
+   * @constructor
+   *
+   * @param {Machine[]} masters - List of machines to use as the masters.
+   * @param {Machine[]} workers - List of machines to use as the workers.
+   *   Worker machines are responsible for running application containers.
+   * @param {Object} [opts] - Optional arguments to tweak the behavior
+   *   of the infrastructure.
+   * @param {string} [opts.namespace=default-namespace] - The name of the
+   *   namespace that the blueprint should operate in.
+   * @param {string[]} [opts.adminACL] - A list of IP addresses that are
+   *   allowed to access the deployed machines.  The IP of the machine where the
+   *   daemon is running is always allowed to access the machines. If you would like to allow
+   *   another machine to access the deployed machines (e.g., to SSH into a machine),
+   *   add its IP address here.  These IP addresses must be in CIDR notation; e.g.,
+   *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
+   *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
+   */
+  constructor(masters, workers, opts = {}) {
+    super(opts);
+    masters.forEach(master => this.machines.push(master.asMaster()));
+    workers.forEach(worker => this.machines.push(worker.asWorker()));
+  }
+}
+
 /**
  * Gets the public key associated with a github username.
  * @param {string} user - The GitHub username.
@@ -113,7 +172,7 @@ let uniqueIDCounter = 0;
  * Overwrites the deployment object with a new one.
  *
  * @deprecated This function is deprecated; users should transition to using
- *   the Deployment constructor directly.
+ *   the {@link Infrastructure} class constructor instead.
  *
  * @param {Object} deploymentOpts - Options for the new deployment object.
  * @returns {Deployment} A deployment object.
@@ -121,36 +180,6 @@ let uniqueIDCounter = 0;
 function createDeployment(deploymentOpts) {
   return new Deployment(deploymentOpts);
 }
-
-/**
- * Creates a new deployment object with the given options.
- * @constructor
- *
- * @param {Object} [deploymentOpts] - Optional arguments to tweak the behavior
- *   of the namespace.
- * @param {string} [deploymentOpts.namespace=default-namespace] - The name of the
- *   namespace that the blueprint should operate in.
- * @param {string[]} [deploymentOpts.adminACL] - A list of IP addresses that are
- *   allowed to access the deployed machines.  The IP of the machine where the
- *   daemon is running is always allowed to access the machines. If you would like to allow
- *   another machine to access the deployed machines (e.g., to SSH into a machine),
- *   add its IP address here.  These IP addresses must be in CIDR notation; e.g.,
- *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
- *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
- */
-function Deployment(deploymentOpts = {}) {
-  this.namespace = deploymentOpts.namespace || 'default-namespace';
-  this.adminACL = getStringArray('adminACL', deploymentOpts.adminACL);
-
-  checkExtraKeys(deploymentOpts, this);
-
-  this.machines = [];
-  this.containers = new Set();
-  this.loadBalancers = [];
-
-  global._quiltDeployment = this;
-}
-
 /**
  * @private
  * @returns {integer} A globally unique integer ID.
@@ -719,6 +748,10 @@ Machine.prototype.withRole = function machineWithRole(role) {
 };
 
 /**
+ * @deprecated Users should no longer use this function directly, and instead
+ * should create infrastructure using the {@link Infrastructure} constructor,
+ * which handles marking the passed-in machines as workers.
+ *
  * @returns {Machine} A new machine with role Worker.
  */
 Machine.prototype.asWorker = function machineAsWorker() {
@@ -726,6 +759,10 @@ Machine.prototype.asWorker = function machineAsWorker() {
 };
 
 /**
+ * @deprecated Users should no longer use this function directly, and instead
+ * should create infrastructure using the {@link Infrastructure} constructor,
+ * which handles marking the passed-in machines as masters.
+ *
  * @returns {Machine} A new machine with role Master.
  */
 Machine.prototype.asMaster = function machineAsMaster() {
@@ -1185,6 +1222,7 @@ function resetGlobals() {
 module.exports = {
   Container,
   Deployment,
+  Infrastructure,
   Image,
   Machine,
   Port,
