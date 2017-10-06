@@ -59,6 +59,14 @@ func Run(conn db.Conn, listenAddr string, runningOnDaemon bool,
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGHUP)
 	go func(c chan os.Signal) {
 		sig := <-c
+		var activeMachinesCount = len(conn.SelectFromMachine(nil))
+		var namespace, _ = conn.GetBlueprintNamespace()
+		if activeMachinesCount > 0 {
+			log.Warnf("\n%d machines will continue running after the Kelda"+
+				" daemon shuts down. If you'd like to stop them, restart"+
+				" the daemon and run `kelda stop %s`.\n",
+				activeMachinesCount, namespace)
+		}
 		log.Printf("Caught signal %s: shutting down.\n", sig)
 		sock.Close()
 		os.Exit(0)
