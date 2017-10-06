@@ -66,6 +66,13 @@ class Infrastructure extends Deployment {
    */
   constructor(masters, workers, opts = {}) {
     super(opts);
+    if (masters.length < 1) {
+      throw new Error('masters must include 1 or more Machines to use as ' +
+        'Quilt masters.');
+    } else if (workers.length < 1) {
+      throw new Error('workers must include 1 or more Machines to use as ' +
+        'Quilt workers.');
+    }
     masters.forEach(master => this.machines.push(master.asMaster()));
     workers.forEach(worker => this.machines.push(worker.asWorker()));
   }

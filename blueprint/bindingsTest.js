@@ -711,6 +711,20 @@ describe('Bindings', () => {
         region: 'us-west-2',
       }]);
     });
+    it('errors when no masters are given', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+      });
+      expect(() => new b.Infrastructure([], [machine]))
+        .to.throw('masters must include 1 or more');
+    });
+    it('errors when no workers are given', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+      });
+      expect(() => new b.Infrastructure([machine], []))
+        .to.throw('workers must include 1 or more');
+    });
   });
   describe('Query', () => {
     it('namespace', () => {
