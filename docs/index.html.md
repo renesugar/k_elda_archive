@@ -22,5 +22,8 @@ includes:
   - FAQ
   - Feedback
 
+stylesheets:
+  - stylesheets/jsdoc.css
+
 search: true
 ---

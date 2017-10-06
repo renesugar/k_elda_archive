@@ -4,6 +4,7 @@ all: build/slate _jsdoc.erb
 	cp -r ${CURDIR}/source/* source/ && \
 	cp -r ${CURDIR}/*md source/ && \
 	cp ${CURDIR}/_jsdoc.erb source/ && \
+	cp ${CURDIR}/build/jsdoc_template/stylesheets/jsdoc.css source/stylesheets/ && \
 	bundle exec middleman build --clean && \
 	cp -r build/* ${CURDIR}/build/ && \
 	echo "docs successfully compiled to HTML. To view docs, run:" && \
