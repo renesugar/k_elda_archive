@@ -711,6 +711,22 @@ describe('Bindings', () => {
         region: 'us-west-2',
       }]);
     });
+    it('accepts non-array master and worker as arguments', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+      deployment = new b.Infrastructure(machine, machine);
+      checkMachines([{
+        role: 'Master',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }, {
+        role: 'Worker',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }]);
+    });
     it('errors when no masters are given', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
@@ -724,6 +740,15 @@ describe('Bindings', () => {
       });
       expect(() => new b.Infrastructure([machine], []))
         .to.throw('workers must include 1 or more');
+    });
+    it('errors when a non-Machine is given as the master', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+      });
+      expect(() => new b.Infrastructure(['not a Machine'], [machine]))
+        .to.throw('not an array of Machines; item at index 0 ("not a Machine") is not a Machine');
+      expect(() => new b.Infrastructure(3, [machine]))
+        .to.throw('not an array of Machines (was 3)');
     });
   });
   describe('Query', () => {

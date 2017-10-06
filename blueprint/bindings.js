@@ -49,9 +49,10 @@ class Infrastructure extends Deployment {
    * Creates a new Infrastructure with the given options.
    * @constructor
    *
-   * @param {Machine[]} masters - List of machines to use as the masters.
-   * @param {Machine[]} workers - List of machines to use as the workers.
-   *   Worker machines are responsible for running application containers.
+   * @param {Machine|Machine[]} masters - One or more machines that should be launched to
+   *   use as the masters.
+   * @param {Machine|Machine[]} workers - One or more machines that should be launched to
+   *   use as the workers.  Worker machines are responsible for running application containers.
    * @param {Object} [opts] - Optional arguments to tweak the behavior
    *   of the infrastructure.
    * @param {string} [opts.namespace=default-namespace] - The name of the
@@ -66,15 +67,17 @@ class Infrastructure extends Deployment {
    */
   constructor(masters, workers, opts = {}) {
     super(opts);
-    if (masters.length < 1) {
+    const boxedMasters = boxObjects(masters, Machine);
+    const boxedWorkers = boxObjects(workers, Machine);
+    if (boxedMasters.length < 1) {
       throw new Error('masters must include 1 or more Machines to use as ' +
         'Quilt masters.');
-    } else if (workers.length < 1) {
+    } else if (boxedWorkers.length < 1) {
       throw new Error('workers must include 1 or more Machines to use as ' +
         'Quilt workers.');
     }
-    masters.forEach(master => this.machines.push(master.asMaster()));
-    workers.forEach(worker => this.machines.push(worker.asWorker()));
+    boxedMasters.forEach(master => this.machines.push(master.asMaster()));
+    boxedWorkers.forEach(worker => this.machines.push(worker.asWorker()));
   }
 }
 
