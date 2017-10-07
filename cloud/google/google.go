@@ -456,15 +456,19 @@ func (prvdr *Provider) UpdateFloatingIPs(machines []db.Machine) error {
 				"timed out waiting for access config to be removed")
 		}
 
+		newAccessConfig := &compute.AccessConfig{Type: "ONE_TO_ONE_NAT"}
+		if m.FloatingIP == "" {
+			// Google will automatically assign a dynamic IP
+			// if no NatIP is provided.
+			newAccessConfig.Name = ephemeralIPName
+		} else {
+			newAccessConfig.Name = floatingIPName
+			newAccessConfig.NatIP = m.FloatingIP
+		}
+
 		// Add new network interface.
 		op, err = prvdr.AddAccessConfig(prvdr.zone, m.CloudID,
-			networkInterface.Name, &compute.AccessConfig{
-				Type: "ONE_TO_ONE_NAT",
-				Name: floatingIPName,
-				// Google will automatically assign a dynamic IP
-				// if none is provided (i.e. m.FloatingIP == "").
-				NatIP: m.FloatingIP,
-			})
+			networkInterface.Name, newAccessConfig)
 		if err != nil {
 			return err
 		}
