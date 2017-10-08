@@ -3,7 +3,6 @@ package cloud
 import (
 	"crypto/rand"
 	goRSA "crypto/rsa"
-	"path/filepath"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -47,16 +46,15 @@ func TestSyncCredentials(t *testing.T) {
 	syncCredentialsOnce(conn, expSigner, ca)
 
 	aferoFs := afero.Afero{Fs: mockFs}
-	certBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "kelda.crt"))
+	certBytes, err := aferoFs.ReadFile(tlsIO.SignedCertPath(tlsIO.MinionTLSDir))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
 
-	keyBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "kelda.key"))
+	keyBytes, err := aferoFs.ReadFile(tlsIO.SignedKeyPath(tlsIO.MinionTLSDir))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, keyBytes)
 
-	caBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir,
-		"certificate_authority.crt"))
+	caBytes, err := aferoFs.ReadFile(tlsIO.CACertPath(tlsIO.MinionTLSDir))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, caBytes)
 

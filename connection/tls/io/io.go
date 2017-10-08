@@ -32,17 +32,17 @@ type File struct {
 
 // ReadCredentials reads the TLS credentials contained within the directory.
 func ReadCredentials(dir string) (tls.TLS, error) {
-	caCert, err := util.ReadFile(caCertPath(dir))
+	caCert, err := util.ReadFile(CACertPath(dir))
 	if err != nil {
 		return tls.TLS{}, fmt.Errorf("read CA: %s", err)
 	}
 
-	signedCert, err := util.ReadFile(signedCertPath(dir))
+	signedCert, err := util.ReadFile(SignedCertPath(dir))
 	if err != nil {
 		return tls.TLS{}, fmt.Errorf("read signed cert: %s", err)
 	}
 
-	signedKey, err := util.ReadFile(signedKeyPath(dir))
+	signedKey, err := util.ReadFile(SignedKeyPath(dir))
 	if err != nil {
 		return tls.TLS{}, fmt.Errorf("read signed key: %s", err)
 	}
@@ -52,12 +52,12 @@ func ReadCredentials(dir string) (tls.TLS, error) {
 
 // ReadCA reads the certificate authority contained with the directory.
 func ReadCA(dir string) (rsa.KeyPair, error) {
-	caCert, err := util.ReadFile(caCertPath(dir))
+	caCert, err := util.ReadFile(CACertPath(dir))
 	if err != nil {
 		return rsa.KeyPair{}, fmt.Errorf("read cert: %s", err)
 	}
 
-	caKey, err := util.ReadFile(caKeyPath(dir))
+	caKey, err := util.ReadFile(CAKeyPath(dir))
 	if err != nil {
 		return rsa.KeyPair{}, fmt.Errorf("read key: %s", err)
 	}
@@ -69,9 +69,9 @@ func ReadCA(dir string) (rsa.KeyPair, error) {
 // minions.
 func MinionFiles(dir string, ca, signed rsa.KeyPair) []File {
 	return []File{
-		{Path: caCertPath(dir), Content: ca.CertString(), Mode: 0644},
-		{Path: signedCertPath(dir), Content: signed.CertString(), Mode: 0644},
-		{Path: signedKeyPath(dir), Content: signed.PrivateKeyString(),
+		{Path: CACertPath(dir), Content: ca.CertString(), Mode: 0644},
+		{Path: SignedCertPath(dir), Content: signed.CertString(), Mode: 0644},
+		{Path: SignedKeyPath(dir), Content: signed.PrivateKeyString(),
 			Mode: 0600},
 	}
 }
@@ -79,25 +79,25 @@ func MinionFiles(dir string, ca, signed rsa.KeyPair) []File {
 // DaemonFiles defines how files should be written to disk for use by the daemon.
 func DaemonFiles(dir string, ca, signed rsa.KeyPair) []File {
 	return append(MinionFiles(dir, ca, signed),
-		File{Path: caKeyPath(dir), Content: ca.PrivateKeyString(), Mode: 0600})
+		File{Path: CAKeyPath(dir), Content: ca.PrivateKeyString(), Mode: 0600})
 }
 
-// caCertPath defines where to write the certificate for the certificate authority.
-func caCertPath(dir string) string {
+// CACertPath defines where to write the certificate for the certificate authority.
+func CACertPath(dir string) string {
 	return filepath.Join(dir, caCertFilename)
 }
 
-// caKeyPath defines where to write the private key for the certificate authority.
-func caKeyPath(dir string) string {
+// CAKeyPath defines where to write the private key for the certificate authority.
+func CAKeyPath(dir string) string {
 	return filepath.Join(dir, caKeyFilename)
 }
 
-// signedCertPath defines where to write the certificate for the signed certificate.
-func signedCertPath(dir string) string {
+// SignedCertPath defines where to write the certificate for the signed certificate.
+func SignedCertPath(dir string) string {
 	return filepath.Join(dir, signedCertFilename)
 }
 
-// signedKeyPath defines where to write the private key for the signed certificate.
-func signedKeyPath(dir string) string {
+// SignedKeyPath defines where to write the private key for the signed certificate.
+func SignedKeyPath(dir string) string {
 	return filepath.Join(dir, signedKeyFilename)
 }

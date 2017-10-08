@@ -21,8 +21,8 @@ func TestWriteAndReadCA(t *testing.T) {
 
 	// Write the CA.
 	util.Mkdir(testDir, 0755)
-	util.WriteFile(caCertPath(testDir), []byte(ca.CertString()), 0644)
-	util.WriteFile(caKeyPath(testDir), []byte(ca.PrivateKeyString()), 0600)
+	util.WriteFile(CACertPath(testDir), []byte(ca.CertString()), 0644)
+	util.WriteFile(CAKeyPath(testDir), []byte(ca.PrivateKeyString()), 0600)
 
 	parsedCA, err := ReadCA(testDir)
 	assert.NoError(t, err)
@@ -78,13 +78,13 @@ func TestReadCAErrors(t *testing.T) {
 	testDir := "/tls"
 
 	// Missing certificate.
-	setupFilesystem([]File{{Path: caKeyPath(testDir), Mode: 0644}})
+	setupFilesystem([]File{{Path: CAKeyPath(testDir), Mode: 0644}})
 	_, err := ReadCA(testDir)
 	assert.EqualError(t, err,
 		"read cert: open /tls/certificate_authority.crt: file does not exist")
 
 	// Missing key.
-	setupFilesystem([]File{{Path: caCertPath(testDir), Mode: 0644}})
+	setupFilesystem([]File{{Path: CACertPath(testDir), Mode: 0644}})
 	_, err = ReadCA(testDir)
 	assert.EqualError(t, err,
 		"read key: open /tls/certificate_authority.key: file does not exist")
@@ -95,8 +95,8 @@ func TestReadCredentialsErrors(t *testing.T) {
 
 	// Missing CA certificate.
 	setupFilesystem([]File{
-		{Path: signedKeyPath(testDir), Mode: 0644},
-		{Path: signedCertPath(testDir), Mode: 0644},
+		{Path: SignedKeyPath(testDir), Mode: 0644},
+		{Path: SignedCertPath(testDir), Mode: 0644},
 	})
 	_, err := ReadCredentials(testDir)
 	assert.EqualError(t, err,
@@ -104,8 +104,8 @@ func TestReadCredentialsErrors(t *testing.T) {
 
 	// Missing signed key.
 	setupFilesystem([]File{
-		{Path: caCertPath(testDir), Mode: 0644},
-		{Path: signedCertPath(testDir), Mode: 0644},
+		{Path: CACertPath(testDir), Mode: 0644},
+		{Path: SignedCertPath(testDir), Mode: 0644},
 	})
 	_, err = ReadCredentials(testDir)
 	assert.EqualError(t, err,
@@ -113,8 +113,8 @@ func TestReadCredentialsErrors(t *testing.T) {
 
 	// Missing signed cert.
 	setupFilesystem([]File{
-		{Path: caCertPath(testDir), Mode: 0644},
-		{Path: signedKeyPath(testDir), Mode: 0644},
+		{Path: CACertPath(testDir), Mode: 0644},
+		{Path: SignedKeyPath(testDir), Mode: 0644},
 	})
 	_, err = ReadCredentials(testDir)
 	assert.EqualError(t, err,
