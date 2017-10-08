@@ -78,11 +78,8 @@ func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 func syncWorker(dbcs []db.Container, dkcs []docker.Container) (
 	changed []db.Container, toBoot, toKill []interface{}) {
 
-	pairs, dbci, dkci := join.Join(dbcs, dkcs, syncJoinScore)
-
-	for _, i := range dkci {
-		toKill = append(toKill, i.(docker.Container))
-	}
+	var pairs []join.Pair
+	pairs, toBoot, toKill = join.Join(dbcs, dkcs, syncJoinScore)
 
 	for _, pair := range pairs {
 		dbc := pair.L.(db.Container)
@@ -93,11 +90,6 @@ func syncWorker(dbcs []db.Container, dkcs []docker.Container) (
 		dbc.Status = dkc.Status
 		dbc.Created = dkc.Created
 		changed = append(changed, dbc)
-	}
-
-	for _, i := range dbci {
-		dbc := i.(db.Container)
-		toBoot = append(toBoot, dbc)
 	}
 
 	return changed, toBoot, toKill
