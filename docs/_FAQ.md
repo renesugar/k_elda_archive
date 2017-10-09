@@ -27,6 +27,13 @@ There are a few possible reasons:
 3. When exposing a different port than `80`, make sure to paste both the
   IP address _and_ the port number into the browser as `<IP>:<PORT>`.
 
+### How do I get persistent storage?
+Quilt currently doesn't support persistent storage, so we recommend using
+a hosted database like [Firebase](https://firebase.google.com/).
+If you still choose to run storage applications like [MongoDB](https://github.com/quilt/mongo)
+or [Elasticsearch](https://github.com/quilt/elasticsearch) on Quilt, be aware
+that the data will be lost if the containers or the VMs hosting them die.
+
 ### I tried to `quilt run` a blueprint on Amazon and nothing seems to be working.
 If you're running a blueprint on AWS and the containers are not getting properly
 created, you may have an issue with your VPC (Virtual Private Cloud) settings
