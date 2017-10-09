@@ -54,7 +54,7 @@ $ tree ~/.quilt/tls
 ```
 
 - certificate_authority.crt: The certificate authority certificate.
-- certificate_authority.crt: The private key of the certificate authority.
+- certificate_authority.key: The private key of the certificate authority.
 Used by the daemon to generate minion certificates.
 - quilt.crt: A certificate signed by the certificate authority.
 Used for connecting to the cluster.
