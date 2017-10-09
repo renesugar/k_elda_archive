@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/quilt/quilt/blueprint"
+	cliPath "github.com/quilt/quilt/cli/path"
 	"github.com/quilt/quilt/db"
 	testerUtil "github.com/quilt/quilt/integration-tester/util"
 	"github.com/quilt/quilt/join"
@@ -185,6 +186,18 @@ func (t *tester) setup() error {
 	if err != nil {
 		l.infoln("Could not install dependencies")
 		l.errorln(err.Error())
+		return err
+	}
+
+	// Wait for the daemon to generate the TLS credentials. If we don't wait,
+	// the subsequent Quilt commands (such as `quilt stop`) might fail if they
+	// are executed before the credentials are generated.
+	err = util.BackoffWaitFor(func() bool {
+		_, err = util.Stat(cliPath.DefaultTLSDir)
+		return err == nil
+	}, 15*time.Second, 3*time.Minute)
+	if err != nil {
+		l.infoln("Timed out waiting for daemon to generate TLS credentials")
 		return err
 	}
 
