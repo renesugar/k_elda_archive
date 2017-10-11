@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/minion/docker"
 	"github.com/kelda/kelda/minion/network/openflow"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRunWorker(t *testing.T) {

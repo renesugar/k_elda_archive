@@ -14,6 +14,7 @@ import (
 	"github.com/kelda/kelda/minion/network/openflow"
 	"github.com/kelda/kelda/minion/network/plugin"
 	"github.com/kelda/kelda/util"
+
 	log "github.com/sirupsen/logrus"
 )
 

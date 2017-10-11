@@ -3,8 +3,9 @@ package etcd
 import (
 	"testing"
 
-	"github.com/kelda/kelda/db"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kelda/kelda/db"
 )
 
 func TestRunContainerOnce(t *testing.T) {
