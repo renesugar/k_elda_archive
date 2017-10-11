@@ -5,11 +5,19 @@ service API {
     rpc Query(DBQuery) returns(QueryReply) {}
     rpc Version(VersionRequest) returns(VersionReply) {}
     rpc QueryCounters(CountersRequest) returns(CountersReply){}
+    rpc SetSecret(Secret) returns(SecretReply) {}
 
     // Only defined on the daemon.
     rpc Deploy(DeployRequest) returns(DeployReply) {}
     rpc QueryMinionCounters(MinionCountersRequest) returns(CountersReply){}
 }
+
+message Secret {
+    string Name = 1;
+    string Value = 2;
+}
+
+message SecretReply {}
 
 message DBQuery {
     string Table = 1;

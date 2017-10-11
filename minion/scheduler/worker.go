@@ -3,6 +3,7 @@ package scheduler
 import (
 	"crypto/sha1"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/kelda/kelda/minion/ipdef"
 	"github.com/kelda/kelda/minion/network/openflow"
 	"github.com/kelda/kelda/minion/network/plugin"
+	"github.com/kelda/kelda/minion/vault"
 	"github.com/kelda/kelda/util"
 
 	log "github.com/sirupsen/logrus"
@@ -26,8 +28,31 @@ const concurrencyLimit = 32
 
 var once sync.Once
 
+// evaluatedContainer represents a container as specified by the user, but
+// with all references to secrets in Env and FilepathToContent evaluated
+// to simple strings.
+type evaluatedContainer struct {
+	resolvedEnv, resolvedFilepathToContent map[string]string
+	db.Container
+}
+
 func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 	if myIP == "" {
+		return
+	}
+	myContainers := func(dbc db.Container) bool {
+		return dbc.IP != "" && dbc.Minion == myIP
+	}
+
+	etcds := conn.SelectFromEtcd(nil)
+	if len(etcds) == 0 || etcds[0].LeaderIP == "" {
+		log.Warn("No leader yet. Cannot connect to Vault without a leader.")
+		return
+	}
+
+	vaultClient, err := newVault(etcds[0].LeaderIP)
+	if err != nil {
+		log.WithError(err).Error("Failed to connect to Vault")
 		return
 	}
 
@@ -48,13 +73,44 @@ func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 			return
 		}
 
+		// Get all the secret values referenced by the containers scheduled
+		// for this minion. This must be done outside the database transaction
+		// because it would be unreasonable to hold the database lock while
+		// using the network to fetch the secret values. The secret values
+		// are used to determine whether any containers have out of date
+		// secret values, and thus need to be restarted.
+		secretMap := resolveSecrets(
+			vaultClient, conn.SelectFromContainer(myContainers))
+
+		// Join the scheduled containers with the containers actually running
+		// to figure out what containers to boot and stop.
 		conn.Txn(db.ContainerTable).Run(func(view db.Database) error {
-			dbcs := view.SelectFromContainer(func(dbc db.Container) bool {
-				return dbc.IP != "" && dbc.Minion == myIP
-			})
+			var readyToRun []evaluatedContainer
+			for _, dbc := range view.SelectFromContainer(myContainers) {
+				resolvedEnv, missingEnv := evaluateSecretOrStrings(
+					dbc.Env, secretMap)
+				resolvedFiles, missingFiles := evaluateSecretOrStrings(
+					dbc.FilepathToContent, secretMap)
+
+				missingSecrets := uniqueStrings(
+					append(missingEnv, missingFiles...))
+				if len(missingSecrets) != 0 {
+					sort.Strings(missingSecrets)
+					dbc.Status = fmt.Sprintf(
+						"Waiting for secrets: %v", missingSecrets)
+					view.Commit(dbc)
+					continue
+				}
+
+				readyToRun = append(readyToRun, evaluatedContainer{
+					resolvedEnv:               resolvedEnv,
+					resolvedFilepathToContent: resolvedFiles,
+					Container:                 dbc,
+				})
+			}
 
 			var changed []db.Container
-			changed, toBoot, toKill = syncWorker(dbcs, dkcs)
+			changed, toBoot, toKill = syncWorker(readyToRun, dkcs)
 			for _, dbc := range changed {
 				view.Commit(dbc)
 			}
@@ -76,14 +132,14 @@ func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 	updateOpenflow(conn, myIP)
 }
 
-func syncWorker(dbcs []db.Container, dkcs []docker.Container) (
+func syncWorker(dbcs []evaluatedContainer, dkcs []docker.Container) (
 	changed []db.Container, toBoot, toKill []interface{}) {
 
 	var pairs []join.Pair
 	pairs, toBoot, toKill = join.Join(dbcs, dkcs, syncJoinScore)
 
 	for _, pair := range pairs {
-		dbc := pair.L.(db.Container)
+		dbc := pair.L.(evaluatedContainer).Container
 		dkc := pair.R.(docker.Container)
 
 		dbc.DockerID = dkc.ID
@@ -115,16 +171,16 @@ func doContainers(dk docker.Client, ifaces []interface{},
 }
 
 func dockerRun(dk docker.Client, iface interface{}) {
-	dbc := iface.(db.Container)
+	dbc := iface.(evaluatedContainer)
 	log.WithField("container", dbc).Info("Start container")
 	_, err := dk.Run(docker.RunOptions{
 		Image:             dbc.Image,
 		Args:              dbc.Command,
-		Env:               dbc.Env,
-		FilepathToContent: dbc.FilepathToContent,
+		Env:               dbc.resolvedEnv,
+		FilepathToContent: dbc.resolvedFilepathToContent,
 		Labels: map[string]string{
 			labelKey: labelValue,
-			filesKey: filesHash(dbc.FilepathToContent),
+			filesKey: filesHash(dbc.resolvedFilepathToContent),
 		},
 		IP:          dbc.IP,
 		NetworkMode: plugin.NetworkName,
@@ -151,10 +207,11 @@ func dockerKill(dk docker.Client, iface interface{}) {
 }
 
 func syncJoinScore(left, right interface{}) int {
-	dbc := left.(db.Container)
+	dbc := left.(evaluatedContainer)
 	dkc := right.(docker.Container)
 
-	if dbc.IP != dkc.IP || filesHash(dbc.FilepathToContent) != dkc.Labels[filesKey] {
+	expFilesHash := filesHash(dbc.resolvedFilepathToContent)
+	if dbc.IP != dkc.IP || expFilesHash != dkc.Labels[filesKey] {
 		return -1
 	}
 
@@ -165,7 +222,7 @@ func syncJoinScore(left, right interface{}) int {
 		return -1
 	}
 
-	for key, value := range dbc.Env {
+	for key, value := range dbc.resolvedEnv {
 		if dkc.Env[key] != value {
 			return -1
 		}
@@ -265,4 +322,17 @@ func openflowContainers(dbcs []db.Container,
 	return ofcs
 }
 
+func uniqueStrings(lst []string) (unique []string) {
+	set := map[string]struct{}{}
+	for _, item := range lst {
+		set[item] = struct{}{}
+	}
+
+	for item := range set {
+		unique = append(unique, item)
+	}
+	return unique
+}
+
 var replaceFlows = openflow.ReplaceFlows
+var newVault = vault.New

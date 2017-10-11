@@ -16,6 +16,12 @@ daemon automatically grants it access to the cluster.
 - Add Infrastructure class for deploying Kelda machines. createDeployment()
 and the Deployment class are now deprecated, and users should transition
 to using Infrastructure instead.
+- Add support for Secrets -- a Kelda-blessed method for securely using
+sensitive values. Before, secrets (such as OAuth tokens) were stored in the
+blueprint source. It was very easy to accidentally commit these secrets, and
+they had no special protection once deployed to the cluster. Secrets are now a
+first-level concept of Kelda. They are encrypted at rest and in transit, and
+access to them is limited based on least privilege.
 
 JavaScript API-breaking changes:
 - Remove the Container.replicate() method. Users should create multiple

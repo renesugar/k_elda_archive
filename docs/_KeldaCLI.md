@@ -31,6 +31,7 @@ $ kelda COMMAND --help
 | `minion`     | Run the kelda minion.                                                                            |
 | `show`       | Display the status of kelda-managed machines and containers.                                     |
 | `run`        | Compile a blueprint, and deploy the system it describes.                                         |
+| `secret`     | Securely add a named secret to the cluster.                                                      |
 | `ssh`        | SSH into or execute a command in a machine or container.                                         |
 | `stop`       | Stop a deployment.                                                                               |
 | `version`    | Show the Kelda version information.                                                              |

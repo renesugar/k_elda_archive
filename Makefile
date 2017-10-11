@@ -12,6 +12,7 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 		    ./minion/ovsdb/mock_transact_test.go \
 		    ./minion/ovsdb/mocks/Client.go \
 		    ./minion/pb/pb.pb.go \
+		    ./minion/vault/mocks/% \
 		    ./node_modules/% \
 		    ./integration-tester/tests/zookeeper/vendor/%
 

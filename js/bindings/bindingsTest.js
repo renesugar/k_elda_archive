@@ -383,12 +383,16 @@ describe('Bindings', () => {
     it('env', () => {
       const c = new b.Container('host', 'image');
       c.env.foo = 'bar';
+      c.env.secretEnv = new b.Secret('secret');
       c.deploy(deployment);
       checkContainers([{
-        id: '299619d3fb4b89fd5cc822983bc3fbcced2f0a98',
+        id: '4e73e3aa5e1d1d083061ff9ab7b21bbce429f410',
         image: new b.Image('image'),
         command: [],
-        env: { foo: 'bar' },
+        env: {
+          foo: 'bar',
+          secretEnv: { nameOfSecret: 'secret' },
+        },
         hostname: 'host',
         filepathToContent: {},
       }]);
@@ -478,13 +482,16 @@ describe('Bindings', () => {
     const hostname = 'host';
     const image = new b.Image('image');
     const command = ['arg1', 'arg2'];
+
     const env = { foo: 'bar' };
-    const filepathToContent = { qux: 'quuz' };
+
+    const filepathToContent = { qux: new b.Secret('quuz') };
+    const jsonFilepathToContent = { qux: { nameOfSecret: 'quuz' } };
     it('with*', () => {
       // The blueprint ID is different than the Container created with the
       // constructor because the hostname ID increases with each with*
       // call.
-      const id = 'f5c3e0fa3843e6fa149289d476f507831a45654d';
+      const id = 'a700a7e79677620b35ac1455e781d964eea4cbb0';
       const container = new b.Container(hostname, image, {
         command,
       }).withEnv(env)
@@ -495,18 +502,23 @@ describe('Bindings', () => {
         image,
         command,
         env,
-        filepathToContent,
+        filepathToContent: jsonFilepathToContent,
         hostname: 'host3',
       }]);
     });
     it('constructor', () => {
-      const id = '9f9d0c0868163eda5b4ad5861c9558f055508959';
+      const id = 'bcdf48e8ad8247fb0fb2bb4024c184811a7d844e';
       const container = new b.Container(hostname, image, {
         command, env, filepathToContent,
       });
       container.deploy(deployment);
       checkContainers([{
-        id, hostname, image, command, env, filepathToContent,
+        id,
+        hostname,
+        image,
+        command,
+        env,
+        filepathToContent: jsonFilepathToContent,
       }]);
     });
   });

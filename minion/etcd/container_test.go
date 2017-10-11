@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/db"
 )
 
@@ -37,8 +38,13 @@ func TestRunContainerOnce(t *testing.T) {
 		dbc.BlueprintID = "12"
 		dbc.Image = "ubuntu"
 		dbc.Command = []string{"1", "2", "3"}
-		dbc.Env = map[string]string{"red": "pill", "blue": "pill"}
-		dbc.FilepathToContent = map[string]string{"foo": "bar"}
+		dbc.Env = map[string]blueprint.SecretOrString{
+			"red":  blueprint.NewSecret("pill"),
+			"blue": blueprint.NewString("pill"),
+		}
+		dbc.FilepathToContent = map[string]blueprint.SecretOrString{
+			"foo": blueprint.NewString("bar"),
+		}
 		view.Commit(dbc)
 		return nil
 	})
@@ -61,7 +67,9 @@ func TestRunContainerOnce(t *testing.T) {
         ],
         "Env": {
             "blue": "pill",
-            "red": "pill"
+            "red": {
+                "NameOfSecret": "pill"
+            }
         },
         "FilepathToContent": {
             "foo": "bar"
@@ -79,8 +87,13 @@ func TestRunContainerOnce(t *testing.T) {
 		view.Commit(etcd)
 
 		dbc := view.SelectFromContainer(nil)[0]
-		dbc.Env = map[string]string{"red": "fish", "blue": "fish"}
-		dbc.FilepathToContent = map[string]string{"bar": "baz"}
+		dbc.Env = map[string]blueprint.SecretOrString{
+			"red":  blueprint.NewSecret("fish"),
+			"blue": blueprint.NewString("fish"),
+		}
+		dbc.FilepathToContent = map[string]blueprint.SecretOrString{
+			"bar": blueprint.NewString("baz"),
+		}
 		view.Commit(dbc)
 		return nil
 	})
@@ -89,14 +102,19 @@ func TestRunContainerOnce(t *testing.T) {
 	assert.NoError(t, err)
 
 	expDBC := db.Container{
-		IP:                "10.0.0.2",
-		BlueprintID:       "12",
-		Minion:            "1.2.3.4",
-		Image:             "ubuntu",
-		Command:           []string{"1", "2", "3"},
-		Env:               map[string]string{"red": "pill", "blue": "pill"},
-		FilepathToContent: map[string]string{"foo": "bar"},
-		Hostname:          "host",
+		IP:          "10.0.0.2",
+		BlueprintID: "12",
+		Minion:      "1.2.3.4",
+		Image:       "ubuntu",
+		Command:     []string{"1", "2", "3"},
+		Env: map[string]blueprint.SecretOrString{
+			"red":  blueprint.NewSecret("pill"),
+			"blue": blueprint.NewString("pill"),
+		},
+		FilepathToContent: map[string]blueprint.SecretOrString{
+			"foo": blueprint.NewString("bar"),
+		},
+		Hostname: "host",
 	}
 	dbcs := conn.SelectFromContainer(nil)
 	assert.Len(t, dbcs, 1)

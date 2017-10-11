@@ -20,6 +20,7 @@ import (
 	"github.com/kelda/kelda/minion/registry"
 	"github.com/kelda/kelda/minion/scheduler"
 	"github.com/kelda/kelda/minion/supervisor"
+	"github.com/kelda/kelda/minion/vault"
 	"github.com/kelda/kelda/util"
 
 	log "github.com/sirupsen/logrus"
@@ -58,7 +59,6 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 
 	supervisor.Run(conn, dk, role)
 
-	go scheduler.Run(conn, dk)
 	go network.Run(conn, inboundPubIntf, outboundPubIntf)
 	go registry.Run(conn, dk)
 	go etcd.Run(conn)
@@ -86,6 +86,18 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 	go minionServerRun(conn, creds)
 	go apiServer.Run(conn, fmt.Sprintf("tcp://0.0.0.0:%d", api.DefaultRemotePort),
 		false, creds)
+
+	// Vault must be started after the credentials are resolved because it also
+	// makes use of the credentials.
+	if role == db.Master {
+		vaultClient := vault.Start(conn, dk)
+		go vault.Run(conn, dk, vaultClient)
+	}
+
+	// Don't start scheduling containers until after Vault has booted (i.e.
+	// until after vault.Start has returned). This way, workers never attempt
+	// to access secrets before Vault has started.
+	go scheduler.Run(conn, dk)
 
 	loopLog := util.NewEventTimer("Minion-Update")
 

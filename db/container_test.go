@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kelda/kelda/blueprint"
 )
 
 func TestContainerString(t *testing.T) {
@@ -13,8 +15,8 @@ func TestContainerString(t *testing.T) {
 	exp := "Container-0{run }"
 	assert.Equal(t, got, exp)
 
-	fakeMap := make(map[string]string)
-	fakeMap["test"] = "tester"
+	fakeMap := make(map[string]blueprint.SecretOrString)
+	fakeMap["test"] = blueprint.NewString("tester")
 	fakeTime := time.Now()
 	fakeTimeString := fakeTime.String()
 
@@ -56,4 +58,31 @@ func TestContainerHelpers(t *testing.T) {
 	})
 	assert.Len(t, dbcs, 1)
 	assert.Equal(t, "foo", dbcs[0].IP)
+}
+
+func TestGetReferencedSecrets(t *testing.T) {
+	t.Parallel()
+
+	secret1 := "secret1"
+	secret2 := "secret2"
+	secret3 := "secret3"
+	secret4 := "secret4"
+	dbc := Container{
+		Env: map[string]blueprint.SecretOrString{
+			"key1": blueprint.NewString("ignoreme"),
+			"key2": blueprint.NewSecret(secret1),
+			"key3": blueprint.NewSecret(secret2),
+		},
+		FilepathToContent: map[string]blueprint.SecretOrString{
+			"key4": blueprint.NewString("ignoreme2"),
+			"key5": blueprint.NewSecret(secret3),
+			"key6": blueprint.NewSecret(secret4),
+		},
+	}
+	referencedSecrets := dbc.GetReferencedSecrets()
+	assert.Len(t, referencedSecrets, 4)
+	assert.Contains(t, referencedSecrets, secret1)
+	assert.Contains(t, referencedSecrets, secret2)
+	assert.Contains(t, referencedSecrets, secret3)
+	assert.Contains(t, referencedSecrets, secret4)
 }

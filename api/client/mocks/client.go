@@ -246,6 +246,20 @@ func (_m *Client) QueryMinionCounters(_a0 string) ([]pb.Counter, error) {
 	return r0, r1
 }
 
+// SetSecret provides a mock function with given fields: name, value
+func (_m *Client) SetSecret(name string, value string) error {
+	ret := _m.Called(name, value)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(name, value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Version provides a mock function with given fields:
 func (_m *Client) Version() (string, error) {
 	ret := _m.Called()

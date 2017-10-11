@@ -44,12 +44,91 @@ type Image struct {
 
 // A Container may be instantiated in the blueprint and queried by users.
 type Container struct {
-	ID                string            `json:",omitempty"`
-	Image             Image             `json:",omitempty"`
-	Command           []string          `json:",omitempty"`
-	Env               map[string]string `json:",omitempty"`
-	FilepathToContent map[string]string `json:",omitempty"`
-	Hostname          string            `json:",omitempty"`
+	ID                string                    `json:",omitempty"`
+	Image             Image                     `json:",omitempty"`
+	Command           []string                  `json:",omitempty"`
+	Env               map[string]SecretOrString `json:",omitempty"`
+	FilepathToContent map[string]SecretOrString `json:",omitempty"`
+	Hostname          string                    `json:",omitempty"`
+}
+
+// NewSecret returns a SecretOrString representing a secret.
+func NewSecret(name string) SecretOrString {
+	return SecretOrString{
+		value:    name,
+		isSecret: true,
+	}
+}
+
+// NewString returns a SecretOrString representing a string.
+func NewString(str string) SecretOrString {
+	return SecretOrString{value: str}
+}
+
+// SecretOrString represents a value that might be a string, or a Secret.
+type SecretOrString struct {
+	// If the value refers to a secret, then the value is the name of the
+	// secret, and the caller is expected to query Vault to resolve the secret
+	// value.
+	value    string
+	isSecret bool
+}
+
+// Value returns the value of the SecretOrString, and whether the value refers
+// to a secret. If the value is a secret, then the name of the secret is
+// returned, and the caller is expected to query Vault to resolve the secret
+// value. Otherwise, the value is used directly.
+func (secretOrString SecretOrString) Value() (string, bool) {
+	return secretOrString.value, secretOrString.isSecret
+}
+
+// String returns a human-readable representation of the secretOrString. This
+// makes the database logs easier to read.
+func (secretOrString SecretOrString) String() string {
+	val, isSecret := secretOrString.Value()
+	if isSecret {
+		return "Secret: " + val
+	}
+	return val
+}
+
+// secret is used to marshal and unmarshal secrets between the JavaScript
+// API and the deployment engine. The name of the field must match the name
+// in the JavaScript Secret object.
+type secret struct {
+	NameOfSecret string
+}
+
+// UnmarshalJSON implements the JSON unmarshal interface. It first attempts
+// to convert the JSON object into a secret. If that fails, it tries
+// to convert the object into a string.
+func (secretOrString *SecretOrString) UnmarshalJSON(jsonBytes []byte) error {
+	trySecret := secret{}
+	secretErr := json.Unmarshal(jsonBytes, &trySecret)
+	if secretErr == nil {
+		secretOrString.isSecret = true
+		secretOrString.value = trySecret.NameOfSecret
+		return nil
+	}
+
+	var tryString string
+	stringErr := json.Unmarshal(jsonBytes, &tryString)
+	if stringErr == nil {
+		secretOrString.value = tryString
+		return nil
+	}
+
+	return fmt.Errorf("neither secret (%s), nor string (%s)", secretErr, stringErr)
+}
+
+// MarshalJSON implements the JSON marshal interface. If the value is a secret,
+// it converts the value into a secret object. Otherwise, it sends the raw
+// string directly.
+func (secretOrString SecretOrString) MarshalJSON() ([]byte, error) {
+	if secretOrString.isSecret {
+		return json.Marshal(secret{secretOrString.value})
+	}
+	return json.Marshal(secretOrString.value)
 }
 
 // A LoadBalancer represents a load balanced group of containers.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/join"
 	"github.com/kelda/kelda/util"
@@ -84,24 +85,30 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 	key := func(iface interface{}) interface{} {
 		dbc := iface.(db.Container)
 
+		envSecrets, envStrings := splitSecretOrStringMap(dbc.Env)
+		fileSecrets, fileStrings := splitSecretOrStringMap(dbc.FilepathToContent)
 		return struct {
-			Hostname          string
-			IP                string
-			BlueprintID       string
-			Image             string
-			ImageID           string
-			Command           string
-			Env               string
-			FilepathToContent string
+			Hostname                 string
+			IP                       string
+			BlueprintID              string
+			Image                    string
+			ImageID                  string
+			Command                  string
+			EnvSecrets               string
+			EnvStrings               string
+			FilepathToContentSecrets string
+			FilepathToContentStrings string
 		}{
-			Hostname:          dbc.Hostname,
-			IP:                dbc.IP,
-			BlueprintID:       dbc.BlueprintID,
-			Image:             dbc.Image,
-			ImageID:           dbc.ImageID,
-			Command:           fmt.Sprintf("%v", dbc.Command),
-			Env:               util.MapAsString(dbc.Env),
-			FilepathToContent: util.MapAsString(dbc.FilepathToContent),
+			Hostname:                 dbc.Hostname,
+			IP:                       dbc.IP,
+			BlueprintID:              dbc.BlueprintID,
+			Image:                    dbc.Image,
+			ImageID:                  dbc.ImageID,
+			Command:                  fmt.Sprintf("%v", dbc.Command),
+			EnvSecrets:               util.MapAsString(envSecrets),
+			EnvStrings:               util.MapAsString(envStrings),
+			FilepathToContentSecrets: util.MapAsString(fileSecrets),
+			FilepathToContentStrings: util.MapAsString(fileStrings),
 		}
 	}
 
@@ -133,4 +140,23 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 		dbc.Hostname = edbc.Hostname
 		view.Commit(dbc)
 	}
+}
+
+// splitSecretOrStringMap divides a map with SecretOrString values into two maps
+// with string values. The first map has only Secret names as values, and the
+// second map has raw strings.
+func splitSecretOrStringMap(x map[string]blueprint.SecretOrString) (
+	secrets map[string]string, strings map[string]string) {
+
+	secrets = map[string]string{}
+	strings = map[string]string{}
+	for key, boxedVal := range x {
+		val, isSecret := boxedVal.Value()
+		if isSecret {
+			secrets[key] = val
+		} else {
+			strings[key] = val
+		}
+	}
+	return secrets, strings
 }

@@ -47,6 +47,12 @@ func (c mockAPIClient) Version(ctx context.Context, in *pb.VersionRequest,
 	return &pb.VersionReply{}, nil
 }
 
+func (c mockAPIClient) SetSecret(ctx context.Context, in *pb.Secret,
+	opts ...grpc.CallOption) (*pb.SecretReply, error) {
+
+	return &pb.SecretReply{}, nil
+}
+
 func TestUnmarshalMachine(t *testing.T) {
 	t.Parallel()
 

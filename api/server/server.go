@@ -16,6 +16,7 @@ import (
 	"github.com/kelda/kelda/connection"
 	"github.com/kelda/kelda/counter"
 	"github.com/kelda/kelda/db"
+	"github.com/kelda/kelda/minion/vault"
 	"github.com/kelda/kelda/version"
 
 	"github.com/docker/distribution/reference"
@@ -68,6 +69,30 @@ func Run(conn db.Conn, listenAddr string, runningOnDaemon bool,
 	s.Serve(sock)
 
 	return nil
+}
+
+func (s server) SetSecret(ctx context.Context, msg *pb.Secret) (*pb.SecretReply, error) {
+	// If this method is called while running on the daemon, forward the secret
+	// assignment to the leader. The assignment is synchronous, so the user
+	// will get immediate feedback on whether or not the secret was successfully
+	// set.
+	if s.runningOnDaemon {
+		machines := s.conn.SelectFromMachine(nil)
+		leaderClient, err := newLeaderClient(machines, s.clientCreds)
+		if err != nil {
+			return &pb.SecretReply{}, err
+		}
+		defer leaderClient.Close()
+		return &pb.SecretReply{}, leaderClient.SetSecret(msg.Name, msg.Value)
+	}
+
+	// We're running in the cluster, so write the secret into Vault.
+	client, err := newVaultClient(s.conn.MinionSelf().PrivateIP)
+	if err != nil {
+		return &pb.SecretReply{}, err
+	}
+
+	return &pb.SecretReply{}, client.Write(msg.Name, msg.Value)
 }
 
 // Query runs in two modes: daemon, or local. If in local mode, Query simply
@@ -309,7 +334,8 @@ func updateLeaderContainerAttrs(lContainers []db.Container, wContainers []db.Con
 	return allContainers
 }
 
-// client.New and client.Leader are saved in variables to facilitate
-// injecting test clients for unit testing.
+// client.New, client.Leader, and vault.New are saved in variables to
+// facilitate injecting test clients for unit testing.
 var newClient = client.New
 var newLeaderClient = client.Leader
+var newVaultClient = vault.New

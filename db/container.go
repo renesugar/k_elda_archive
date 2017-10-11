@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/util"
 )
 
@@ -14,21 +15,37 @@ import (
 type Container struct {
 	ID int `json:"-"`
 
-	IP                string            `json:",omitempty"`
-	Minion            string            `json:",omitempty"`
-	EndpointID        string            `json:",omitempty"`
-	BlueprintID       string            `json:",omitempty"`
-	DockerID          string            `json:",omitempty"`
-	Status            string            `json:",omitempty"`
-	Command           []string          `json:",omitempty"`
-	Env               map[string]string `json:",omitempty"`
-	FilepathToContent map[string]string `json:",omitempty"`
-	Hostname          string            `json:",omitempty"`
-	Created           time.Time         `json:","`
+	IP                string                              `json:",omitempty"`
+	Minion            string                              `json:",omitempty"`
+	EndpointID        string                              `json:",omitempty"`
+	BlueprintID       string                              `json:",omitempty"`
+	DockerID          string                              `json:",omitempty"`
+	Status            string                              `json:",omitempty"`
+	Command           []string                            `json:",omitempty"`
+	Env               map[string]blueprint.SecretOrString `json:",omitempty"`
+	FilepathToContent map[string]blueprint.SecretOrString `json:",omitempty"`
+	Hostname          string                              `json:",omitempty"`
+	Created           time.Time                           `json:","`
 
 	Image      string `json:",omitempty"`
 	ImageID    string `json:",omitempty"`
 	Dockerfile string `json:"-"`
+}
+
+// GetReferencedSecrets returns the names of all Secrets referenced in the Env
+// and FilepathToContent maps.
+func (c Container) GetReferencedSecrets() []string {
+	return append(getReferencedSecrets(c.Env),
+		getReferencedSecrets(c.FilepathToContent)...)
+}
+
+func getReferencedSecrets(x map[string]blueprint.SecretOrString) (secrets []string) {
+	for _, maybeSecret := range x {
+		if secretName, isSecret := maybeSecret.Value(); isSecret {
+			secrets = append(secrets, secretName)
+		}
+	}
+	return secrets
 }
 
 // ContainerSlice is an alias for []Container to allow for joins

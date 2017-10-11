@@ -645,27 +645,29 @@ function getString(argName, arg) {
 /**
  * @private
  * @param {string} argName - The name of `arg` (for logging).
- * @param {Object.<string, string>} arg - The map of strings.
- * @returns {Object.<string, string>} An empty object if `arg` is not defined,
- *   and otherwise ensures that `arg` is an object with string keys and values
- *   and then returns it.
+ * @param {Object.<string, string|Secret>} arg - The map of strings to Secret
+ *   or Strings.
+ * @returns {Object.<string, string|Secret>} An empty object if `arg` is not
+ *   defined, and otherwise ensures that `arg` is an object with string keys and
+ *   string or Secret values and then returns it.
  */
-function getStringMap(argName, arg) {
+function getSecretOrStringMap(argName, arg) {
   if (arg === undefined) {
     return {};
   }
   if (typeof arg !== 'object') {
-    throw new Error(`${argName} must be a string map ` +
+    throw new Error(`${argName} must be a map ` +
             `(was: ${stringify(arg)})`);
   }
   Object.keys(arg).forEach((k) => {
     if (typeof k !== 'string') {
-      throw new Error(`${argName} must be a string map (key ` +
+      throw new Error(`${argName} must be a map with string keys (key ` +
                 `${stringify(k)} is not a string)`);
     }
-    if (typeof arg[k] !== 'string') {
-      throw new Error(`${argName} must be a string map (value ` +
-                `${stringify(arg[k])} associated with ${k} is not a string)`);
+    const val = arg[k];
+    if (typeof val !== 'string' && !(val instanceof Secret)) {
+      throw new Error(`${argName} must be a map with string or Secret values (value ` +
+                `${stringify(arg[k])} associated with ${k} is not a string or Secret)`);
     }
   });
   return arg;
@@ -1045,11 +1047,11 @@ class Container {
    * @param {Object} [optionalArgs] - Additional, named, optional arguments.
    * @param {string} [optionalArgs.command] - The command to use when starting
    *   the container.
-   * @param {Object.<string, string>} [optionalArgs.env] - Environment variables
-   *   to set in the booted container.  The key is the name of the environment
-   *   variable.
-   * @param {Object.<string, string>} [optionalArgs.filepathToContent] - Text
-   *   files to be installed on the container before it starts.  The key is
++  * @param {Object.<string, string|Secret>} [optionalArgs.env] - Environment
++  *   variables to set in the booted container.  The key is the name of the
++  *   environment variable.
++  * @param {Object.<string, string|Secret>} [optionalArgs.filepathToContent] -
++  *   Text files to be installed on the container before it starts.  The key is
    *   the path on the container where the text file should be installed, and
    *   the value is the contents of the text file. If the file content specified
    *   by this argument changes and the blueprint is re-run, Kelda will re-start
@@ -1074,8 +1076,8 @@ class Container {
     this.hostnamePrefix = getString('hostnamePrefix', hostnamePrefix);
     this.hostname = uniqueHostname(this.hostnamePrefix);
     this.command = getStringArray('command', optionalArgs.command);
-    this.env = getStringMap('env', optionalArgs.env);
-    this.filepathToContent = getStringMap('filepathToContent',
+    this.env = getSecretOrStringMap('env', optionalArgs.env);
+    this.filepathToContent = getSecretOrStringMap('filepathToContent',
       optionalArgs.filepathToContent);
 
     // Don't allow callers to modify the arguments by reference.
@@ -1348,6 +1350,25 @@ class Container {
   }
 }
 
+class Secret {
+  /**
+   * Secret represents the name of a secret to extract from the Vault secret
+   * store. The value is stored encrypted in a Vault instance running in the
+   * cluster. Only the value is considered secret -- names should not contain
+   * private information as they are expected to be saved in insecure locations
+   * such as user blueprints.
+   *
+   * A secret association is created by running the Kelda `secret` command. For
+   * example, running `kelda secret foo bar` creates a secret named `foo` that
+   * can be referenced using this type.
+   *
+   * @param {string} name - The name of the Secret.
+   */
+  constructor(name) {
+    this.nameOfSecret = name;
+  }
+}
+
 /**
  * Attempts to convert `objects` into an array of objects that
  * define allowFrom.
@@ -1506,6 +1527,7 @@ module.exports = {
   Port,
   PortRange,
   Range,
+  Secret,
   LoadBalancer,
   allow,
   createDeployment,

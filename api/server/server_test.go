@@ -15,6 +15,8 @@ import (
 	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/connection"
 	"github.com/kelda/kelda/db"
+	"github.com/kelda/kelda/minion/vault"
+	vaultMocks "github.com/kelda/kelda/minion/vault/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -343,4 +345,54 @@ func TestQueryImagesDaemon(t *testing.T) {
 
 	exp := `[{"ID":0,"Name":"bar","Dockerfile":"","DockerID":"","Status":""}]`
 	checkQuery(t, server{db.New(), true, nil}, db.ImageTable, exp)
+}
+
+// The Daemon should get a connection to the leader of the cluster, and
+// forward the secret association.
+func TestSetSecretDaemon(t *testing.T) {
+	secretName := "secretName"
+	secretValue := "secretValue"
+
+	mc := new(mocks.Client)
+	mc.On("SetSecret", secretName, secretValue).Return(nil)
+	mc.On("Close").Return(nil)
+	newLeaderClient = func(_ []db.Machine, _ connection.Credentials) (
+		client.Client, error) {
+		return mc, nil
+	}
+
+	_, err := server{db.New(), true, nil}.SetSecret(nil, &pb.Secret{
+		Name: secretName, Value: secretValue,
+	})
+	assert.NoError(t, err)
+	mc.AssertExpectations(t)
+}
+
+// The minion should get a connection to Vault, and write the secret.
+func TestSetSecretCluster(t *testing.T) {
+	secretName := "secretName"
+	secretValue := "secretValue"
+	myIP := "1.2.3.4"
+
+	conn := db.New()
+	conn.Txn(db.MinionTable).Run(func(view db.Database) error {
+		m := view.InsertMinion()
+		m.Self = true
+		m.PrivateIP = myIP
+		view.Commit(m)
+		return nil
+	})
+
+	mockClient := &vaultMocks.SecretStore{}
+	newVaultClient = func(addr string) (vault.SecretStore, error) {
+		assert.Equal(t, myIP, addr)
+		return mockClient, nil
+	}
+
+	mockClient.On("Write", secretName, secretValue).Return(nil).Once()
+	_, err := server{conn, false, nil}.SetSecret(nil, &pb.Secret{
+		Name: secretName, Value: secretValue,
+	})
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
 }

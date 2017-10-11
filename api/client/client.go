@@ -56,6 +56,10 @@ type Client interface {
 	// QueryImages retrieves the image information tracked by the Kelda daemon.
 	QueryImages() ([]db.Image, error)
 
+	// SetSecret sets the value of a named secret in the cluster. The value is
+	// encrypted and stored in Vault.
+	SetSecret(name, value string) error
+
 	// Deploy makes a request to the Kelda daemon to deploy the given deployment.
 	// Only defined on the daemon.
 	Deploy(deployment string) error
@@ -186,6 +190,12 @@ func parseCountersReply(reply *pb.CountersReply) (counters []pb.Counter) {
 		counters = append(counters, *c)
 	}
 	return counters
+}
+
+func (c clientImpl) SetSecret(name, value string) error {
+	ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
+	_, err := c.pbClient.SetSecret(ctx, &pb.Secret{Name: name, Value: value})
+	return err
 }
 
 // Deploy makes a request to the Kelda daemon to deploy the given deployment.
