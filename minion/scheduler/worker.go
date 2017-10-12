@@ -66,8 +66,8 @@ func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 		}
 
 		start := time.Now()
-		doContainers(dk, toBoot, dockerRun)
 		doContainers(dk, toKill, dockerKill)
+		doContainers(dk, toBoot, dockerRun)
 		log.Infof("Scheduler spent %v starting/stopping containers",
 			time.Since(start))
 	}
