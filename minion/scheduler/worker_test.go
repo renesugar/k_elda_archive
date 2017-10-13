@@ -63,10 +63,16 @@ func runSync(dk docker.Client, dbcs []db.Container,
 	return changes
 }
 
+// This test verifies that the worker synchronizes with the database correctly,
+// by booting or destroying containers as appropriate.
 func TestSyncWorker(t *testing.T) {
 	t.Parallel()
 
 	md, dk := docker.NewMock()
+
+	// The containers that should be running, according to the database. We
+	// populate this manually here to simulate different states of the
+	// database.
 	dbcs := []db.Container{
 		{
 			ID:      1,
@@ -76,12 +82,21 @@ func TestSyncWorker(t *testing.T) {
 		},
 	}
 
+	// Test when there are no containers running, but one specified in the
+	// database. We should attempt to start the container, and there should be
+	// no matching containers. However, the container never starts because
+	// we mock an error when starting.
 	md.StartError = true
 	changed := runSync(dk, dbcs, nil)
 	md.StartError = false
 	assert.Len(t, changed, 0)
 
+	// The same case as above, except there is no error when starting, so the
+	// container should actually get booted.
 	runSync(dk, dbcs, nil)
+
+	// The previous test booted the desired container. Therefore, this sync
+	// should pair the running container with the desired container.
 	dkcs, err := dk.List(nil)
 	changed, _, _ = syncWorker(dbcs, dkcs)
 	assert.NoError(t, err)
@@ -90,40 +105,48 @@ func TestSyncWorker(t *testing.T) {
 		t.Error(spew.Sprintf("Incorrect DockerID: %v", changed))
 	}
 
+	// Assert that the pairing specified in `changed` is consistent with the
+	// desired container in the database.
 	dbcs[0].DockerID = dkcs[0].ID
 	assert.Equal(t, dbcs, changed)
 
-	dkcsDB := []db.Container{
-		{
-			ID:       1,
-			DockerID: dkcs[0].ID,
-			Image:    dkcs[0].Image,
-			Command:  dkcs[0].Args,
-			Env:      dkcs[0].Env,
-		},
-	}
-	assert.Equal(t, dkcsDB, dbcs)
+	// Ensure that the booted container has the attributes specified in the
+	// database.
+	assert.Equal(t, dbcs[0].Image, dkcs[0].Image)
+	assert.Equal(t, dbcs[0].Command, dkcs[0].Args)
+	assert.Equal(t, dbcs[0].Env, dkcs[0].Env)
 
+	// Unassign the DockerID, and run the sync again. Even though the DockerID
+	// was unassigned, new containers shouldn't be booted.
 	dbcs[0].DockerID = ""
 	changed = runSync(dk, dbcs, dkcs)
 
+	// Ensure that runSync did not boot any new containers.
 	newDkcs, err := dk.List(nil)
 	assert.NoError(t, err)
 	assert.Equal(t, dkcs, newDkcs)
 
+	// Assert that the pairing specified in `changed` is consistent with the
+	// desired container in the database.
 	dbcs[0].DockerID = dkcs[0].ID
 	assert.Equal(t, dbcs, changed)
 
-	// Atempt a failed remove
+	// Change the desired containers to be empty. Any running containers should
+	// be stopped. However, the running container is not actually removed
+	// because we mock an error during Remove.
 	md.RemoveError = true
 	changed = runSync(dk, nil, dkcs)
 	md.RemoveError = false
 	assert.Len(t, changed, 0)
 
+	// Assert that the running containers has not changed.
 	newDkcs, err = dk.List(nil)
 	assert.NoError(t, err)
 	assert.Equal(t, dkcs, newDkcs)
 
+	// The same case as above, except don't throw an error when removing
+	// containers. No containers should be running, and no containers should
+	// be paired.
 	changed = runSync(dk, nil, dkcs)
 	assert.Len(t, changed, 0)
 
