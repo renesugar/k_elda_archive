@@ -126,7 +126,7 @@ func TestDebug(t *testing.T) {
 	}()
 
 	execCmd = func(name string, arg ...string) *exec.Cmd {
-		assert.Equal(t, name, "quilt")
+		assert.Equal(t, name, "kelda")
 		return exec.Command("echo", "hello world")
 	}
 	defer func() {

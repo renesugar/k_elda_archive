@@ -79,7 +79,7 @@ func TestSyncKeysError(t *testing.T) {
 		return nil
 	})
 	err := runOnce(conn)
-	assert.EqualError(t, err, "open /home/quilt/.ssh/authorized_keys: "+
+	assert.EqualError(t, err, "open /home/kelda/.ssh/authorized_keys: "+
 		"file does not exist")
 
 	fs.Create(authorizedKeysFile)

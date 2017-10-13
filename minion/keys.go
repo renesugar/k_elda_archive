@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const authorizedKeysFile = "/home/quilt/.ssh/authorized_keys"
+const authorizedKeysFile = "/home/kelda/.ssh/authorized_keys"
 
 func syncAuthorizedKeys(conn db.Conn) {
 	// XXX: If we immediately started syncing the SSH keys, there would be a

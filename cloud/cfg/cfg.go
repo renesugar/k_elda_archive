@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	quiltImage = "quilt/quilt"
+	keldaImage = "keldaio/kelda"
 )
 
 // Allow mocking out for the unit tests.
@@ -25,7 +25,7 @@ var ver = version.Version
 func Ubuntu(m db.Machine, inboundPublic string) string {
 	t := template.Must(template.New("cloudConfig").Parse(cfgTemplate))
 
-	img := fmt.Sprintf("%s:%s", quiltImage, ver)
+	img := fmt.Sprintf("%s:%s", keldaImage, ver)
 
 	// Mount the TLSDir as a read-only host volume. This is necessary for
 	// the minion container to access the TLS certificates copied by
@@ -34,13 +34,13 @@ func Ubuntu(m db.Machine, inboundPublic string) string {
 
 	var cloudConfigBytes bytes.Buffer
 	err := t.Execute(&cloudConfigBytes, struct {
-		QuiltImage string
+		KeldaImage string
 		SSHKeys    string
 		LogLevel   string
 		MinionOpts string
 		DockerOpts string
 	}{
-		QuiltImage: img,
+		KeldaImage: img,
 		SSHKeys:    strings.Join(m.SSHKeys, "\n"),
 		LogLevel:   log.GetLevel().String(),
 		MinionOpts: minionOptions(m.Role, inboundPublic),

@@ -16,7 +16,7 @@ initialize_ovs() {
 	Type=oneshot
 	ExecStartPre=/sbin/modprobe gre
 	ExecStartPre=/sbin/modprobe nf_nat_ipv6
-	ExecStart=/usr/bin/docker run --rm --privileged --net=host {{.QuiltImage}} \
+	ExecStart=/usr/bin/docker run --rm --privileged --net=host {{.KeldaImage}} \
 	bash -c "if [ ! -d /modules/$(uname -r) ]; then \
 			echo WARN No usable pre-built kernel module. Building now... >&2; \
 			/bin/bootstrap kernel_modules $(uname -r); \
@@ -53,7 +53,7 @@ initialize_docker() {
 initialize_minion() {
 	cat <<- EOF > /etc/systemd/system/minion.service
 	[Unit]
-	Description=Quilt Minion
+	Description=Kelda Minion
 	After=ovs.service
 	Requires=ovs.service
 
@@ -61,13 +61,13 @@ initialize_minion() {
 	TimeoutSec=1000
 	ExecStartPre=-/usr/bin/docker kill minion
 	ExecStartPre=-/usr/bin/docker rm minion
-	ExecStartPre=/usr/bin/docker pull {{.QuiltImage}}
+	ExecStartPre=/usr/bin/docker pull {{.KeldaImage}}
 	ExecStart=/usr/bin/docker run --net=host --name=minion --privileged \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt \
-	-v /home/quilt/.ssh:/home/quilt/.ssh:rw \
-	-v /run/docker:/run/docker:rw {{.DockerOpts}} {{.QuiltImage}} \
-	quilt -l {{.LogLevel}} minion {{.MinionOpts}}
+	-v /home/kelda/.ssh:/home/kelda/.ssh:rw \
+	-v /run/docker:/run/docker:rw {{.DockerOpts}} {{.KeldaImage}} \
+	kelda -l {{.LogLevel}} minion {{.MinionOpts}}
 	Restart=on-failure
 
 	[Install]
@@ -116,7 +116,7 @@ date >> /var/log/bootscript.log
 export DEBIAN_FRONTEND=noninteractive
 
 ssh_keys="{{.SSHKeys}}"
-setup_user quilt "$ssh_keys"
+setup_user kelda "$ssh_keys"
 
 sudo mkdir /run/docker/plugins
 sudo chmod -R /run/docker/plugins 0755
@@ -127,7 +127,7 @@ initialize_docker
 initialize_minion
 
 # Allow the user to use docker without sudo
-sudo usermod -aG docker quilt
+sudo usermod -aG docker kelda
 
 # Reload because we replaced the docker.service provided by the package
 systemctl daemon-reload

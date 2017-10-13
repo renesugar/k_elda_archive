@@ -226,8 +226,8 @@ func (dCmd Debug) downloadLogs(targets []logTarget) int {
 	for _, cmd := range daemonCmds {
 		file := filepath.Join(rootDir, cmd.name)
 		fmtCmd := fmt.Sprintf(cmd.cmd, dCmd.host)
-		qCmd := execCmd("quilt", strings.Fields(fmtCmd)...)
-		log.Debugf("Gathering `quilt %s` output", fmtCmd)
+		qCmd := execCmd("kelda", strings.Fields(fmtCmd)...)
+		log.Debugf("Gathering `kelda %s` output", fmtCmd)
 		if result, err := qCmd.CombinedOutput(); err != nil {
 			errno++
 			log.Error(err)

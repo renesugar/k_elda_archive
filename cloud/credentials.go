@@ -138,7 +138,7 @@ func (fs sftpFsImpl) Close() error {
 // getSftpFsImpl gets an SFTP connection to `host` authenticated by `sshKey`.
 func getSftpFsImpl(host string, sshKey ssh.Signer) (sftpFs, error) {
 	sshConfig := &ssh.ClientConfig{
-		User:    "quilt",
+		User:    "kelda",
 		Auth:    []ssh.AuthMethod{ssh.PublicKeys(sshKey)},
 		Timeout: 5 * time.Second,
 		// XXX: We have to ignore the host key because we don't keep track of

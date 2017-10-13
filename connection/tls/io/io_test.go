@@ -109,7 +109,7 @@ func TestReadCredentialsErrors(t *testing.T) {
 	})
 	_, err = ReadCredentials(testDir)
 	assert.EqualError(t, err,
-		"read signed key: open /tls/quilt.key: file does not exist")
+		"read signed key: open /tls/kelda.key: file does not exist")
 
 	// Missing signed cert.
 	setupFilesystem([]File{
@@ -118,7 +118,7 @@ func TestReadCredentialsErrors(t *testing.T) {
 	})
 	_, err = ReadCredentials(testDir)
 	assert.EqualError(t, err,
-		"read signed cert: open /tls/quilt.crt: file does not exist")
+		"read signed cert: open /tls/kelda.crt: file does not exist")
 }
 
 func setupFilesystem(files []File) {

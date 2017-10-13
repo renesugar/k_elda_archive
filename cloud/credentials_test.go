@@ -43,11 +43,11 @@ func TestSyncCredentials(t *testing.T) {
 	assert.Len(t, credentialedMachines, 1)
 
 	aferoFs := afero.Afero{Fs: mockFs}
-	certBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "quilt.crt"))
+	certBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "kelda.crt"))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
 
-	keyBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "quilt.key"))
+	keyBytes, err := aferoFs.ReadFile(filepath.Join(tlsIO.MinionTLSDir, "kelda.key"))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, keyBytes)
 

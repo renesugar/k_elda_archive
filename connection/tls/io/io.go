@@ -15,12 +15,12 @@ import (
 const (
 	// MinionTLSDir is the directory in which the daemon will place TLS
 	// credentials on cloud machines.
-	MinionTLSDir = "/home/quilt/.quilt/tls"
+	MinionTLSDir = "/home/kelda/.kelda/tls"
 
 	caCertFilename     = "certificate_authority.crt"
 	caKeyFilename      = "certificate_authority.key"
-	signedCertFilename = "quilt.crt"
-	signedKeyFilename  = "quilt.key"
+	signedCertFilename = "kelda.crt"
+	signedKeyFilename  = "kelda.key"
 )
 
 // File represents a file to be written to the filesystem.

@@ -23,10 +23,10 @@ _testmain.go
 *.test
 *.prof
 
-quilt
-quilt.exe
-quilt_linux
-quilt_darwin
+kelda
+kelda.exe
+kelda_linux
+kelda_darwin
 
 *.cov
 *.cov.html

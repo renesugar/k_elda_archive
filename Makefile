@@ -21,7 +21,7 @@ JS_LINT_COMMAND = node_modules/eslint/bin/eslint.js \
                   integration-tester/ \
                   cli/command/init/ \
                   util/
-REPO = quilt
+REPO = keldaio
 DOCKER = docker
 SHELL := /bin/bash
 
@@ -44,13 +44,13 @@ clean:
 	govendor clean -x +local
 	rm -f *.cov.coverprofile cloud/*.cov.coverprofile minion/*.cov.coverprofile
 	rm -f *.cov.html cloud/*.cov.html minion/*.cov.html
-	rm quilt_linux quilt_darwin
+	rm kelda_linux kelda_darwin
 
 linux:
-	cd -P . && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o quilt_linux .
+	cd -P . && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o kelda_linux .
 
 darwin:
-	cd -P . && CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o quilt_darwin .
+	cd -P . && CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o kelda_darwin .
 
 release: linux darwin
 
@@ -159,12 +159,12 @@ go-get: get-build-tools
 	    github.com/golang/protobuf/{proto,protoc-gen-go} \
 	    github.com/vektra/mockery/.../
 
-docker-build-quilt: linux
+docker-build-kelda: linux
 	cd -P . && git show --pretty=medium --no-patch > buildinfo \
-	    && ${DOCKER} build -t ${REPO}/quilt .
+	    && ${DOCKER} build -t ${REPO}/kelda .
 
-docker-push-quilt:
-	${DOCKER} push ${REPO}/quilt
+docker-push-kelda:
+	${DOCKER} push ${REPO}/kelda
 
 docker-build-ovs:
 	cd -P ovs && docker build -t ${REPO}/ovs .
