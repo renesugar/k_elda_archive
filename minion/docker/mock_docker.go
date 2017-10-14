@@ -280,7 +280,12 @@ func (dk MockClient) InspectContainer(id string) (*dkc.Container, error) {
 		return nil, ErrNoSuchContainer
 	}
 
-	return container.Container, nil
+	toReturn := container.Container
+	if container.Running {
+		toReturn.State = dkc.State{Status: "Running"}
+	}
+
+	return toReturn, nil
 }
 
 // CreateContainer creates a container in accordance with the supplied options.

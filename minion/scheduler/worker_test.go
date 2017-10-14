@@ -57,9 +57,11 @@ func TestRunWorker(t *testing.T) {
 	// The image should be as specified in the database.
 	assert.Equal(t, "Image", dkcs[0].Image)
 
-	// The running container's Docker ID should be committed to the database.
+	// The running container's Docker ID and Status should be committed to the
+	// database.
 	dbc := conn.SelectFromContainer(nil)[0]
 	assert.Equal(t, dkcs[0].ID, dbc.DockerID)
+	assert.Equal(t, "Running", dbc.Status)
 }
 
 func runSync(dk docker.Client, dbcs []db.Container,
@@ -116,6 +118,7 @@ func TestSyncWorker(t *testing.T) {
 	// Assert that the pairing specified in `changed` is consistent with the
 	// desired container in the database.
 	dbcs[0].DockerID = dkcs[0].ID
+	dbcs[0].Status = dkcs[0].Status
 	assert.Equal(t, dbcs, changed)
 
 	// Ensure that the booted container has the attributes specified in the
@@ -137,6 +140,7 @@ func TestSyncWorker(t *testing.T) {
 	// Assert that the pairing specified in `changed` is consistent with the
 	// desired container in the database.
 	dbcs[0].DockerID = dkcs[0].ID
+	dbcs[0].Status = dkcs[0].Status
 	assert.Equal(t, dbcs, changed)
 
 	// Change the desired containers to be empty. Any running containers should
