@@ -48,11 +48,18 @@ func TestRunWorker(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, dkcs, 0)
 
+	// Success case. We should boot the container.
 	runWorker(conn, dk, "1.2.3.4")
 	dkcs, err = dk.List(nil)
 	assert.NoError(t, err)
 	assert.Len(t, dkcs, 1)
+
+	// The image should be as specified in the database.
 	assert.Equal(t, "Image", dkcs[0].Image)
+
+	// The running container's Docker ID should be committed to the database.
+	dbc := conn.SelectFromContainer(nil)[0]
+	assert.Equal(t, dkcs[0].ID, dbc.DockerID)
 }
 
 func runSync(dk docker.Client, dbcs []db.Container,
