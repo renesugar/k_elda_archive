@@ -304,13 +304,19 @@ func (dk *MockClient) CreateContainer(opts dkc.CreateContainerOptions) (*dkc.Con
 
 	id := uuid.NewV4().String()
 
+	var ip string
+	if opts.NetworkingConfig != nil {
+		ip = opts.NetworkingConfig.EndpointsConfig["quilt"].IPAMConfig.IPv4Address
+	}
 	container := &dkc.Container{
-		ID:              id,
-		Name:            opts.Name,
-		Args:            opts.Config.Cmd,
-		Config:          opts.Config,
-		HostConfig:      opts.HostConfig,
-		NetworkSettings: &dkc.NetworkSettings{},
+		ID:         id,
+		Name:       opts.Name,
+		Args:       opts.Config.Cmd,
+		Config:     opts.Config,
+		HostConfig: opts.HostConfig,
+		NetworkSettings: &dkc.NetworkSettings{
+			IPAddress: ip,
+		},
 	}
 	if img, ok := dk.Images[image]; ok {
 		container.Image = img.ID
