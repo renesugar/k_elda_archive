@@ -98,14 +98,14 @@ func TestBootEtcd(t *testing.T) {
 		m.Role = db.Master
 		m.PublicIP = "m1-pub"
 		m.PrivateIP = "m1-priv"
-		m.CloudID = "ignored"
+		m.CloudID = "cloud1"
 		view.Commit(m)
 
 		m = view.InsertMachine()
 		m.Role = db.Worker
 		m.PublicIP = "w1-pub"
 		m.PrivateIP = "w1-priv"
-		m.CloudID = "ignored"
+		m.CloudID = "cloud2"
 		view.Commit(m)
 		return nil
 	})
@@ -155,12 +155,14 @@ func TestBootEtcdRoleConflict(t *testing.T) {
 		m.Role = db.Worker
 		m.PublicIP = "m1-pub"
 		m.PrivateIP = "m1-priv"
+		m.CloudID = "cloud1"
 		view.Commit(m)
 
 		m = view.InsertMachine()
 		m.Role = db.Master
 		m.PublicIP = "w1-pub"
 		m.PrivateIP = "w1-priv"
+		m.CloudID = "cloud2"
 		view.Commit(m)
 		return nil
 	})

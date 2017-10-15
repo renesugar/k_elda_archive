@@ -72,7 +72,7 @@ func (p *fakeProvider) Boot(bootSet []db.Machine) error {
 		// We simulate this by setting the role of the machine returned by
 		// `List()` to be None, and only return the correct role in
 		// `getMachineRole`.
-		p.roles[toBoot.PublicIP] = toBoot.Role
+		p.roles[toBoot.CloudID] = toBoot.Role
 		toBoot.Role = db.None
 
 		p.machines[idStr] = toBoot
@@ -250,9 +250,9 @@ func mock() {
 
 	validRegions = fakeValidRegions
 	db.AllProviders = []db.ProviderName{FakeAmazon, FakeVagrant}
-	getMachineRole = func(ip string) db.Role {
+	getMachineRole = func(cloudID string) db.Role {
 		for _, prvdr := range instantiatedProviders {
-			if role, ok := prvdr.roles[ip]; ok {
+			if role, ok := prvdr.roles[cloudID]; ok {
 				return role
 			}
 		}

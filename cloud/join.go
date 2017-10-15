@@ -205,7 +205,7 @@ func (cld cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
 
 func connectionStatus(m db.Machine) string {
 	// "Connected" takes priority over other statuses.
-	connected := m.PublicIP != "" && isConnected(m.PublicIP)
+	connected := m.PublicIP != "" && isConnected(m.CloudID)
 	if connected {
 		return db.Connected
 	}
@@ -260,7 +260,7 @@ func (cld cloud) selectMachines(view db.Database) []db.Machine {
 
 func getMachineRoles(machines []db.Machine) (withRoles []db.Machine) {
 	for _, m := range machines {
-		m.Role = getMachineRole(m.PublicIP)
+		m.Role = getMachineRole(m.CloudID)
 		withRoles = append(withRoles, m)
 	}
 	return withRoles

@@ -17,6 +17,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// minions is a map from a machine's cloud ID to the minion running on that
+// machine. It must be updated regularly in order to account for changes such as
+// new machines, or changes to a machine's IP address that require obtaining a
+// new client.
 var minions map[string]*minion
 
 // Credentials that the foreman should use to connect to its minions.
@@ -134,30 +138,31 @@ func RunOnce(conn db.Conn) {
 }
 
 // GetMachineRole uses the minion map to find the associated minion with
-// the IP, according to the foreman's last update cycle.
-func GetMachineRole(pubIP string) db.Role {
-	if min, ok := minions[pubIP]; ok {
+// the cloudID, according to the foreman's last update cycle.
+func GetMachineRole(cloudID string) db.Role {
+	if min, ok := minions[cloudID]; ok {
 		return db.PBToRole(min.config.Role)
 	}
 	return db.None
 }
 
-// IsConnected returns whether the foreman is connected to the minion at pubIP.
-func IsConnected(pubIP string) bool {
-	min, ok := minions[pubIP]
+// IsConnected returns whether the foreman is connected to the minion running
+// on the machine with the given cloud ID.
+func IsConnected(cloudID string) bool {
+	min, ok := minions[cloudID]
 	return ok && min.connected
 }
 
 func updateMinionMap(machines []db.Machine) {
 	for _, m := range machines {
-		min, ok := minions[m.PublicIP]
-		if !ok {
+		min, ok := minions[m.CloudID]
+		if !ok || min.machine.PublicIP != m.PublicIP {
 			client, err := newClient(m.PublicIP)
 			if err != nil {
 				continue
 			}
 			min = &minion{client: client}
-			minions[m.PublicIP] = min
+			minions[m.CloudID] = min
 		}
 
 		min.machine = m
