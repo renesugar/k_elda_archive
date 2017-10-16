@@ -27,7 +27,7 @@ func TestMinionLogs(t *testing.T) {
 
 	for _, machine := range machines {
 		fmt.Println(machine)
-		logsOutput, err := exec.Command("quilt", "ssh", machine.BlueprintID,
+		logsOutput, err := exec.Command("quilt", "ssh", machine.CloudID,
 			"sudo", "journalctl", "-o", "cat", "-u", "minion").
 			CombinedOutput()
 		if err != nil {
