@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-/* eslint-disable import/no-extraneous-dependencies, no-underscore-dangle */
+/* eslint-disable import/no-extraneous-dependencies, no-underscore-dangle, require-jsdoc */
 const chai = require('chai');
 const chaiSubset = require('chai-subset');
 const rewire = require('rewire');

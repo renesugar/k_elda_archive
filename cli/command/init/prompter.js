@@ -1,3 +1,13 @@
+// Disable requiring FunctionExpression JSDoc, because this file
+// uses many function expressions as lambda expressions where
+// it is overkill to require documentation.
+/*
+eslint "require-jsdoc": ["error", {
+    "require": {
+        "FunctionExpression": false
+    }
+}]
+*/
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
