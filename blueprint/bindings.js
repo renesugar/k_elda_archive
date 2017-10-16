@@ -53,6 +53,63 @@ class Deployment {
 
     global._quiltDeployment = this;
   }
+
+  // Convert the deployment to the QRI deployment format.
+  toQuiltRepresentation() {
+    setQuiltIDs(this.machines);
+    setQuiltIDs(this.containers);
+
+    const loadBalancers = [];
+    let connections = [];
+    let placements = [];
+    const containers = [];
+
+    // Convert the load balancers.
+    this.loadBalancers.forEach((lb) => {
+      connections = connections.concat(lb.getQuiltConnections());
+      loadBalancers.push({
+        name: lb.name,
+        hostnames: lb.containers.map(c => c.hostname),
+      });
+    });
+
+    this.containers.forEach((c) => {
+      connections = connections.concat(c.getQuiltConnections());
+      placements = placements.concat(c.getPlacementsWithID());
+      containers.push(c.toQuiltRepresentation());
+    });
+
+    const quiltDeployment = {
+      machines: this.machines,
+      loadBalancers,
+      containers,
+      connections,
+      placements,
+
+      namespace: this.namespace,
+      adminACL: this.adminACL,
+    };
+    vet(quiltDeployment);
+    return quiltDeployment;
+  }
+
+  // deploy adds an object, or list of objects, to the deployment.
+  // Deployable objects must implement the deploy(deployment) interface.
+  deploy(list) {
+    let toDeployList = list;
+    if (!Array.isArray(toDeployList)) {
+      toDeployList = [toDeployList];
+    }
+
+    const that = this;
+    toDeployList.forEach((toDeploy) => {
+      if (!toDeploy.deploy) {
+        throw new Error('only objects that implement ' +
+                  '"deploy(deployment)" can be deployed');
+      }
+      toDeploy.deploy(that);
+    });
+  }
 }
 
 class Infrastructure extends Deployment {
@@ -256,45 +313,6 @@ function hash(str) {
   return shaSum.digest('hex');
 }
 
-// Convert the deployment to the QRI deployment format.
-Deployment.prototype.toQuiltRepresentation = function toQuiltRepresentation() {
-  setQuiltIDs(this.machines);
-  setQuiltIDs(this.containers);
-
-  const loadBalancers = [];
-  let connections = [];
-  let placements = [];
-  const containers = [];
-
-  // Convert the load balancers.
-  this.loadBalancers.forEach((lb) => {
-    connections = connections.concat(lb.getQuiltConnections());
-    loadBalancers.push({
-      name: lb.name,
-      hostnames: lb.containers.map(c => c.hostname),
-    });
-  });
-
-  this.containers.forEach((c) => {
-    connections = connections.concat(c.getQuiltConnections());
-    placements = placements.concat(c.getPlacementsWithID());
-    containers.push(c.toQuiltRepresentation());
-  });
-
-  const quiltDeployment = {
-    machines: this.machines,
-    loadBalancers,
-    containers,
-    connections,
-    placements,
-
-    namespace: this.namespace,
-    adminACL: this.adminACL,
-  };
-  vet(quiltDeployment);
-  return quiltDeployment;
-};
-
 /**
  * Checks if the namespace is lower case, and if all referenced
  * containers in connections and load balancers are really deployed.
@@ -352,77 +370,71 @@ function vet(deployment) {
   });
 }
 
-// deploy adds an object, or list of objects, to the deployment.
-// Deployable objects must implement the deploy(deployment) interface.
-Deployment.prototype.deploy = function deploy(list) {
-  let toDeployList = list;
-  if (!Array.isArray(toDeployList)) {
-    toDeployList = [toDeployList];
-  }
 
-  const that = this;
-  toDeployList.forEach((toDeploy) => {
-    if (!toDeploy.deploy) {
-      throw new Error('only objects that implement ' +
-                '"deploy(deployment)" can be deployed');
+class LoadBalancer {
+  /**
+   * Creates a new LoadBalancer object which represents a collection of
+   * containers behind a load balancer.
+   * @implements {Connectable}
+   * @constructor
+   *
+   * @param {string} name - The name of the load balancer.
+   * @param {Container[]} containers - The containers behind the load balancer.
+   */
+  constructor(name, containers) {
+    if (typeof name !== 'string') {
+      throw new Error(`name must be a string; was ${stringify(name)}`);
     }
-    toDeploy.deploy(that);
-  });
-};
+    this.name = uniqueHostname(name);
+    this.containers = boxObjects(containers, Container);
 
-/**
- * Creates a new LoadBalancer object which represents a collection of
- * containers behind a load balancer.
- * @implements {Connectable}
- * @constructor
- *
- * @param {string} name - The name of the load balancer.
- * @param {Container[]} containers - The containers behind the load balancer.
- */
-function LoadBalancer(name, containers) {
-  if (typeof name !== 'string') {
-    throw new Error(`name must be a string; was ${stringify(name)}`);
+    this.allowedInboundConnections = [];
   }
-  this.name = uniqueHostname(name);
-  this.containers = boxObjects(containers, Container);
 
-  this.allowedInboundConnections = [];
+  // Get the Quilt hostname that represents the entire load balancer.
+  hostname() {
+    return `${this.name}.q`;
+  }
+
+  deploy(deployment) {
+    deployment.loadBalancers.push(this);
+  }
+
+  /**
+   * Allows inbound connections to the load balancer. Note that this does not
+   * allow direct connections to the containers behind the load balancer.
+   *
+   * @param {Container|Container[]} srcArg - The containers that can open
+   *   connections to this load balancer.
+   * @param {int|Port|PortRange} portRange - The ports on which containers can
+   *   open connections.
+   * @returns {void}
+   */
+  allowFrom(srcArg, portRange) {
+    let src;
+    try {
+      src = boxObjects(srcArg, Container);
+    } catch (err) {
+      throw new Error('Load Balancers can only allow traffic from containers. ' +
+            'Check that you\'re allowing connections from a Container ' +
+            'or list of containers and not from a Load Balancer or other object.');
+    }
+
+    src.forEach((c) => {
+      this.allowedInboundConnections.push(
+        new Connection(c, boxRange(portRange)));
+    });
+  }
+
+  getQuiltConnections() {
+    return this.allowedInboundConnections.map(conn => ({
+      from: conn.from.hostname,
+      to: this.name,
+      minPort: conn.minPort,
+      maxPort: conn.maxPort,
+    }));
+  }
 }
-
-// Get the Quilt hostname that represents the entire load balancer.
-LoadBalancer.prototype.hostname = function lbHostname() {
-  return `${this.name}.q`;
-};
-
-LoadBalancer.prototype.deploy = function lbDeploy(deployment) {
-  deployment.loadBalancers.push(this);
-};
-
-/**
- * Allows inbound connections to the load balancer. Note that this does not
- * allow direct connections to the containers behind the load balancer.
- *
- * @param {Container|Container[]} srcArg - The containers that can open
- *   connections to this load balancer.
- * @param {int|Port|PortRange} portRange - The ports on which containers can
- *   open connections.
- * @returns {void}
- */
-LoadBalancer.prototype.allowFrom = function lbAllowFrom(srcArg, portRange) {
-  let src;
-  try {
-    src = boxObjects(srcArg, Container);
-  } catch (err) {
-    throw new Error('Load Balancers can only allow traffic from containers. ' +
-          'Check that you\'re allowing connections from a Container ' +
-          'or list of containers and not from a Load Balancer or other object.');
-  }
-
-  src.forEach((c) => {
-    this.allowedInboundConnections.push(
-      new Connection(c, boxRange(portRange)));
-  });
-};
 
 // publicInternet is an object that looks like another container that can
 // allow inbound connections. However, it is actually just syntactic sugar
@@ -445,15 +457,6 @@ const publicInternet = {
       c.allowOutboundPublic(portRange);
     });
   },
-};
-
-LoadBalancer.prototype.getQuiltConnections = function lbGetQuiltConnections() {
-  return this.allowedInboundConnections.map(conn => ({
-    from: conn.from.hostname,
-    to: this.name,
-    minPort: conn.minPort,
-    maxPort: conn.maxPort,
-  }));
 };
 
 /**
@@ -682,524 +685,524 @@ function getBoolean(argName, arg) {
   throw new Error(`${argName} must be a boolean (was: ${stringify(arg)})`);
 }
 
-/**
- * Sets the machine's size attribute to an instance size (e.g., m2.xlarge),
- * based on the Machine's specified provider, region, and hardware. Throw
- * an error if provider is not valid or given machine requirements cannot
- * be satisfied by any size.
- * @private
- * @returns {void}
- */
-Machine.prototype.chooseSize = function machineChooseSize() {
-  if (this.size !== '') return;
-  switch (this.provider) {
-    case 'Amazon':
-      this.chooseBestSize(amazonDescriptions.Descriptions);
-      break;
-    case 'DigitalOcean':
-      this.chooseBestSize(digitalOceanDescriptions.Descriptions);
-      break;
-    case 'Google':
-      this.chooseBestSize(googleDescriptions.Descriptions);
-      break;
-    case 'Vagrant':
-      this.vagrantSize();
-      break;
-    default:
-      throw new Error(`Unknown Cloud Provider: ${this.provider}`);
-  }
-  if (this.size === '') {
-    throw new Error(`No valid size for Machine ${stringify(this)}`);
-  }
-};
+class Machine {
+  /**
+   * Creates a new Machine object, which represents a machine to be deployed.
+   * @constructor
+   *
+   * @example <caption>Create a template Machine on Amazon, and then use the
+   * template to create a master and 2 workers. This will use the default size
+   * and region for Amazon.</caption>
+   * const baseMachine = new Machine({provider: 'Amazon'});
+   * const master = baseMachine.asMaster();
+   * const workers = baseMachine.asWorker().replicate(2);
+   *
+   * @example <caption>Create a worker machine with the 'n1-standard-1' size in
+   * GCE's 'us-east1-b' region.</caption>
+   * const googleWorker = new Machine({
+   *   provider: 'Google',
+   *   region: 'us-east1-b',
+   *   size: 'n1-standard-1',
+   *   role: 'Worker',
+   * });
+   *
+   * @example <caption>Create a DigitalOcean master droplet with the '512mb' size
+   * in the 'sfo1' zone.</caption>
+   * const googleWorker = new Machine({
+   *   provider: 'DigitalOcean',
+   *   region: 'sfo1',
+   *   size: '512mb',
+   *   role: 'Master',
+   * });
+   *
+   * @param {Object.<string, string>} [optionalArgs] - Optional arguments that
+   *   modify the machine.
+   * @param {string} [optionalArgs.provider] - The cloud provider that the machine
+   *   should be launched in. Accepted values are Amazon, DigitalOcean, Google,
+   *   and Vagrant. This argument is optional, but the provider attribute of the
+   *   machine must be set before it is deployed.
+   * @param {string} [optionalArgs.role] - The role the machine will run as
+   *   (accepted value are Master and Worker). A Machine's role must be set before
+   *   it can be deployed.  This argument is not required, so that users can
+   *   create a template to use for all machines in the cluster;
+   *   {@link Machine#asWorker} and {@link Machine#asMaster} can be called on the
+   *   template to create a machine with the appropriate role, as in the example.
+   * @param {string} [optionalArgs.region] - The region the machine will run-in
+   *   (provider-specific; e.g., for Amazon, this could be 'us-west-2').
+   * @param {string} [optionalArgs.size] - The instance type (provider-specific).
+   * @param {Range|int} [optionalArgs.cpu] - The desired number of CPUs.
+   * @param {Range|int} [optionalArgs.ram] - The desired amount of RAM in GiB.
+   * @param {int} [optionalArgs.diskSize] - The desired amount of disk space in GB.
+   * @param {string} [optionalArgs.floatingIp] - A reserved IP to associate with
+   *   the machine.
+   * @param {string[]} [optionalArgs.sshKeys] - Public keys to allow users to log
+   *   in to the machine and containers running on it.
+   * @param {boolean} [optionalArgs.preemptible=false] - Whether the machine
+   *   should be preemptible. Only supported on the Amazon provider.
+   */
+  constructor(optionalArgs) {
+    this._refID = uniqueID();
 
-/**
- * Sets the machine's region using the default region of the specified provider
- * Throw an error if provider is not valid or given machine requirements cannot
- * be satisfied by any size.
- * @private
- * @returns {void}
- */
-Machine.prototype.chooseRegion = function machineChooseRegion() {
-  if (this.region !== '') return;
-  if (this.provider in providerDefaultRegions) {
-    this.region = providerDefaultRegions[this.provider];
-  } else {
-    throw new Error(`Unknown Cloud Provider: ${this.provider}`);
-  }
-};
+    this.provider = getString('provider', optionalArgs.provider);
+    this.role = getString('role', optionalArgs.role);
+    this.region = getString('region', optionalArgs.region);
+    this.size = getString('size', optionalArgs.size);
+    this.floatingIp = getString('floatingIp', optionalArgs.floatingIp);
+    this.diskSize = getNumber('diskSize', optionalArgs.diskSize);
+    this.sshKeys = getStringArray('sshKeys', optionalArgs.sshKeys);
+    this.cpu = boxRange(optionalArgs.cpu);
+    this.ram = boxRange(optionalArgs.ram);
+    this.preemptible = getBoolean('preemptible', optionalArgs.preemptible);
 
-/**
- * Iterates through all the decriptions for a given provider, and returns
- * the cheapest option that fits the user's requirements.
- * @private
- * @param {description[]} providerDescriptions - Array of descriptions of
- *   a provider.
- * @returns {string} The best size that fits the user's requirements if
- *   provider is available in Quilt, otherwise throws an error.
- */
-Machine.prototype.chooseBestSize = function machineChooseBestSize(
-  providerDescriptions) {
-  let bestSize = '';
-  let bestPrice = Infinity;
-  for (let i = 0; i < providerDescriptions.length; i += 1) {
-    const description = providerDescriptions[i];
-    if (this.ram.inRange(description.RAM) &&
-        this.cpu.inRange(description.CPU) &&
-        (bestSize === '' || description.Price < bestPrice)) {
-      bestSize = description.Size;
-      bestPrice = description.Price;
+    checkExtraKeys(optionalArgs, this);
+
+    this.chooseSize();
+    this.chooseRegion();
+  }
+
+  /**
+   * Sets the machine's size attribute to an instance size (e.g., m2.xlarge),
+   * based on the Machine's specified provider, region, and hardware. Throws
+   * an error if provider is not valid or given machine requirements cannot
+   * be satisfied by any size.
+   * @private
+   * @returns {void}
+   */
+  chooseSize() {
+    if (this.size !== '') return;
+    switch (this.provider) {
+      case 'Amazon':
+        this.chooseBestSize(amazonDescriptions.Descriptions);
+        break;
+      case 'DigitalOcean':
+        this.chooseBestSize(digitalOceanDescriptions.Descriptions);
+        break;
+      case 'Google':
+        this.chooseBestSize(googleDescriptions.Descriptions);
+        break;
+      case 'Vagrant':
+        this.vagrantSize();
+        break;
+      default:
+        throw new Error(`Unknown Cloud Provider: ${this.provider}`);
+    }
+    if (this.size === '') {
+      throw new Error(`No valid size for Machine ${stringify(this)}`);
     }
   }
-  this.size = bestSize;
-};
 
-/**
- * Rounds up RAM and CPU requirements to be at least one for Vagrant.
- * @private
- * @returns {string} The rounded up Vagrant size.
- */
-Machine.prototype.vagrantSize = function machineVagrantSize() {
-  let ram = this.ram.min;
-  if (ram < 1) {
-    ram = 1;
+  /**
+   * Sets the machine's region using the default region of the specified provider
+   * Throws an error if provider is not valid or given machine requirements cannot
+   * be satisfied by any size.
+   * @private
+   * @returns {void}
+   */
+  chooseRegion() {
+    if (this.region !== '') return;
+    if (this.provider in providerDefaultRegions) {
+      this.region = providerDefaultRegions[this.provider];
+    } else {
+      throw new Error(`Unknown Cloud Provider: ${this.provider}`);
+    }
   }
-  let cpu = this.cpu.min;
-  if (cpu < 1) {
-    cpu = 1;
+
+  /**
+   * Iterates through all the decriptions for a given provider, and returns
+   * the cheapest option that fits the user's requirements.
+   * @private
+   * @param {description[]} providerDescriptions - Array of descriptions of
+   *   a provider.
+   * @returns {string} The best size that fits the user's requirements if
+   *   provider is available in Quilt, otherwise throws an error.
+   */
+  chooseBestSize(providerDescriptions) {
+    let bestSize = '';
+    let bestPrice = Infinity;
+    for (let i = 0; i < providerDescriptions.length; i += 1) {
+      const description = providerDescriptions[i];
+      if (this.ram.inRange(description.RAM) &&
+          this.cpu.inRange(description.CPU) &&
+          (bestSize === '' || description.Price < bestPrice)) {
+        bestSize = description.Size;
+        bestPrice = description.Price;
+      }
+    }
+    this.size = bestSize;
   }
-  this.size = `${ram},${cpu}`;
-};
 
-/**
- * Creates a new Machine object, which represents a machine to be deployed.
- * @constructor
- *
- * @example <caption>Create a template Machine on Amazon, and then use the
- * template to create a master and 2 workers. This will use the default size
- * and region for Amazon.</caption>
- * const baseMachine = new Machine({provider: 'Amazon'});
- * const master = baseMachine.asMaster();
- * const workers = baseMachine.asWorker().replicate(2);
- *
- * @example <caption>Create a worker machine with the 'n1-standard-1' size in
- * GCE's 'us-east1-b' region.</caption>
- * const googleWorker = new Machine({
- *   provider: 'Google',
- *   region: 'us-east1-b',
- *   size: 'n1-standard-1',
- *   role: 'Worker',
- * });
- *
- * @example <caption>Create a DigitalOcean master droplet with the '512mb' size
- * in the 'sfo1' zone.</caption>
- * const googleWorker = new Machine({
- *   provider: 'DigitalOcean',
- *   region: 'sfo1',
- *   size: '512mb',
- *   role: 'Master',
- * });
- *
- * @param {Object.<string, string>} [optionalArgs] - Optional arguments that
- *   modify the machine.
- * @param {string} [optionalArgs.provider] - The cloud provider that the machine
- *   should be launched in. Accepted values are Amazon, DigitalOcean, Google,
- *   and Vagrant. This argument is optional, but the provider attribute of the
- *   machine must be set before it is deployed.
- * @param {string} [optionalArgs.role] - The role the machine will run as
- *   (accepted value are Master and Worker). A Machine's role must be set before
- *   it can be deployed.  This argument is not required, so that users can
- *   create a template to use for all machines in the cluster;
- *   {@link Machine#asWorker} and {@link Machine#asMaster} can be called on the
- *   template to create a machine with the appropriate role, as in the example.
- * @param {string} [optionalArgs.region] - The region the machine will run-in
- *   (provider-specific; e.g., for Amazon, this could be 'us-west-2').
- * @param {string} [optionalArgs.size] - The instance type (provider-specific).
- * @param {Range|int} [optionalArgs.cpu] - The desired number of CPUs.
- * @param {Range|int} [optionalArgs.ram] - The desired amount of RAM in GiB.
- * @param {int} [optionalArgs.diskSize] - The desired amount of disk space in GB.
- * @param {string} [optionalArgs.floatingIp] - A reserved IP to associate with
- *   the machine.
- * @param {string[]} [optionalArgs.sshKeys] - Public keys to allow users to log
- *   in to the machine and containers running on it.
- * @param {boolean} [optionalArgs.preemptible=false] - Whether the machine
- *   should be preemptible. Only supported on the Amazon provider.
- */
-function Machine(optionalArgs) {
-  this._refID = uniqueID();
+  /**
+   * Rounds up RAM and CPU requirements to be at least one for Vagrant.
+   * @private
+   * @returns {string} The rounded up Vagrant size.
+   */
+  vagrantSize() {
+    let ram = this.ram.min;
+    if (ram < 1) {
+      ram = 1;
+    }
+    let cpu = this.cpu.min;
+    if (cpu < 1) {
+      cpu = 1;
+    }
+    this.size = `${ram},${cpu}`;
+  }
 
-  this.provider = getString('provider', optionalArgs.provider);
-  this.role = getString('role', optionalArgs.role);
-  this.region = getString('region', optionalArgs.region);
-  this.size = getString('size', optionalArgs.size);
-  this.floatingIp = getString('floatingIp', optionalArgs.floatingIp);
-  this.diskSize = getNumber('diskSize', optionalArgs.diskSize);
-  this.sshKeys = getStringArray('sshKeys', optionalArgs.sshKeys);
-  this.cpu = boxRange(optionalArgs.cpu);
-  this.ram = boxRange(optionalArgs.ram);
-  this.preemptible = getBoolean('preemptible', optionalArgs.preemptible);
+  deploy(deployment) {
+    deployment.machines.push(this);
+  }
 
-  checkExtraKeys(optionalArgs, this);
+  // Create a new machine with the same attributes.
+  clone() {
+    // _.clone only creates a shallow copy, so we must clone sshKeys ourselves.
+    const keyClone = _.clone(this.sshKeys);
+    const cloned = _.clone(this);
+    cloned.sshKeys = keyClone;
+    return new Machine(cloned);
+  }
 
-  this.chooseSize();
-  this.chooseRegion();
+  withRole(role) {
+    const copy = this.clone();
+    copy.role = role;
+    return copy;
+  }
+
+  /**
+   * @deprecated Users should no longer use this function directly, and instead
+   * should create infrastructure using the {@link Infrastructure} constructor,
+   * which handles marking the passed-in machines as workers.
+   *
+   * @returns {Machine} A new machine with role Worker.
+   */
+  asWorker() {
+    return this.withRole('Worker');
+  }
+
+  /**
+   * @deprecated Users should no longer use this function directly, and instead
+   * should create infrastructure using the {@link Infrastructure} constructor,
+   * which handles marking the passed-in machines as masters.
+   *
+   * @returns {Machine} A new machine with role Master.
+   */
+  asMaster() {
+    return this.withRole('Master');
+  }
+
+  // Create n new machines with the same attributes.
+  replicate(n) {
+    let i;
+    const res = [];
+    for (i = 0; i < n; i += 1) {
+      res.push(this.clone());
+    }
+    return res;
+  }
+
+  hash() {
+    return stringify({
+      provider: this.provider,
+      role: this.role,
+      region: this.region,
+      size: this.size,
+      floatingIp: this.floatingIp,
+      diskSize: this.diskSize,
+      cpu: this.cpu,
+      ram: this.ram,
+      preemptible: this.preemptible,
+    });
+  }
 }
 
-Machine.prototype.deploy = function machineDeploy(deployment) {
-  deployment.machines.push(this);
-};
-
-// Create a new machine with the same attributes.
-Machine.prototype.clone = function machineClone() {
-  // _.clone only creates a shallow copy, so we must clone sshKeys ourselves.
-  const keyClone = _.clone(this.sshKeys);
-  const cloned = _.clone(this);
-  cloned.sshKeys = keyClone;
-  return new Machine(cloned);
-};
-
-Machine.prototype.withRole = function machineWithRole(role) {
-  const copy = this.clone();
-  copy.role = role;
-  return copy;
-};
-
-/**
- * @deprecated Users should no longer use this function directly, and instead
- * should create infrastructure using the {@link Infrastructure} constructor,
- * which handles marking the passed-in machines as workers.
- *
- * @returns {Machine} A new machine with role Worker.
- */
-Machine.prototype.asWorker = function machineAsWorker() {
-  return this.withRole('Worker');
-};
-
-/**
- * @deprecated Users should no longer use this function directly, and instead
- * should create infrastructure using the {@link Infrastructure} constructor,
- * which handles marking the passed-in machines as masters.
- *
- * @returns {Machine} A new machine with role Master.
- */
-Machine.prototype.asMaster = function machineAsMaster() {
-  return this.withRole('Master');
-};
-
-// Create n new machines with the same attributes.
-Machine.prototype.replicate = function machineReplicate(n) {
-  let i;
-  const res = [];
-  for (i = 0; i < n; i += 1) {
-    res.push(this.clone());
+class Image {
+  /**
+   * Creates a Docker Image.
+   *
+   * If two images with the same name but different Dockerfiles are referenced, an
+   * error will be thrown.
+   *
+   * @constructor
+   *
+   * @example <caption>Create an image that uses the nginx image stored on
+   * Docker Hub.</caption>
+   * const image = new Image('nginx');
+   *
+   * @example <caption>Create an image that uses the etcd image stored at
+   * quay.io.</caption>
+   * const image = new Image('quay.io/coreos/etcd');
+   *
+   * @example <caption>Create an Image named my-image-name that's built on top of
+   * the nginx image, and additionally includes the Git repository at
+   * github.com/my/web/repo cloned into /web_root.</caption>
+   * const image = new Image('my-image-name',
+   *   'FROM nginx\n' +
+   *   'RUN cd /web_root && git clone github.com/my/web_repo');
+   *
+   * @example <caption>Create an image named my-inage-name that's built using a
+   * Dockerfile saved locally at 'Dockerfile'.</caption>
+   * const container = new Image('my-image-name', fs.readFileSync('./Dockerfile'));
+   *
+   * @param {string} name - The name to use for the Docker image, or if no
+   *   Dockerfile is specified, the repository to get the image from. The repository
+   *   can be a full URL (e.g., quay.io/coreos/etcd) or the name of an image in
+   *   Docker Hub (e.g., nginx or nginx:1.13.3).
+   * @param {string} [dockerfile] - The string contents of the Dockerfile that
+   *   constructs the Image.
+   */
+  constructor(name, dockerfile) {
+    this.name = name;
+    this.dockerfile = dockerfile;
   }
-  return res;
-};
 
-Machine.prototype.hash = function machineHash() {
-  return stringify({
-    provider: this.provider,
-    role: this.role,
-    region: this.region,
-    size: this.size,
-    floatingIp: this.floatingIp,
-    diskSize: this.diskSize,
-    cpu: this.cpu,
-    ram: this.ram,
-    preemptible: this.preemptible,
-  });
-};
-
-/**
- * Creates a Docker Image.
- *
- * If two images with the same name but different Dockerfiles are referenced, an
- * error will be thrown.
- *
- * @constructor
- *
- * @example <caption>Create an image that uses the nginx image stored on
- * Docker Hub.</caption>
- * const image = new Image('nginx');
- *
- * @example <caption>Create an image that uses the etcd image stored at
- * quay.io.</caption>
- * const image = new Image('quay.io/coreos/etcd');
- *
- * @example <caption>Create an Image named my-image-name that's built on top of
- * the nginx image, and additionally includes the Git repository at
- * github.com/my/web/repo cloned into /web_root.</caption>
- * const image = new Image('my-image-name',
- *   'FROM nginx\n' +
- *   'RUN cd /web_root && git clone github.com/my/web_repo');
- *
- * @example <caption>Create an image named my-inage-name that's built using a
- * Dockerfile saved locally at 'Dockerfile'.</caption>
- * const container = new Image('my-image-name', fs.readFileSync('./Dockerfile'));
- *
- * @param {string} name - The name to use for the Docker image, or if no
- *   Dockerfile is specified, the repository to get the image from. The repository
- *   can be a full URL (e.g., quay.io/coreos/etcd) or the name of an image in
- *   Docker Hub (e.g., nginx or nginx:1.13.3).
- * @param {string} [dockerfile] - The string contents of the Dockerfile that
- *   constructs the Image.
- */
-function Image(name, dockerfile) {
-  this.name = name;
-  this.dockerfile = dockerfile;
+  clone() {
+    return new Image(this.name, this.dockerfile);
+  }
 }
 
-Image.prototype.clone = function imageClone() {
-  return new Image(this.name, this.dockerfile);
-};
+class Container {
+  /**
+   * Creates a new Container, which represents a container to be deployed.
+   *
+   * If a Container uses a custom image (e.g., the image is created by reading
+   * in a local Dockerfile), Quilt tracks the Dockerfile that was used to create
+   * that image.  If the Dockerfile is changed and the blueprint is re-run,
+   * the image will be re-built and all containers that use the image will be
+   * re-started with the new image.
+   *
+   * @constructor
+   * @implements {Connectable}
+   *
+   * @example <caption>Create a Container with hostname myApp that uses the nginx
+   * image on Docker Hub, and that includes a file located at /etc/myconf with
+   * contents foo.</caption>
+   * const container = new Container(
+   *   'myApp', 'nginx', {filepathToContent: {'/etc/myconf': 'foo'}});
+   *
+   * @param {string} hostnamePrefix - The network hostname of the container.
+   * @param {Image|string} image - An {@link Image} that the container should
+   *   boot, or a string with the name of a Docker image (that exists in
+   *   Docker Hub) that the container should boot.
+   * @param {Object} [optionalArgs] - Additional, named, optional arguments.
+   * @param {string} [optionalArgs.command] - The command to use when starting
+   *   the container.
+   * @param {Object.<string, string>} [optionalArgs.env] - Environment variables
+   *   to set in the booted container.  The key is the name of the environment
+   *   variable.
+   * @param {Object.<string, string>} [optionalArgs.filepathToContent] - Text
+   *   files to be installed on the container before it starts.  The key is
+   *   the path on the container where the text file should be installed, and
+   *   the value is the contents of the text file. If the file content specified
+   *   by this argument changes and the blueprint is re-run, Quilt will re-start
+   *   the container using the new files.  Files are installed with permissions
+   *   0644 and parent directories are automatically created.
+   */
+  constructor(hostnamePrefix, image, optionalArgs = {}) {
+    // refID is used to distinguish deployments with multiple references to the
+    // same container, and deployments with multiple containers with the exact
+    // same attributes.
+    this._refID = uniqueID();
 
-/**
- * Creates a new Container, which represents a container to be deployed.
- *
- * If a Container uses a custom image (e.g., the image is created by reading
- * in a local Dockerfile), Quilt tracks the Dockerfile that was used to create
- * that image.  If the Dockerfile is changed and the blueprint is re-run,
- * the image will be re-built and all containers that use the image will be
- * re-started with the new image.
- *
- * @constructor
- * @implements {Connectable}
- *
- * @example <caption>Create a Container with hostname myApp that uses the nginx
- * image on Docker Hub, and that includes a file located at /etc/myconf with
- * contents foo.</caption>
- * const container = new Container(
- *   'myApp', 'nginx', {filepathToContent: {'/etc/myconf': 'foo'}});
- *
- * @param {string} hostnamePrefix - The network hostname of the container.
- * @param {Image|string} image - An {@link Image} that the container should
- *   boot, or a string with the name of a Docker image (that exists in
- *   Docker Hub) that the container should boot.
- * @param {Object} [optionalArgs] - Additional, named, optional arguments.
- * @param {string} [optionalArgs.command] - The command to use when starting
- *   the container.
- * @param {Object.<string, string>} [optionalArgs.env] - Environment variables
- *   to set in the booted container.  The key is the name of the environment
- *   variable.
- * @param {Object.<string, string>} [optionalArgs.filepathToContent] - Text
- *   files to be installed on the container before it starts.  The key is
- *   the path on the container where the text file should be installed, and
- *   the value is the contents of the text file. If the file content specified
- *   by this argument changes and the blueprint is re-run, Quilt will re-start
- *   the container using the new files.  Files are installed with permissions
- *   0644 and parent directories are automatically created.
- */
-function Container(hostnamePrefix, image, optionalArgs = {}) {
-  // refID is used to distinguish deployments with multiple references to the
-  // same container, and deployments with multiple containers with the exact
-  // same attributes.
-  this._refID = uniqueID();
+    this.image = image;
+    if (typeof image === 'string') {
+      this.image = new Image(image);
+    }
+    if (!(this.image instanceof Image)) {
+      throw new Error('image must be an Image or string (was ' +
+              `${stringify(image)})`);
+    }
 
-  this.image = image;
-  if (typeof image === 'string') {
-    this.image = new Image(image);
+    this.hostnamePrefix = getString('hostnamePrefix', hostnamePrefix);
+    this.hostname = uniqueHostname(this.hostnamePrefix);
+    this.command = getStringArray('command', optionalArgs.command);
+    this.env = getStringMap('env', optionalArgs.env);
+    this.filepathToContent = getStringMap('filepathToContent',
+      optionalArgs.filepathToContent);
+
+    // Don't allow callers to modify the arguments by reference.
+    this.command = _.clone(this.command);
+    this.env = _.clone(this.env);
+    this.filepathToContent = _.clone(this.filepathToContent);
+    this.image = this.image.clone();
+
+    checkExtraKeys(optionalArgs, this);
+
+    // When generating the Quilt deployment JSON object, these placements must
+    // be converted using Container.getPlacementsWithID.
+    this.placements = [];
+
+    this.allowedInboundConnections = [];
+    this.outgoingPublic = [];
+    this.incomingPublic = [];
   }
-  if (!(this.image instanceof Image)) {
-    throw new Error('image must be an Image or string (was ' +
-            `${stringify(image)})`);
+
+  // Create a new Container with the same attributes.
+  clone() {
+    return new Container(this.hostnamePrefix, this.image, this);
   }
 
-  this.hostnamePrefix = getString('hostnamePrefix', hostnamePrefix);
-  this.hostname = uniqueHostname(this.hostnamePrefix);
-  this.command = getStringArray('command', optionalArgs.command);
-  this.env = getStringMap('env', optionalArgs.env);
-  this.filepathToContent = getStringMap('filepathToContent',
-    optionalArgs.filepathToContent);
+  setEnv(key, val) {
+    this.env[key] = val;
+  }
 
-  // Don't allow callers to modify the arguments by reference.
-  this.command = _.clone(this.command);
-  this.env = _.clone(this.env);
-  this.filepathToContent = _.clone(this.filepathToContent);
-  this.image = this.image.clone();
+  withEnv(env) {
+    const cloned = this.clone();
+    cloned.env = env;
+    return cloned;
+  }
 
-  checkExtraKeys(optionalArgs, this);
+  /**
+   * Creates a new container that replaces the mapping of filepaths to filecontent
+   * with the given mapping.
+   *
+   * @example <caption>Create a container with hostname haproxy and using an
+   * image named haproxyImage that has a file at path /etc/myconf containing the
+   * text foo.</caption>
+   * const c = new Container('haproxy', haproxyImage).withFiles({
+   *   '/etc/myconf': 'foo'
+   * });
+   *
+   * @param {Object.<string, string>} fileMap - Text files to be installed on
+   *   the container before it starts.  Uses the same format as the
+   *   filepathToContent argument to the {@link Container} constructor.
+   * @returns {Container} A new container that is identical to this one, except
+   *   that filepathToContent is set to the given mappng.
+   */
+  withFiles(fileMap) {
+    const cloned = this.clone();
+    cloned.filepathToContent = fileMap;
+    return cloned;
+  }
 
-  // When generating the Quilt deployment JSON object, these placements must
-  // be converted using Container.getPlacementsWithID.
-  this.placements = [];
+  /**
+   * @returns {string} The container's hostname.
+   */
+  getHostname() {
+    return `${this.hostname}.q`;
+  }
 
-  this.allowedInboundConnections = [];
-  this.outgoingPublic = [];
-  this.incomingPublic = [];
+  hash() {
+    return stringify({
+      image: this.image,
+      command: this.command,
+      env: this.env,
+      filepathToContent: this.filepathToContent,
+      hostname: this.hostname,
+    });
+  }
+
+  placeOn(machineAttrs) {
+    this.placements.push({
+      exclusive: false,
+      provider: getString('provider', machineAttrs.provider),
+      size: getString('size', machineAttrs.size),
+      region: getString('region', machineAttrs.region),
+      floatingIp: getString('floatingIp', machineAttrs.floatingIp),
+    });
+  }
+
+  /**
+   * Set the targetContainer of the placement rules to be this container. This
+   * cannot be done when `placeOn` is called because the container ID is not
+   * determined until after all user code has executed.
+   * @private
+   *
+   * @returns {Object} The placements in the form required by the deployment
+   *   engine.
+   */
+  getPlacementsWithID() {
+    return this.placements.map((plcm) => {
+      plcm.targetContainerID = this.id; // eslint-disable-line no-param-reassign
+      return plcm;
+    });
+  }
+
+  allowFrom(srcArg, portRange) {
+    if (srcArg === publicInternet) {
+      this.allowFromPublic(portRange);
+      return;
+    }
+
+    let src;
+    try {
+      src = boxObjects(srcArg, Container);
+    } catch (err) {
+      throw new Error('Containers can only connect to other containers. ' +
+              'Check that you\'re allowing connections from a container or ' +
+              'list of containers, and not from a LoadBalancer or other object.');
+    }
+
+    src.forEach((c) => {
+      this.allowedInboundConnections.push(
+        new Connection(c, boxRange(portRange)));
+    });
+  }
+
+  allowOutboundPublic(r) {
+    const range = boxRange(r);
+    if (range.min !== range.max) {
+      throw new Error('public internet can only connect to single ports ' +
+              'and not to port ranges');
+    }
+    this.outgoingPublic.push(range);
+  }
+
+  allowFromPublic(r) {
+    const range = boxRange(r);
+    if (range.min !== range.max) {
+      throw new Error('public internet can only connect to single ports ' +
+              'and not to port ranges');
+    }
+    this.incomingPublic.push(range);
+  }
+
+  deploy(deployment) {
+    deployment.containers.add(this);
+  }
+
+  getQuiltConnections() {
+    const connections = [];
+
+    this.allowedInboundConnections.forEach((conn) => {
+      connections.push({
+        from: conn.from.hostname,
+        to: this.hostname,
+        minPort: conn.minPort,
+        maxPort: conn.maxPort,
+      });
+    });
+
+    this.outgoingPublic.forEach((rng) => {
+      connections.push({
+        from: this.hostname,
+        to: publicInternetLabel,
+        minPort: rng.min,
+        maxPort: rng.max,
+      });
+    });
+
+    this.incomingPublic.forEach((rng) => {
+      connections.push({
+        from: publicInternetLabel,
+        to: this.hostname,
+        minPort: rng.min,
+        maxPort: rng.max,
+      });
+    });
+
+    return connections;
+  }
+
+  toQuiltRepresentation() {
+    return {
+      id: this.id,
+      image: this.image,
+      command: this.command,
+      env: this.env,
+      filepathToContent: this.filepathToContent,
+      hostname: this.hostname,
+    };
+  }
 }
-
-// Create a new Container with the same attributes.
-Container.prototype.clone = function containerClone() {
-  return new Container(this.hostnamePrefix, this.image, this);
-};
-
-Container.prototype.setEnv = function containerSetEnv(key, val) {
-  this.env[key] = val;
-};
-
-Container.prototype.withEnv = function containerWithEnv(env) {
-  const cloned = this.clone();
-  cloned.env = env;
-  return cloned;
-};
-
-/**
- * Creates a new container that replaces the mapping of filepaths to filecontent
- * with the given mapping.
- *
- * @example <caption>Create a container with hostname haproxy and using an
- * image named haproxyImage that has a file at path /etc/myconf containing the
- * text foo.</caption>
- * const c = new Container('haproxy', haproxyImage).withFiles({
- *   '/etc/myconf': 'foo'
- * });
- *
- * @param {Object.<string, string>} fileMap - Text files to be installed on
- *   the container before it starts.  Uses the same format as the
- *   filepathToContent argument to the {@link Container} constructor.
- * @returns {Container} A new container that is identical to this one, except
- *   that filepathToContent is set to the given mappng.
- */
-Container.prototype.withFiles = function containerWithFiles(fileMap) {
-  const cloned = this.clone();
-  cloned.filepathToContent = fileMap;
-  return cloned;
-};
-
-/**
- * @returns {string} The container's hostname.
- */
-Container.prototype.getHostname = function containerGetHostname() {
-  return `${this.hostname}.q`;
-};
-
-Container.prototype.hash = function containerHash() {
-  return stringify({
-    image: this.image,
-    command: this.command,
-    env: this.env,
-    filepathToContent: this.filepathToContent,
-    hostname: this.hostname,
-  });
-};
-
-Container.prototype.placeOn = function containerPlaceOn(machineAttrs) {
-  this.placements.push({
-    exclusive: false,
-    provider: getString('provider', machineAttrs.provider),
-    size: getString('size', machineAttrs.size),
-    region: getString('region', machineAttrs.region),
-    floatingIp: getString('floatingIp', machineAttrs.floatingIp),
-  });
-};
-
-/**
- * Set the targetContainer of the placement rules to be this container. This
- * cannot be done when `placeOn` is called because the container ID is not
- * determined until after all user code has executed.
- * @private
- *
- * @returns {Object} The placements in the form required by the deployment
- *   engine.
- */
-Container.prototype.getPlacementsWithID =
-function containerGetPlacementsWithID() {
-  return this.placements.map((plcm) => {
-    plcm.targetContainerID = this.id; // eslint-disable-line no-param-reassign
-    return plcm;
-  });
-};
-
-Container.prototype.allowFrom =
-function containerAllowFrom(srcArg, portRange) {
-  if (srcArg === publicInternet) {
-    this.allowFromPublic(portRange);
-    return;
-  }
-
-  let src;
-  try {
-    src = boxObjects(srcArg, Container);
-  } catch (err) {
-    throw new Error('Containers can only connect to other containers. ' +
-            'Check that you\'re allowing connections from a container or ' +
-            'list of containers, and not from a LoadBalancer or other object.');
-  }
-
-  src.forEach((c) => {
-    this.allowedInboundConnections.push(
-      new Connection(c, boxRange(portRange)));
-  });
-};
-
-Container.prototype.allowOutboundPublic =
-function containerAllowOutboundPublic(r) {
-  const range = boxRange(r);
-  if (range.min !== range.max) {
-    throw new Error('public internet can only connect to single ports ' +
-            'and not to port ranges');
-  }
-  this.outgoingPublic.push(range);
-};
-
-Container.prototype.allowFromPublic = function containerAllowFromPublic(r) {
-  const range = boxRange(r);
-  if (range.min !== range.max) {
-    throw new Error('public internet can only connect to single ports ' +
-            'and not to port ranges');
-  }
-  this.incomingPublic.push(range);
-};
-
-Container.prototype.deploy = function containerDeploy(deployment) {
-  deployment.containers.add(this);
-};
-
-Container.prototype.getQuiltConnections =
-function containerGetQuiltConnections() {
-  const connections = [];
-
-  this.allowedInboundConnections.forEach((conn) => {
-    connections.push({
-      from: conn.from.hostname,
-      to: this.hostname,
-      minPort: conn.minPort,
-      maxPort: conn.maxPort,
-    });
-  });
-
-  this.outgoingPublic.forEach((rng) => {
-    connections.push({
-      from: this.hostname,
-      to: publicInternetLabel,
-      minPort: rng.min,
-      maxPort: rng.max,
-    });
-  });
-
-  this.incomingPublic.forEach((rng) => {
-    connections.push({
-      from: publicInternetLabel,
-      to: this.hostname,
-      minPort: rng.min,
-      maxPort: rng.max,
-    });
-  });
-
-  return connections;
-};
-
-Container.prototype.toQuiltRepresentation =
-function containerToQuiltRepresentation() {
-  return {
-    id: this.id,
-    image: this.image,
-    command: this.command,
-    env: this.env,
-    filepathToContent: this.filepathToContent,
-    hostname: this.hostname,
-  };
-};
 
 /**
  * Attempts to convert `objects` into an array of objects that
@@ -1281,29 +1284,33 @@ function allow(src, dst, port) {
   });
 }
 
-/**
- * Creates a Connection.
- * @constructor
- *
- * @param {string} from - The host from which connections are allowed.
- * @param {PortRange} ports - The port numbers which are allowed.
- */
-function Connection(from, ports) {
-  this.minPort = ports.min;
-  this.maxPort = ports.max;
-  this.from = from;
+class Connection {
+  /**
+   * Creates a Connection.
+   * @constructor
+   *
+   * @param {string} from - The host from which connections are allowed.
+   * @param {PortRange} ports - The port numbers which are allowed.
+   */
+  constructor(from, ports) {
+    this.minPort = ports.min;
+    this.maxPort = ports.max;
+    this.from = from;
+  }
 }
 
-/**
- * Creates a Range object.
- * @constructor
- *
- * @param {integer} min - The minimum of the range (inclusive).
- * @param {integer} max - The maximum of the range (inclusive).
- */
-function Range(min, max) {
-  this.min = min;
-  this.max = max;
+class Range {
+  /**
+   * Creates a Range object.
+   * @constructor
+   *
+   * @param {integer} min - The minimum of the range (inclusive).
+   * @param {integer} max - The maximum of the range (inclusive).
+   */
+  constructor(min, max) {
+    this.min = min;
+    this.max = max;
+  }
 }
 
 /**
