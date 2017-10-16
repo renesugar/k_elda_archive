@@ -784,13 +784,15 @@ class Machine {
     this.floatingIp = getString('floatingIp', optionalArgs.floatingIp);
     this.diskSize = getNumber('diskSize', optionalArgs.diskSize);
     this.sshKeys = getStringArray('sshKeys', optionalArgs.sshKeys);
-    this.cpu = boxRange(optionalArgs.cpu);
-    this.ram = boxRange(optionalArgs.ram);
     this.preemptible = getBoolean('preemptible', optionalArgs.preemptible);
-
+    // temporarily keeps cpu and ram for checkExtraKeys
+    this.cpu = optionalArgs.cpu;
+    this.ram = optionalArgs.ram;
     checkExtraKeys(optionalArgs, this);
+    delete this.cpu;
+    delete this.ram;
 
-    this.chooseSize();
+    this.chooseSize(boxRange(optionalArgs.cpu), boxRange(optionalArgs.ram));
     this.chooseRegion();
   }
 
@@ -801,9 +803,11 @@ class Machine {
    * be satisfied by any size. Also throws an error if the user requests a
    * preemptible instance for a size that cannot be preempted.
    * @private
+   * @param {Range} cpu - The desired number of CPUs.
+   * @param {Range} ram - The desired amount of RAM in GiB.
    * @returns {void}
    */
-  chooseSize() {
+  chooseSize(cpu, ram) {
     if (this.preemptible && this.size !== ''
         && nonPreemptibleSizes[this.provider].includes(this.size)) {
       throw new Error(`Requested size ${this.size} can not be preemptible.` +
@@ -812,16 +816,16 @@ class Machine {
     if (this.size !== '') return;
     switch (this.provider) {
       case 'Amazon':
-        this.chooseBestSize(amazonDescriptions.Descriptions);
+        this.chooseBestSize(amazonDescriptions.Descriptions, cpu, ram);
         break;
       case 'DigitalOcean':
-        this.chooseBestSize(digitalOceanDescriptions.Descriptions);
+        this.chooseBestSize(digitalOceanDescriptions.Descriptions, cpu, ram);
         break;
       case 'Google':
-        this.chooseBestSize(googleDescriptions.Descriptions);
+        this.chooseBestSize(googleDescriptions.Descriptions, cpu, ram);
         break;
       case 'Vagrant':
-        this.vagrantSize();
+        this.vagrantSize(cpu, ram);
         break;
       default:
         throw new Error(`Unknown Cloud Provider: ${this.provider}`);
@@ -853,16 +857,18 @@ class Machine {
    * @private
    * @param {description[]} providerDescriptions - Array of descriptions of
    *   a provider.
+   * @param {Range} cpu - The desired number of CPUs.
+   * @param {Range} ram - The desired amount of RAM in GiB.
    * @returns {string} The best size that fits the user's requirements if
    *   provider is available in Kelda, otherwise throws an error.
    */
-  chooseBestSize(providerDescriptions) {
+  chooseBestSize(providerDescriptions, cpu, ram) {
     let bestSize = '';
     let bestPrice = Infinity;
     for (let i = 0; i < providerDescriptions.length; i += 1) {
       const description = providerDescriptions[i];
-      if (this.ram.inRange(description.RAM) &&
-          this.cpu.inRange(description.CPU) &&
+      if (ram.inRange(description.RAM) &&
+          cpu.inRange(description.CPU) &&
           (bestSize === '' || description.Price < bestPrice)) {
         bestSize = description.Size;
         bestPrice = description.Price;
@@ -874,14 +880,16 @@ class Machine {
   /**
    * Rounds up RAM and CPU requirements to be at least one for Vagrant.
    * @private
+   * @param {Range} cpuRange - The desired number of CPUs.
+   * @param {Range} ramRange - The desired amount of RAM in GiB.
    * @returns {string} The rounded up Vagrant size.
    */
-  vagrantSize() {
-    let ram = this.ram.min;
+  vagrantSize(cpuRange, ramRange) {
+    let ram = ramRange.min;
     if (ram < 1) {
       ram = 1;
     }
-    let cpu = this.cpu.min;
+    let cpu = cpuRange.min;
     if (cpu < 1) {
       cpu = 1;
     }
@@ -973,8 +981,6 @@ class Machine {
       size: this.size,
       floatingIp: this.floatingIp,
       diskSize: this.diskSize,
-      cpu: this.cpu,
-      ram: this.ram,
       preemptible: this.preemptible,
     });
   }

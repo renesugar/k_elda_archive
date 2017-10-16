@@ -30,7 +30,7 @@ describe('Bindings', () => {
       // test more specific and restricted cases.
       size: 'm3.medium',
     });
-    dummyMachine.chooseBestSize(description);
+    dummyMachine.chooseBestSize(description, cpu, ram);
     expect(dummyMachine.size).to.equal(expected);
   };
 
@@ -136,13 +136,11 @@ describe('Bindings', () => {
         sshKeys: ['key1', 'key2'],
       })]);
       checkMachines([{
-        id: 'ae657514e0aa41ed95d9e27c3f3c9b2ff23bd05e',
+        id: '951009cc72958434e4c3e52dd0425d086dd45311',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
-        cpu: new b.Range(2, 4),
-        ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key1', 'key2'],
       }]);
@@ -159,8 +157,6 @@ describe('Bindings', () => {
         role: 'Worker',
         provider: 'Google',
         size: 'n1-standard-2',
-        cpu: new b.Range(2, 4),
-        ram: new b.Range(6, 8),
       }]);
     });
     it('chooses size when neither ram nor cpu are provided', () => {
@@ -270,13 +266,11 @@ describe('Bindings', () => {
         sshKeys: ['key3'],
       })]);
       checkMachines([{
-        id: 'ae657514e0aa41ed95d9e27c3f3c9b2ff23bd05e',
+        id: '951009cc72958434e4c3e52dd0425d086dd45311',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
-        cpu: new b.Range(2, 4),
-        ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key3'],
       }]);
@@ -286,12 +280,12 @@ describe('Bindings', () => {
       deployment.deploy(baseMachine.asMaster().replicate(2));
       checkMachines([
         {
-          id: '9217e915558ab1e77e4421f6e7faa214c42de6e2',
+          id: 'a45b4bef049ee155e0c481af209bf40fe676fdd1',
           role: 'Master',
           provider: 'Amazon',
         },
         {
-          id: 'cb0fc44398aa0f311401d40f1eff25533953b365',
+          id: '67abd5ce263a7bae2e9d7b1e20b9e687efbeb658',
           role: 'Master',
           provider: 'Amazon',
         },
@@ -304,13 +298,13 @@ describe('Bindings', () => {
       deployment.deploy(machines);
       checkMachines([
         {
-          id: '9217e915558ab1e77e4421f6e7faa214c42de6e2',
+          id: 'a45b4bef049ee155e0c481af209bf40fe676fdd1',
           role: 'Master',
           provider: 'Amazon',
           sshKeys: ['key'],
         },
         {
-          id: 'cb0fc44398aa0f311401d40f1eff25533953b365',
+          id: '67abd5ce263a7bae2e9d7b1e20b9e687efbeb658',
           role: 'Master',
           provider: 'Amazon',
         },
@@ -323,7 +317,7 @@ describe('Bindings', () => {
       });
       deployment.deploy(baseMachine.asMaster());
       checkMachines([{
-        id: '39099b7442602dd8308cebe45f8e83088f15291c',
+        id: '8ceb9adb32e66f6b5c8d4f402ddbe2e898bdaacf',
         role: 'Master',
         provider: 'Amazon',
         floatingIp: 'xxx.xxx.xxx.xxx',
@@ -336,7 +330,7 @@ describe('Bindings', () => {
         preemptible: true,
       }).asMaster());
       checkMachines([{
-        id: '27ec2ee9b1ff9d5d87470bc8d25efa63bcb0b43e',
+        id: 'a3ec0cb8dbee293d12239c886a66a31c70d96a02',
         role: 'Master',
         provider: 'Amazon',
         preemptible: true,
@@ -891,12 +885,12 @@ describe('Bindings', () => {
         // The ID is included here because otherwise the containSubset function
         // used in checkMachines will return true, even if there is only one
         // worker and two masters in the actual output.
-        id: 'a1305bb64dcea38e12e152c59f07150765ad2c6f',
+        id: '3e552589b55a5dbb79b18dca93922c8eba9617c3',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
       }, {
-        id: '856af7c5cab0db7a2ecc692194840258a8ec81d1',
+        id: '97ab06b11f9761250ce630d4e55b925826ca6fcd',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
