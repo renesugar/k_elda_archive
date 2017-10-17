@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	lSwitch                = "quilt"
+	lSwitch                = "kelda"
 	loadBalancerRouter     = "loadBalancerRouter"
 	loadBalancerSwitchPort = "loadBalancerSwitchPort"
 	loadBalancerRouterPort = "loadBalancerRouterPort"
