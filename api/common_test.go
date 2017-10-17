@@ -41,9 +41,9 @@ func TestAddrParsing(t *testing.T) {
 	t.Parallel()
 
 	checkAddr(t, "tcp://8.8.8.8:9000", "tcp", "8.8.8.8:9000")
-	checkAddr(t, "unix:///tmp/quilt.sock", "unix", "/tmp/quilt.sock")
-	checkAddrError(t, "/tmp/quilt.sock",
-		errors.New("malformed listen address: /tmp/quilt.sock"))
+	checkAddr(t, "unix:///tmp/kelda.sock", "unix", "/tmp/kelda.sock")
+	checkAddrError(t, "/tmp/kelda.sock",
+		errors.New("malformed listen address: /tmp/kelda.sock"))
 	checkAddrError(t, "8.8.8.8", errors.New("malformed listen address: 8.8.8.8"))
 }
 

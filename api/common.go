@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-// DefaultSocket is the socket the Quilt daemon listens on by default.
-var DefaultSocket = "unix:///tmp/quilt.sock"
+// DefaultSocket is the socket the Kelda daemon listens on by default.
+var DefaultSocket = "unix:///tmp/kelda.sock"
 
-// DefaultRemotePort is the port remote Quilt daemons (the minion) listen on by default.
+// DefaultRemotePort is the port remote Kelda daemons (the minion) listen on by default.
 const DefaultRemotePort = 9000
 
 // ParseListenAddress validates and parses a socket address into the
