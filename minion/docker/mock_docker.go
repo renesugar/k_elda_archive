@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	dkc "github.com/fsouza/go-dockerclient"
+	"github.com/kelda/kelda/minion/network/plugin"
 	"github.com/satori/go.uuid"
 )
 
@@ -311,7 +312,8 @@ func (dk *MockClient) CreateContainer(opts dkc.CreateContainerOptions) (*dkc.Con
 
 	var ip string
 	if opts.NetworkingConfig != nil {
-		ip = opts.NetworkingConfig.EndpointsConfig["quilt"].IPAMConfig.IPv4Address
+		ip = opts.NetworkingConfig.EndpointsConfig[plugin.NetworkName].
+			IPAMConfig.IPv4Address
 	}
 	container := &dkc.Container{
 		ID:         id,

@@ -269,20 +269,20 @@ func TestRunFilepathToContent(t *testing.T) {
 func TestConfigureNetwork(t *testing.T) {
 	md, dk := NewMock()
 
-	err := dk.ConfigureNetwork("quilt")
+	err := dk.ConfigureNetwork("kelda")
 	assert.NoError(t, err)
 
 	exp := &dkc.Network{
-		Name:   "quilt",
-		Driver: "quilt",
+		Name:   "kelda",
+		Driver: "kelda",
 		IPAM: dkc.IPAMOptions{
 			Config: []dkc.IPAMConfig{{
 				Subnet:  ipdef.QuiltSubnet.String(),
 				Gateway: ipdef.GatewayIP.String()}}}}
-	assert.Equal(t, exp, md.Networks["quilt"])
+	assert.Equal(t, exp, md.Networks["kelda"])
 
 	md.CreateNetworkError = true
-	err = dk.ConfigureNetwork("quilt")
+	err = dk.ConfigureNetwork("kelda")
 	assert.NoError(t, err)
 }
 

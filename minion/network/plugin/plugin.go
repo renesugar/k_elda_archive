@@ -19,7 +19,7 @@ import (
 
 const (
 	// NetworkName is the name of the network driver plugin.
-	NetworkName = "quilt"
+	NetworkName = "kelda"
 
 	pluginDir   = "/run/docker/plugins"
 	ifacePrefix = "eth"

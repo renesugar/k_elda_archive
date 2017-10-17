@@ -11,6 +11,7 @@ import (
 
 	"github.com/kelda/kelda/counter"
 	"github.com/kelda/kelda/minion/ipdef"
+	"github.com/kelda/kelda/minion/network/plugin"
 	"github.com/kelda/kelda/util"
 
 	dkc "github.com/fsouza/go-dockerclient"
@@ -132,7 +133,7 @@ func (dk Client) Run(opts RunOptions) (string, error) {
 	if opts.IP != "" {
 		nc = &dkc.NetworkingConfig{
 			EndpointsConfig: map[string]*dkc.EndpointConfig{
-				"quilt": {
+				plugin.NetworkName: {
 					IPAMConfig: &dkc.EndpointIPAMConfig{
 						IPv4Address: opts.IP,
 					},
