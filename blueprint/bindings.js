@@ -1403,7 +1403,7 @@ class Connectable {
  * Returns whether x can allow inbound connections.
  * @private
  *
- * @param {object} x - The object to check
+ * @param {Object} x - The object to check
  * @returns {boolean} Whether x can be connected to
  */
 function isConnectable(x) {
