@@ -59,7 +59,7 @@ type pingResult struct {
 	cmdTime   commandTime
 }
 
-// We have to limit our parallelization because each `quilt exec` creates a new SSH login
+// We have to limit our parallelization because each `kelda exec` creates a new SSH login
 // session. Doing this quickly in parallel breaks system-logind
 // on the remote machine: https://github.com/systemd/systemd/issues/2925.
 // Furthermore, the concurrency limit cannot exceed the sshd MaxStartups setting,
@@ -153,7 +153,7 @@ func ignoreErrorField(pingResultIntf interface{}) interface{} {
 // ping `target` from within container `id` with 3 packets, with a timeout of
 // 1 second for each packet.
 func ping(id string, target string) (string, error) {
-	return quiltSSH(id, "ping", "-c", "3", "-W", "1", target)
+	return keldaSSH(id, "ping", "-c", "3", "-W", "1", target)
 }
 
 type pingSlice []pingResult

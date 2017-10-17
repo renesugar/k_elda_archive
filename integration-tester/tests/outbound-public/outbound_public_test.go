@@ -52,7 +52,7 @@ func test(t *testing.T, containers []db.Container, connections []db.Connection) 
 			fmt.Println(".. It should fail")
 		}
 
-		out, err := exec.Command("quilt", "ssh", c.BlueprintID,
+		out, err := exec.Command("kelda", "ssh", c.BlueprintID,
 			"wget", "-T", "2", "-O", "-", testHost).CombinedOutput()
 
 		errored := err != nil

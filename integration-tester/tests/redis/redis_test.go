@@ -44,7 +44,7 @@ func TestRedis(t *testing.T) {
 		t.Fatal("Failed to find master container")
 	}
 
-	redisInfoBytes, err := exec.Command("quilt", "ssh", redisMasterID,
+	redisInfoBytes, err := exec.Command("kelda", "ssh", redisMasterID,
 		"redis-cli", "-a", masterPassword, "info").CombinedOutput()
 	redisInfo := string(redisInfoBytes)
 	fmt.Printf("Master node info:\n%s\n", redisInfo)

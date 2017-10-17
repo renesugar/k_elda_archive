@@ -44,7 +44,7 @@ func test(t *testing.T, containers []db.Container) {
 
 		fmt.Printf("Writing %s to key %s from %s\n",
 			expData[key], key, c.BlueprintID)
-		out, err := exec.Command("quilt", "ssh", c.BlueprintID,
+		out, err := exec.Command("kelda", "ssh", c.BlueprintID,
 			"bin/zkCli.sh", "create", key, expData[key]).CombinedOutput()
 		if err != nil {
 			t.Errorf("unable to create key: %s", err)
@@ -56,7 +56,7 @@ func test(t *testing.T, containers []db.Container) {
 		for key, val := range expData {
 			fmt.Printf("Getting key %s from %s: expect %s\n",
 				key, c.BlueprintID, val)
-			out, err := exec.Command("quilt", "ssh", c.BlueprintID,
+			out, err := exec.Command("kelda", "ssh", c.BlueprintID,
 				"bin/zkCli.sh", "get", key).CombinedOutput()
 			if err != nil || !strings.Contains(string(out), val) {
 				t.Errorf("unexpected value: %s", err)

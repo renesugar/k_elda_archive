@@ -23,8 +23,8 @@ func TestCalculatesPI(t *testing.T) {
 		t.Fatalf("couldn't query containers: %s", err.Error())
 	}
 
-	containersPretty, _ := exec.Command("quilt", "ps").Output()
-	fmt.Println("`quilt ps` output:")
+	containersPretty, _ := exec.Command("kelda", "ps").Output()
+	fmt.Println("`kelda ps` output:")
 	fmt.Println(string(containersPretty))
 
 	var id string
@@ -41,13 +41,13 @@ func TestCalculatesPI(t *testing.T) {
 	// The Spark job takes some time to complete, so we wait for the appropriate
 	// result for up to a minute.
 	err = util.BackoffWaitFor(func() bool {
-		logs, err := exec.Command("quilt", "logs", id).CombinedOutput()
+		logs, err := exec.Command("kelda", "logs", id).CombinedOutput()
 		if err != nil {
 			t.Errorf("unable to get Spark master logs: %s", err)
 			return false
 		}
 
-		fmt.Printf("`quilt logs %s` output:\n", id)
+		fmt.Printf("`kelda logs %s` output:\n", id)
 		fmt.Println(string(logs))
 		return strings.Contains(string(logs), "Pi is roughly")
 	}, 15*time.Second, time.Minute)

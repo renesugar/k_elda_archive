@@ -14,7 +14,7 @@ import (
 )
 
 func TestStopContainer(t *testing.T) {
-	if err := exec.Command("quilt", "stop", "-containers").Run(); err != nil {
+	if err := exec.Command("kelda", "stop", "-containers").Run(); err != nil {
 		t.Fatalf("couldn't run stop command: %s", err.Error())
 	}
 
@@ -27,7 +27,7 @@ func TestStopContainer(t *testing.T) {
 	var passed bool
 	tries := 1
 	for ; tries <= 5; tries++ {
-		log.Info("Sleeping thirty seconds for `quilt stop -containers` " +
+		log.Info("Sleeping thirty seconds for `kelda stop -containers` " +
 			"to take effect")
 		time.Sleep(30 * time.Second)
 
@@ -38,7 +38,7 @@ func TestStopContainer(t *testing.T) {
 
 		passed = true
 		for _, m := range machines {
-			containersRaw, err := exec.Command("quilt", "ssh", m.CloudID,
+			containersRaw, err := exec.Command("kelda", "ssh", m.CloudID,
 				"docker", "ps", "--format", "{{.Names}}").Output()
 			if err != nil {
 				passed = false
@@ -72,7 +72,7 @@ func TestStopContainer(t *testing.T) {
 	}
 }
 
-var quiltContainers = map[string]struct{}{
+var keldaContainers = map[string]struct{}{
 	images.Etcd:          {},
 	images.Ovncontroller: {},
 	images.Ovnnorthd:     {},
@@ -84,7 +84,7 @@ var quiltContainers = map[string]struct{}{
 
 func filterQuiltContainers(containers []string) (filtered []string) {
 	for _, c := range containers {
-		if _, ok := quiltContainers[c]; !ok && c != "" {
+		if _, ok := keldaContainers[c]; !ok && c != "" {
 			filtered = append(filtered, c)
 		}
 	}

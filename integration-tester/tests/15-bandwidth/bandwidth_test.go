@@ -126,7 +126,7 @@ func runTests(containers []db.Container) []testResult {
 }
 
 func test(client, server db.Container) testResult {
-	cmd := exec.Command("quilt", "ssh", client.BlueprintID,
+	cmd := exec.Command("kelda", "ssh", client.BlueprintID,
 		"iperf3", "-c", server.IP, "-f", "m", "-t", "30")
 	outB, err := cmd.CombinedOutput()
 	out := string(outB)

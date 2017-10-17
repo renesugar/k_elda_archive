@@ -111,7 +111,7 @@ func (tester dnsTester) test(container db.Container) (failures []error) {
 }
 
 func lookup(id string, hostname string) (string, error) {
-	stdout, err := quiltSSH(id, "getent", "hosts", hostname)
+	stdout, err := keldaSSH(id, "getent", "hosts", hostname)
 	if err != nil {
 		return "", err
 	}

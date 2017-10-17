@@ -57,7 +57,7 @@ func TestLoadBalancer(t *testing.T) {
 
 	loadBalancedCounts := map[string]int{}
 	for i := 0; i < len(loadBalancedContainers)*15; i++ {
-		outBytes, err := exec.Command("quilt", "ssh", fetcherID,
+		outBytes, err := exec.Command("kelda", "ssh", fetcherID,
 			"wget", "-q", "-O", "-", loadBalancedLabel+".q").
 			CombinedOutput()
 		if err != nil {

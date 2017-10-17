@@ -115,8 +115,8 @@ func testContainers(t *testing.T, tester testerIntf, containers []db.Container) 
 	wg.Wait()
 }
 
-func quiltSSH(id string, cmd ...string) (string, error) {
-	execCmd := exec.Command("quilt", append([]string{"ssh", id}, cmd...)...)
+func keldaSSH(id string, cmd ...string) (string, error) {
+	execCmd := exec.Command("kelda", append([]string{"ssh", id}, cmd...)...)
 	stderrBytes := bytes.NewBuffer(nil)
 	execCmd.Stderr = stderrBytes
 

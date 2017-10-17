@@ -190,7 +190,7 @@ func (t *tester) setup() error {
 	}
 
 	// Wait for the daemon to generate the TLS credentials. If we don't wait,
-	// the subsequent Quilt commands (such as `quilt stop`) might fail if they
+	// the subsequent Quilt commands (such as `kelda stop`) might fail if they
 	// are executed before the credentials are generated.
 	err = util.BackoffWaitFor(func() bool {
 		_, err = util.Stat(cliPath.DefaultTLSDir)
@@ -201,8 +201,8 @@ func (t *tester) setup() error {
 		return err
 	}
 
-	// Do a preliminary quilt stop.
-	l.infoln(fmt.Sprintf("Preliminary `quilt stop %s`", t.namespace))
+	// Do a preliminary kelda stop.
+	l.infoln(fmt.Sprintf("Preliminary `kelda stop %s`", t.namespace))
 	_, _, err = stop(t.namespace)
 	if err != nil {
 		l.infoln(fmt.Sprintf("Error stopping: %s", err.Error()))
@@ -267,7 +267,7 @@ func (ts *testSuite) run() error {
 	}()
 	defer func() {
 		logsPath := filepath.Join(os.Getenv("WORKSPACE"), ts.name+"_debug_logs")
-		cmd := exec.Command("quilt", "-v", "debug-logs", "-tar=false",
+		cmd := exec.Command("kelda", "-v", "debug-logs", "-tar=false",
 			"-o="+logsPath, "-all")
 		stdout, stderr, err := execCmd(cmd, "DEBUG LOGS")
 		if err != nil {

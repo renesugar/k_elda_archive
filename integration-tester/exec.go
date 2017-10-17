@@ -18,7 +18,7 @@ import (
 // runBlueprintUntilConnected runs the given blueprint, and blocks until either all
 // machines have connected back to the daemon, or 500 seconds have passed.
 func runBlueprintUntilConnected(blueprint string) (string, string, error) {
-	cmd := exec.Command("quilt", "run", "-f", blueprint)
+	cmd := exec.Command("kelda", "run", "-f", blueprint)
 	stdout, stderr, err := execCmd(cmd, "INFRA")
 	if err != nil {
 		return stdout, stderr, err
@@ -46,7 +46,7 @@ func runBlueprintUntilConnected(blueprint string) (string, string, error) {
 // stop stops the given namespace, and waits 2 minutes for the command
 // to take effect.
 func stop(namespace string) (string, string, error) {
-	cmd := exec.Command("quilt", "stop", namespace)
+	cmd := exec.Command("kelda", "stop", namespace)
 
 	stdout, stderr, err := execCmd(cmd, "STOP")
 	if err != nil {
@@ -66,7 +66,7 @@ func npmInstall() (string, string, error) {
 // runBlueprint runs the given blueprint. Note that it does not block on the connection
 // status of the machines.
 func runBlueprint(blueprint string) (string, string, error) {
-	cmd := exec.Command("quilt", "run", "-f", blueprint)
+	cmd := exec.Command("kelda", "run", "-f", blueprint)
 	return execCmd(cmd, "RUN")
 }
 
@@ -75,7 +75,7 @@ func runQuiltDaemon() {
 	os.Remove(api.DefaultSocket[len("unix://"):])
 
 	args := []string{"-l", "debug", "daemon"}
-	cmd := exec.Command("quilt", args...)
+	cmd := exec.Command("kelda", args...)
 	execCmd(cmd, "QUILT")
 }
 
@@ -138,7 +138,7 @@ func execCmd(cmd *exec.Cmd, logLineTitle string) (string, string, error) {
 func sshGen(host string, cmd *exec.Cmd) *exec.Cmd {
 	script := "ssh"
 	args := []string{"-o", "UserKnownHostsFile=/dev/null", "-o",
-		"StrictHostKeyChecking=no", fmt.Sprintf("quilt@%s", host)}
+		"StrictHostKeyChecking=no", fmt.Sprintf("kelda@%s", host)}
 	args = append(args, cmd.Args...)
 	sshCmd := exec.Command(script, args...)
 	return sshCmd
@@ -147,7 +147,7 @@ func sshGen(host string, cmd *exec.Cmd) *exec.Cmd {
 func scp(host string, source string, target string) error {
 	cmd := exec.Command("scp", "-o", "UserKnownHostsFile=/dev/null", "-o",
 		"StrictHostKeyChecking=no", source,
-		fmt.Sprintf("quilt@%s:%s", host, target))
+		fmt.Sprintf("kelda@%s:%s", host, target))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errors.New(string(out))

@@ -96,12 +96,12 @@ func checkImageCounts(machines []db.Machine, dockerfileCounts map[string]int) er
 
 func getContainerInfo(blueprintID string) (string, string, error) {
 	dockerfileID, err := exec.Command(
-		"quilt", "ssh", blueprintID, "cat /dockerfile-id").CombinedOutput()
+		"kelda", "ssh", blueprintID, "cat /dockerfile-id").CombinedOutput()
 	if err != nil {
 		return "", "", err
 	}
 	imageID, err := exec.Command(
-		"quilt", "ssh", blueprintID, "cat /image-id").CombinedOutput()
+		"kelda", "ssh", blueprintID, "cat /image-id").CombinedOutput()
 	return strings.TrimSpace(string(dockerfileID)),
 		strings.TrimSpace(string(imageID)),
 		err

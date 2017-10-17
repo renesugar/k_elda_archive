@@ -24,11 +24,11 @@ func TestDuplicateCluster(t *testing.T) {
 		t.Fatalf("couldn't query containers: %s", err)
 	}
 
-	psPretty, err := exec.Command("quilt", "ps").Output()
+	psPretty, err := exec.Command("kelda", "ps").Output()
 	if err != nil {
-		t.Fatalf("`quilt ps` failed: %s", err)
+		t.Fatalf("`kelda ps` failed: %s", err)
 	}
-	fmt.Println("`quilt ps` output:")
+	fmt.Println("`kelda ps` output:")
 	fmt.Println(string(psPretty))
 
 	var masters []string
@@ -46,7 +46,7 @@ func TestDuplicateCluster(t *testing.T) {
 	}
 
 	for _, master := range masters {
-		logs, err := exec.Command("quilt", "logs", master).CombinedOutput()
+		logs, err := exec.Command("kelda", "logs", master).CombinedOutput()
 		if err != nil {
 			t.Fatalf("unable to get Spark master logs: %s", err)
 		}
@@ -64,7 +64,7 @@ func TestDuplicateCluster(t *testing.T) {
 				master, totalWorkers/2, workerCount)
 		}
 
-		fmt.Printf("`quilt logs %s` output:\n", master)
+		fmt.Printf("`kelda logs %s` output:\n", master)
 		fmt.Println(logsStr)
 	}
 }

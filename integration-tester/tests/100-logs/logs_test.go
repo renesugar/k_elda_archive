@@ -11,7 +11,7 @@ import (
 
 func TestMinionLogs(t *testing.T) {
 	if err := printQuiltPs(); err != nil {
-		t.Errorf("failed to print quilt ps: %s", err.Error())
+		t.Errorf("failed to print kelda ps: %s", err.Error())
 	}
 
 	c, err := util.GetDefaultDaemonClient()
@@ -27,7 +27,7 @@ func TestMinionLogs(t *testing.T) {
 
 	for _, machine := range machines {
 		fmt.Println(machine)
-		logsOutput, err := exec.Command("quilt", "ssh", machine.CloudID,
+		logsOutput, err := exec.Command("kelda", "ssh", machine.CloudID,
 			"sudo", "journalctl", "-o", "cat", "-u", "minion").
 			CombinedOutput()
 		if err != nil {
@@ -66,7 +66,7 @@ func checkString(t *testing.T, str string) {
 }
 
 func printQuiltPs() error {
-	psout, err := exec.Command("quilt", "ps").CombinedOutput()
+	psout, err := exec.Command("kelda", "ps").CombinedOutput()
 	fmt.Println(string(psout))
 	return err
 }
