@@ -101,8 +101,8 @@ func (d driver) CreateEndpoint(req *dnet.CreateEndpointRequest) (
 	peerBr, peerQuilt := ipdef.PatchPorts(req.EndpointID)
 
 	err = vsctl([][]string{
-		{"add-port", ipdef.QuiltBridge, ipdef.IFName(req.EndpointID)},
-		{"add-port", ipdef.QuiltBridge, peerQuilt},
+		{"add-port", ipdef.KeldaBridge, ipdef.IFName(req.EndpointID)},
+		{"add-port", ipdef.KeldaBridge, peerQuilt},
 		{"set", "Interface", peerQuilt, "type=patch", "options:peer=" + peerBr},
 		{"add-port", ipdef.OvnBridge, peerBr},
 		{"set", "Interface", peerBr, "type=patch", "options:peer=" + peerQuilt,
@@ -144,8 +144,8 @@ func (d driver) DeleteEndpoint(req *dnet.DeleteEndpointRequest) error {
 	c.Inc("Delete Endpoint")
 	peerBr, peerQuilt := ipdef.PatchPorts(req.EndpointID)
 	err := vsctl([][]string{
-		{"del-port", ipdef.QuiltBridge, ipdef.IFName(req.EndpointID)},
-		{"del-port", ipdef.QuiltBridge, peerQuilt},
+		{"del-port", ipdef.KeldaBridge, ipdef.IFName(req.EndpointID)},
+		{"del-port", ipdef.KeldaBridge, peerQuilt},
 		{"del-port", ipdef.OvnBridge, peerBr}})
 	if err != nil {
 		return fmt.Errorf("ovs-vsctl: %v", err)

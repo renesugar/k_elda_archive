@@ -29,8 +29,8 @@ var (
 	// LoadBalancerMac is the MAC address of the load balancer router.
 	LoadBalancerMac = IPToMac(LoadBalancerIP)
 
-	// QuiltBridge is the Open vSwitch bridge controlled by the Quilt minion.
-	QuiltBridge = "quilt-int"
+	// KeldaBridge is the Open vSwitch bridge controlled by the Quilt minion.
+	KeldaBridge = "kelda-int"
 
 	// OvnBridge is the Open vSwitch bridge controlled by OVN.
 	OvnBridge = "br-int"

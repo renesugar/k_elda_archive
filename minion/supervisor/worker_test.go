@@ -111,30 +111,30 @@ func TestCfgGateway(t *testing.T) {
 	err := cfgGatewayImpl("bogus", ip)
 	assert.EqualError(t, err, "no such interface: bogus (linkByName)")
 
-	mk.On("LinkByName", "quilt-int").Return(&netlink.Device{}, nil)
+	mk.On("LinkByName", "kelda-int").Return(&netlink.Device{}, nil)
 	mk.On("LinkSetUp", mock.Anything).Return(errors.New("linkSetUp"))
-	err = cfgGatewayImpl("quilt-int", ip)
-	assert.EqualError(t, err, "failed to bring up link: quilt-int (linkSetUp)")
+	err = cfgGatewayImpl("kelda-int", ip)
+	assert.EqualError(t, err, "failed to bring up link: kelda-int (linkSetUp)")
 
 	mk = new(nlmock.I)
 	nl.N = mk
 
-	mk.On("LinkByName", "quilt-int").Return(&netlink.Device{}, nil)
+	mk.On("LinkByName", "kelda-int").Return(&netlink.Device{}, nil)
 	mk.On("LinkSetUp", mock.Anything).Return(nil)
 	mk.On("AddrAdd", mock.Anything, mock.Anything).Return(errors.New("addrAdd"))
 
-	err = cfgGatewayImpl("quilt-int", ip)
-	assert.EqualError(t, err, "failed to set address: quilt-int (addrAdd)")
+	err = cfgGatewayImpl("kelda-int", ip)
+	assert.EqualError(t, err, "failed to set address: kelda-int (addrAdd)")
 	mk.AssertCalled(t, "LinkSetUp", mock.Anything)
 
 	mk = new(nlmock.I)
 	nl.N = mk
 
-	mk.On("LinkByName", "quilt-int").Return(&netlink.Device{}, nil)
+	mk.On("LinkByName", "kelda-int").Return(&netlink.Device{}, nil)
 	mk.On("LinkSetUp", mock.Anything).Return(nil)
 	mk.On("AddrAdd", mock.Anything, ip).Return(nil)
 
-	err = cfgGatewayImpl("quilt-int", ip)
+	err = cfgGatewayImpl("kelda-int", ip)
 	assert.NoError(t, err)
 	mk.AssertCalled(t, "LinkSetUp", mock.Anything)
 	mk.AssertCalled(t, "AddrAdd", mock.Anything, ip)
@@ -142,8 +142,8 @@ func TestCfgGateway(t *testing.T) {
 
 func setupArgs() [][]string {
 	vsctl := []string{
-		"ovs-vsctl", "add-br", "quilt-int",
-		"--", "set", "bridge", "quilt-int", "fail_mode=secure",
+		"ovs-vsctl", "add-br", "kelda-int",
+		"--", "set", "bridge", "kelda-int", "fail_mode=secure",
 		"other_config:hwaddr=\"02:00:0a:00:00:01\"",
 	}
 	gateway := []string{"cfgGateway", "10.0.0.1/8"}

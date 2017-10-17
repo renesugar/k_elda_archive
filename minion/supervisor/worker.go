@@ -34,11 +34,11 @@ func setupWorker() {
 
 	ip := net.IPNet{IP: ipdef.GatewayIP, Mask: ipdef.QuiltSubnet.Mask}
 	for {
-		err := cfgGateway("quilt-int", ip)
+		err := cfgGateway(ipdef.KeldaBridge, ip)
 		if err == nil {
 			break
 		}
-		log.WithError(err).Error("Failed to configure quilt-int.")
+		log.WithError(err).Errorf("Failed to configure %s.", ipdef.KeldaBridge)
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -101,8 +101,8 @@ func runWorkerOnce() {
 
 func setupBridge() error {
 	gwMac := ipdef.IPToMac(ipdef.GatewayIP)
-	return execRun("ovs-vsctl", "add-br", "quilt-int",
-		"--", "set", "bridge", "quilt-int", "fail_mode=secure",
+	return execRun("ovs-vsctl", "add-br", ipdef.KeldaBridge,
+		"--", "set", "bridge", ipdef.KeldaBridge, "fail_mode=secure",
 		fmt.Sprintf("other_config:hwaddr=\"%s\"", gwMac))
 }
 

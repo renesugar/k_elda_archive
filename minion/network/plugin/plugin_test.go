@@ -93,8 +93,8 @@ func TestCreateEndpoint(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expResp, *resp.Interface)
 	assert.Equal(t, [][]string{
-		{"add-port", "quilt-int", "000000000000000"},
-		{"add-port", "quilt-int", "q_0000000000000"},
+		{"add-port", "kelda-int", "000000000000000"},
+		{"add-port", "kelda-int", "q_0000000000000"},
 		{"set", "Interface", "q_0000000000000", "type=patch",
 			"options:peer=br_000000000000"},
 		{"add-port", "br-int", "br_000000000000"},
@@ -131,8 +131,8 @@ func TestDeleteEndpoint(t *testing.T) {
 	mk.AssertCalled(t, "LinkDel", link)
 
 	expOvsArgs := [][]string{
-		{"del-port", "quilt-int", "foo"},
-		{"del-port", "quilt-int", "q_foo"},
+		{"del-port", "kelda-int", "foo"},
+		{"del-port", "kelda-int", "q_foo"},
 		{"del-port", "br-int", "br_foo"}}
 	assert.Equal(t, expOvsArgs, args)
 

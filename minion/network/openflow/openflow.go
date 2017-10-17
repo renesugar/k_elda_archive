@@ -316,7 +316,7 @@ func openflowPorts() (map[string]int, error) {
 var ofctl = func(action string, flows []string) error {
 	c.Inc("ovs-ofctl")
 	cmd := exec.Command("ovs-ofctl", "-O", "OpenFlow13", action,
-		ipdef.QuiltBridge, "/dev/stdin")
+		ipdef.KeldaBridge, "/dev/stdin")
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {

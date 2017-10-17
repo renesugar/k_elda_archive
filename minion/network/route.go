@@ -42,7 +42,7 @@ func writeSubnetsOnce(conn db.Conn) error {
 		}
 
 		// Ignore the OVN interface and the default route.
-		if link.Attrs().Name == ipdef.QuiltBridge || r.Dst == nil {
+		if link.Attrs().Name == ipdef.KeldaBridge || r.Dst == nil {
 			continue
 		}
 		subnets = append(subnets, r.Dst.String())
