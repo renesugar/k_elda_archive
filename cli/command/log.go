@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Log is the structure for the `quilt logs` command.
+// Log is the structure for the `kelda logs` command.
 type Log struct {
 	privateKey     string
 	sinceTimestamp string
@@ -31,15 +31,15 @@ func NewLogCommand() *Log {
 	return &Log{sshGetter: ssh.New}
 }
 
-var logCommands = `quilt logs [OPTIONS] ID`
+var logCommands = `kelda logs [OPTIONS] ID`
 var logExplanation = `Fetch the logs of a container or machine minion. Either a container
 or machine ID must be supplied.
 
 To get the logs of container 8879fd2dbcee with a specific private key:
-quilt logs -i ~/.ssh/quilt 8879fd2dbcee
+kelda logs -i ~/.ssh/kelda 8879fd2dbcee
 
 To follow the logs of the minion on machine 09ed35808a0b:
-quilt logs -f 09ed35808a0b`
+kelda logs -f 09ed35808a0b`
 
 // InstallFlags sets up parsing for command line flags.
 func (lCmd *Log) InstallFlags(flags *flag.FlagSet) {

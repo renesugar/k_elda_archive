@@ -22,7 +22,7 @@ func NewStopCommand() *Stop {
 	return &Stop{}
 }
 
-var stopCommands = `quilt stop [NAMESPACE]`
+var stopCommands = `kelda stop [NAMESPACE]`
 
 var stopExplanation = `Stop a deployment.
 

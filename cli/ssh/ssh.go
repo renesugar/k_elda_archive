@@ -2,7 +2,7 @@ package ssh
 
 //go:generate mockery -name=Client
 
-// Client is an SSH client used for `quilt` commands.
+// Client is an SSH client used for `kelda` commands.
 type Client interface {
 	// Run runs a command over the SSH connection.
 	Run(bool, string) error

@@ -17,12 +17,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var quiltCommands = "quilt [OPTIONS] COMMAND"
+var keldaCommands = "kelda [OPTIONS] COMMAND"
 
-var quiltExplanation = `An approachable way to deploy to the cloud using Node.js.
+var keldaExplanation = `An approachable way to deploy to the cloud using Node.js.
 
 To see the help text for a given command:
-quilt COMMAND --help
+kelda COMMAND --help
 
 Commands:
   counters, daemon, debug-logs, init, inspect, logs, minion, show, run, ssh,
@@ -30,7 +30,7 @@ Commands:
 
 func main() {
 	flag.Usage = func() {
-		util.PrintUsageString(quiltCommands, quiltExplanation, nil)
+		util.PrintUsageString(keldaCommands, keldaExplanation, nil)
 	}
 	var logLevelInfo = "logging level (debug, info, warn, error, fatal, or panic)"
 	var debugInfo = "turn on debug logging"

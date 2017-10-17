@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	// KeldaSubnet is the subnet under which Quilt containers and load balancers
+	// KeldaSubnet is the subnet under which Kelda containers and load balancers
 	// are given IP addresses.
 	KeldaSubnet = net.IPNet{
 		IP:   net.IPv4(10, 0, 0, 0),
@@ -29,7 +29,7 @@ var (
 	// LoadBalancerMac is the MAC address of the load balancer router.
 	LoadBalancerMac = IPToMac(LoadBalancerIP)
 
-	// KeldaBridge is the Open vSwitch bridge controlled by the Quilt minion.
+	// KeldaBridge is the Open vSwitch bridge controlled by the Kelda minion.
 	KeldaBridge = "kelda-int"
 
 	// OvnBridge is the Open vSwitch bridge controlled by OVN.
@@ -67,7 +67,7 @@ func IFName(name string) string {
 }
 
 // PatchPorts takes an ID and converts it to two patch port names.  One for the
-// QuiltBridge and one for the OvnBridge.
-func PatchPorts(id string) (br, quilt string) {
+// KeldaBridge and one for the OvnBridge.
+func PatchPorts(id string) (br, kelda string) {
 	return IFName("br_" + id), IFName("q_" + id)
 }

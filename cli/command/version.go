@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Version prints the Quilt version information.
+// Version prints the Kelda version information.
 type Version struct {
 	connectionFlags
 }
@@ -25,8 +25,8 @@ func NewVersionCommand() *Version {
 	return &Version{}
 }
 
-var versionCommands = "quilt version [OPTIONS]"
-var versionExplanation = "Show the Quilt version information."
+var versionCommands = "kelda version [OPTIONS]"
+var versionExplanation = "Show the Kelda version information."
 
 // InstallFlags sets up parsing for command line flags.
 func (vCmd *Version) InstallFlags(flags *flag.FlagSet) {

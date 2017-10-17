@@ -25,7 +25,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Daemon contains the options for running the Quilt daemon.
+// Daemon contains the options for running the Kelda daemon.
 type Daemon struct {
 	*connectionFlags
 }
@@ -37,8 +37,8 @@ func NewDaemonCommand() *Daemon {
 	}
 }
 
-var daemonCommands = "quilt daemon [OPTIONS]"
-var daemonExplanation = "Start the quilt daemon, which listens for quilt API requests."
+var daemonCommands = "kelda daemon [OPTIONS]"
+var daemonExplanation = "Start the kelda daemon, which listens for kelda API requests."
 
 // InstallFlags sets up parsing for command line flags
 func (dCmd *Daemon) InstallFlags(flags *flag.FlagSet) {
@@ -65,7 +65,7 @@ func (dCmd *Daemon) AfterRun() error {
 
 // Run starts the daemon.
 func (dCmd *Daemon) Run() int {
-	log.WithField("version", version.Version).Info("Starting Quilt daemon")
+	log.WithField("version", version.Version).Info("Starting Kelda daemon")
 
 	// If the TLS credentials do not exist, autogenerate credentials and write
 	// them to disk.
@@ -81,7 +81,7 @@ func (dCmd *Daemon) Run() int {
 
 	if _, err := util.Stat(cliPath.DefaultSSHKeyPath); os.IsNotExist(err) {
 		log.WithField("path", cliPath.DefaultSSHKeyPath).Info(
-			"Auto-generating Quilt SSH key")
+			"Auto-generating Kelda SSH key")
 		if err := setupSSHKey(cliPath.DefaultSSHKeyPath); err != nil {
 			log.WithError(err).Error("SSH key generation failed")
 			return 1

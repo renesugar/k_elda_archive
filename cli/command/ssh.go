@@ -14,7 +14,7 @@ import (
 	"github.com/kelda/kelda/api/util"
 	"github.com/kelda/kelda/cli/ssh"
 	"github.com/kelda/kelda/db"
-	quiltUtil "github.com/kelda/kelda/util"
+	keldaUtil "github.com/kelda/kelda/util"
 )
 
 // SSH contains the options for SSHing into machines.
@@ -34,16 +34,16 @@ func NewSSHCommand() *SSH {
 	return &SSH{sshGetter: ssh.New}
 }
 
-var sshCommands = "quilt ssh [OPTIONS] ID [COMMAND]"
+var sshCommands = "kelda ssh [OPTIONS] ID [COMMAND]"
 var sshExplanation = `SSH into or execute a command in a machine or container.
 
 If no command is supplied, a login shell is created.
 
 To login to machine 09ed35808a0b with a specific private key:
-quilt ssh -i ~/.ssh/quilt 09ed35808a0b
+kelda ssh -i ~/.ssh/kelda 09ed35808a0b
 
 To run a command on container 8879fd2dbcee:
-quilt ssh 8879fd2dbcee echo foo`
+kelda ssh 8879fd2dbcee echo foo`
 
 // InstallFlags sets up parsing for command line flags.
 func (sCmd *SSH) InstallFlags(flags *flag.FlagSet) {
@@ -54,7 +54,7 @@ func (sCmd *SSH) InstallFlags(flags *flag.FlagSet) {
 		"attempt to allocate a pseudo-terminal")
 
 	flags.Usage = func() {
-		quiltUtil.PrintUsageString(sshCommands, sshExplanation, flags)
+		keldaUtil.PrintUsageString(sshCommands, sshExplanation, flags)
 	}
 }
 

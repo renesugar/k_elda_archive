@@ -13,13 +13,13 @@ import (
 // Init represents an Init command.
 type Init struct{}
 
-var initCommands = `quilt init`
+var initCommands = `kelda init`
 
 var initExplanation = `Create a new infrastructure to use with
 baseInfrastructure().
 
 After creating an infrastructure named 'infra', the infrastructure can be used
-in any blueprint by calling baseInfrastructure(quilt, 'infra').`
+in any blueprint by calling baseInfrastructure(kelda, 'infra').`
 
 // InstallFlags sets up parsing for command line flags.
 func (iCmd *Init) InstallFlags(flags *flag.FlagSet) {
@@ -59,9 +59,9 @@ func (iCmd *Init) Run() int {
 		log.Errorf("%s: Make sure that "+
 			"cli/command/init/intializer.js is installed in your $PATH as "+
 			"%s. This is done automatically with "+
-			"`npm install -g @quilt/install`, but if you're running Quilt "+
+			"`npm install -g @quilt/install`, but if you're running Kelda "+
 			"from source, you must set up the symlink manually. You can "+
-			"do this by executing `ln -s <ABS_PATH_TO_QUILT_SOURCE>/"+
+			"do this by executing `ln -s <ABS_PATH_TO_KELDA_SOURCE>/"+
 			"cli/command/init/initializer.js /usr/local/bin/%s`",
 			err, executable, executable)
 		return 1

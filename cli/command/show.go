@@ -31,8 +31,8 @@ func NewShowCommand() *Show {
 	return &Show{}
 }
 
-var showCommands = "quilt show [OPTIONS]"
-var showExplanation = "Display the status of quilt-managed machines and containers."
+var showCommands = "kelda show [OPTIONS]"
+var showExplanation = "Display the status of kelda-managed machines and containers."
 
 // InstallFlags sets up parsing for command line flags
 func (pCmd *Show) InstallFlags(flags *flag.FlagSet) {

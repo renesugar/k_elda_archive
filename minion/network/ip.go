@@ -17,11 +17,11 @@ import (
 
 XXX: It takes into account the subnets governed by routes on the host network
 stack of worker machines. If any worker has a route that intersects with the
-Quilt container subnet, we refuse to allocate container IPs within that subnet.
-If a container had an IP within a non-Quilt route, traffic destined to it from
+Kelda container subnet, we refuse to allocate container IPs within that subnet.
+If a container had an IP within a non-Kelda route, traffic destined to it from
 the host might get routed to the wrong interface.
 
-Note that the proper fix to this problem is to separate the Quilt networking
+Note that the proper fix to this problem is to separate the Kelda networking
 stack from the host network. */
 func runUpdateIPs(conn db.Conn) {
 	for range conn.Trigger(db.ContainerTable, db.LoadBalancerTable, db.EtcdTable,
@@ -111,7 +111,7 @@ func updateIPsOnce(view db.Database) error {
 }
 
 // makeSubnetBlacklist returns all subnets that are governed by routes in a
-// worker machine's network stack, and intersect with the Quilt container
+// worker machine's network stack, and intersect with the Kelda container
 // subnet.
 func makeSubnetBlacklist(view db.Database) ([]net.IPNet, error) {
 	isWorker := func(m db.Minion) bool {

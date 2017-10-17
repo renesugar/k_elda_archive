@@ -82,21 +82,21 @@ func TestLookupA(t *testing.T) {
 	assert.Equal(t, []net.IP{net.IPv4(1, 2, 3, 4)}, table.lookupA("a.q."))
 
 	lookupHost = func(string) ([]string, error) { return nil, assert.AnError }
-	assert.Empty(t, table.lookupA("quilt.io."))
+	assert.Empty(t, table.lookupA("kelda.io."))
 
 	lookupHost = func(string) ([]string, error) { return []string{"bad"}, nil }
-	assert.Empty(t, table.lookupA("quilt.io."))
+	assert.Empty(t, table.lookupA("kelda.io."))
 
 	lookupHost = func(string) ([]string, error) {
 		return []string{"2601:644:380:cde:fc06:2533:adf9:2891"}, nil
 	}
-	assert.Empty(t, table.lookupA("quilt.io."))
+	assert.Empty(t, table.lookupA("kelda.io."))
 
 	lookupHost = func(string) ([]string, error) {
 		return []string{"1.2.3.4", "5.6.7.8"}, nil
 	}
 	assert.Equal(t, []net.IP{net.IPv4(1, 2, 3, 4), net.IPv4(5, 6, 7, 8)},
-		table.lookupA("quilt.io."))
+		table.lookupA("kelda.io."))
 }
 
 func TestMakeTable(t *testing.T) {

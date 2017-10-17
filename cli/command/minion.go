@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Minion contains the options for running the Quilt minion.
+// Minion contains the options for running the Kelda minion.
 type Minion struct {
 	role                            string
 	inboundPubIntf, outboundPubIntf string
@@ -29,15 +29,15 @@ func NewMinionCommand() *Minion {
 	return &Minion{}
 }
 
-var minionCommands = "quilt minion [OPTIONS] ROLE"
-var minionExplanation = `Run the quilt minion.
+var minionCommands = "kelda minion [OPTIONS] ROLE"
+var minionExplanation = `Run the kelda minion.
 
 ROLE should be Worker or Master.`
 
 // InstallFlags sets up parsing for command line flags.
 func (mCmd *Minion) InstallFlags(flags *flag.FlagSet) {
 	mCmd.connectionFlags.InstallFlags(flags)
-	flags.StringVar(&mCmd.role, "role", "", "the role of this quilt minion (Worker"+
+	flags.StringVar(&mCmd.role, "role", "", "the role of this kelda minion (Worker"+
 		" or Master)")
 	flags.StringVar(&mCmd.inboundPubIntf, "inbound-pub-intf", "",
 		"the interface on which to allow inbound traffic")
@@ -69,7 +69,7 @@ func (mCmd *Minion) AfterRun() error {
 
 // Run starts the minion.
 func (mCmd *Minion) Run() int {
-	log.WithField("version", version.Version).Info("Starting Quilt minion")
+	log.WithField("version", version.Version).Info("Starting Kelda minion")
 
 	if err := mCmd.run(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)

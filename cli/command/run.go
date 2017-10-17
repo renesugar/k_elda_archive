@@ -33,7 +33,7 @@ func NewRunCommand() *Run {
 	return &Run{}
 }
 
-var runCommands = `quilt run [OPTIONS] BLUEPRINT`
+var runCommands = `kelda run [OPTIONS] BLUEPRINT`
 var runExplanation = `Compile a blueprint, and deploy the system it describes.
 
 Confirmation is required if deploying the blueprint would change an existing
@@ -113,7 +113,7 @@ func (rCmd *Run) Run() int {
 	}
 
 	fmt.Println("Your blueprint is being deployed. " +
-		"Check its status with `quilt show`.")
+		"Check its status with `kelda show`.")
 	log.Debug("Successfully started run")
 	return 0
 }

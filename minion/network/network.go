@@ -41,7 +41,7 @@ func Run(conn db.Conn, inboundPubIntf, outboundPubIntf string) {
 // The leader of the cluster is responsible for properly configuring OVN northd
 // for container networking and load balancing.  This means creating a logical
 // port for each container, creating ACLs, creating the load balancer router,
-// and creating load balancers.  The specialized OpenFlow rules Quilt requires
+// and creating load balancers.  The specialized OpenFlow rules Kelda requires
 // are managed by the workers individuallly.
 func runMaster(conn db.Conn) {
 	c.Inc("Run Master")

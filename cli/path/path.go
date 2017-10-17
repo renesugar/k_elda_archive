@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	// quiltHome is where Quilt configuration (such as TLS credentials) are
+	// quiltHome is where Kelda configuration (such as TLS credentials) are
 	// stored.
 	// The HOME environment variable is the user's home directory on all POSIX
 	// compatible systems.
@@ -16,6 +16,6 @@ var (
 	DefaultTLSDir = filepath.Join(quiltHome, "tls")
 
 	// DefaultSSHKeyPath is the default filepath where the private SSH key used
-	// to access Quilt will be stored.
+	// to access Kelda will be stored.
 	DefaultSSHKeyPath = filepath.Join(quiltHome, "ssh_key")
 )

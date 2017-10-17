@@ -10,7 +10,7 @@ import (
 	"github.com/kelda/kelda/util"
 )
 
-var inspCommands = "quilt inspect BLUEPRINT OUTPUT_FORMAT"
+var inspCommands = "kelda inspect BLUEPRINT OUTPUT_FORMAT"
 var inspExplanation = `Visualize a blueprint.
 
 OUTPUT_FORMAT can be pdf, ascii, or graphviz.

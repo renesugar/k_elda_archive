@@ -36,7 +36,7 @@ type Placement struct {
 }
 
 // An Image represents a Docker image that can be run. If the Dockerfile is non-empty,
-// the image should be built and hosted by Quilt.
+// the image should be built and hosted by Kelda.
 type Image struct {
 	Name       string `json:",omitempty"`
 	Dockerfile string `json:",omitempty"`
@@ -96,7 +96,7 @@ func FromFile(filename string) (Blueprint, error) {
 			"failed to locate Node.js. Is it installed and in your PATH?")
 	}
 
-	outFile, err := ioutil.TempFile("", "quilt-out")
+	outFile, err := ioutil.TempFile("", "kelda-out")
 	if err != nil {
 		return Blueprint{}, fmt.Errorf(
 			"failed to create deployment file: %s", err)
