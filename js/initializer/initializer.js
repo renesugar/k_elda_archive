@@ -43,7 +43,7 @@ function createFileFromTemplate(templateLocation, context, destination) {
 }
 
 /**
-  * Create an SSH key pair in the default Quilt SSH key location. Will throw
+  * Create an SSH key pair in the default Kelda SSH key location. Will throw
   * an error if the key creation fails.
   *
   * @returns {void}
@@ -51,7 +51,7 @@ function createFileFromTemplate(templateLocation, context, destination) {
 function sshGenerateKeyPair() {
   try {
     execSync(
-      `ssh-keygen -t rsa -b 2048 -f ${consts.quiltSshKeyLocationPrivate}` +
+      `ssh-keygen -t rsa -b 2048 -f ${consts.keldaSshKeyLocationPrivate}` +
       ' -N \'\' -C \'\'',
       { stdio: ['ignore', 'ignore', 'pipe'] });
   } catch (err) {
@@ -96,7 +96,7 @@ function writeProviderCreds(provider, answers) {
 
 /**
   * Retrieve the correct SSH key based on the user's input. This can be no key,
-  * a newly Quilt-generated SSH key, or an existing SSH key at user-given path.
+  * a newly Kelda-generated SSH key, or an existing SSH key at user-given path.
   *
   * @param {Promise} answers promise that contains the user's answers.
   * @returns {string} The relevant SSH key.
@@ -110,8 +110,8 @@ function getSshKey(answers) {
 
     case consts.sshGenerateKey:
       sshGenerateKeyPair();
-      log(`Created SSH key pair in ${consts.quiltSshKeyLocationPrivate}`);
-      keyPath = consts.quiltSshKeyLocationPublic;
+      log(`Created SSH key pair in ${consts.keldaSshKeyLocationPrivate}`);
+      keyPath = consts.keldaSshKeyLocationPublic;
       break;
 
     case consts.sshUseExistingKey:
@@ -178,7 +178,7 @@ function run() {
 
 if (require.main === module) {
   console.log(`---------------------------------------------------------
-|   See docs at http://docs.quilt.io/#init   |
+|   See docs at http://docs.kelda.io/#init   |
 ---------------------------------------------------------`);
   run();
 }

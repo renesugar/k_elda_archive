@@ -1,5 +1,5 @@
 {
-  "name": "@quilt/quilt",
+  "name": "kelda",
   "version": "0.4.0",
   "main": "bindings.js",
   "files": [

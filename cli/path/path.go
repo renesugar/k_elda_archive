@@ -10,7 +10,7 @@ var (
 	// stored.
 	// The HOME environment variable is the user's home directory on all POSIX
 	// compatible systems.
-	quiltHome = filepath.Join(os.Getenv("HOME"), ".quilt")
+	quiltHome = filepath.Join(os.Getenv("HOME"), ".kelda")
 
 	// DefaultTLSDir is the default location for users to store TLS credentials.
 	DefaultTLSDir = filepath.Join(quiltHome, "tls")

@@ -1,19 +1,19 @@
 {
-  "name": "@quilt/tester-dependencies",
+  "name": "@kelda/tester-dependencies",
   "version": "0.0.1",
   "license": "MIT",
   "dependencies": {
-    "@quilt/django": "quilt/django#b45728f90227efe021634838bfb36323719ecfe4",
-    "@quilt/elasticsearch": "quilt/elasticsearch",
-    "@quilt/etcd": "quilt/etcd",
-    "@quilt/haproxy": "quilt/haproxy",
-    "@quilt/lobsters": "quilt/lobsters",
-    "@quilt/mongo": "quilt/mongo",
-    "@quilt/nginx": "quilt/nginx",
-    "@quilt/nodejs": "quilt/nodejs",
-    "@quilt/quilt": "quilt/quilt",
-    "@quilt/redis": "quilt/redis",
-    "@quilt/spark": "quilt/spark",
-    "@quilt/zookeeper": "quilt/zookeeper"
+    "@kelda/django": "kelda/django#b45728f90227efe021634838bfb36323719ecfe4",
+    "@kelda/elasticsearch": "kelda/elasticsearch",
+    "@kelda/etcd": "kelda/etcd",
+    "@kelda/haproxy": "kelda/haproxy",
+    "@kelda/lobsters": "kelda/lobsters",
+    "@kelda/mongo": "kelda/mongo",
+    "@kelda/nginx": "kelda/nginx",
+    "@kelda/nodejs": "kelda/nodejs",
+    "kelda": "0.x",
+    "@kelda/redis": "kelda/redis",
+    "@kelda/spark": "kelda/spark",
+    "@kelda/zookeeper": "kelda/zookeeper"
   }
 }

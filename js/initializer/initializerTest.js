@@ -219,12 +219,12 @@ describe('Initializer', () => {
     });
 
     /**
-     * Verifies that inputting the given answers to 'quilt init' results
+     * Verifies that inputting the given answers to 'kelda init' results
      * in the given file describing the infrastructure.
      *
-     * @param {Object} answers - Maps the name of a particular input to 'quilt init'
+     * @param {Object} answers - Maps the name of a particular input to 'kelda init'
      *   to the answer provided for that input.
-     * @param {string} expInfraFile - The file expected to be output by 'quilt init',
+     * @param {string} expInfraFile - The file expected to be output by 'kelda init',
      *   when the given answers are provided as input.
      * @returns {void}
      */
@@ -254,9 +254,9 @@ describe('Initializer', () => {
         [consts.workerCount]: 2,
       };
 
-      const expInfraFile = `function infraGetter(quilt) {
+      const expInfraFile = `function infraGetter(kelda) {
 
-  var vmTemplate = new quilt.Machine({
+  var vmTemplate = new kelda.Machine({
     provider: 'provider',
     region: 'somewhere',
     size: 'big',
@@ -264,10 +264,10 @@ describe('Initializer', () => {
     preemptible: true
   });
 
-  return new quilt.Infrastructure(
+  return new kelda.Infrastructure(
     vmTemplate.replicate(1),
     vmTemplate.replicate(2),
-    {namespace: 'quilt-deployment'});
+    {namespace: 'kelda-deployment'});
 }
 
 module.exports = infraGetter;
@@ -289,9 +289,9 @@ module.exports = infraGetter;
         [consts.workerCount]: 2,
       };
 
-      const expInfraFile = `function infraGetter(quilt) {
+      const expInfraFile = `function infraGetter(kelda) {
 
-  var vmTemplate = new quilt.Machine({
+  var vmTemplate = new kelda.Machine({
     provider: 'provider',
     region: 'somewhere',
     ram: 2,
@@ -299,10 +299,10 @@ module.exports = infraGetter;
     preemptible: true
   });
 
-  return new quilt.Infrastructure(
+  return new kelda.Infrastructure(
     vmTemplate.replicate(1),
     vmTemplate.replicate(2),
-    {namespace: 'quilt-deployment'});
+    {namespace: 'kelda-deployment'});
 }
 
 module.exports = infraGetter;

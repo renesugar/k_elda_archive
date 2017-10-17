@@ -1,4 +1,4 @@
-const zookeeper = require('@quilt/zookeeper');
+const zookeeper = require('@kelda/zookeeper');
 const infrastructure = require('../../config/infrastructure.js');
 
 const infra = infrastructure.createTestInfrastructure();

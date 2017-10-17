@@ -1,5 +1,5 @@
 const infrastructure = require('../../config/infrastructure.js');
-const lobsters = require('@quilt/lobsters');
+const lobsters = require('@kelda/lobsters');
 
 const infra = infrastructure.createTestInfrastructure();
 lobsters.deploy(infra, 'mysqlRootPassword');

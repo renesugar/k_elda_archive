@@ -1,8 +1,8 @@
 const path = require('path');
 const os = require('os');
 
-const quiltSshKeyLocationPrivate = path.join(os.homedir(), '.ssh', 'quilt');
-const quiltSshKeyLocationPublic = path.join(os.homedir(), '.ssh', 'quilt.pub');
+const keldaSshKeyLocationPrivate = path.join(os.homedir(), '.ssh', 'kelda');
+const keldaSshKeyLocationPublic = path.join(os.homedir(), '.ssh', 'kelda.pub');
 
 // Used in infrastructure template.
 const namespace = 'namespace';
@@ -45,8 +45,8 @@ const ramCpuSize = 'RAM & CPU';
 const inputCredsPath = 'credsPath';
 
 module.exports = {
-  quiltSshKeyLocationPrivate,
-  quiltSshKeyLocationPublic,
+  keldaSshKeyLocationPrivate,
+  keldaSshKeyLocationPublic,
 
   name,
   namespace,

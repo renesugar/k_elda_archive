@@ -1,4 +1,4 @@
-const nginx = require('@quilt/nginx');
+const nginx = require('@kelda/nginx');
 const infrastructure = require('../../config/infrastructure.js');
 
 // The integration tests always run in the default region for each provider,

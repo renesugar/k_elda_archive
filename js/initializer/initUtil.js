@@ -3,7 +3,7 @@ const os = require('os');
 
 // Both infraDirectory and infraPath are also defined in bindings.js.
 // This code duplication is ugly, but it significantly simplifies packaging
-// the `quilt init` code with the "@quilt/install" module.
+// the `kelda init` code with the "@kelda/install" module.
 const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
 
 /**

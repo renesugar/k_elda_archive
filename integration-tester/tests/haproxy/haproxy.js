@@ -1,5 +1,5 @@
-const quilt = require('@quilt/quilt');
-const hap = require('@quilt/haproxy');
+const kelda = require('kelda');
+const hap = require('@kelda/haproxy');
 const infrastructure = require('../../config/infrastructure.js');
 
 const indexPath = '/usr/share/nginx/html/index.html';
@@ -10,7 +10,7 @@ const indexPath = '/usr/share/nginx/html/index.html';
  * @returns {Container} - A container with given content in its index file.
  */
 function containerWithContent(content) {
-  return new quilt.Container('web', 'nginx', {
+  return new kelda.Container('web', 'nginx', {
     filepathToContent: {
       [indexPath]: content,
     },
@@ -33,7 +33,7 @@ const proxy = hap.withURLrouting({
   'serviceA.com': serviceA,
 });
 
-proxy.allowFrom(quilt.publicInternet, 80);
+proxy.allowFrom(kelda.publicInternet, 80);
 
 const inf = infrastructure.createTestInfrastructure();
 serviceA.forEach(container => container.deploy(inf));

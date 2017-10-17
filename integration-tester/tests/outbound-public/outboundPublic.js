@@ -1,20 +1,20 @@
-const quilt = require('@quilt/quilt');
+const kelda = require('kelda');
 const infrastructure = require('../../config/infrastructure.js');
 
 const infra = infrastructure.createTestInfrastructure();
 
 const connected = [];
 for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
-  connected.push(new quilt.Container('outbound', 'alpine', {
+  connected.push(new kelda.Container('outbound', 'alpine', {
     command: ['tail', '-f', '/dev/null'],
   }));
 }
 
-quilt.publicInternet.allowFrom(connected, 80);
+kelda.publicInternet.allowFrom(connected, 80);
 
 const notConnected = [];
 for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
-  notConnected.push(new quilt.Container('ignoreme', 'alpine', {
+  notConnected.push(new kelda.Container('ignoreme', 'alpine', {
     command: ['tail', '-f', '/dev/null'],
   }));
 }

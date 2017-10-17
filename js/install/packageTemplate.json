@@ -1,7 +1,7 @@
 {
-  "name": "@quilt/install",
+  "name": "@kelda/install",
   "version": "0.2.0",
-  "homepage": "http://quilt.io",
+  "homepage": "http://kelda.io",
   "license": "MIT",
   "preferGlobal": true,
   "scripts": {

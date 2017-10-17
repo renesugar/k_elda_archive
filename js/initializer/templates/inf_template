@@ -1,6 +1,6 @@
-function infraGetter(quilt) {
+function infraGetter(kelda) {
 
-  var vmTemplate = new quilt.Machine({
+  var vmTemplate = new kelda.Machine({
     provider: '{{provider}}',
   {{#if region}}
     region: '{{region}}',
@@ -17,10 +17,10 @@ function infraGetter(quilt) {
     preemptible: {{preemptible}}
   });
 
-  return new quilt.Infrastructure(
+  return new kelda.Infrastructure(
     vmTemplate.replicate({{masterCount}}),
     vmTemplate.replicate({{workerCount}}),
-    {namespace: 'quilt-deployment'});
+    {namespace: 'kelda-deployment'});
 }
 
 module.exports = infraGetter;

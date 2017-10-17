@@ -1,5 +1,5 @@
 const infrastructure = require('../../config/infrastructure.js');
-const Redis = require('@quilt/redis');
+const Redis = require('@kelda/redis');
 
 const infra = infrastructure.createTestInfrastructure();
 

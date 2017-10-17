@@ -29,13 +29,13 @@ function allProviders() {
   return Object.keys(providerInfo);
 }
 /**
-  * Check if the Quilt SSH keys exists.
+  * Check if the Kelda SSH keys exists.
   *
-  * @returns {boolean} True iff both the private and public Quilt SSH keys exist.
+  * @returns {boolean} True iff both the private and public Kelda SSH keys exist.
   */
-function quiltSshKeyExists() {
-  return (fs.existsSync(consts.quiltSshKeyLocationPublic) &&
-      fs.existsSync(consts.quiltSshKeyLocationPrivate));
+function keldaSshKeyExists() {
+  return (fs.existsSync(consts.keldaSshKeyLocationPublic) &&
+      fs.existsSync(consts.keldaSshKeyLocationPrivate));
 }
 
 /**
@@ -170,7 +170,7 @@ function sshKeyPrompts(provider) {
   if (!provider.requiresSsh) return { [consts.sshKeyOption]: consts.skip };
 
   let choices = [consts.sshUseExistingKey, consts.skip];
-  if (!quiltSshKeyExists()) {
+  if (!keldaSshKeyExists()) {
     choices = [consts.sshGenerateKey].concat(choices);
   }
 
@@ -191,7 +191,7 @@ function sshKeyPrompts(provider) {
       },
 
       default() {
-        if (quiltSshKeyExists()) return consts.quiltSshKeyLocationPublic;
+        if (keldaSshKeyExists()) return consts.keldaSshKeyLocationPublic;
         return path.join(os.homedir(), '.ssh', 'id_rsa.pub');
       },
 
@@ -245,9 +245,9 @@ function credentialsPrompts(provider) {
   const keys = provider.getCredsKeys();
   const keyNames = Object.keys(keys);
 
-  const credsHelp = `Quilt needs access to your ${provider.getName()} ` +
+  const credsHelp = `Kelda needs access to your ${provider.getName()} ` +
   'credientials in order to launch VMs in your account. See details at ' +
-  'http://docs.quilt.io/#cloud-provider-configuration';
+  'http://docs.kelda.io/#cloud-provider-configuration';
 
   keyNames.forEach((keyName) => {
     questions.push(

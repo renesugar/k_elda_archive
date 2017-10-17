@@ -51,18 +51,18 @@ class Deployment {
     this.containers = new Set();
     this.loadBalancers = [];
 
-    global._quiltDeployment = this;
+    global._keldaDeployment = this;
   }
 
   /**
    * Converts the deployment to the QRI deployment format.
    * @private
-   * @returns {Object} A map that can be converted to JSON and interpreted by the Quilt
+   * @returns {Object} A map that can be converted to JSON and interpreted by the Kelda
    *   Go code.
    */
-  toQuiltRepresentation() {
-    setQuiltIDs(this.machines);
-    setQuiltIDs(this.containers);
+  toKeldaRepresentation() {
+    setKeldaIDs(this.machines);
+    setKeldaIDs(this.containers);
 
     const loadBalancers = [];
     let connections = [];
@@ -71,7 +71,7 @@ class Deployment {
 
     // Convert the load balancers.
     this.loadBalancers.forEach((lb) => {
-      connections = connections.concat(lb.getQuiltConnections());
+      connections = connections.concat(lb.getKeldaConnections());
       loadBalancers.push({
         name: lb.name,
         hostnames: lb.containers.map(c => c.hostname),
@@ -79,12 +79,12 @@ class Deployment {
     });
 
     this.containers.forEach((c) => {
-      connections = connections.concat(c.getQuiltConnections());
+      connections = connections.concat(c.getKeldaConnections());
       placements = placements.concat(c.getPlacementsWithID());
-      containers.push(c.toQuiltRepresentation());
+      containers.push(c.toKeldaRepresentation());
     });
 
-    const quiltDeployment = {
+    const keldaDeployment = {
       machines: this.machines,
       loadBalancers,
       containers,
@@ -94,8 +94,8 @@ class Deployment {
       namespace: this.namespace,
       adminACL: this.adminACL,
     };
-    vet(quiltDeployment);
-    return quiltDeployment;
+    vet(keldaDeployment);
+    return keldaDeployment;
   }
 
   /**
@@ -150,10 +150,10 @@ class Infrastructure extends Deployment {
     const boxedWorkers = boxObjects(workers, Machine);
     if (boxedMasters.length < 1) {
       throw new Error('masters must include 1 or more Machines to use as ' +
-        'Quilt masters.');
+        'Kelda masters.');
     } else if (boxedWorkers.length < 1) {
       throw new Error('workers must include 1 or more Machines to use as ' +
-        'Quilt workers.');
+        'Kelda workers.');
     }
     boxedMasters.forEach(master => this.machines.push(master.asMaster()));
     boxedWorkers.forEach(worker => this.machines.push(worker.asWorker()));
@@ -186,7 +186,7 @@ function githubKeys(user) {
 
 // Both infraDirectory and getInfraPath are also defined in init-util.js.
 // This code duplication is ugly, but it significantly simplifies packaging
-// the `quilt init` code with the "@quilt/install" module.
+// the `kelda init` code with the "@kelda/install" module.
 const infraDirectory = path.join(os.homedir(), '.quilt', 'infra');
 
 /**
@@ -213,7 +213,7 @@ function getInfraDeployment(infraPath) {
   const infraGetter = require(infraPath); // eslint-disable-line
 
   // By passing this module to the infraGetter, the blueprint doesn't have to
-  // require Quilt directly and we thus don't have to `npm install` in the
+  // require Kelda directly and we thus don't have to `npm install` in the
   // infrastructure directory, which would be messy.
   return infraGetter(module.exports);
 }
@@ -221,7 +221,7 @@ function getInfraDeployment(infraPath) {
 /**
  * Returns a base infrastructure. The base infrastructure is automatically deployed,
  * so there is no need to .deploy() it. The base infrastructure could be created
- * with `quilt init`.
+ * with `kelda init`.
  *
  * @example <caption>Retrieve the base infrastructure called NAME, and deploy
  * an nginx container on it.</caption>
@@ -229,7 +229,7 @@ function getInfraDeployment(infraPath) {
  * (new Container('web', 'nginx')).deploy(inf);
  *
  * @param {string} name - The name of the infrastructure, as passed to
- *   `quilt init`.
+ *   `kelda init`.
  * @returns {Deployment} A deployment object representing the infrastructure.
  */
 function baseInfrastructure(name = 'default') {
@@ -239,14 +239,14 @@ function baseInfrastructure(name = 'default') {
 
   const infraPath = getInfraPath(name);
   if (!fs.existsSync(infraPath)) {
-    throw new Error(`no infrastructure called ${name}. Use 'quilt init' ` +
+    throw new Error(`no infrastructure called ${name}. Use 'kelda init' ` +
       'to create a new infrastructure.');
   }
   return getInfraDeployment(infraPath);
 }
 
 // The default deployment object. The Deployment constructor overwrites this.
-global._quiltDeployment = new Deployment({});
+global._keldaDeployment = new Deployment({});
 
 // The name used to refer to the public internet in the JSON description
 // of the network connections (connections to other entities are referenced by
@@ -287,7 +287,7 @@ function uniqueID() {
  * @param {Object[]} objs - An array of objects.
  * @returns {void}
  */
-function setQuiltIDs(objs) {
+function setKeldaIDs(objs) {
   // The refIDs for each identical instance.
   const refIDs = {};
   objs.forEach((obj) => {
@@ -403,7 +403,7 @@ class LoadBalancer {
   }
 
   /**
-   * @returns {string} The Quilt hostname that represents the entire load balancer.
+   * @returns {string} The Kelda hostname that represents the entire load balancer.
    */
   hostname() {
     return `${this.name}.q`;
@@ -448,9 +448,9 @@ class LoadBalancer {
   /**
    * @private
    * @returns {Object} - A list of maps describing the inbound connections to the load balancer, in
-   *   a format that can be converted to JSON and sent to the Quilt Go code.
+   *   a format that can be converted to JSON and sent to the Kelda Go code.
    */
-  getQuiltConnections() {
+  getKeldaConnections() {
     return this.allowedInboundConnections.map(conn => ({
       from: conn.from.hostname,
       to: this.name,
@@ -587,12 +587,12 @@ function boxRange(x) {
   * @throws Throws an error if redundant keys are found in `opts`.
   */
 function checkExtraKeys(opts, obj) {
-  // Sometimes, prototype constructors are called internally by Quilt. In these
+  // Sometimes, prototype constructors are called internally by Kelda. In these
   // cases, an existing object is passed as the optional argument, and the
   // optional argument thus contains not just the keys passed by the user, but
-  // also the keys Quilt set on the object, as well as all the prototype
+  // also the keys Kelda set on the object, as well as all the prototype
   // methods. Since we only want to check the optional arguments passed by the
-  // user, we skip all calls internally from Quilt (indicated by having the
+  // user, we skip all calls internally from Kelda (indicated by having the
   // refID set in the options).
   if (objectHasKey.call(opts, '_refID')) { return; }
 
@@ -845,7 +845,7 @@ class Machine {
    * @param {description[]} providerDescriptions - Array of descriptions of
    *   a provider.
    * @returns {string} The best size that fits the user's requirements if
-   *   provider is available in Quilt, otherwise throws an error.
+   *   provider is available in Kelda, otherwise throws an error.
    */
   chooseBestSize(providerDescriptions) {
     let bestSize = '';
@@ -1024,7 +1024,7 @@ class Container {
    * Creates a new Container, which represents a container to be deployed.
    *
    * If a Container uses a custom image (e.g., the image is created by reading
-   * in a local Dockerfile), Quilt tracks the Dockerfile that was used to create
+   * in a local Dockerfile), Kelda tracks the Dockerfile that was used to create
    * that image.  If the Dockerfile is changed and the blueprint is re-run,
    * the image will be re-built and all containers that use the image will be
    * re-started with the new image.
@@ -1052,7 +1052,7 @@ class Container {
    *   files to be installed on the container before it starts.  The key is
    *   the path on the container where the text file should be installed, and
    *   the value is the contents of the text file. If the file content specified
-   *   by this argument changes and the blueprint is re-run, Quilt will re-start
+   *   by this argument changes and the blueprint is re-run, Kelda will re-start
    *   the container using the new files.  Files are installed with permissions
    *   0644 and parent directories are automatically created.
    */
@@ -1086,7 +1086,7 @@ class Container {
 
     checkExtraKeys(optionalArgs, this);
 
-    // When generating the Quilt deployment JSON object, these placements must
+    // When generating the Kelda deployment JSON object, these placements must
     // be converted using Container.getPlacementsWithID.
     this.placements = [];
 
@@ -1295,9 +1295,9 @@ class Container {
   /**
    * @private
    * @returns {Object} - A list of maps describing the inbound connections to the Container, in
-   *   a format that can be converted to JSON and sent to the Quilt Go code.
+   *   a format that can be converted to JSON and sent to the Kelda Go code.
    */
-  getQuiltConnections() {
+  getKeldaConnections() {
     const connections = [];
 
     this.allowedInboundConnections.forEach((conn) => {
@@ -1333,10 +1333,10 @@ class Container {
   /**
    * Converts the Container to the QRI deployment format.
    * @private
-   * @returns {Object} A map that can be converted to JSON and interpreted by the Quilt
+   * @returns {Object} A map that can be converted to JSON and interpreted by the Kelda
    *   Go code.
    */
-  toQuiltRepresentation() {
+  toKeldaRepresentation() {
     return {
       id: this.id,
       image: this.image,
@@ -1483,7 +1483,7 @@ function Port(p) {
  * @returns {Deployment} The global deployment object.
  */
 function getDeployment() {
-  return global._quiltDeployment;
+  return global._keldaDeployment;
 }
 
 /**

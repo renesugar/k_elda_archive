@@ -1,4 +1,4 @@
-const nginx = require('@quilt/nginx');
+const nginx = require('@kelda/nginx');
 const infrastructure = require('../../config/infrastructure.js');
 
 const infra = infrastructure.createTestInfrastructure();

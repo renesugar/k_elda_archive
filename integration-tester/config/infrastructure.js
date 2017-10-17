@@ -1,10 +1,10 @@
-const { Infrastructure, Machine } = require('@quilt/quilt');
+const { Infrastructure, Machine } = require('kelda');
 
 /** The number of worker machines to launch to run the tests on. */
 const nWorker = 3;
 
 /**
- * Creates an Infrastructure to use to run the Quilt integration tests.
+ * Creates an Infrastructure to use to run the Kelda integration tests.
  *
  * @returns {Infrastructure} An Infrastructure to use to run the tests.
  */

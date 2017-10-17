@@ -1,4 +1,4 @@
-const spark = require('@quilt/spark');
+const spark = require('@kelda/spark');
 const infrastructure = require('../../config/infrastructure.js');
 
 // Application

@@ -1,4 +1,4 @@
-const Elasticsearch = require('@quilt/elasticsearch').Elasticsearch;
+const Elasticsearch = require('@kelda/elasticsearch').Elasticsearch;
 const infrastructure = require('../../config/infrastructure.js');
 
 const infra = infrastructure.createTestInfrastructure();

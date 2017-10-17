@@ -1,7 +1,7 @@
 // AWS: http://docs.aws.amazon.com/cli/latest/reference/ec2/allocate-address.html
 // Google: https://cloud.google.com/compute/docs/configure-instance-ip-addresses#reserve_new_static
-const { Infrastructure, Machine } = require('@quilt/quilt');
-const nginx = require('@quilt/nginx');
+const { Infrastructure, Machine } = require('kelda');
+const nginx = require('@kelda/nginx');
 
 const floatingIp = 'xxx.xxx.xxx.xxx (CHANGE ME)';
 

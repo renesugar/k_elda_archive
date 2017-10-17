@@ -35,31 +35,31 @@ describe('Bindings', () => {
   };
 
   const checkMachines = function checkMachines(expected) {
-    const { machines } = deployment.toQuiltRepresentation();
+    const { machines } = deployment.toKeldaRepresentation();
     expect(machines).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
   const checkContainers = function checkContainers(expected) {
-    const { containers } = deployment.toQuiltRepresentation();
+    const { containers } = deployment.toKeldaRepresentation();
     expect(containers).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
   const checkPlacements = function checkPlacements(expected) {
-    const { placements } = deployment.toQuiltRepresentation();
+    const { placements } = deployment.toKeldaRepresentation();
     expect(placements).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
   const checkLoadBalancers = function checkLoadBalancers(expected) {
-    const { loadBalancers } = deployment.toQuiltRepresentation();
+    const { loadBalancers } = deployment.toKeldaRepresentation();
     expect(loadBalancers).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
   const checkConnections = function checkConnections(expected) {
-    const { connections } = deployment.toQuiltRepresentation();
+    const { connections } = deployment.toKeldaRepresentation();
     expect(connections).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
@@ -457,7 +457,7 @@ describe('Bindings', () => {
       const y = new b.Container('host', 'image');
       y.hostname = 'host';
       y.deploy(deployment);
-      expect(() => deployment.toQuiltRepresentation()).to
+      expect(() => deployment.toKeldaRepresentation()).to
         .throw('hostname "host" used multiple times');
     });
     it('image dockerfile', () => {
@@ -774,7 +774,7 @@ describe('Bindings', () => {
   });
   describe('Vet', () => {
     let foo;
-    const deploy = () => deployment.toQuiltRepresentation();
+    const deploy = () => deployment.toKeldaRepresentation();
     beforeEach(() => {
       foo = new b.LoadBalancer('foo', []);
       foo.deploy(deployment);
@@ -852,7 +852,7 @@ describe('Bindings', () => {
         region: 'us-west-2',
       });
       const infra = new b.Infrastructure([machine], [machine], { namespace });
-      expect(infra.toQuiltRepresentation().namespace).to.equal(namespace);
+      expect(infra.toKeldaRepresentation().namespace).to.equal(namespace);
     });
     it('master and worker machines added correctly', () => {
       const machine = new b.Machine({
@@ -922,20 +922,20 @@ describe('Bindings', () => {
   describe('Query', () => {
     it('namespace', () => {
       deployment = new b.Deployment({ namespace: 'mynamespace' });
-      expect(deployment.toQuiltRepresentation().namespace).to.equal(
+      expect(deployment.toKeldaRepresentation().namespace).to.equal(
         'mynamespace');
     });
     it('default namespace', () => {
-      expect(deployment.toQuiltRepresentation().namespace).to.equal(
+      expect(deployment.toKeldaRepresentation().namespace).to.equal(
         'default-namespace');
     });
     it('admin ACL', () => {
       deployment = new b.Deployment({ adminACL: ['local'] });
-      expect(deployment.toQuiltRepresentation().adminACL).to.eql(
+      expect(deployment.toKeldaRepresentation().adminACL).to.eql(
         ['local']);
     });
     it('default admin ACL', () => {
-      expect(deployment.toQuiltRepresentation().adminACL).to.eql([]);
+      expect(deployment.toKeldaRepresentation().adminACL).to.eql([]);
     });
   });
   describe('githubKeys()', () => {});
