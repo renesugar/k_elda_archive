@@ -78,4 +78,4 @@ used to reserve IPs that Quilt can then assign to droplets.
 
 5. Run `quilt init` on the machine from which you will be running the Quilt
   daemon, and give it the path to the downloaded JSON from step 3.
-  The credentials will be placed in `~/.gce/quilt.json`.
+  The credentials will be placed in `~/.gce/kelda.json`.

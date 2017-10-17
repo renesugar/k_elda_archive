@@ -52,7 +52,7 @@ var c = counter.New("Google")
 func New() (Client, error) {
 	c.Inc("New Client")
 
-	configPath := filepath.Join(os.Getenv("HOME"), ".gce", "quilt.json")
+	configPath := filepath.Join(os.Getenv("HOME"), ".gce", "kelda.json")
 	configStr, err := util.ReadFile(configPath)
 	if err != nil {
 		return nil, err

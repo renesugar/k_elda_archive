@@ -146,7 +146,7 @@ func (prvdr *Provider) Boot(bootSet []db.Machine) error {
 			return errors.New("preemptible instances are not yet implemented")
 		}
 
-		name := "quilt-" + uuid.NewV4().String()
+		name := "kelda-" + uuid.NewV4().String()
 		_, err := prvdr.instanceNew(name, m.Size, cfg.Ubuntu(m, ""))
 		if err != nil {
 			log.WithFields(log.Fields{
