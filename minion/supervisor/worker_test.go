@@ -106,7 +106,7 @@ func TestCfgGateway(t *testing.T) {
 	nl.N = mk
 
 	mk.On("LinkByName", "bogus").Return(nil, errors.New("linkByName"))
-	ip := net.IPNet{IP: ipdef.GatewayIP, Mask: ipdef.QuiltSubnet.Mask}
+	ip := net.IPNet{IP: ipdef.GatewayIP, Mask: ipdef.KeldaSubnet.Mask}
 
 	err := cfgGatewayImpl("bogus", ip)
 	assert.EqualError(t, err, "no such interface: bogus (linkByName)")

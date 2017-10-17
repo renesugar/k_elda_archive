@@ -246,7 +246,7 @@ func TestGetDefaultRouteIntf(t *testing.T) {
 	assert.EqualError(t, err, "missing default route")
 
 	mockNetlink.On("RouteList", mock.Anything).Once().Return(
-		[]nl.Route{{Dst: &ipdef.QuiltSubnet}}, nil)
+		[]nl.Route{{Dst: &ipdef.KeldaSubnet}}, nil)
 	res, err = getDefaultRouteIntfImpl()
 	assert.Empty(t, res)
 	assert.EqualError(t, err, "missing default route")

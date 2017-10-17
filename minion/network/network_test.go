@@ -120,7 +120,7 @@ func TestUpdateLoadBalancerRouter(t *testing.T) {
 	client.On("CreateRouterPort", loadBalancerRouter, ovsdb.RouterPort{
 		Name:     loadBalancerRouterPort,
 		MAC:      ipdef.LoadBalancerMac,
-		Networks: []string{ipdef.QuiltSubnet.String()},
+		Networks: []string{ipdef.KeldaSubnet.String()},
 	}).Return(nil).Once()
 	updateLoadBalancerRouter(client)
 	client.AssertExpectations(t)

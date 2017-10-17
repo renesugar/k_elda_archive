@@ -49,7 +49,7 @@ func TestWriteSubnets(t *testing.T) {
 	mockNetlink.On("RouteList", mock.Anything).Once().Return([]nl.Route{
 		{
 			LinkIndex: 1,
-			Dst:       &ipdef.QuiltSubnet,
+			Dst:       &ipdef.KeldaSubnet,
 		},
 		{
 			LinkIndex: 2,

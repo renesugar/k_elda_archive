@@ -173,7 +173,7 @@ func updateLoadBalancerRouter(ovsdbClient ovsdb.Client) {
 		{
 			Name:     loadBalancerRouterPort,
 			MAC:      ipdef.LoadBalancerMac,
-			Networks: []string{ipdef.QuiltSubnet.String()},
+			Networks: []string{ipdef.KeldaSubnet.String()},
 		},
 	}
 

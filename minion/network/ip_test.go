@@ -179,7 +179,7 @@ func TestAllocateContainerIPs(t *testing.T) {
 
 	dbc = dbcs[1]
 	assert.Equal(t, "2", dbc.BlueprintID)
-	assert.True(t, ipdef.QuiltSubnet.Contains(net.ParseIP(dbc.IP)))
+	assert.True(t, ipdef.KeldaSubnet.Contains(net.ParseIP(dbc.IP)))
 }
 
 func TestAllocateLoadBalancerIPs(t *testing.T) {
@@ -202,7 +202,7 @@ func TestAllocateLoadBalancerIPs(t *testing.T) {
 	loadBalancers := conn.SelectFromLoadBalancer(nil)
 	assert.Len(t, loadBalancers, 1)
 	lbIP := net.ParseIP(loadBalancers[0].IP)
-	assert.True(t, ipdef.QuiltSubnet.Contains(lbIP))
+	assert.True(t, ipdef.KeldaSubnet.Contains(lbIP))
 }
 
 func TestAllocate(t *testing.T) {

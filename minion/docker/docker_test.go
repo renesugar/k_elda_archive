@@ -277,7 +277,7 @@ func TestConfigureNetwork(t *testing.T) {
 		Driver: "kelda",
 		IPAM: dkc.IPAMOptions{
 			Config: []dkc.IPAMConfig{{
-				Subnet:  ipdef.QuiltSubnet.String(),
+				Subnet:  ipdef.KeldaSubnet.String(),
 				Gateway: ipdef.GatewayIP.String()}}}}
 	assert.Equal(t, exp, md.Networks["kelda"])
 

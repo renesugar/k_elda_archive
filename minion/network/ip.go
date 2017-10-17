@@ -55,7 +55,7 @@ func makeIPContext(view db.Database, subnetBlacklist []net.IPNet) ipContext {
 
 			// While not strictly required, it would be odd to allocate
 			// 10.0.0.0.
-			ipdef.QuiltSubnet.IP.String(): {},
+			ipdef.KeldaSubnet.IP.String(): {},
 		},
 	}
 
@@ -132,7 +132,7 @@ func makeSubnetBlacklist(view db.Database) ([]net.IPNet, error) {
 			return nil, fmt.Errorf("parse subnet %s: %s", subnetStr, err)
 		}
 
-		if subnetIntersects(ipdef.QuiltSubnet, *subnet) {
+		if subnetIntersects(ipdef.KeldaSubnet, *subnet) {
 			subnetBlacklist = append(subnetBlacklist, *subnet)
 		}
 	}
@@ -155,7 +155,7 @@ func ipBlacklisted(ip string, subnetBlacklist []net.IPNet) bool {
 func allocateContainerIPs(view db.Database, ctx ipContext) error {
 	for _, dbc := range ctx.unassignedContainers {
 		c.Inc("Allocate Container IP")
-		ip, err := allocateIP(ctx.reserved, ipdef.QuiltSubnet)
+		ip, err := allocateIP(ctx.reserved, ipdef.KeldaSubnet)
 		if err != nil {
 			return err
 		}
@@ -170,7 +170,7 @@ func allocateContainerIPs(view db.Database, ctx ipContext) error {
 func allocateLoadBalancerIPs(view db.Database, ctx ipContext) error {
 	for _, lb := range ctx.unassignedLoadBalancers {
 		c.Inc("Allocate LoadBalancer IP")
-		ip, err := allocateIP(ctx.reserved, ipdef.QuiltSubnet)
+		ip, err := allocateIP(ctx.reserved, ipdef.KeldaSubnet)
 		if err != nil {
 			return err
 		}

@@ -32,7 +32,7 @@ func setupWorker() {
 		time.Sleep(5 * time.Second)
 	}
 
-	ip := net.IPNet{IP: ipdef.GatewayIP, Mask: ipdef.QuiltSubnet.Mask}
+	ip := net.IPNet{IP: ipdef.GatewayIP, Mask: ipdef.KeldaSubnet.Mask}
 	for {
 		err := cfgGateway(ipdef.KeldaBridge, ip)
 		if err == nil {

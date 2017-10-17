@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	// QuiltSubnet is the subnet under which Quilt containers and load balancers
+	// KeldaSubnet is the subnet under which Quilt containers and load balancers
 	// are given IP addresses.
-	QuiltSubnet = net.IPNet{
+	KeldaSubnet = net.IPNet{
 		IP:   net.IPv4(10, 0, 0, 0),
 		Mask: net.CIDRMask(8, 32),
 	}

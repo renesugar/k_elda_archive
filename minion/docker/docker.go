@@ -174,7 +174,7 @@ func (dk Client) ConfigureNetwork(driver string) error {
 		Driver: driver,
 		IPAM: dkc.IPAMOptions{
 			Config: []dkc.IPAMConfig{{
-				Subnet:  ipdef.QuiltSubnet.String(),
+				Subnet:  ipdef.KeldaSubnet.String(),
 				Gateway: ipdef.GatewayIP.String(),
 			}},
 		},
