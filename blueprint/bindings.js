@@ -54,7 +54,12 @@ class Deployment {
     global._quiltDeployment = this;
   }
 
-  // Convert the deployment to the QRI deployment format.
+  /**
+   * Converts the deployment to the QRI deployment format.
+   * @private
+   * @returns {Object} A map that can be converted to JSON and interpreted by the Quilt
+   *   Go code.
+   */
   toQuiltRepresentation() {
     setQuiltIDs(this.machines);
     setQuiltIDs(this.containers);
@@ -93,8 +98,14 @@ class Deployment {
     return quiltDeployment;
   }
 
-  // deploy adds an object, or list of objects, to the deployment.
-  // Deployable objects must implement the deploy(deployment) interface.
+  /**
+   * Adds an object, or list of objects, to the deployment.
+   * Deployable objects must implement the deploy(deployment) interface.
+   *
+   * @param {Object|Object[]} list - An object or list of objects to add to
+   *   the Deployment.
+   * @returns {void}
+   */
   deploy(list) {
     let toDeployList = list;
     if (!Array.isArray(toDeployList)) {
@@ -391,11 +402,19 @@ class LoadBalancer {
     this.allowedInboundConnections = [];
   }
 
-  // Get the Quilt hostname that represents the entire load balancer.
+  /**
+   * @returns {string} The Quilt hostname that represents the entire load balancer.
+   */
   hostname() {
     return `${this.name}.q`;
   }
 
+  /**
+   * Adds this load balancer to the given deployment.
+   *
+   * @param {Deployment} deployment - The Deployment that this should be added to.
+   * @returns {void}
+   */
   deploy(deployment) {
     deployment.loadBalancers.push(this);
   }
@@ -426,6 +445,11 @@ class LoadBalancer {
     });
   }
 
+  /**
+   * @private
+   * @returns {Object} - A list of maps describing the inbound connections to the load balancer, in
+   *   a format that can be converted to JSON and sent to the Quilt Go code.
+   */
   getQuiltConnections() {
     return this.allowedInboundConnections.map(conn => ({
       from: conn.from.hostname,
@@ -443,6 +467,13 @@ class LoadBalancer {
  * @implements {Connectable}
  */
 const publicInternet = {
+  /**
+   * @param {Container|Container[]} srcArg - A Container or list of Containers
+   *   that should be allowed to connect to the public internet.
+   * @param {number|Range|PortRange} portRange - A port or range of ports that the
+   *   given container(s) are allowed to connect to the public internet on.
+   * @returns {void}
+   */
   allowFrom(srcArg, portRange) {
     let src;
     try {
@@ -848,11 +879,20 @@ class Machine {
     this.size = `${ram},${cpu}`;
   }
 
+  /**
+   * Adds this to be deployed as part of the given deployment.
+   *
+   * @param {Deployment} deployment - The Deployment that this machine should be
+   *   added to.
+   * @returns {void}
+   */
   deploy(deployment) {
     deployment.machines.push(this);
   }
 
-  // Create a new machine with the same attributes.
+  /**
+   * @returns {Machine} A new machine with the same attributes.
+   */
   clone() {
     // _.clone only creates a shallow copy, so we must clone sshKeys ourselves.
     const keyClone = _.clone(this.sshKeys);
@@ -861,6 +901,13 @@ class Machine {
     return new Machine(cloned);
   }
 
+  /**
+   * Clones this machine, and adds the given role.
+   *
+   * @param {string} role - The role of the machine (either 'Master' or 'Worker').
+   * @returns {Machine} A new machine that has all of the attributes of this machine
+   *   and the given role.
+   */
   withRole(role) {
     const copy = this.clone();
     copy.role = role;
@@ -889,7 +936,13 @@ class Machine {
     return this.withRole('Master');
   }
 
-  // Create n new machines with the same attributes.
+  /**
+   * Creates n new machines with the same attributes.
+   *
+   * @param {number} n - The number of new machines to create.
+   * @returns {Machine[]} A list of the new machines. This machine will
+   *   not be in the returned list.
+   */
   replicate(n) {
     let i;
     const res = [];
@@ -899,6 +952,10 @@ class Machine {
     return res;
   }
 
+  /**
+   * @private
+   * @returns {string} A string describing all attributes of the machine.
+   */
   hash() {
     return stringify({
       provider: this.provider,
@@ -954,6 +1011,9 @@ class Image {
     this.dockerfile = dockerfile;
   }
 
+  /**
+   * @returns {Image} A new Image with all of the same attributes as this Image.
+   */
   clone() {
     return new Image(this.name, this.dockerfile);
   }
@@ -1035,15 +1095,34 @@ class Container {
     this.incomingPublic = [];
   }
 
-  // Create a new Container with the same attributes.
+  /**
+   * @returns {Container} A new Container with the same attributes.
+   */
   clone() {
     return new Container(this.hostnamePrefix, this.image, this);
   }
 
+  /**
+   * Sets the given environment variable to the given value.
+   *
+   * @param {string} key - The name of the environment variable to set.
+   * @param {string} val - The value that the given environment variable
+   *   should be given.
+   * @returns {void}
+   */
   setEnv(key, val) {
     this.env[key] = val;
   }
 
+  /**
+   * Creates a new container with the same attributes as this container,
+   * except that the environment is set to the given environment.
+   *
+   * @param {Object.<string, string>} env - A mapping of environment variables
+   *   to values for the container.
+   * @returns {Container} A new container with the same attributes as this one
+   *   except that the environment is set to env.
+   */
   withEnv(env) {
     const cloned = this.clone();
     cloned.env = env;
@@ -1080,6 +1159,10 @@ class Container {
     return `${this.hostname}.q`;
   }
 
+  /**
+   * @private
+   * @returns {string} A string describing all attributes of the machine.
+   */
   hash() {
     return stringify({
       image: this.image,
@@ -1090,6 +1173,20 @@ class Container {
     });
   }
 
+  /**
+   * Sets placement requirements for the Machine that the Container is placed on.
+   *
+   * @param {Object.<string, string>} machineAttrs - Requirements for the machine the
+   *   Container gets placed on.
+   * @param {string} [machineAttrs.provider] - Provider that the Container should be placed
+   *   in.
+   * @param {string} [machineAttrs.size] - Size of the machine that the Container should be placed
+   *   on (e.g., m2.4xlarge).
+   * @param {string} [machineAttrs.region] - Region that the Container should be placed in.
+   * @param {string} [machineAttrs.floatingIp] - Floating IP address that must be assigned to
+   *   the machine that the Container gets placed on.
+   * @returns {void}
+   */
   placeOn(machineAttrs) {
     this.placements.push({
       exclusive: false,
@@ -1116,6 +1213,18 @@ class Container {
     });
   }
 
+  /**
+   * Allows connections to this Container from the given Container(s) on the given
+   * port or port range.  Containers have a default-deny firewall, meaning that
+   * unless connections are explicitly allowed to a container (by calling this
+   * function) they will not be allowed.
+   *
+   * @param {Container|Container[]|publicInternet} srcArg - An entity that should
+   *   be allowed to connect to this Container.
+   * @param {number|Range|PortRange} portRange - A port or range of ports that the
+   *  given Container(s) are allowed to connect to this Container on.
+   * @returns {void}
+   */
   allowFrom(srcArg, portRange) {
     if (srcArg === publicInternet) {
       this.allowFromPublic(portRange);
@@ -1137,6 +1246,15 @@ class Container {
     });
   }
 
+  /**
+   * Allows outbound connections from this Container to the public internet.
+   * Users should access this functionality by calling publicInternet.allowFrom(this, r).
+   * @private
+   *
+   * @param {number|Range} r - A port or port range that this Container should be allowed
+   *   to initiate outbound connections to the public internet on.
+   * @returns {void}
+   */
   allowOutboundPublic(r) {
     const range = boxRange(r);
     if (range.min !== range.max) {
@@ -1146,6 +1264,15 @@ class Container {
     this.outgoingPublic.push(range);
   }
 
+  /**
+   * Allows inbound connections to this Container from the public internet.
+   * Users should access this functionality by calling this.allowFrom(publicInternet, r).
+   * @private
+   *
+   * @param {number|Range} r - A port or port range that this Container should accept
+   *   inbound connetions from the public internet on.
+   * @returns {void}
+   */
   allowFromPublic(r) {
     const range = boxRange(r);
     if (range.min !== range.max) {
@@ -1155,10 +1282,21 @@ class Container {
     this.incomingPublic.push(range);
   }
 
+  /**
+   * Adds this Container to be deployed as part of the given deployment.
+   *
+   * @param {Deployment} deployment - The deployment that this should be added to.
+   * @returns {void}
+   */
   deploy(deployment) {
     deployment.containers.add(this);
   }
 
+  /**
+   * @private
+   * @returns {Object} - A list of maps describing the inbound connections to the Container, in
+   *   a format that can be converted to JSON and sent to the Quilt Go code.
+   */
   getQuiltConnections() {
     const connections = [];
 
@@ -1192,6 +1330,12 @@ class Container {
     return connections;
   }
 
+  /**
+   * Converts the Container to the QRI deployment format.
+   * @private
+   * @returns {Object} A map that can be converted to JSON and interpreted by the Quilt
+   *   Go code.
+   */
   toQuiltRepresentation() {
     return {
       id: this.id,
