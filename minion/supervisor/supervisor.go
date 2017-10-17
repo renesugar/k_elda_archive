@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const ovsImage = "quilt/ovs"
+const ovsImage = "keldaio/ovs"
 
 // The tunneling protocol to use between machines.
 // "stt" and "geneve" are supported.

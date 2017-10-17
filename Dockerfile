@@ -1,4 +1,4 @@
-From quilt/ovs
+From keldaio/ovs
 Maintainer Ethan J. Jackson
 
 Copy ./buildinfo /buildinfo
