@@ -66,7 +66,7 @@ func defaultSigners() []ssh.Signer {
 
 	pathsToTry := []string{cliPath.DefaultSSHKeyPath}
 	for _, keyName := range []string{"id_rsa", "id_dsa", "id_ecdsa",
-		"id_ed25519", "quilt"} {
+		"id_ed25519", "quilt", "kelda"} {
 		pathsToTry = append(pathsToTry, filepath.Join(dir, ".ssh", keyName))
 	}
 
