@@ -2,19 +2,20 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/kelda/kelda)](https://goreportcard.com/report/github.com/kelda/kelda)
 [![Code Coverage](https://codecov.io/gh/kelda/kelda/branch/master/graph/badge.svg)](https://codecov.io/gh/kelda/kelda)
 
-# Quilt
+# Kelda
+_Formerly known as Quilt._
 
 Deploying applications to the cloud can be painful. Booting virtual machines, configuring
 networks, and setting up databases, requires massive amounts of specialized knowledge —
 knowledge that’s scattered across documentation, blog posts, tutorials, and source code.
 
-Quilt aims to make sharing this knowledge simple by encoding it in JavaScript.  Just as
-developers package, share, and reuse application code, Quilt’s JavaScript framework makes
-it possible to package, share, and reuse the knowledge necessary to run applications in
-the cloud.
+Kelda, formerly Quilt, aims to make sharing this knowledge simple by encoding
+it in JavaScript.  Just as developers package, share, and reuse application
+code, Kelda’s JavaScript framework makes it possible to package, share, and
+reuse the knowledge necessary to run applications in the cloud.
 
-To take this knowledge into production, simply `quilt run` the JavaScript blueprint of
-your application. Quilt will set up virtual machines, configure a secure network, install
+To take this knowledge into production, simply `kelda run` the JavaScript blueprint of
+your application. Kelda will set up virtual machines, configure a secure network, install
 containers, and whatever else is needed to get up and running smoothly on your favorite
 cloud provider.
 
@@ -24,19 +25,19 @@ cloud provider.
 
 ## Install
 
-Install Quilt with npm:
+Install Kelda with npm:
 
 ```bash
-$ npm install -g @quilt/install
+$ npm install -g @kelda/install
 ```
-Check out more in our [Getting Started Guide](http://docs.quilt.io/#getting-started).
+Check out more in our [Getting Started Guide](http://docs.kelda.io/#getting-started).
 
 ## API
 
 Run any container.
 
 [//]: # (b1)
-<!-- const {Container, LoadBalancer, Machine, allow, publicInternet} = require('@quilt/quilt'); -->
+<!-- const {Container, LoadBalancer, Machine, allow, publicInternet} = require('kelda'); -->
 ```javascript
 let web = new Container('web', 'someNodejsImage');
 ```
@@ -56,7 +57,7 @@ Share and import blueprints via npm.
 
 [//]: # (b1)
 ```javascript
-const Redis = require('@quilt/redis');
+const Redis = require('@kelda/redis');
 let redis = new Redis(2, 'AUTH_PASSWORD'); // 2 Redis database replicas.
 ```
 
@@ -78,29 +79,29 @@ let vm = new Machine({
 });
 ```
 
-See [full example blueprints](https://github.com/quilt/) and [check out our docs](http://docs.quilt.io).
+See [full example blueprints](https://github.com/kelda/) and [check out our docs](http://docs.kelda.io).
 
-## Quilt CLI
+## Kelda CLI
 
 ```bash
 # Deploy your application.
-$ quilt run ./someBlueprint.js
+$ kelda run ./someBlueprint.js
 
 # SSH into VMs and containers.
-$ quilt ssh <ID>
+$ kelda ssh <ID>
 
 # Check the status of your deployment.
-$ quilt show
+$ kelda show
 ```
 
-This is just a small sample of the Quilt CLI. [Check out more handy commands](http://docs.quilt.io/#quilt-cli) for managing your deployment.
+This is just a small sample of the Kelda CLI. [Check out more handy commands](http://docs.kelda.io/#kelda-cli) for managing your deployment.
 
 ## Get Started
 
-* Get started with [our **tutorial**](http://docs.quilt.io/#getting-started)
-* Check out [our **docs**](http://docs.quilt.io/)
-* [**Contribute** to the project](http://docs.quilt.io/#developing-quilt)
-* Learn more on our [**website**](http://quilt.io)
-* [**Get in touch!**](http://quilt.io/#contact)
+* Get started with [our **tutorial**](http://docs.kelda.io/#getting-started)
+* Check out [our **docs**](http://docs.kelda.io/)
+* [**Contribute** to the project](http://docs.kelda.io/#developing-kelda)
+* Learn more on our [**website**](http://kelda.io)
+* [**Get in touch!**](http://kelda.io/#contact)
 
 We would love to hear if you have any questions, suggestions, or other comments!

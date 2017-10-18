@@ -88,8 +88,8 @@ func (parser readmeParser) blocks() (map[string]string, error) {
 
 var dependencies = `{
   "dependencies": {
-    "@quilt/quilt": "quilt/quilt",
-    "@quilt/redis": "quilt/redis"
+    "kelda": "0.x",
+    "@kelda/redis": "kelda/redis"
   }
 }`
 
