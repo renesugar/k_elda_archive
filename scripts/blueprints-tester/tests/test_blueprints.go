@@ -51,6 +51,10 @@ func TestExampleBlueprints() error {
 			return err
 		}
 
+		if err = run("npm", "install", "../../js/bindings"); err != nil {
+			return err
+		}
+
 		if err = tryRunBlueprint(bp); err != nil {
 			return err
 		}
@@ -65,6 +69,10 @@ func TestCIBlueprints() error {
 	os.Chdir("../../integration-tester")
 
 	if err := run("npm", "install", "."); err != nil {
+		return err
+	}
+
+	if err := run("npm", "install", "../js/bindings"); err != nil {
 		return err
 	}
 
