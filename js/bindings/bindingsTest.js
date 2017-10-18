@@ -86,6 +86,18 @@ describe('Bindings', () => {
       checkInRange(2, 4, 4, true);
       checkInRange(2, 4, 2, true);
     });
+    it('undefined max results in a lower-bounded range', () => {
+      const range = new b.Range(2);
+      expect(range.inRange(6)).to.equal(true);
+      expect(range.inRange(2)).to.equal(true);
+      expect(range.inRange(1)).to.equal(false);
+    });
+    it('undefined min and max accepts any value', () => {
+      const range = new b.Range();
+      expect(range.inRange(6)).to.equal(true);
+      expect(range.inRange(2)).to.equal(true);
+      expect(range.inRange(1)).to.equal(true);
+    });
   });
 
   describe('Machine', () => {
@@ -101,6 +113,7 @@ describe('Bindings', () => {
       });
       it('no max', () => {
         checkSizes(testDescription, new b.Range(1, 0), new b.Range(1, 0), 'size1');
+        checkSizes(testDescription, new b.Range(1), new b.Range(1), 'size1');
       });
       it('exact match', () => {
         checkSizes(testDescription, new b.Range(2, 2), new b.Range(2, 2), 'size1');
@@ -151,6 +164,20 @@ describe('Bindings', () => {
         provider: 'Google',
         cpu: new b.Range(2, 4),
         ram: new b.Range(6, 8),
+        sshKeys: ['key1', 'key2'],
+      })]);
+      checkMachines([{
+        role: 'Worker',
+        provider: 'Google',
+        size: 'n1-standard-2',
+      }]);
+    });
+    it('chooses size when provided only minimum ram and cpu', () => {
+      deployment.deploy([new b.Machine({
+        role: 'Worker',
+        provider: 'Google',
+        cpu: new b.Range(2),
+        ram: new b.Range(6),
         sshKeys: ['key1', 'key2'],
       })]);
       checkMachines([{

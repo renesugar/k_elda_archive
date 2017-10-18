@@ -1498,7 +1498,8 @@ class Range {
  * @returns {boolean} True if x is in the Range, and False otherwise.
  */
 Range.prototype.inRange = function inRange(x) {
-  return this.min <= x && (this.max === 0 || x <= this.max);
+  return (this.min <= x || this.min === undefined) &&
+         (this.max === 0 || this.max === undefined || x <= this.max);
 };
 
 const PortRange = Range;
