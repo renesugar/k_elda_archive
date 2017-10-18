@@ -38,8 +38,8 @@ find your "Access Keys" on the
 page in the AWS Management Console, and "Create New Access Key" (or use an
 existing key, if you already have one).
 
-Alternatively, follow the instructions for [Google Cloud](http://docs.quilt.io/#google-compute-engine)
-or [DigitalOcean](http://docs.quilt.io/#digitalocean), but **come back to this
+Alternatively, follow the instructions for [Google Cloud](http://docs.kelda.io/#google-compute-engine)
+or [DigitalOcean](http://docs.kelda.io/#digitalocean), but **come back to this
 tutorial before running `quilt init`**. In the next step, you will run
 `quilt init` with some specific inputs.
 
@@ -171,7 +171,7 @@ and importantly, how to shut down the deployment.
 
 <aside class="notice">Make sure to stop your deployment! You can skip the next
 few sections, but make sure to read the section on
-<a href="http://docs.quilt.io/#stopping-the-application">how to stop your
+<a href="http://docs.kelda.io/#stopping-the-application">how to stop your
 application</a> to avoid getting charged for any VMs that are left running.
 </aside>
 

@@ -13,5 +13,5 @@ cd ..
 tar czf ${tarOut} ${base}
 cd ${base}
 
-scp -i ${keyPath} -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ../${tarOut} releaser@jenkins.quilt.io:
+scp -i ${keyPath} -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ../${tarOut} releaser@jenkins.kelda.io:
 rm ../${tarOut}

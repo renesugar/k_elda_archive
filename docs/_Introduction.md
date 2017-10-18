@@ -11,7 +11,7 @@ for a new application.
 We hope you will find this documentation to be a helpful guide to
 using Quilt.  If you run into any issues using Quilt,
 don't hesitate to
-[contact us](http://quilt.io/#contact). If you notice
+[contact us](http://kelda.io/#contact). If you notice
 issues in the documentation, please submit a
 [Github issue](https://github.com/quilt/quilt/issues/new),
 or feel free to

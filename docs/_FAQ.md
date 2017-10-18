@@ -2,7 +2,7 @@
 
 This section includes answers to common questions about Quilt, and solutions
 to various issues.  If you run into an issue and can't find the answer here,
-don't hesitate to email us at [discuss@quilt.io](mailto:discuss@quilt.io).
+don't hesitate to email us at [discuss@kelda.io](mailto:discuss@kelda.io).
 
 ### What does Quilt use SSH keys for?
 Quilt `Machine`s optionally take one or more public SSH keys. It is strongly

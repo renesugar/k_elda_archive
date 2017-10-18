@@ -152,7 +152,7 @@ We highly encourage contributions to Quilt from the Open Source community!
 Everything from fixing spelling errors to major contributions to the
 architecture is welcome.  If you'd like to contribute but don't know
 where to get started, feel free to reach out to
-[us](http://quilt.io/#contact) for some guidance.
+[us](http://kelda.io/#contact) for some guidance.
 
 The project is organized using a hybrid of the Github and Linux Kernel
 development workflows.   Changes are submitted using the Github Pull Request

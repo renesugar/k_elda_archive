@@ -1,6 +1,6 @@
 # Quilt Documentation
 
-The Quilt documentation is located at [docs.quilt.io](http://docs.quilt.io).
+The Quilt documentation is located at [docs.kelda.io](http://docs.kelda.io).
 This directory contains the Markdown files that are used to generate those
 docs. We do not recommend directly browing the Markdown files, because the
 links are designed to work properly for the HTML version of the page, and
