@@ -7,7 +7,7 @@ const Mongo = require('@kelda/mongo');
 const infra = infrastructure.createTestInfrastructure();
 
 const mongo = new Mongo(3);
-const django = new Django(3, 'kelda/django-polls', mongo);
+const django = new Django(3, 'keldaio/django-polls', mongo);
 const proxy = haproxy.simpleLoadBalancer(django.containers);
 proxy.allowFrom(kelda.publicInternet, 80);
 
