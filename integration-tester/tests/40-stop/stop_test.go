@@ -51,7 +51,7 @@ func TestStopContainer(t *testing.T) {
 			fmt.Println(string(containersRaw))
 
 			names := strings.Split(containersStr, "\n")
-			if len(filterQuiltContainers(names)) > 0 {
+			if len(filterKeldaContainers(names)) > 0 {
 				passed = false
 				t.Errorf("machine %s has unexpected containers",
 					m.CloudID)
@@ -82,7 +82,7 @@ var keldaContainers = map[string]struct{}{
 	"minion":             {},
 }
 
-func filterQuiltContainers(containers []string) (filtered []string) {
+func filterKeldaContainers(containers []string) (filtered []string) {
 	for _, c := range containers {
 		if _, ok := keldaContainers[c]; !ok && c != "" {
 			filtered = append(filtered, c)

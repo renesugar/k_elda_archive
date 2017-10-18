@@ -10,7 +10,7 @@ import (
 )
 
 func TestMinionLogs(t *testing.T) {
-	if err := printQuiltPs(); err != nil {
+	if err := printKeldaPs(); err != nil {
 		t.Errorf("failed to print kelda ps: %s", err.Error())
 	}
 
@@ -65,7 +65,7 @@ func checkString(t *testing.T, str string) {
 	}
 }
 
-func printQuiltPs() error {
+func printKeldaPs() error {
 	psout, err := exec.Command("kelda", "ps").CombinedOutput()
 	fmt.Println(string(psout))
 	return err

@@ -70,13 +70,13 @@ func runBlueprint(blueprint string) (string, string, error) {
 	return execCmd(cmd, "RUN")
 }
 
-// runQuiltDaemon starts the daemon.
-func runQuiltDaemon() {
+// runKeldaDaemon starts the daemon.
+func runKeldaDaemon() {
 	os.Remove(api.DefaultSocket[len("unix://"):])
 
 	args := []string{"-l", "debug", "daemon"}
 	cmd := exec.Command("kelda", args...)
-	execCmd(cmd, "QUILT")
+	execCmd(cmd, "KELDA")
 }
 
 func logAndUpdate(sc bufio.Scanner, l fileLogger, logFmt string) chan string {

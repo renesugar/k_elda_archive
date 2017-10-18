@@ -78,7 +78,7 @@ func updateNamespace(blueprintFile string, namespace string) error {
 
 	// Set the namespace of the global deployment to be `namespace`.
 	updatedBlueprint := blueprintContents +
-		fmt.Sprintf("; require('@quilt/quilt').getDeployment()."+
+		fmt.Sprintf("; require('kelda').getDeployment()."+
 			"namespace = %q;", namespace)
 
 	return overwrite(blueprintFile, updatedBlueprint)

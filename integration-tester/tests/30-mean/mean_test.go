@@ -13,7 +13,7 @@ import (
 	"github.com/kelda/kelda/integration-tester/util"
 )
 
-// Response represents the JSON response from the quilt/mean-service
+// Response represents the JSON response from the kelda/mean-service
 type Response struct {
 	Text string `json:"text"`
 	ID   string `json:"_id"`
@@ -117,7 +117,7 @@ func checkInstances(t *testing.T, publicIPs []string, expectedTodos int) {
 	}
 }
 
-// httpPostTest tests that data persists across the quilt/mean-service.
+// httpPostTest tests that data persists across the kelda/mean-service.
 // Data is POSTed to each instance, and then we check from all instances that
 // all of the data can be recovered.
 func httpPostTest(t *testing.T, publicIPs []string) {

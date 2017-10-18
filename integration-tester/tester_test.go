@@ -48,7 +48,7 @@ var infra = new Infrastructure(new Machine(), new Machine(), {namespace: "replac
 	res, err := fileContents(blueprintPath)
 	exp := `require("spark");
 var infra = new Infrastructure(new Machine(), new Machine(), {namespace: "replace"});; ` +
-		`require('@quilt/quilt').getDeployment().namespace = "test-namespace";`
+		`require('kelda').getDeployment().namespace = "test-namespace";`
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())
 		return

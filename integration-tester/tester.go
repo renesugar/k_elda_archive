@@ -177,8 +177,8 @@ func (t tester) run() error {
 func (t *tester) setup() error {
 	l := log.testerLogger
 
-	l.infoln("Starting the Quilt daemon.")
-	go runQuiltDaemon()
+	l.infoln("Starting the Kelda daemon.")
+	go runKeldaDaemon()
 
 	// Get blueprint dependencies.
 	l.infoln("Installing blueprint dependencies")
@@ -190,7 +190,7 @@ func (t *tester) setup() error {
 	}
 
 	// Wait for the daemon to generate the TLS credentials. If we don't wait,
-	// the subsequent Quilt commands (such as `kelda stop`) might fail if they
+	// the subsequent Kelda commands (such as `kelda stop`) might fail if they
 	// are executed before the credentials are generated.
 	err = util.BackoffWaitFor(func() bool {
 		_, err = util.Stat(cliPath.DefaultTLSDir)
@@ -230,7 +230,7 @@ func (t *tester) setup() error {
 		return err
 	}
 
-	l.infoln("Booted Quilt")
+	l.infoln("Booted Kelda")
 	l.infoln("Machines")
 	machines, _ := queryMachines()
 	l.println(fmt.Sprintf("%v", machines))
