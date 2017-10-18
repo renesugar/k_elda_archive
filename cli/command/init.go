@@ -46,9 +46,9 @@ func (iCmd *Init) AfterRun() error {
 // Run executes the Nodejs initializer that prompts the user.
 func (iCmd *Init) Run() int {
 	// Assumes `js/initializer/intializer.js` was installed in the path
-	// somewhere as `quilt-initializer.js`. This is done automatically for users by
+	// somewhere as `kelda-initializer.js`. This is done automatically for users by
 	// npm when installed.
-	executable := "quilt-initializer.js"
+	executable := "kelda-initializer.js"
 	cmd := exec.Command(executable)
 
 	cmd.Stdout = os.Stdout
@@ -57,7 +57,7 @@ func (iCmd *Init) Run() int {
 
 	if _, err := exec.LookPath(executable); err != nil {
 		log.Errorf("%s: Make sure that "+
-			"js/initializer/intializer.js is installed in your $PATH as "+
+			"js/initializer/initializer.js is installed in your $PATH as "+
 			"%s. This is done automatically with "+
 			"`npm install -g @kelda/install`, but if you're running Kelda "+
 			"from source, you must set up the symlink manually. You can "+
