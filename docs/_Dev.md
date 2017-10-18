@@ -128,7 +128,7 @@ to use your local development copy of the Kelda JavaScript bindings (when you
 use Kelda to run blueprints) by running:
 
 ```console
-$ npm link .
+$ npm link js/bindings
 ```
 
 in the directory that contains your local Kelda source files. For each blueprint
