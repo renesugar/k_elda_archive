@@ -18,7 +18,7 @@ clean:
 _jsdoc.erb: build/jsdoc_template ../blueprint/
 	build/jsdoc_template/node_modules/.bin/jsdoc \
 		-t build/jsdoc_template/ \
-		$(abspath ${CURDIR}/../blueprint/bindings.js) -d ./
+		$(abspath ${CURDIR}/../js/bindings/bindings.js) -d ./
 
 build/jsdoc_template:
 	mkdir -p build && \
