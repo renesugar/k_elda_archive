@@ -178,3 +178,12 @@ prep-install: linux darwin js/install/package.json
 
 js/install/package.json: js/install/packageTemplate.json
 	node js/install/makePackage.js > js/install/package.json
+
+build-integration:
+	cd integration-tester && go build . && make tests
+
+build-docs:
+	cd docs && make
+
+travis: check lint coverage check-blueprints docker-build-kelda \
+    build-integration build-docs

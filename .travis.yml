@@ -30,9 +30,7 @@ install:
 
 script:
     - govendor test -i +local
-    - make -j 2 check lint coverage check-blueprints docker-build-kelda
-    - (cd integration-tester && go build . && make tests)
-    - (cd docs && make)
+    - make -j 2 travis
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
