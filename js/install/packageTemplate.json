@@ -4,6 +4,9 @@
   "homepage": "http://kelda.io",
   "license": "MIT",
   "preferGlobal": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "preinstall": "node install.js"
   },
