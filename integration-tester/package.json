@@ -11,7 +11,7 @@
     "@kelda/mongo": "kelda/mongo",
     "@kelda/nginx": "kelda/nginx",
     "@kelda/nodejs": "kelda/nodejs",
-    "kelda": "0.x",
+    "kelda": "../js/bindings",
     "@kelda/redis": "kelda/redis",
     "@kelda/spark": "kelda/spark",
     "@kelda/zookeeper": "kelda/zookeeper"
