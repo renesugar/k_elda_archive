@@ -16,6 +16,7 @@ import (
 
 	"github.com/kelda/kelda/blueprint"
 	cliPath "github.com/kelda/kelda/cli/path"
+	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/db"
 	testerUtil "github.com/kelda/kelda/integration-tester/util"
 	"github.com/kelda/kelda/join"
@@ -193,8 +194,12 @@ func (t *tester) setup() error {
 	// the subsequent Kelda commands (such as `kelda stop`) might fail if they
 	// are executed before the credentials are generated.
 	err = util.BackoffWaitFor(func() bool {
-		_, err = util.Stat(cliPath.DefaultTLSDir)
-		return err == nil
+		_, caCertErr := util.Stat(tlsIO.CACertPath(cliPath.DefaultTLSDir))
+		_, caKeyErr := util.Stat(tlsIO.CAKeyPath(cliPath.DefaultTLSDir))
+		_, signedCertErr := util.Stat(tlsIO.SignedCertPath(cliPath.DefaultTLSDir))
+		_, signedKeyErr := util.Stat(tlsIO.SignedKeyPath(cliPath.DefaultTLSDir))
+		return caCertErr == nil && caKeyErr == nil &&
+			signedCertErr == nil && signedKeyErr == nil
 	}, 15*time.Second, 3*time.Minute)
 	if err != nil {
 		l.infoln("Timed out waiting for daemon to generate TLS credentials")
