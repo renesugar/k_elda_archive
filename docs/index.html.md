@@ -16,6 +16,7 @@ includes:
   - BlueprintAPI
   - jsdoc
   - KeldaCLI
+  - HowTo
   - CloudProviders
   - Dev
   - Security
