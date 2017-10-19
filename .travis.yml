@@ -53,10 +53,12 @@ notifications:
     secure: 0YSnrh9wEnohthlLcWdy7KJQ5VO4PEeP+1m9GVCqmNmDV6iEtyz7+iWoXfmXLJa0G1NrJrm6SH4Xm9bRDXweZJ9pCrXtBrDP7iiT3gQWmL60H5cwKejsXP8pjo61YI5StjAXKkhuI40AlRERcD8404rREFGhhejEGygz6FPEoolSVELBoHKVlYdDGAn+3j8DQA2xzheXX+8DKT7hNzkkJ6WCFgYDlI4PScST1/GvJyweK9eaC09O82tEqiObrgkZrWX6s0nNJTmfzNoTKaqyyGwRYAXFOrL5JvInmcab/4zQtuFNokWFrHu5j3kmt1Ypwqt4NAI/fzS9hUkP9hc7XWxckJZpXNbY5G/jScrwLM04LYq9gt74jHYhDsh+v03bUIgfWj4aR3xw6Dg4XT0/gjxKVQpU87ePfXD+b/sAxFwf0v17dzAJp/GcHQj+I3nX1cM5h2oKfjnOBRkNUDEo5UpnkuyT4TDsup3UCBkw2Ea5wjw+3lqXAIWWSMWbYYBtIGSyG5g7xl6DaQ3ziuC/l9Iagf1OWmdoxVssat/e9VH+JikQqdcbQty81++YSGkMtYNAshA2ynde8ysp2pf3bBY3Hx3T9KnOhKnpd5e/SqI+mtN/jSN8hx9D7iudMYXDzKGzVSHHHsHIgDd7iFOXtMamo0vOc0eR0nG5lHYjWhk=
 
 before_deploy:
-    - make release
+    - make release prep-install
     # Decrypt the SSH key used to upload releases to Jenkins.
     - openssl aes-256-cbc -K $encrypted_e63862ef6e81_key -iv $encrypted_e63862ef6e81_iv
       -in ${RELEASER_KEY_PATH}.enc -out ${RELEASER_KEY_PATH} -d && chmod 600 ${RELEASER_KEY_PATH}
+    # Setup the NPM auth token so that we can publish during deploy.
+    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
 
 deploy:
     - provider: script
@@ -74,3 +76,15 @@ deploy:
       skip_cleanup: true
       on:
         tags: true
+    - provider: script
+      script: npm publish js/install
+      skip_cleanup: true
+      on:
+        tags: true
+        condition: $TRAVIS_TAG != "dev"
+    - provider: script
+      script: npm publish js/bindings
+      skip_cleanup: true
+      on:
+        tags: true
+        condition: $TRAVIS_TAG != "dev"
