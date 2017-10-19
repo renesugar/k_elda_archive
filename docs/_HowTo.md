@@ -58,3 +58,93 @@ same `name:tag` as the currently running one.
 didn't change. For instance, this could be because the Dockerfile clones a
 GitHub repository, so rebuilding the image would recreate the container with
 the latest code from GitHub.
+
+## How to Run a Replicated, Load Balanced Application Behind a Single IP Address
+This guide describes how to write a blueprint that will run a replicated, load
+balanced application behind a single IP address. We will use [HAProxy](https://www.haproxy.com/)
+(High Availability Proxy), a popular open source load balancer, to evenly
+distribute traffic between your application containers.
+
+Before we start writing the blueprint, make sure the application you want to
+replicate is listening on port 80. E.g., for an Node.js Express application
+called `app`, call `app.listen(80)` in your application code.
+
+### A Single Replicated Application
+**Import [Kelda's HAProxy blueprint](https://github.com/kelda/haproxy)** in your
+application blueprint:
+
+```javascript
+const haproxy = require('@kelda/haproxy');
+```
+
+**Replicate the application** container. E.g., to create 3 containers with the
+`myWebsite` image:
+
+```javascript
+const appContainers = [];
+for (let i = 0; i < 3; i += 1) {
+  appContainers.push(new Container('web', 'myWebsite'));
+}
+```
+
+**Create a load balancer** to sit in front of `appContainers`:
+
+```javascript
+const loadBalancer = haproxy.simpleLoadBalancer(appContainers);
+```
+
+**Allow requests** from the public internet to the load balancer on port 80 (the
+default `exposedPort`).
+
+```javascript
+loadBalancer.allowFrom(publicInternet, haproxy.exposedPort);
+```
+
+**Deploy** the application containers and load balancer to your infrastructure:
+
+```javascript
+const inf = baseInfrastructure();
+appContainers.forEach(container => container.deploy(inf));
+loadBalancer.deploy(inf);
+```
+
+#### Accessing the application
+The application will be accessible on the `PUBLIC IP` of the `haproxy`
+container.
+
+### Multiple Replicated Applications
+Say you want to run two different replicated websites with different domain
+names. You could call `simpleLoadBalancer` for each of them, but that would
+create two separate load balancers. This section explains how to put multiple
+applications behind a single load balancer -- that is, behind a single
+IP address.
+
+The steps are basically identical to those for [running a single replicated application](#a-single-replicated-application).
+There are just two important differences:
+
+1. **Register a domain name** for each replicated application (e.g. `apples.com`
+  and `oranges.com`) before deploying them. The load balancer will need the
+  domain names to forward incoming requests to the right application.
+2. **Create the load balancer** using the `withURLrouting()` function _instead
+  of_  `simpleLoadBalancer()`. As an example, the load balancer below will
+  forward requests for `apples.com` to one of the containers in
+  `appleContainers`, and requests for `oranges.com` will go to one of the
+  containers in `orangeContainers`.
+
+```javascript
+const loadBalancer = haproxy.withURLrouting({
+  'apples.com': appleContainers,
+  'oranges.com': orangeContainers,
+});
+```
+
+#### Accessing the applications
+The applications are now only available via their domain names. When the domains
+are registered, the applications can be accessed with the domain name
+(e.g. `apples.com`) in the browser. If a domain name isn't yet
+registered, you can test that the redirects work by `cURL`ing the load balancer
+and check you get the right response:
+
+```console
+$ curl -H "Host: apples.com" HAPROXY_PUBLIC_IP
+```
