@@ -21,6 +21,8 @@ func TestRunContainerOnce(t *testing.T) {
 	err = store.Set(containerPath, "", 0)
 	assert.NoError(t, err)
 
+	// Setup the database as if it were the leader, and had a single container.
+	// runContainerOnce should write the container into etcd.
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		self := view.InsertMinion()
 		self.Self = true
@@ -52,6 +54,7 @@ func TestRunContainerOnce(t *testing.T) {
 	err = runContainerOnce(conn, store)
 	assert.NoError(t, err)
 
+	// Check that the container in the database was properly written into etcd.
 	str, err := store.Get(containerPath)
 	assert.NoError(t, err)
 
@@ -81,6 +84,11 @@ func TestRunContainerOnce(t *testing.T) {
 ]`
 	assert.Equal(t, expStr, str)
 
+	// Simulate reading from etcd as a non-leader Master minion. Note that the
+	// etcd store was not reset (the string written by the master from the
+	// above test is still present). Therefore, the changes to Env and
+	// FilepathToContent in the local database should be overwritten by what is
+	// in etcd.
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		etcd := view.SelectFromEtcd(nil)[0]
 		etcd.Leader = false
@@ -101,6 +109,7 @@ func TestRunContainerOnce(t *testing.T) {
 	err = runContainerOnce(conn, store)
 	assert.NoError(t, err)
 
+	// Ensure that the minion properly synced the container from etcd.
 	expDBC := db.Container{
 		IP:          "10.0.0.2",
 		BlueprintID: "12",
@@ -121,6 +130,8 @@ func TestRunContainerOnce(t *testing.T) {
 	dbcs[0].ID = 0
 	assert.Equal(t, expDBC, dbcs[0])
 
+	// Run the same non-leader sync test again to make sure the result is
+	// consistent.
 	err = runContainerOnce(conn, store)
 	assert.NoError(t, err)
 
@@ -129,6 +140,8 @@ func TestRunContainerOnce(t *testing.T) {
 	dbcs[0].ID = 0
 	assert.Equal(t, expDBC, dbcs[0])
 
+	// Check that syncing etcd from a Worker minion for which the container is
+	// scheduled properly syncs the container.
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		self := view.MinionSelf()
 		self.Role = db.Worker
@@ -145,6 +158,9 @@ func TestRunContainerOnce(t *testing.T) {
 	dbcs[0].ID = 0
 	assert.Equal(t, expDBC, dbcs[0])
 
+	// Check that syncing etcd from a Worker minion for which the container is
+	// _not_ scheduled does not sync the container. The minion should remove
+	// the now irrelevant Container row.
 	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		self := view.MinionSelf()
 		self.PrivateIP = "1.2.3.5"
