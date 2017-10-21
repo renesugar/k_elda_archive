@@ -1,5 +1,49 @@
 # How To
 
+## How to Give Your Application a Custom Domain Name
+
+1. **Buy your domain name**  from a registrar like
+  [Namecheap](https://www.namecheap.com/) or [GoDaddy](https://www.godaddy.com).
+2. **Get a floating IP** (also called Elastic IP or Static External IP) through
+  your cloud provider's management console or command line tool. When you
+  reserve a floating IP, it is guaranteed to be yours until you explicitly
+  release it.
+3. **Point the domain to your IP** by modifying the A record on your registrar's
+  website, so the domain points at the floating IP from last step.
+4. **Run a blueprint** that hosts the website on that floating IP. The next
+section describes how to write the blueprint.
+
+### Blueprint: Hosting a Website on a Floating IP
+Assigning a floating IP address to an application just involves two steps:
+
+1. Deploy a worker machine with the floating IP:
+
+    ```javascript
+    // The floating IP you registered with the cloud provider -- say, Amazon.
+    const floatingIP = '1.2.3.4';
+
+    const baseMachine = new Machine({ provider: 'Amazon' });
+
+    // Set the IP on the worker machine.
+    const worker = baseMachine.asWorker();
+    worker.floatingIp = floatingIp;
+
+    // Create the infrastructure.
+    const inf = new Infrastructure(baseMachine.asMaster(), worker);
+    ```
+2. Tell Kelda to place the application on the machine with your floating IP:
+
+    ```javascript
+    const app = new Container('myApp', 'myImage');
+    app.placeOn({ floatingIP });
+
+    // Deploy the application.
+    app.deploy(inf);
+    ```
+If your website is hosted on multiple servers, follow the guide for running a
+[replicated, load balanced application](#how-to-run-a-replicated-load-balanced-application-behind-a-single-ip-address),
+and simply place the `loadBalancer` on the floating IP.
+
 ## How to Update Your Application on Kelda
 The most robust way to handle updates to your application is to [build and
 push](https://docs.docker.com/get-started/part2/) your own tagged Docker images.
@@ -127,7 +171,8 @@ There are just two important differences:
 
 1. **Register a domain name** for each replicated application (e.g. `apples.com`
   and `oranges.com`) before deploying them. The load balancer will need the
-  domain names to forward incoming requests to the right application.
+  domain names to forward incoming requests to the right application. For more
+  details, see the guide on [custom domain names](#how-to-give-your-application-a-custom-domain-name).
 2. **Create the load balancer** using the `withURLrouting()` function _instead
   of_  `simpleLoadBalancer()`. As an example, the load balancer below will
   forward requests for `apples.com` to one of the containers in
