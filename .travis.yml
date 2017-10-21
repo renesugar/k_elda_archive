@@ -6,6 +6,19 @@ env:
         # ./scripts/releaser_key.enc is an encrypted version of this key generated
         # using the Travis public key for this repo.
         - RELEASER_KEY_PATH=./scripts/releaser_key
+
+        # DEPLOY_NODEJS_VERSION is the version of NodeJS for which to run the
+        # deploy scripts. All deploy targets have the condition to only deploy
+        # when the NODEJS_VERSION is equal to DEPLOY_NODEJS_VERSION to avoid
+        # deploying the same commit multiple times. This is necessary because
+        # Travis runs a new build for each NodeJS version in the build matrix
+        # for each commit.
+        #
+        # The selected version is arbitrary because the generated deployment
+        # files don't actually change depending on the NodeJs version -- the
+        # version simply must be one of the versions specified in the build
+        # matrix.
+        - DEPLOY_NODEJS_VERSION=6.9.0
     matrix:
         # We specify the two different Nodejs versions to test using an environment
         # variable, rather than Travis's built-in language version testing,
@@ -65,6 +78,7 @@ deploy:
       script: ./scripts/scp-to-jenkins ${RELEASER_KEY_PATH}
       skip_cleanup: true
       on:
+        condition: NODEJS_VERSION=$DEPLOY_NODEJS_VERSION
         tags: true
     - provider: releases
       api_key:
@@ -75,16 +89,17 @@ deploy:
       overwrite: true
       skip_cleanup: true
       on:
+        condition: NODEJS_VERSION=$DEPLOY_NODEJS_VERSION
         tags: true
     - provider: script
       script: npm publish js/install
       skip_cleanup: true
       on:
         tags: true
-        condition: $TRAVIS_TAG != "dev"
+        condition: $TRAVIS_TAG != "dev" && NODEJS_VERSION=$DEPLOY_NODEJS_VERSION
     - provider: script
       script: npm publish js/bindings
       skip_cleanup: true
       on:
         tags: true
-        condition: $TRAVIS_TAG != "dev"
+        condition: $TRAVIS_TAG != "dev" && NODEJS_VERSION=$DEPLOY_NODEJS_VERSION
