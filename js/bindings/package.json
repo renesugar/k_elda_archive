@@ -6,7 +6,8 @@
     "amazonDescriptions.json",
     "bindings.js",
     "digitalOceanDescriptions.json",
-    "googleDescriptions.json"
+    "googleDescriptions.json",
+    "nonPreemptibleSizes.json"
   ],
   "license": "MIT",
   "dependencies": {

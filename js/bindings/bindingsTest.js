@@ -240,6 +240,17 @@ describe('Bindings', () => {
         region: 'eu-west-1',
       }]);
     });
+    it('errors if requested a preemptible instance for a size'
+      + ' that cannot be preempted', () => {
+      expect(() => new b.Machine({
+        role: 'Worker',
+        provider: 'Amazon',
+        size: 't2.micro',
+        sshKeys: ['key1', 'key2'],
+        preemptible: true,
+      })).to.throw('Requested size t2.micro can not be preemptible.' +
+        ' Please choose a different size or set preemptible to be False.');
+    });
     it('errors when passed invalid optional arguments', () => {
       expect(() => new b.Machine({ badArg: 'foo' })).to
         .throw('Unrecognized keys passed to Machine constructor: badArg');

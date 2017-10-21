@@ -12,6 +12,7 @@ let fs = require('fs'); // eslint-disable-line prefer-const
 const googleDescriptions = require('./googleDescriptions');
 const amazonDescriptions = require('./amazonDescriptions');
 const digitalOceanDescriptions = require('./digitalOceanDescriptions');
+const nonPreemptibleSizes = require('./nonPreemptibleSizes');
 
 const providerDefaultRegions = {
   Amazon: 'us-west-1',
@@ -797,11 +798,17 @@ class Machine {
    * Sets the machine's size attribute to an instance size (e.g., m2.xlarge),
    * based on the Machine's specified provider, region, and hardware. Throws
    * an error if provider is not valid or given machine requirements cannot
-   * be satisfied by any size.
+   * be satisfied by any size. Also throws an error if the user requests a
+   * preemptible instance for a size that cannot be preempted.
    * @private
    * @returns {void}
    */
   chooseSize() {
+    if (this.preemptible && this.size !== ''
+        && nonPreemptibleSizes[this.provider].includes(this.size)) {
+      throw new Error(`Requested size ${this.size} can not be preemptible.` +
+        ' Please choose a different size or set preemptible to be False.');
+    }
     if (this.size !== '') return;
     switch (this.provider) {
       case 'Amazon':
