@@ -154,6 +154,37 @@ and check you get the right response:
 $ curl -H "Host: apples.com" HAPROXY_PUBLIC_IP
 ```
 
+## How to Run the Daemon
+_We recommend reading about [the daemon](#daemon) before reading this section._
+
+The default way to run the daemon is to run it on a local machine like your
+laptop. However, when running a long term deployment or if multiple
+people need access to the deployment, we recommend running the daemon in the
+cloud.
+
+### A Shared Daemon on a Separate VM
+We recommend running a single, shared daemon on a small VM in the cloud, and
+executing Kelda commands from there.
+
+#### Setting up the Remote Daemon
+1. **Create a VM** (Ubuntu or Debian) on your preferred cloud provider. You can
+  choose a small instance type to keep costs low.
+  - If the provider blocks ports by default, allow ingress TCP traffic on port 22.
+2. **SSH** in to the VM and do the following from the VM:
+  - [Install Node.js](https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions).
+  - [Install Kelda](#installing-kelda) with `npm`.
+  - **Provider Credentials**. Set up [provider credentials](#cloud-provider-configuration).
+  - **Start the Daemon**. The following command starts the daemon in the
+  background, and redirects its logs to the `daemon.log` file. The `nohup`
+  command ensures that the daemon keeps running even when you log out of the VM.
+
+    ```console
+    $ nohup kelda daemon > daemon.log 2>&1 &
+    ```
+
+3. **Run and Manage Applications**. All `kelda` CLI commands (e.g. `run`, `show`
+  and `stop`) can now be run from this machine.
+
 ## How to Run Applications that Rely on Configuration Secrets
 This section walks through an example of running an application that has
 sensitive information in its configuration. Note that Kelda secrets are
