@@ -346,7 +346,7 @@ func TestSetACLs(t *testing.T) {
 	mc.On("CreateFirewall", tagName, allowAll,
 		mock.AnythingOfType("[]godo.InboundRule")).Return(
 		&godo.Firewall{ID: "test", OutboundRules: allowAll}, nil, nil).Once()
-	mc.On("ListFirewalls").Return(
+	mc.On("ListFirewalls", mock.Anything).Return(
 		[]godo.Firewall{
 			{Name: tagName, ID: "test", OutboundRules: allowAll},
 		}, nil, nil).Once()
@@ -362,7 +362,7 @@ func TestSetACLs(t *testing.T) {
 	doPrvdr.Client = mc
 
 	// Check that ACLs are both created and removed when not in the requested list.
-	mc.On("ListFirewalls").Return([]godo.Firewall{
+	mc.On("ListFirewalls", mock.Anything).Return([]godo.Firewall{
 		{
 			Name:          tagName,
 			ID:            "test",
@@ -435,7 +435,7 @@ func TestSetACLs(t *testing.T) {
 	mc.On("CreateFirewall", tagName, allowAll,
 		mock.AnythingOfType("[]godo.InboundRule")).Return(
 		&godo.Firewall{ID: "test", OutboundRules: allowAll}, nil, nil).Once()
-	mc.On("ListFirewalls").Return(
+	mc.On("ListFirewalls", mock.Anything).Return(
 		[]godo.Firewall{
 			{Name: tagName, ID: "test", OutboundRules: allowAll},
 		}, nil, nil).Once()
@@ -446,6 +446,29 @@ func TestSetACLs(t *testing.T) {
 
 	err = doPrvdr.SetACLs(acls)
 	assert.Error(t, err)
+
+	// Check that getCreateFirewall checks all pages of firewalls.
+	fwFirst := []godo.Firewall{{Name: "otherFW", ID: "testWrong"}}
+	fwLast := []godo.Firewall{{Name: tagName, ID: "testCorrect"}}
+
+	respFirst := &godo.Response{
+		Links: &godo.Links{Pages: &godo.Pages{Last: "2"}},
+	}
+	respLast := &godo.Response{Links: &godo.Links{}}
+
+	reqFirst := &godo.ListOptions{}
+	mc.On("ListFirewalls", reqFirst).Return(fwFirst, respFirst, nil).Once()
+
+	reqLast := &godo.ListOptions{
+		Page: reqFirst.Page + 1,
+	}
+	mc.On("ListFirewalls", reqLast).Return(fwLast, respLast, nil).Once()
+	mc.On("CreateFirewall", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errMock).Once()
+
+	fw, err := doPrvdr.getCreateFirewall()
+	assert.NoError(t, err)
+	assert.Equal(t, "testCorrect", fw.ID)
 }
 
 func TestToRules(t *testing.T) {

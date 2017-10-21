@@ -247,13 +247,13 @@ func (_m *Client) ListDroplets(_a0 *godo.ListOptions) ([]godo.Droplet, *godo.Res
 	return r0, r1, r2
 }
 
-// ListFirewalls provides a mock function with given fields:
-func (_m *Client) ListFirewalls() ([]godo.Firewall, *godo.Response, error) {
-	ret := _m.Called()
+// ListFirewalls provides a mock function with given fields: _a0
+func (_m *Client) ListFirewalls(_a0 *godo.ListOptions) ([]godo.Firewall, *godo.Response, error) {
+	ret := _m.Called(_a0)
 
 	var r0 []godo.Firewall
-	if rf, ok := ret.Get(0).(func() []godo.Firewall); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(*godo.ListOptions) []godo.Firewall); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]godo.Firewall)
@@ -261,8 +261,8 @@ func (_m *Client) ListFirewalls() ([]godo.Firewall, *godo.Response, error) {
 	}
 
 	var r1 *godo.Response
-	if rf, ok := ret.Get(1).(func() *godo.Response); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(*godo.ListOptions) *godo.Response); ok {
+		r1 = rf(_a0)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*godo.Response)
@@ -270,8 +270,8 @@ func (_m *Client) ListFirewalls() ([]godo.Firewall, *godo.Response, error) {
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func() error); ok {
-		r2 = rf()
+	if rf, ok := ret.Get(2).(func(*godo.ListOptions) error); ok {
+		r2 = rf(_a0)
 	} else {
 		r2 = ret.Error(2)
 	}

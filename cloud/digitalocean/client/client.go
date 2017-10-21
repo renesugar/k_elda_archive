@@ -25,7 +25,7 @@ type Client interface {
 
 	CreateFirewall(string, []godo.OutboundRule, []godo.InboundRule) (*godo.Firewall,
 		*godo.Response, error)
-	ListFirewalls() ([]godo.Firewall, *godo.Response, error)
+	ListFirewalls(*godo.ListOptions) ([]godo.Firewall, *godo.Response, error)
 	AddRules(string, []godo.InboundRule) (*godo.Response, error)
 	RemoveRules(string, []godo.InboundRule) (*godo.Response, error)
 }
@@ -122,9 +122,11 @@ func (client client) CreateFirewall(tag string, outbound []godo.OutboundRule,
 	return client.acls.Create(context.Background(), req)
 }
 
-func (client client) ListFirewalls() ([]godo.Firewall, *godo.Response, error) {
+func (client client) ListFirewalls(opt *godo.ListOptions) ([]godo.Firewall,
+	*godo.Response, error) {
+
 	c.Inc("List Firewalls")
-	return client.acls.List(context.Background(), nil)
+	return client.acls.List(context.Background(), opt)
 }
 
 // New creates a new DigitalOcean client.

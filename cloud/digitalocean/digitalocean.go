@@ -341,19 +341,27 @@ func (prvdr Provider) SetACLs(acls []acl.ACL) error {
 }
 
 func (prvdr Provider) getCreateFirewall() (*godo.Firewall, error) {
-	firewalls, _, err := prvdr.ListFirewalls()
-	if err != nil {
-		return nil, err
-	}
-
 	tagName := prvdr.getTag()
-	for _, firewall := range firewalls {
-		if firewall.Name == tagName {
-			return &firewall, nil
+	firewallListOpt := &godo.ListOptions{}
+	for {
+		firewalls, resp, err := prvdr.ListFirewalls(firewallListOpt)
+		if err != nil {
+			return nil, fmt.Errorf("list firewalls: %s", err)
 		}
+
+		for _, firewall := range firewalls {
+			if firewall.Name == tagName {
+				return &firewall, nil
+			}
+		}
+
+		if resp.Links == nil || resp.Links.IsLastPage() {
+			break
+		}
+		firewallListOpt.Page++
 	}
 
-	_, _, err = prvdr.CreateTag(tagName)
+	_, _, err := prvdr.CreateTag(tagName)
 	if err != nil {
 		return nil, err
 	}
