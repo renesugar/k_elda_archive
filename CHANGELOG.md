@@ -22,6 +22,8 @@ blueprint source. It was very easy to accidentally commit these secrets, and
 they had no special protection once deployed to the cluster. Secrets are now a
 first-level concept of Kelda. They are encrypted at rest and in transit, and
 access to them is limited based on least privilege.
+- Fix a race condition TLS credentials would not get installed on the minion, so
+it would never enter the "connected" state.
 
 JavaScript API-breaking changes:
 - Remove the Container.replicate() method. Users should create multiple

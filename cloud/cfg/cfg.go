@@ -27,24 +27,19 @@ func Ubuntu(m db.Machine, inboundPublic string) string {
 
 	img := fmt.Sprintf("%s:%s", keldaImage, ver)
 
-	// Mount the TLSDir as a read-only host volume. This is necessary for
-	// the minion container to access the TLS certificates copied by
-	// the daemon onto the host machine.
-	dockerOpts := fmt.Sprintf("-v %[1]s:%[1]s:ro", tlsIO.MinionTLSDir)
-
 	var cloudConfigBytes bytes.Buffer
 	err := t.Execute(&cloudConfigBytes, struct {
 		KeldaImage string
 		SSHKeys    string
 		LogLevel   string
 		MinionOpts string
-		DockerOpts string
+		TLSDir     string
 	}{
 		KeldaImage: img,
 		SSHKeys:    strings.Join(m.SSHKeys, "\n"),
 		LogLevel:   log.GetLevel().String(),
 		MinionOpts: minionOptions(m.Role, inboundPublic),
-		DockerOpts: dockerOpts,
+		TLSDir:     tlsIO.MinionTLSDir,
 	})
 	if err != nil {
 		panic(err)

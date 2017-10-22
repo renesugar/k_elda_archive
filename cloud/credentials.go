@@ -99,6 +99,9 @@ func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
 		return "", false
 	}
 
+	// Create the directory in which the credentials will be installed. This is
+	// usually a no-op because the cloud config (cloud/cfg/template.go) creates
+	// the directory at boot to prevent a race condition with Docker.
 	if err := fs.MkdirAll(tlsIO.MinionTLSDir, 0755); err != nil {
 		log.WithError(err).WithField("host", machine.PublicIP).Error(
 			"Failed to create TLS directory. Retrying.")

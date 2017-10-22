@@ -10,7 +10,7 @@ import (
 
 func TestCloudConfig(t *testing.T) {
 	cfgTemplate = "({{.KeldaImage}}) ({{.SSHKeys}}) " +
-		"({{.MinionOpts}}) ({{.LogLevel}}) ({{.DockerOpts}})"
+		"({{.MinionOpts}}) ({{.LogLevel}}) ({{.TLSDir}})"
 
 	log.SetLevel(log.InfoLevel)
 	ver = "master"
@@ -19,7 +19,7 @@ func TestCloudConfig(t *testing.T) {
 		Role:    db.Master,
 	}, "")
 	exp := "(keldaio/kelda:master) (a\nb) (--role \"Master\") (info)" +
-		" (-v /home/kelda/.kelda/tls:/home/kelda/.kelda/tls:ro)"
+		" (/home/kelda/.kelda/tls)"
 	if res != exp {
 		t.Errorf("res: %s\nexp: %s", res, exp)
 	}
@@ -32,7 +32,7 @@ func TestCloudConfig(t *testing.T) {
 	}, "ib")
 	exp = "(keldaio/kelda:1.2.3) (a\nb) (--role \"Worker\"" +
 		" --inbound-pub-intf \"ib\") (debug)" +
-		" (-v /home/kelda/.kelda/tls:/home/kelda/.kelda/tls:ro)"
+		" (/home/kelda/.kelda/tls)"
 	if res != exp {
 		t.Errorf("res: %s\nexp: %s", res, exp)
 	}
