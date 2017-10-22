@@ -126,9 +126,6 @@ export DEBIAN_FRONTEND=noninteractive
 ssh_keys="{{.SSHKeys}}"
 setup_user kelda "$ssh_keys"
 
-sudo mkdir /run/docker/plugins
-sudo chmod -R /run/docker/plugins 0755
-
 install_docker
 initialize_ovs
 initialize_docker
