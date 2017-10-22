@@ -141,7 +141,7 @@ func TestExistingContainerRemoved(t *testing.T) {
 
 	// Test that if the Vault container is already running, we remove it and
 	// try to start a new one.
-	_, err = dk.Run(docker.RunOptions{Name: vaultContainerName, Image: "vault"})
+	_, err = dk.Run(docker.RunOptions{Name: ContainerName, Image: "vault"})
 	assert.NoError(t, err)
 
 	// Mock a start error to avoid entering the code path of configuring Vault.

@@ -57,12 +57,12 @@ func Run(conn db.Conn, dk docker.Client, vaultClient APIClient) {
 	}
 }
 
-// The name assigned to the Docker container running Vault. Assigning the container
-// a consistent name rather than allowing Docker to pick a name at random makes
-// it more obvious that the container is a Kelda system when running `docker ps`.
-// Furthermore, it simplifies the logic to check whether Kelda has already
-// booted a Vault container.
-const vaultContainerName = "vault"
+// ContainerName is the name assigned to the Docker container running Vault.
+// Assigning the container a consistent name rather than allowing Docker to
+// pick a name at random makes it more obvious that the container is a Kelda
+// system when running `docker ps`. Furthermore, it simplifies the logic to
+// check whether Kelda has already booted a Vault container.
+const ContainerName = "vault"
 
 // Start repeatedly tries to start and bootstrap the Vault container until it
 // succeeds. This way, we recover from any transient errors that might occur
@@ -93,7 +93,7 @@ func startAndBootstrapVault(dk docker.Client, listenAddr string) (APIClient, boo
 	// It is safe to remove the already running Vault container because if this
 	// function is called, it means that Vault has not yet come up
 	// successfully, and so there is not yet any important state stored.
-	isRunning, err := dk.IsRunning(vaultContainerName)
+	isRunning, err := dk.IsRunning(ContainerName)
 	if err != nil {
 		log.WithError(err).Error(
 			"Failed to get running status for the Vault container")
@@ -101,7 +101,7 @@ func startAndBootstrapVault(dk docker.Client, listenAddr string) (APIClient, boo
 	}
 
 	if isRunning {
-		if err := dk.Remove(vaultContainerName); err != nil {
+		if err := dk.Remove(ContainerName); err != nil {
 			log.WithError(err).Error(
 				"Failed to remove currently running Vault container")
 			return nil, false
@@ -213,7 +213,7 @@ func startVaultContainer(dk docker.Client, listenAddr string) error {
 	}`, listenAddr, vaultPort, serverCertPath, serverKeyPath, caCertPath)
 
 	ro := docker.RunOptions{
-		Name:        vaultContainerName,
+		Name:        ContainerName,
 		NetworkMode: "host",
 		Image:       "vault:0.8.3",
 		Args:        []string{"server"},

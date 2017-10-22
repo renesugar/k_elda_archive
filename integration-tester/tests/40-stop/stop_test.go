@@ -9,6 +9,7 @@ import (
 
 	"github.com/kelda/kelda/integration-tester/util"
 	"github.com/kelda/kelda/minion/supervisor/images"
+	"github.com/kelda/kelda/minion/vault"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -79,6 +80,7 @@ var keldaContainers = map[string]struct{}{
 	images.Ovsdb:         {},
 	images.Ovsvswitchd:   {},
 	images.Registry:      {},
+	vault.ContainerName:  {},
 	"minion":             {},
 }
 
