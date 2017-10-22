@@ -78,7 +78,7 @@ deploy:
       script: ./scripts/scp-to-jenkins ${RELEASER_KEY_PATH}
       skip_cleanup: true
       on:
-        condition: NODEJS_VERSION=$DEPLOY_NODEJS_VERSION
+        condition: $NODEJS_VERSION == $DEPLOY_NODEJS_VERSION
         tags: true
     - provider: releases
       api_key:
@@ -89,17 +89,17 @@ deploy:
       overwrite: true
       skip_cleanup: true
       on:
-        condition: NODEJS_VERSION=$DEPLOY_NODEJS_VERSION
+        condition: $NODEJS_VERSION == $DEPLOY_NODEJS_VERSION
         tags: true
     - provider: script
       script: npm publish js/install
       skip_cleanup: true
       on:
         tags: true
-        condition: $TRAVIS_TAG != "dev" && NODEJS_VERSION=$DEPLOY_NODEJS_VERSION
+        condition: $TRAVIS_TAG != "dev" && $NODEJS_VERSION == $DEPLOY_NODEJS_VERSION
     - provider: script
       script: npm publish js/bindings
       skip_cleanup: true
       on:
         tags: true
-        condition: $TRAVIS_TAG != "dev" && NODEJS_VERSION=$DEPLOY_NODEJS_VERSION
+        condition: $TRAVIS_TAG != "dev" && $NODEJS_VERSION == $DEPLOY_NODEJS_VERSION
