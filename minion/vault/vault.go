@@ -61,7 +61,7 @@ func Run(conn db.Conn, dk docker.Client, vaultClient APIClient) {
 // a consistent name rather than allowing Docker to pick a name at random makes
 // it more obvious that the container is a Kelda system when running `docker ps`.
 // Furthermore, it simplifies the logic to check whether Kelda has already
-// booted a Vault container, and thus does not need to boot another.
+// booted a Vault container.
 const vaultContainerName = "vault"
 
 // Start repeatedly tries to start and bootstrap the Vault container until it
