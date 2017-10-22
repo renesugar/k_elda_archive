@@ -106,11 +106,17 @@ func (cld cloud) planUpdates(view db.Database) (boot, stop, updateIPs []db.Machi
 		bpm := p.L.(db.Machine)
 		dbm := p.R.(db.Machine)
 
+		// Write the SSH keys into the database machine to ensure that the
+		// database contains the most up to date SSH keys. If we didn't,
+		// changes to the SSH keys in the blueprint would never get synced.
+		// Similarly, the SSH keys would not be properly synced if the daemon
+		// restarted when machines were already running in the cloud.
+		dbm.SSHKeys = bpm.SSHKeys
 		status := connectionStatus(dbm)
 		if status != "" {
 			dbm.Status = status
-			view.Commit(dbm)
 		}
+		view.Commit(dbm)
 
 		if bpm.FloatingIP != dbm.FloatingIP {
 			dbm.FloatingIP = bpm.FloatingIP

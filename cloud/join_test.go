@@ -295,6 +295,38 @@ func TestDesiredACLs(t *testing.T) {
 	assert.Equal(t, exp, acls)
 }
 
+// Test that planUpdates properly syncs the SSH key information to the database.
+func TestJoinSSHKeys(t *testing.T) {
+	cld := newTestCloud(FakeAmazon, testRegion, "ns")
+
+	adminKey = ""
+	expSSHKeys := []string{"exp", "ssh", "keys"}
+	cld.conn.Txn(db.BlueprintTable,
+		db.MachineTable).Run(func(view db.Database) error {
+
+		bp := view.InsertBlueprint()
+		bp.Blueprint.Machines = []blueprint.Machine{{
+			Provider: string(FakeAmazon),
+			Region:   testRegion,
+			Size:     "1",
+			SSHKeys:  expSSHKeys,
+		}}
+		view.Commit(bp)
+
+		m := view.InsertMachine()
+		m.Provider = FakeAmazon
+		m.Region = testRegion
+		m.Size = "1"
+		m.SSHKeys = []string{"wrong", "ssh", "keys"}
+		view.Commit(m)
+
+		cld.planUpdates(view)
+		assert.Equal(t, expSSHKeys, view.SelectFromMachine(nil)[0].SSHKeys)
+
+		return nil
+	})
+}
+
 func scrubID(dbms []db.Machine) (res []db.Machine) {
 	for _, dbm := range dbms {
 		dbm.ID = 0
