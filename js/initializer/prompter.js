@@ -301,14 +301,6 @@ function machineConfigPrompts(provider) {
   const sizeChoices = getInquirerDescriptions(provider.getSizes());
   sizeChoices.push({ name: consts.other, value: consts.other });
 
-  const sizeOptions = [
-    {
-      name: `${consts.instanceTypeSize} (recommended)`,
-      value: consts.instanceTypeSize,
-    },
-    { name: consts.ramCpuSize },
-  ];
-
   const questions = [
     {
       type: 'confirm',
@@ -330,21 +322,11 @@ function machineConfigPrompts(provider) {
     },
     {
       type: 'list',
-      name: consts.sizeType,
-      message: 'How do you want to specify the size of your machine?',
-      choices: sizeOptions,
-      when() {
-        // If there are no instance types, just ask for RAM and CPU.
-        return provider.sizes !== undefined;
-      },
-    },
-    {
-      type: 'list',
       name: consts.size,
-      message: 'Choose an instance:',
+      message: 'What machine size do you want?',
       choices: sizeChoices,
-      when(answers) {
-        return answers[consts.sizeType] === consts.instanceTypeSize;
+      when() {
+        return provider.sizes !== undefined;
       },
     },
     {
@@ -367,8 +349,8 @@ function machineConfigPrompts(provider) {
       validate(input) {
         return isNumber(input);
       },
-      when(answers) {
-        return answers[consts.sizeType] !== consts.instanceTypeSize;
+      when() {
+        return provider.sizes === undefined;
       },
     }, 'For small applications, 1 CPU is probably enough.'),
     questionWithHelp({
@@ -379,8 +361,8 @@ function machineConfigPrompts(provider) {
       validate(input) {
         return isNumber(input);
       },
-      when(answers) {
-        return answers[consts.sizeType] !== consts.instanceTypeSize;
+      when() {
+        return provider.sizes === undefined;
       },
     }, 'For small applications, 2 GiB is a suitable choice.'),
   ];

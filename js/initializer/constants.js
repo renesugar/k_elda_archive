@@ -38,9 +38,6 @@ const sshKeyPath = 'sshKeyPath';
 
 // Size.
 const other = 'other';
-const sizeType = 'sizeType';
-const instanceTypeSize = 'Instance type';
-const ramCpuSize = 'RAM & CPU';
 
 const inputCredsPath = 'credsPath';
 
@@ -62,10 +59,7 @@ module.exports = {
   sshKeyOption,
   sshKeyPath,
   other,
-  sizeType,
   size,
-  instanceTypeSize,
-  ramCpuSize,
   ram,
   cpu,
   preemptible,
