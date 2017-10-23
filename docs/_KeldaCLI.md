@@ -66,3 +66,10 @@ access to a credentials file on your machine. If there is no existing
 credentials file, `kelda init` helps create one with the correct format. See
 [Cloud Provider Configuration](#cloud-provider-configuration)
 for instructions on how to get your cloud provider credentials.
+
+<aside class="notice"><code>kelda init</code> is great for getting started with a basic
+infrastructure, but users who have more advanced infrastructure requirements
+like floating IPs or specific disk sizes should specify
+<a href="#Machine"><code>Machine</code></a>s in their blueprint rather than
+using <code>kelda init</code> and <code>baseInfrastructure</code>.
+</aside>
