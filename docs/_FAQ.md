@@ -4,13 +4,6 @@ This section includes answers to common questions about Kelda, and solutions
 to various issues.  If you run into an issue and can't find the answer here,
 don't hesitate to email us at [discuss@kelda.io](mailto:discuss@kelda.io).
 
-### What does Kelda use SSH keys for?
-Kelda `Machine`s optionally take one or more public SSH keys. It is strongly
-recommended to always provide at least one SSH key, as this will allow you
-to SSH into VMs and containers, and enables useful Kelda CLI commands like
-`kelda ssh` and `kelda logs` from any computer that holds a private SSH key
-matching the public key set on the `Machine`.
-
 ### Why can't I access my website?
 There are a few possible reasons:
 
