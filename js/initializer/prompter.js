@@ -9,7 +9,6 @@ eslint "require-jsdoc": ["error", {
 }]
 */
 const path = require('path');
-const os = require('os');
 const fs = require('fs');
 
 const inquirer = require('inquirer');
@@ -27,15 +26,6 @@ function allProviders() {
   const providerFile = path.join(__dirname, 'providers.json');
   const providerInfo = JSON.parse(fs.readFileSync(providerFile, 'utf8'));
   return Object.keys(providerInfo);
-}
-/**
-  * Check if the Kelda SSH keys exists.
-  *
-  * @returns {boolean} True iff both the private and public Kelda SSH keys exist.
-  */
-function keldaSshKeyExists() {
-  return (fs.existsSync(consts.keldaSshKeyLocationPublic) &&
-      fs.existsSync(consts.keldaSshKeyLocationPrivate));
 }
 
 /**
@@ -153,51 +143,6 @@ function getProviderPrompt() {
       message: 'Choose a provider:',
       choices() {
         return allProviders();
-      },
-    },
-  ];
-
-  return inquirer.prompt(questions);
-}
-
-/**
-  * Ask the user about SSH keys for the infrastructure.
-  *
-  * @param {Provider} provider The chosen provider.
-  * @returns {Promise} A promise that contains the user's answers.
-  */
-function sshKeyPrompts(provider) {
-  if (!provider.requiresSsh) return { [consts.sshKeyOption]: consts.skip };
-
-  let choices = [consts.sshUseExistingKey, consts.skip];
-  if (!keldaSshKeyExists()) {
-    choices = [consts.sshGenerateKey].concat(choices);
-  }
-
-  const questions = [
-    {
-      type: 'list',
-      name: consts.sshKeyOption,
-      message: 'Choose an SSH key to log into VMs and containers:',
-      choices,
-    },
-    {
-      type: 'input',
-      name: consts.sshKeyPath,
-      message: 'Path to public SSH key:',
-
-      when(answers) {
-        return answers[consts.sshKeyOption] === consts.sshUseExistingKey;
-      },
-
-      default() {
-        if (keldaSshKeyExists()) return consts.keldaSshKeyLocationPublic;
-        return path.join(os.homedir(), '.ssh', 'id_rsa.pub');
-      },
-
-      validate(input) {
-        if (fs.existsSync(input)) return true;
-        return `Oops, no file called ${input}`;
       },
     },
   ];
@@ -429,11 +374,6 @@ function promptUser() {
 
         .then((providerAnswers) => {
           Object.assign(answers, providerAnswers);
-          return sshKeyPrompts(provider);
-        })
-
-        .then((sshKeyAnswers) => {
-          Object.assign(answers, sshKeyAnswers);
           return machineCountPrompts();
         })
 

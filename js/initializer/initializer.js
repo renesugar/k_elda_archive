@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const path = require('path');
-const execSync = require('child_process').execSync;
 const exit = require('process').exit;
 
 // Assign imports to variables rather than consts so the modules can
@@ -43,24 +42,6 @@ function createFileFromTemplate(templateLocation, context, destination) {
 }
 
 /**
-  * Create an SSH key pair in the default Kelda SSH key location. Will throw
-  * an error if the key creation fails.
-  *
-  * @returns {void}
-  */
-function sshGenerateKeyPair() {
-  try {
-    execSync(
-      `ssh-keygen -t rsa -b 2048 -f ${consts.keldaSshKeyLocationPrivate}` +
-      ' -N \'\' -C \'\'',
-      { stdio: ['ignore', 'ignore', 'pipe'] });
-  } catch (err) {
-    throw new Error('failed to create SSH key: ' +
-      `${err.stderr.toString().trim()}`);
-  }
-}
-
-/**
   * Create new credentials file if needed.
   *
   * @param {Provider} provider The chosen provider.
@@ -94,39 +75,7 @@ function writeProviderCreds(provider, answers) {
   log(`Wrote credentials to ${credentialsDest}`);
 }
 
-/**
-  * Retrieve the correct SSH key based on the user's input. This can be no key,
-  * a newly Kelda-generated SSH key, or an existing SSH key at user-given path.
-  *
-  * @param {Promise} answers promise that contains the user's answers.
-  * @returns {string} The relevant SSH key.
-  */
-function getSshKey(answers) {
-  let keyPath;
-
-  switch (answers[consts.sshKeyOption]) {
-    case consts.skip:
-      return '';
-
-    case consts.sshGenerateKey:
-      sshGenerateKeyPair();
-      log(`Created SSH key pair in ${consts.keldaSshKeyLocationPrivate}`);
-      keyPath = consts.keldaSshKeyLocationPublic;
-      break;
-
-    case consts.sshUseExistingKey:
-      keyPath = answers[consts.sshKeyPath];
-      break;
-
-    default:
-      throw new Error('Unrecognized ssh key option: ' +
-        `${answers[consts.sshKeyOption]}`);
-  }
-  return fs.readFileSync(keyPath, 'utf8').trim();
-}
-
-/** Create the infrastructure file, SSH keys, and credentials based on the
-  * user's input.
+/** Create the infrastructure file and credentials based on the user's input.
   *
   * @param {Provider} provider The chosen provider.
   * @param {Promise} answers A promise that contains the user's answers.
@@ -148,7 +97,6 @@ function processAnswers(provider, answers) {
     [consts.cpu]: answers[consts.cpu],
     [consts.preemptible]: answers[consts.preemptible] || false,
     [consts.region]: answers[consts.region],
-    [consts.sshKey]: getSshKey(answers),
     [consts.masterCount]: answers[consts.masterCount],
     [consts.workerCount]: answers[consts.workerCount],
   };
@@ -186,6 +134,5 @@ if (require.main === module) {
 module.exports = {
   createFileFromTemplate,
   writeProviderCreds,
-  getSshKey,
   processAnswers,
 };

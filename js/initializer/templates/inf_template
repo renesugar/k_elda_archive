@@ -11,9 +11,6 @@ function infraGetter(kelda) {
     ram: {{ram}},
     cpu: {{cpu}},
   {{/if}}
-  {{#if sshKey}}
-    sshKeys: ['{{sshKey}}'],
-  {{/if}}
     preemptible: {{preemptible}}
   });
 

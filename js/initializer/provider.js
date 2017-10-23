@@ -17,24 +17,19 @@ let providerConfig = { // eslint-disable-line prefer-const
       key: 'AWS access key id',
       secret: 'AWS secret access key',
     },
-    requiresSsh: true,
   },
   Google: {
     credsKeys: {
       [consts.inputCredsPath]: 'Path to GCE service account key',
     },
-    requiresSsh: true,
   },
   DigitalOcean: {
     credsTemplate: 'digitalocean_creds_template',
     credsKeys: {
       key: 'DigitalOcean account token',
     },
-    requiresSsh: true,
   },
-  Vagrant: {
-    requiresSsh: false,
-  },
+  Vagrant: {},
 };
 
 /**
@@ -51,7 +46,6 @@ class Provider {
     this.name = name;
     this.credsTemplate = providerConfig[name].credsTemplate;
     this.credsKeys = providerConfig[name].credsKeys;
-    this.requiresSsh = providerConfig[name].requiresSsh;
 
     const providerInfo = JSON.parse(fs.readFileSync(providerFile, 'utf8'));
 

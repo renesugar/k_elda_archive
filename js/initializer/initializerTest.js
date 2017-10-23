@@ -111,79 +111,12 @@ describe('Initializer', () => {
     });
   });
 
-  describe('getSshKey()', () => {
-    let revertFs;
-    let readFileStub;
-    let generateSshStub;
-    let revertGenerator;
-
-    before(() => {
-      readFileStub = sinon.stub();
-      readFileStub.returns('');
-      const fsMock = {
-        readFileSync: readFileStub,
-      };
-      revertFs = initializer.__set__('fs', fsMock);
-
-      generateSshStub = sinon.stub();
-      generateSshStub.returns(true);
-      revertGenerator = initializer.__set__(
-        'sshGenerateKeyPair', generateSshStub);
-    });
-
-    after(() => {
-      revertFs();
-      revertGenerator();
-    });
-
-    afterEach(() => {
-      readFileStub.resetHistory();
-      generateSshStub.resetHistory();
-    });
-
-    it('should not do anything, when the SSH key option is skipped', () => {
-      /* eslint-disable no-undef */
-      answers = { [consts.sshKeyOption]: consts.skip };
-      initializer.getSshKey(answers);
-      /* eslint-enable no-undef */
-      expect(readFileStub.notCalled).to.be.true;
-    });
-
-    it('should generate a new SSH key when relevant', () => {
-      initializer.getSshKey({ [consts.sshKeyOption]: consts.sshGenerateKey });
-      expect(readFileStub.called).to.be.true;
-      expect(generateSshStub.called).to.be.true;
-    });
-
-    it('should read an SSH key when given a path', () => {
-      const keyPath = 'some/ssh/path';
-      initializer.getSshKey({
-        [consts.sshKeyOption]: consts.sshUseExistingKey,
-        [consts.sshKeyPath]: keyPath,
-      });
-
-      expect(generateSshStub.notCalled).to.be.true;
-      expect(readFileStub.called).to.be.true;
-      expect(readFileStub.getCall(0).args[0]).to.equal(keyPath);
-    });
-
-    it('should throw an error when passed an unexpected SSH key option', () => {
-      const expectFail = () => {
-        initializer.getSshKey({ [consts.sshKeyOption]: 'badOption' });
-      };
-
-      expect(expectFail).to.throw();
-    });
-  });
-
   describe('processAnswers()', () => {
     let revertWriteCreds;
     let revertFs;
     let revertFsExtra;
-    let revertSshKey;
     let writeCredsStub;
     let writeFileStub;
-    let getSshKeyStub;
     const provider = { provider: 'provider' };
 
     beforeEach(() => {
@@ -198,12 +131,10 @@ describe('Initializer', () => {
         readFileSync: fs.readFileSync,
       };
 
-      getSshKeyStub = sinon.stub();
       writeCredsStub = sinon.stub();
 
       revertFsExtra = initializer.__set__('fsExtra', fsExtraMock);
       revertFs = initializer.__set__('fs', fsMock);
-      revertSshKey = initializer.__set__('getSshKey', getSshKeyStub);
       revertWriteCreds = initializer.__set__(
         'writeProviderCreds', writeCredsStub);
     });
@@ -212,10 +143,8 @@ describe('Initializer', () => {
       revertWriteCreds();
       revertFs();
       revertFsExtra();
-      revertSshKey();
       writeFileStub.resetHistory();
       writeCredsStub.resetHistory();
-      getSshKeyStub.resetBehavior();
     });
 
     /**
@@ -230,7 +159,6 @@ describe('Initializer', () => {
      */
     function checkInfrastructure(answers, expInfraFile) {
       initializer.processAnswers(provider, answers);
-      expect(getSshKeyStub.called).to.be.true;
       expect(writeCredsStub.getCall(0).args[0]).to.equal(provider);
       expect(writeCredsStub.getCall(0).args[1]).to.equal(answers);
       expect(writeFileStub.getCall(0).args[0]).to.equal(
@@ -239,7 +167,6 @@ describe('Initializer', () => {
     }
 
     it('should set SSH key and size when provided', () => {
-      getSshKeyStub.returns('key');
       const answers = {
         [consts.name]: 'foo',
         [consts.provider]: 'provider',
@@ -249,7 +176,6 @@ describe('Initializer', () => {
         [consts.cpu]: 1,
         [consts.preemptible]: true,
         [consts.region]: 'somewhere',
-        [consts.sshKey]: 'keyOption',
         [consts.masterCount]: 1,
         [consts.workerCount]: 2,
       };
@@ -260,7 +186,6 @@ describe('Initializer', () => {
     provider: 'provider',
     region: 'somewhere',
     size: 'big',
-    sshKeys: ['key'],
     preemptible: true
   });
 
@@ -276,7 +201,6 @@ module.exports = infraGetter;
     });
     it('should omit SSH key and size when not provided and use RAM/CPU ' +
       'instead', () => {
-      getSshKeyStub.returns('');
       const answers = {
         [consts.name]: 'foo',
         [consts.provider]: 'provider',
@@ -284,7 +208,6 @@ module.exports = infraGetter;
         [consts.cpu]: 1,
         [consts.preemptible]: true,
         [consts.region]: 'somewhere',
-        [consts.sshKey]: 'noKey',
         [consts.masterCount]: 1,
         [consts.workerCount]: 2,
       };

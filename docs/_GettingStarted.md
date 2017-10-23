@@ -62,9 +62,6 @@ When answering the `kelda init` questions, keep these things in mind:
 * **Credentials**: Use the provider credentials from the previous section.
 * **Size**: When choosing a VM instance size, keep in mind that some
   providers have a free tier for certain instance types.
-* **SSH key**: Make sure to add an SSH key -- we'll need it in [the debugging
-  section](#debugging-applications-with-kelda) later. It doesn't matter whether
-  you use an existing key or let Kelda generate one.
 * **Worker/Master**: For this tutorial, 1 worker and 1 master is enough.
 
 <aside class="notice">If you are unsure about how to answer any of the

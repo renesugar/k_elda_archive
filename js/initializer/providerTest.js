@@ -20,11 +20,8 @@ describe('Provider', () => {
           key: 'aKey',
           secret: 'aSecret',
         },
-        requiresSsh: true,
       },
-      providerB: {
-        requiresSsh: false,
-      },
+      providerB: {},
       providerC: {},
     });
 
@@ -145,15 +142,5 @@ describe('Provider', () => {
       () => {
         expect(providerA.getCredsPath()).to.equal(credentialsPathA);
       });
-  });
-
-  describe('requiresSsh', () => {
-    it('should return true if SSH keys are required for SSH', () => {
-      expect(providerA.requiresSsh).to.be.true;
-    });
-
-    it('should return false if SSH keys are not required for SSH', () => {
-      expect(providerB.requiresSsh).to.be.false;
-    });
   });
 });

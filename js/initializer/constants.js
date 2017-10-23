@@ -1,9 +1,3 @@
-const path = require('path');
-const os = require('os');
-
-const keldaSshKeyLocationPrivate = path.join(os.homedir(), '.ssh', 'kelda');
-const keldaSshKeyLocationPublic = path.join(os.homedir(), '.ssh', 'kelda.pub');
-
 // Used in infrastructure template.
 const namespace = 'namespace';
 const provider = 'provider';
@@ -13,8 +7,6 @@ const ram = 'ram';
 const cpu = 'cpu';
 const preemptible = 'preemptible';
 const region = 'region';
-
-const sshKey = 'sshKey';
 
 const masterCount = 'masterCount';
 const workerCount = 'workerCount';
@@ -29,22 +21,12 @@ const providerUseExistingKey = 'useExistingKey';
 const providerCredsPath = 'credsPath';
 const credsConfirmOverwrite = 'confirmOverwrite';
 
-// SSH.
-const sshUseExistingKey = 'Use existing SSH key';
-const sshGenerateKey = 'Generate new SSH key pair';
-const skip = 'Skip (not recommended)';
-const sshKeyOption = 'sshKeyOption';
-const sshKeyPath = 'sshKeyPath';
-
 // Size.
 const other = 'other';
 
 const inputCredsPath = 'credsPath';
 
 module.exports = {
-  keldaSshKeyLocationPrivate,
-  keldaSshKeyLocationPublic,
-
   name,
   namespace,
   infraOverwrite,
@@ -52,12 +34,6 @@ module.exports = {
   providerUseExistingKey,
   providerCredsPath,
   credsConfirmOverwrite,
-  sshKey,
-  sshUseExistingKey,
-  sshGenerateKey,
-  skip,
-  sshKeyOption,
-  sshKeyPath,
   other,
   size,
   ram,
