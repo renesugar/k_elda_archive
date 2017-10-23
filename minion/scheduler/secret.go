@@ -47,10 +47,18 @@ func resolveSecrets(client vault.SecretStore, dbcs []db.Container) map[string]st
 			// run the `kelda secret` command. Therefore, we only log the
 			// error if it is for a reason other than not running `kelda
 			// secret`.
-			if err != vault.ErrSecretDoesNotExist {
-				log.WithError(err).WithField("name", name).
-					Warn("Failed to fetch secret")
+			if err == vault.ErrSecretDoesNotExist {
+				continue
 			}
+
+			log.WithFields(log.Fields{
+				"error": err,
+				"name":  name,
+			}).Info("Failed to fetch secret. This error is probably benign " +
+				"if the container was launched recently -- permission " +
+				"issues are expected when containers are first " +
+				"scheduled because the leader is still configuring the " +
+				"Vault ACLs for accessing the secret.")
 		}
 	}
 	return secretMap
