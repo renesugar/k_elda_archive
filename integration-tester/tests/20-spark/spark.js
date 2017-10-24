@@ -6,8 +6,7 @@ const infrastructure = require('../../config/infrastructure.js');
 // to connect to the Spark web interface. sprk.job causes Spark to run that
 // job when it boots.
 const sprk = new spark.Spark(1, infrastructure.nWorker - 1)
-  .exposeUIToPublic()
-  .job('run-example SparkPi');
+  .exposeUIToPublic();
 
 const infra = infrastructure.createTestInfrastructure();
 sprk.deploy(infra);

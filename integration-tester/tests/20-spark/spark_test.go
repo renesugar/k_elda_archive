@@ -5,10 +5,8 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
-	"time"
 
 	testerUtil "github.com/kelda/kelda/integration-tester/util"
-	"github.com/kelda/kelda/util"
 )
 
 func TestCalculatesPI(t *testing.T) {
@@ -38,21 +36,14 @@ func TestCalculatesPI(t *testing.T) {
 		t.Fatal("unable to find BlueprintID of Spark master")
 	}
 
-	// The Spark job takes some time to complete, so we wait for the appropriate
-	// result for up to a minute.
-	err = util.BackoffWaitFor(func() bool {
-		logs, err := exec.Command("kelda", "logs", id).CombinedOutput()
-		if err != nil {
-			t.Errorf("unable to get Spark master logs: %s", err)
-			return false
-		}
-
-		fmt.Printf("`kelda logs %s` output:\n", id)
-		fmt.Println(string(logs))
-		return strings.Contains(string(logs), "Pi is roughly")
-	}, 15*time.Second, time.Minute)
-
+	cmd := exec.Command("kelda", "ssh", id, "run-example", "SparkPi")
+	output, err := cmd.Output()
+	fmt.Println(string(output))
 	if err != nil {
-		t.Fatalf("unable to get Spark master logs: %s", err.Error())
+		t.Fatalf("Failed to run spark job: %s", err.Error())
+	}
+
+	if !strings.Contains(string(output), "Pi is roughly") {
+		t.Fatalf("Failed to calculate Pi")
 	}
 }
