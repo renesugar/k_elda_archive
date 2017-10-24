@@ -110,7 +110,7 @@ haven't done anything Kelda-specific: if you were using another container
 management service like Kubernetes, you would have had to create the container
 images like we did above.  These containers aren't yet configured to communicate
 with each other, which is what we'll set up with Kelda.  We'll also use Kelda to
-descrbie the machines to launch for the containers to run on.
+describe the machines to launch for the containers to run on.
 
 To run the containers for your application with Kelda, you'll need to write a
 Kelda blueprint.  Kelda blueprints are written in Javascript, and the Kelda
