@@ -2,7 +2,7 @@
 set -e
 
 build_dir="/build"
-ovs_ver="2.7.2"
+ovs_ver="2.8.1"
 build_deps="build-essential libssl-dev python python-six curl"
 
 function setup_build() {
