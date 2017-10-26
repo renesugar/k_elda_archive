@@ -44,6 +44,9 @@ func Run(conn db.Conn, dk docker.Client) {
 }
 
 func bootWait(conn db.Conn) {
+	if conn.MinionSelf().Role != db.Master {
+		return
+	}
 	for {
 		workers := conn.SelectFromMinion(func(m db.Minion) bool {
 			return m.Role == db.Worker
