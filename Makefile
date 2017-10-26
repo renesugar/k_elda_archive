@@ -41,7 +41,6 @@ check: gocheck jscheck
 
 clean:
 	govendor clean -x +local
-	rm -f *.cov.coverprofile cloud/*.cov.coverprofile minion/*.cov.coverprofile
 	rm -f *.cov.html cloud/*.cov.html minion/*.cov.html
 	rm kelda_linux kelda_darwin
 

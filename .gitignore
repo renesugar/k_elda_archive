@@ -30,7 +30,6 @@ kelda_darwin
 
 *.cov
 *.cov.html
-*.coverprofile
 coverage.txt
 
 *.pdf
