@@ -44,12 +44,12 @@ func Run(conn db.Conn, dk docker.Client) {
 }
 
 func bootWait(conn db.Conn) {
-	for workerCount := 0; workerCount <= 0; {
-		workerCount = 0
-		for _, m := range conn.SelectFromMinion(nil) {
-			if m.Role == db.Worker {
-				workerCount++
-			}
+	for {
+		workers := conn.SelectFromMinion(func(m db.Minion) bool {
+			return m.Role == db.Worker
+		})
+		if len(workers) > 0 {
+			return
 		}
 		time.Sleep(30 * time.Second)
 	}
