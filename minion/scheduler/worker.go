@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -36,6 +37,20 @@ type evaluatedContainer struct {
 	db.Container
 }
 
+// isWorkerReady waits until it can successfully connect to Vault. This way,
+// any errors communicating with Vault within the module can be treated as real
+// errors.
+func isWorkerReady(conn db.Conn) bool {
+	_, err := newVault(conn)
+	if err == nil {
+		return true
+	}
+	log.WithError(err).Debug("Failed to connect to Vault. This is " +
+		"expected when the cluster has just booted, and the " +
+		"leader has not yet started Vault.")
+	return false
+}
+
 func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 	if myIP == "" {
 		return
@@ -44,13 +59,7 @@ func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 		return dbc.IP != "" && dbc.Minion == myIP
 	}
 
-	etcds := conn.SelectFromEtcd(nil)
-	if len(etcds) == 0 || etcds[0].LeaderIP == "" {
-		log.Warn("No leader yet. Cannot connect to Vault without a leader.")
-		return
-	}
-
-	vaultClient, err := newVault(etcds[0].LeaderIP)
+	vaultClient, err := newVault(conn)
 	if err != nil {
 		log.WithError(err).Error("Failed to connect to Vault")
 		return
@@ -334,5 +343,14 @@ func uniqueStrings(lst []string) (unique []string) {
 	return unique
 }
 
+// newVault gets a Vault client connected to the leader of the cluster.
+var newVault = func(conn db.Conn) (vault.SecretStore, error) {
+	etcds := conn.SelectFromEtcd(nil)
+	if len(etcds) == 0 || etcds[0].LeaderIP == "" {
+		return nil, errors.New("no cluster leader")
+	}
+
+	return vault.New(etcds[0].LeaderIP)
+}
+
 var replaceFlows = openflow.ReplaceFlows
-var newVault = vault.New

@@ -18,7 +18,7 @@ import (
 
 func TestRunWorker(t *testing.T) {
 	mockVault := &mocks.SecretStore{}
-	newVault = func(_ string) (vault.SecretStore, error) {
+	newVault = func(_ db.Conn) (vault.SecretStore, error) {
 		return mockVault, nil
 	}
 

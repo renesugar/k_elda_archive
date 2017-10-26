@@ -44,11 +44,13 @@ func Run(conn db.Conn, dk docker.Client) {
 }
 
 func bootWait(conn db.Conn) {
-	if conn.MinionSelf().Role != db.Master {
-		return
+	waitFn := isMasterReady
+	if conn.MinionSelf().Role == db.Worker {
+		waitFn = isWorkerReady
 	}
+
 	err := util.BackoffWaitFor(func() bool {
-		return isMasterReady(conn)
+		return waitFn(conn)
 	}, 30*time.Second, 1*time.Hour)
 	if err != nil {
 		panic("timed out waiting for scheduler module to start")
