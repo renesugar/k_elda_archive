@@ -18,6 +18,8 @@ or feel free to
 [fix it](https://github.com/kelda/kelda/tree/master/docs)
 and submit a pull request!
 
+*Kelda is currently in beta.*
+
 ## Overview
 
 ### Run An Application in the Cloud

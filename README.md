@@ -19,6 +19,8 @@ your application. Kelda will set up virtual machines, configure a secure network
 containers, and whatever else is needed to get up and running smoothly on your favorite
 cloud provider.
 
+*Kelda is currently in beta.*
+
 ## Deploy Quickly on...
 
 ![providers](./docs/source/images/providers.png)
