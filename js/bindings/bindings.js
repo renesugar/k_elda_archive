@@ -1145,29 +1145,6 @@ class Container {
   }
 
   /**
-   * Creates a new container that replaces the mapping of filepaths to filecontent
-   * with the given mapping.
-   *
-   * @example <caption>Create a container with hostname haproxy and using an
-   * image named haproxyImage that has a file at path /etc/myconf containing the
-   * text foo.</caption>
-   * const c = new Container('haproxy', haproxyImage).withFiles({
-   *   '/etc/myconf': 'foo'
-   * });
-   *
-   * @param {Object.<string, string>} fileMap - Text files to be installed on
-   *   the container before it starts.  Uses the same format as the
-   *   filepathToContent argument to the {@link Container} constructor.
-   * @returns {Container} A new container that is identical to this one, except
-   *   that filepathToContent is set to the given mappng.
-   */
-  withFiles(fileMap) {
-    const cloned = this.clone();
-    cloned.filepathToContent = fileMap;
-    return cloned;
-  }
-
-  /**
    * @returns {string} The container's hostname.
    */
   getHostname() {

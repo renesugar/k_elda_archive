@@ -519,15 +519,15 @@ describe('Bindings', () => {
 
     const filepathToContent = { qux: new b.Secret('quuz') };
     const jsonFilepathToContent = { qux: { nameOfSecret: 'quuz' } };
-    it('with*', () => {
+    it('withEnv', () => {
       // The blueprint ID is different than the Container created with the
-      // constructor because the hostname ID increases with each with*
+      // constructor because the hostname ID increases with each withEnv
       // call.
-      const id = 'a700a7e79677620b35ac1455e781d964eea4cbb0';
+      const id = 'd6b685d85b5426f8bf2083cb8394466099aba0e4';
       const container = new b.Container(hostname, image, {
         command,
-      }).withEnv(env)
-        .withFiles(filepathToContent);
+        filepathToContent,
+      }).withEnv(env);
       container.deploy(deployment);
       checkContainers([{
         id,
@@ -535,7 +535,7 @@ describe('Bindings', () => {
         command,
         env,
         filepathToContent: jsonFilepathToContent,
-        hostname: 'host3',
+        hostname: 'host2',
       }]);
     });
     it('constructor', () => {

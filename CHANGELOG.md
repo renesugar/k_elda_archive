@@ -28,6 +28,9 @@ it would never enter the "connected" state.
 JavaScript API-breaking changes:
 - Remove the Container.replicate() method. Users should create multiple
 containers by looping.
+- Remove the Container.withFiles() method.  Users should use the
+'filepathToContent' optional argument when creating a container instead.
+
 
 Release 0.4.0
 -------------

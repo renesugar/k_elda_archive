@@ -30,7 +30,7 @@ the changes and reboot the affected containers.
 Examples of when `kelda run` will update the application:
 
 * You updated the contents of a file that is transferred to the application
-container using `withFiles`.
+container using the Container's `filepathToContent` attribute.
 * You changed the Dockerfile string passed to the `Image` constructor in the
 blueprint.
 
