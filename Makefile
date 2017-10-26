@@ -41,7 +41,7 @@ check: gocheck jscheck
 
 clean:
 	govendor clean -x +local
-	rm -f *.cov.html cloud/*.cov.html minion/*.cov.html
+	find . \( -name "*.cov" -or -name "*.cov.html" -type f \) -delete
 	rm kelda_linux kelda_darwin
 
 linux:
@@ -79,7 +79,7 @@ go-coverage:
 	echo "" > coverage.txt
 	for package in $(filter-out $(COV_SKIP), $(subst github.com/kelda/kelda,,$(PACKAGES))) ; do \
 	    go test -coverprofile=.$$package.cov .$$package && \
-	    go tool cover -html=.$$package.cov -o .$$package.html ; \
+	    go tool cover -html=.$$package.cov -o .$$package.cov.html ; \
 	    cat .$$package.cov >> coverage.txt ; \
 	done
 
