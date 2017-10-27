@@ -153,3 +153,66 @@ and check you get the right response:
 ```console
 $ curl -H "Host: apples.com" HAPROXY_PUBLIC_IP
 ```
+
+## How to Run Applications that Rely on Configuration Secrets
+This section walks through an example of running an application that has
+sensitive information in its configuration. Note that Kelda secrets are
+currently only useful for _configuration_. Secrets generated at runtime, such
+as customer information that needs to be stored in a secure database, are not
+yet handled.
+
+This section walks through deploying a GitHub bot that requires a GitHub OAuth
+token in order to push to a private GitHub repository. Specifically, it
+deploys the `keldaio/bot` Docker image, and configures its `GITHUB_OAUTH_TOKEN`
+environment variable with a Kelda secret. Although this example uses an
+environment variable, the workflow is exactly the same when installing a secret
+onto the filesystem.
+
+1. Create the Container in the blueprint. Note the secret name "githubToken".
+    The name is arbitrary, but will be used in the next steps to interact with
+    the secret.
+    
+    ```javascript
+    const container = new kelda.Container('bot', 'keldaio/bot', {
+      env: {
+        GITHUB_OAUTH_TOKEN: new kelda.Secret('githubToken'),
+      },
+    });
+    ```
+    
+2. Deploy the blueprint.
+    
+    ```console
+    $ kelda run <blueprintName.js>
+    ```
+    
+3. Kelda will not launch a container until all secrets needed by the container
+    have been added to Kelda. Running `kelda show` after deploying the
+    blueprint should result in the following:
+    
+    ```console
+    CONTAINER       MACHINE         COMMAND           HOSTNAME   STATUS                                CREATED    PUBLIC IP
+    d044f3880fdc    sir-m5erezkj    keldaio/bot       bot        Waiting for secrets: [githubToken]
+    ```
+    
+    This means that Kelda is waiting to launch the container until the secret
+    called `githubToken` is set. To set the secret value, use `kelda secret`:
+    
+    ```console
+    $ kelda secret githubToken <tokenValue>
+    ```
+
+    If the command succeeds, there will be no output, and the exit code will be
+    zero.
+    
+    Note that Kelda does not handle the lifecycle of the secret before `kelda
+    secret` is run. For the GitHub token example, the GitHub token can be
+    copied directly from the GitHub web UI to the `kelda secret` command.
+    Another approach could be to store the token in a password manager, and
+    paste it into `kelda secret` when needed.
+    
+4. `kelda show` should show that the bot container has started. It may take up to
+    a minute for the container to start.
+    
+5. To change the secret value, run `kelda secret githubToken <newValue>`
+   again, and the container will restart with the new value within a minute.

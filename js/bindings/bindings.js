@@ -1053,6 +1053,18 @@ class Container {
    * const container = new Container(
    *   'myApp', 'nginx', {filepathToContent: {'/etc/myconf': 'foo'}});
    *
+   * @example <caption>Create a Container that has one regular, and one secret
+   * environment variable value. The value of `mySecret` must be defined by
+   * running `kelda secret mySecret SECRET_VALUE`. If the blueprint with the
+   * container is launched before `mySecret` has been added, Kelda will wait to
+   * launch the container until the secret's value has been defined.</caption>
+   * const container = new Container('myApp', 'nginx', {
+   *   env: {
+   *     'key1': 'a plaintext value',
+   *     'key2': new Secret('mySecret'),
+   *   },
+   * });
+   *
    * @param {string} hostnamePrefix - The network hostname of the container.
    * @param {Image|string} image - An {@link Image} that the container should
    *   boot, or a string with the name of a Docker image (that exists in

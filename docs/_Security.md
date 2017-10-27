@@ -62,3 +62,15 @@ Used for connecting to the cluster.
 Used for connecting to the cluster.
 
 Other files in the directory are ignored by Kelda.
+
+## Secrets
+Kelda uses Vault to securely store values for container environment variables
+and files. For an example of how to use secrets, see [How to Run Applications
+that Rely on Configuration Secrets](#how-to-run-applications-that-rely-on-configuration-secrets).
+
+Secrets are encrypted both in transit and at rest. Furthermore, access to the
+secrets are constrained by least privilege:
+
+- Containers only have access to the secrets they need to run.
+- Workers only have access to the secrets of the containers scheduled for it.
+- Masters have access to all secrets.
