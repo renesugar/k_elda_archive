@@ -15,7 +15,7 @@ clean:
 	rm -rf build
 
 # Generate the JavaScript documentation by using jsdoc and Kelda's template.
-_jsdoc.erb: build/jsdoc_template ../blueprint/
+_jsdoc.erb: build/jsdoc_template ../js/bindings/bindings.js
 	build/jsdoc_template/node_modules/.bin/jsdoc \
 		-t build/jsdoc_template/ \
 		$(abspath ${CURDIR}/../js/bindings/bindings.js) -d ./
