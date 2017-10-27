@@ -24,6 +24,8 @@ and submit a pull request!
 
 * **Run An Application in the Cloud**: Walk through the [Getting Started tutorial](#installing-kelda)
 and learn how to quickly deploy an application to your favorite cloud provider.
+* **Existing Blueprints**: Check out some of the [Kelda blueprints we recommend
+trying out](#blueprint-library).
 * **Write Blueprints for Your Favorite Systems**: Check out the
 [Blueprint Writers Guide](#blueprint-writers-guide) to learn how to write
 sharable blueprints so others can easily run the systems you're an expert in.

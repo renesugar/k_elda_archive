@@ -81,7 +81,8 @@ let vm = new Machine({
 });
 ```
 
-See [full example blueprints](https://github.com/kelda/) and [check out our docs](http://docs.kelda.io).
+For more examples, have a look at [the blueprints in the blueprint library](http://docs.kelda.io/#blueprint-library)
+and [check out our docs](http://docs.kelda.io).
 
 ## Kelda CLI
 

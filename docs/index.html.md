@@ -20,6 +20,7 @@ includes:
   - CloudProviders
   - Dev
   - Security
+  - BlueprintLibrary
   - FAQ
   - Feedback
 

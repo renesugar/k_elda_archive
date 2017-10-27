@@ -6,6 +6,9 @@ blueprint for a new application, using the lobste.rs application as an example.
 lobste.rs is an open source project that implements a reddit-like web page,
 where users can post content and vote up or down other content.
 
+For more blueprint examples, check out [the blueprints in the blueprint
+library](#blueprint-library).
+
 ## Decomposing the application into containers
 
 The first question you should ask yourself is "how should this application be
