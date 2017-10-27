@@ -27,7 +27,7 @@ func TestCalculatesPI(t *testing.T) {
 
 	var id string
 	for _, dbc := range containers {
-		if strings.Join(dbc.Command, " ") == "run master" {
+		if strings.HasPrefix(dbc.Hostname, "spark-ms") {
 			id = dbc.BlueprintID
 			break
 		}
