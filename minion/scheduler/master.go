@@ -22,6 +22,15 @@ type context struct {
 	changed     []*db.Container
 }
 
+// isMasterReady waits for there to be at least one worker in the database so
+// the scheduling code can place containers.
+func isMasterReady(conn db.Conn) bool {
+	workers := conn.SelectFromMinion(func(m db.Minion) bool {
+		return m.Role == db.Worker
+	})
+	return len(workers) > 0
+}
+
 func runMaster(conn db.Conn) {
 	if !conn.EtcdLeader() {
 		return

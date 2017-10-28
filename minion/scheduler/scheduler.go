@@ -47,13 +47,10 @@ func bootWait(conn db.Conn) {
 	if conn.MinionSelf().Role != db.Master {
 		return
 	}
-	for {
-		workers := conn.SelectFromMinion(func(m db.Minion) bool {
-			return m.Role == db.Worker
-		})
-		if len(workers) > 0 {
-			return
-		}
-		time.Sleep(30 * time.Second)
+	err := util.BackoffWaitFor(func() bool {
+		return isMasterReady(conn)
+	}, 30*time.Second, 1*time.Hour)
+	if err != nil {
+		panic("timed out waiting for scheduler module to start")
 	}
 }
