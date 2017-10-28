@@ -108,6 +108,9 @@ appContainers.forEach(container => container.deploy(inf));
 loadBalancer.deploy(inf);
 ```
 
+*You can find a full example blueprint [here](https://github.com/kelda/haproxy/blob/master/examples/haproxyExampleSingleApp.js).*
+
+
 #### Accessing the application
 The application will be accessible on the `PUBLIC IP` of the `haproxy`
 container.
@@ -137,6 +140,8 @@ const loadBalancer = haproxy.withURLrouting({
   'oranges.com': orangeContainers,
 });
 ```
+
+*You can find a full example blueprint [here](https://github.com/kelda/haproxy/blob/master/examples/haproxyExampleMultipleApps.js).*
 
 #### Accessing the applications
 The applications are now only available via their domain names. When the domains
