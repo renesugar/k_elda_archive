@@ -93,15 +93,19 @@ func RunOnce(conn db.Conn) {
 	updateMinionMap(machines)
 	forEachMinion(updateConfig)
 
+	// Generate the public key and etcd configurations based on the machines in
+	// the database. Note that we can't generate the configuration based on the
+	// minion map because that contains the _connected_ minions, and we should
+	// not alter the configuration because of temporary connectivity issues.
 	minionIPToPublicKey := map[string]string{}
 	var etcdIPs []string
-	for _, m := range minions {
-		if m.config.Role == pb.MinionConfig_MASTER && m.machine.PrivateIP != "" {
-			etcdIPs = append(etcdIPs, m.machine.PrivateIP)
+	for _, m := range machines {
+		if m.Role == db.Master && m.PrivateIP != "" {
+			etcdIPs = append(etcdIPs, m.PrivateIP)
 		}
 
-		if m.machine.PrivateIP != "" && m.machine.PublicKey != "" {
-			minionIPToPublicKey[m.machine.PrivateIP] = m.machine.PublicKey
+		if m.PrivateIP != "" && m.PublicKey != "" {
+			minionIPToPublicKey[m.PrivateIP] = m.PublicKey
 		}
 	}
 
