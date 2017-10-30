@@ -30,11 +30,11 @@ class Deployment {
    * @deprecated Deployment is now deprecated in favor of {@link Infrastructure}.
    * @constructor
    *
-   * @param {Object} [deploymentOpts] - Optional arguments to tweak the behavior
+   * @param {Object} [opts] - Optional arguments to tweak the behavior
    *   of the namespace.
-   * @param {string} [deploymentOpts.namespace=default-namespace] - The name of the
+   * @param {string} [opts.namespace=default-namespace] - The name of the
    *   namespace that the blueprint should operate in.
-   * @param {string[]} [deploymentOpts.adminACL] - A list of IP addresses that are
+   * @param {string[]} [opts.adminACL] - A list of IP addresses that are
    *   allowed to access the deployed machines.  The IP of the machine where the
    *   daemon is running is always allowed to access the machines. If you would like to allow
    *   another machine to access the deployed machines (e.g., to SSH into a machine),
@@ -42,11 +42,11 @@ class Deployment {
    *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
    *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
    */
-  constructor(deploymentOpts = {}) {
-    this.namespace = deploymentOpts.namespace || 'default-namespace';
-    this.adminACL = getStringArray('adminACL', deploymentOpts.adminACL);
+  constructor(opts = {}) {
+    this.namespace = opts.namespace || 'default-namespace';
+    this.adminACL = getStringArray('adminACL', opts.adminACL);
 
-    checkExtraKeys(deploymentOpts, this);
+    checkExtraKeys(opts, this);
 
     this.machines = [];
     this.containers = new Set();
@@ -264,11 +264,11 @@ let uniqueIDCounter = 0;
  * @deprecated This function is deprecated; users should transition to using
  *   the {@link Infrastructure} class constructor instead.
  *
- * @param {Object} deploymentOpts - Options for the new deployment object.
+ * @param {Object} opts - Options for the new deployment object.
  * @returns {Deployment} A deployment object.
  */
-function createDeployment(deploymentOpts) {
-  return new Deployment(deploymentOpts);
+function createDeployment(opts) {
+  return new Deployment(opts);
 }
 /**
  * @private
@@ -749,50 +749,50 @@ class Machine {
    *   role: 'Master',
    * });
    *
-   * @param {Object.<string, string>} [optionalArgs] - Optional arguments that
+   * @param {Object.<string, string>} [opts] - Optional arguments that
    *   modify the machine.
-   * @param {string} [optionalArgs.provider] - The cloud provider that the machine
+   * @param {string} [opts.provider] - The cloud provider that the machine
    *   should be launched in. Accepted values are Amazon, DigitalOcean, Google,
    *   and Vagrant. This argument is optional, but the provider attribute of the
    *   machine must be set before it is deployed.
-   * @param {string} [optionalArgs.role] - The role the machine will run as
+   * @param {string} [opts.role] - The role the machine will run as
    *   (accepted value are Master and Worker). A Machine's role must be set before
    *   it can be deployed.  This argument is not required, so that users can
    *   create a template to use for all machines in the cluster;
    *   {@link Machine#asWorker} and {@link Machine#asMaster} can be called on the
    *   template to create a machine with the appropriate role, as in the example.
-   * @param {string} [optionalArgs.region] - The region the machine will run-in
+   * @param {string} [opts.region] - The region the machine will run-in
    *   (provider-specific; e.g., for Amazon, this could be 'us-west-2').
-   * @param {string} [optionalArgs.size] - The instance type (provider-specific).
-   * @param {Range|int} [optionalArgs.cpu] - The desired number of CPUs.
-   * @param {Range|int} [optionalArgs.ram] - The desired amount of RAM in GiB.
-   * @param {int} [optionalArgs.diskSize] - The desired amount of disk space in GB.
-   * @param {string} [optionalArgs.floatingIp] - A reserved IP to associate with
+   * @param {string} [opts.size] - The instance type (provider-specific).
+   * @param {Range|int} [opts.cpu] - The desired number of CPUs.
+   * @param {Range|int} [opts.ram] - The desired amount of RAM in GiB.
+   * @param {int} [opts.diskSize] - The desired amount of disk space in GB.
+   * @param {string} [opts.floatingIp] - A reserved IP to associate with
    *   the machine.
-   * @param {string[]} [optionalArgs.sshKeys] - Public keys to allow users to log
+   * @param {string[]} [opts.sshKeys] - Public keys to allow users to log
    *   in to the machine and containers running on it.
-   * @param {boolean} [optionalArgs.preemptible=false] - Whether the machine
+   * @param {boolean} [opts.preemptible=false] - Whether the machine
    *   should be preemptible. Only supported on the Amazon provider.
    */
-  constructor(optionalArgs) {
+  constructor(opts) {
     this._refID = uniqueID();
 
-    this.provider = getString('provider', optionalArgs.provider);
-    this.role = getString('role', optionalArgs.role);
-    this.region = getString('region', optionalArgs.region);
-    this.size = getString('size', optionalArgs.size);
-    this.floatingIp = getString('floatingIp', optionalArgs.floatingIp);
-    this.diskSize = getNumber('diskSize', optionalArgs.diskSize);
-    this.sshKeys = getStringArray('sshKeys', optionalArgs.sshKeys);
-    this.preemptible = getBoolean('preemptible', optionalArgs.preemptible);
+    this.provider = getString('provider', opts.provider);
+    this.role = getString('role', opts.role);
+    this.region = getString('region', opts.region);
+    this.size = getString('size', opts.size);
+    this.floatingIp = getString('floatingIp', opts.floatingIp);
+    this.diskSize = getNumber('diskSize', opts.diskSize);
+    this.sshKeys = getStringArray('sshKeys', opts.sshKeys);
+    this.preemptible = getBoolean('preemptible', opts.preemptible);
     // temporarily keeps cpu and ram for checkExtraKeys
-    this.cpu = optionalArgs.cpu;
-    this.ram = optionalArgs.ram;
-    checkExtraKeys(optionalArgs, this);
+    this.cpu = opts.cpu;
+    this.ram = opts.ram;
+    checkExtraKeys(opts, this);
     delete this.cpu;
     delete this.ram;
 
-    this.chooseSize(boxRange(optionalArgs.cpu), boxRange(optionalArgs.ram));
+    this.chooseSize(boxRange(opts.cpu), boxRange(opts.ram));
     this.chooseRegion();
   }
 
@@ -1069,13 +1069,13 @@ class Container {
    * @param {Image|string} image - An {@link Image} that the container should
    *   boot, or a string with the name of a Docker image (that exists in
    *   Docker Hub) that the container should boot.
-   * @param {Object} [optionalArgs] - Additional, named, optional arguments.
-   * @param {string} [optionalArgs.command] - The command to use when starting
+   * @param {Object} [opts] - Additional, named, optional arguments.
+   * @param {string} [opts.command] - The command to use when starting
    *   the container.
-   * @param {Object.<string, string|Secret>} [optionalArgs.env] - Environment
+   * @param {Object.<string, string|Secret>} [opts.env] - Environment
    *   variables to set in the booted container.  The key is the name of the
    *   environment variable.
-   * @param {Object.<string, string|Secret>} [optionalArgs.filepathToContent] -
+   * @param {Object.<string, string|Secret>} [opts.filepathToContent] -
    *   Text files to be installed on the container before it starts.  The key is
    *   the path on the container where the text file should be installed, and
    *   the value is the contents of the text file. If the file content specified
@@ -1083,7 +1083,7 @@ class Container {
    *   the container using the new files.  Files are installed with permissions
    *   0644 and parent directories are automatically created.
    */
-  constructor(hostnamePrefix, image, optionalArgs = {}) {
+  constructor(hostnamePrefix, image, opts = {}) {
     // refID is used to distinguish deployments with multiple references to the
     // same container, and deployments with multiple containers with the exact
     // same attributes.
@@ -1100,10 +1100,10 @@ class Container {
 
     this.hostnamePrefix = getString('hostnamePrefix', hostnamePrefix);
     this.hostname = uniqueHostname(this.hostnamePrefix);
-    this.command = getStringArray('command', optionalArgs.command);
-    this.env = getSecretOrStringMap('env', optionalArgs.env);
+    this.command = getStringArray('command', opts.command);
+    this.env = getSecretOrStringMap('env', opts.env);
     this.filepathToContent = getSecretOrStringMap('filepathToContent',
-      optionalArgs.filepathToContent);
+      opts.filepathToContent);
 
     // Don't allow callers to modify the arguments by reference.
     this.command = _.clone(this.command);
@@ -1111,7 +1111,7 @@ class Container {
     this.filepathToContent = _.clone(this.filepathToContent);
     this.image = this.image.clone();
 
-    checkExtraKeys(optionalArgs, this);
+    checkExtraKeys(opts, this);
 
     // When generating the Kelda deployment JSON object, these placements must
     // be converted using Container.getPlacementsWithID.
