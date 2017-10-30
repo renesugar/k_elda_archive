@@ -441,6 +441,8 @@ func syncACLs(desired []acl.ACL, current []godo.InboundRule) (
 }
 
 func toRules(acls []acl.ACL) (rules []godo.InboundRule) {
+	icmpSources := map[string]struct{}{}
+
 	for _, acl := range acls {
 		for _, proto := range protocols {
 			portRange := fmt.Sprintf("%d-%d", acl.MinPort, acl.MaxPort)
@@ -452,6 +454,10 @@ func toRules(acls []acl.ACL) (rules []godo.InboundRule) {
 			}
 
 			if proto == "icmp" {
+				if _, ok := icmpSources[acl.CidrIP]; ok {
+					continue
+				}
+				icmpSources[acl.CidrIP] = struct{}{}
 				portRange = ""
 			}
 

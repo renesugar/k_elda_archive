@@ -478,6 +478,8 @@ func TestToRules(t *testing.T) {
 		{CidrIP: "2.0.0.0/8", MinPort: 80, MaxPort: 80},
 		{CidrIP: "3.0.0.0/8", MinPort: 0, MaxPort: 100},
 		{CidrIP: "4.0.0.0/8", MinPort: 0, MaxPort: 0},
+		{CidrIP: "1.0.0.0/8", MinPort: 4000, MaxPort: 4000},
+		{CidrIP: "1.0.0.0/8", MinPort: 500, MaxPort: 600},
 	}
 	srcForIP := func(ip string) *godo.Sources {
 		return &godo.Sources{Addresses: []string{ip}}
@@ -498,6 +500,14 @@ func TestToRules(t *testing.T) {
 		{Protocol: "tcp", PortRange: "all", Sources: srcForIP("4.0.0.0/8")},
 		{Protocol: "udp", PortRange: "all", Sources: srcForIP("4.0.0.0/8")},
 		{Protocol: "icmp", Sources: srcForIP("4.0.0.0/8")},
+
+		{Protocol: "tcp", PortRange: "4000", Sources: srcForIP("1.0.0.0/8")},
+		{Protocol: "udp", PortRange: "4000", Sources: srcForIP("1.0.0.0/8")},
+		// We do not want a duplicate ICMP rule here.
+
+		{Protocol: "tcp", PortRange: "500-600", Sources: srcForIP("1.0.0.0/8")},
+		{Protocol: "udp", PortRange: "500-600", Sources: srcForIP("1.0.0.0/8")},
+		// Nor do we want one here.
 	}
 	assert.Equal(t, godoRules, toRules(acls))
 }
