@@ -1072,11 +1072,11 @@ class Container {
    * @param {Object} [optionalArgs] - Additional, named, optional arguments.
    * @param {string} [optionalArgs.command] - The command to use when starting
    *   the container.
-+  * @param {Object.<string, string|Secret>} [optionalArgs.env] - Environment
-+  *   variables to set in the booted container.  The key is the name of the
-+  *   environment variable.
-+  * @param {Object.<string, string|Secret>} [optionalArgs.filepathToContent] -
-+  *   Text files to be installed on the container before it starts.  The key is
+   * @param {Object.<string, string|Secret>} [optionalArgs.env] - Environment
+   *   variables to set in the booted container.  The key is the name of the
+   *   environment variable.
+   * @param {Object.<string, string|Secret>} [optionalArgs.filepathToContent] -
+   *   Text files to be installed on the container before it starts.  The key is
    *   the path on the container where the text file should be installed, and
    *   the value is the contents of the text file. If the file content specified
    *   by this argument changes and the blueprint is re-run, Kelda will re-start
