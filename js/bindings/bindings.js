@@ -24,15 +24,19 @@ const providerDefaultRegions = {
 const githubCache = {};
 const objectHasKey = Object.prototype.hasOwnProperty;
 
-// The default deployment object. The Deployment constructor overwrites this.
-let _keldaDeployment;
+// The default Infrastructure object. The Infrastructure constructor overwrites
+// this.
+let _keldaInfrastructure;
 
-class Deployment {
+class Infrastructure {
   /**
-   * Creates a new deployment object with the given options.
-   * @deprecated Deployment is now deprecated in favor of {@link Infrastructure}.
+   * Creates a new Infrastructure with the given options.
    * @constructor
    *
+   * @param {Machine|Machine[]} masters - One or more machines that should be launched to
+   *   use as the masters.
+   * @param {Machine|Machine[]} workers - One or more machines that should be launched to
+   *   use as the workers.  Worker machines are responsible for running application containers.
    * @param {Object} [opts] - Optional arguments to tweak the behavior
    *   of the namespace.
    * @param {string} [opts.namespace=default-namespace] - The name of the
@@ -45,7 +49,7 @@ class Deployment {
    *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
    *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
    */
-  constructor(opts = {}) {
+  constructor(masters, workers, opts = {}) {
     this.namespace = opts.namespace || 'default-namespace';
     this.adminACL = getStringArray('adminACL', opts.adminACL);
 
@@ -55,11 +59,33 @@ class Deployment {
     this.containers = new Set();
     this.loadBalancers = [];
 
-    _keldaDeployment = this;
+    _keldaInfrastructure = this;
+
+    const boxedMasters = boxObjects(masters, Machine);
+    const boxedWorkers = boxObjects(workers, Machine);
+    if (boxedMasters.length < 1) {
+      throw new Error('masters must include 1 or more Machines to use as ' +
+        'Kelda masters.');
+    } else if (boxedWorkers.length < 1) {
+      throw new Error('workers must include 1 or more Machines to use as ' +
+        'Kelda workers.');
+    }
+
+    const machineWithRole = (machine, role) => {
+      const copy = machine.clone();
+      copy.role = role;
+      return copy;
+    };
+
+    boxedMasters.forEach(master =>
+      this.machines.push(machineWithRole(master, 'Master')));
+    boxedWorkers.forEach(worker =>
+      this.machines.push(machineWithRole(worker, 'Worker')));
   }
 
   /**
-   * Converts the deployment to the QRI deployment format.
+   * Converts the infrastructure to the JSON format expected by the Kelda go
+   * code.
    * @private
    * @returns {Object} A map that can be converted to JSON and interpreted by the Kelda
    *   Go code.
@@ -88,7 +114,7 @@ class Deployment {
       containers.push(c.toKeldaRepresentation());
     });
 
-    const keldaDeployment = {
+    const keldaInfrastructure = {
       machines: this.machines,
       loadBalancers,
       containers,
@@ -98,69 +124,8 @@ class Deployment {
       namespace: this.namespace,
       adminACL: this.adminACL,
     };
-    vet(keldaDeployment);
-    return keldaDeployment;
-  }
-
-  /**
-   * Adds an object, or list of objects, to the deployment.
-   * Deployable objects must implement the deploy(deployment) interface.
-   *
-   * @param {Object|Object[]} list - An object or list of objects to add to
-   *   the Deployment.
-   * @returns {void}
-   */
-  deploy(list) {
-    let toDeployList = list;
-    if (!Array.isArray(toDeployList)) {
-      toDeployList = [toDeployList];
-    }
-
-    const that = this;
-    toDeployList.forEach((toDeploy) => {
-      if (!toDeploy.deploy) {
-        throw new Error('only objects that implement ' +
-                  '"deploy(deployment)" can be deployed');
-      }
-      toDeploy.deploy(that);
-    });
-  }
-}
-
-class Infrastructure extends Deployment {
-  /**
-   * Creates a new Infrastructure with the given options.
-   * @constructor
-   *
-   * @param {Machine|Machine[]} masters - One or more machines that should be launched to
-   *   use as the masters.
-   * @param {Machine|Machine[]} workers - One or more machines that should be launched to
-   *   use as the workers.  Worker machines are responsible for running application containers.
-   * @param {Object} [opts] - Optional arguments to tweak the behavior
-   *   of the infrastructure.
-   * @param {string} [opts.namespace=default-namespace] - The name of the
-   *   namespace that the blueprint should operate in.
-   * @param {string[]} [opts.adminACL] - A list of IP addresses that are
-   *   allowed to access the deployed machines.  The IP of the machine where the
-   *   daemon is running is always allowed to access the machines. If you would like to allow
-   *   another machine to access the deployed machines (e.g., to SSH into a machine),
-   *   add its IP address here.  These IP addresses must be in CIDR notation; e.g.,
-   *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
-   *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
-   */
-  constructor(masters, workers, opts = {}) {
-    super(opts);
-    const boxedMasters = boxObjects(masters, Machine);
-    const boxedWorkers = boxObjects(workers, Machine);
-    if (boxedMasters.length < 1) {
-      throw new Error('masters must include 1 or more Machines to use as ' +
-        'Kelda masters.');
-    } else if (boxedWorkers.length < 1) {
-      throw new Error('workers must include 1 or more Machines to use as ' +
-        'Kelda workers.');
-    }
-    boxedMasters.forEach(master => this.machines.push(master.asMaster()));
-    boxedWorkers.forEach(worker => this.machines.push(worker.asWorker()));
+    vet(keldaInfrastructure);
+    return keldaInfrastructure;
   }
 }
 
@@ -205,15 +170,16 @@ function getInfraPath(infraName) {
 }
 
 /**
- * Returns the Deployment exported by the infrastructure in the given blueprint.
+ * Returns the Infrastructure object exported by the given infrastructure
+ * blueprint.
  * Having this as a separate function simplifies testing baseInfrastructure().
  * @private
  *
  * @param {string} infraPath - Absolute path to the infrastructure blueprint.
- * @returns {Deployment} - The Deployment exported by the infrastructure
+ * @returns {Infrastructure} - The Infrastructure exported by the infrastructure
  *  blueprint.
  */
-function getInfraDeployment(infraPath) {
+function getBaseInfrastructure(infraPath) {
   const infraGetter = require(infraPath); // eslint-disable-line
 
   // By passing this module to the infraGetter, the blueprint doesn't have to
@@ -223,8 +189,7 @@ function getInfraDeployment(infraPath) {
 }
 
 /**
- * Returns a base infrastructure. The base infrastructure is automatically deployed,
- * so there is no need to .deploy() it. The base infrastructure could be created
+ * Returns a base infrastructure. The base infrastructure could be created
  * with `kelda init`.
  *
  * @example <caption>Retrieve the base infrastructure called NAME, and deploy
@@ -234,7 +199,7 @@ function getInfraDeployment(infraPath) {
  *
  * @param {string} name - The name of the infrastructure, as passed to
  *   `kelda init`.
- * @returns {Deployment} A deployment object representing the infrastructure.
+ * @returns {Infrastructure} The infrastructure object.
  */
 function baseInfrastructure(name = 'default') {
   if (typeof name !== 'string') {
@@ -246,7 +211,7 @@ function baseInfrastructure(name = 'default') {
     throw new Error(`no infrastructure called ${name}. Use 'kelda init' ` +
       'to create a new infrastructure.');
   }
-  return getInfraDeployment(infraPath);
+  return getBaseInfrastructure(infraPath);
 }
 
 // The name used to refer to the public internet in the JSON description
@@ -258,18 +223,6 @@ const publicInternetLabel = 'public';
 // Global unique ID counter.
 let uniqueIDCounter = 0;
 
-/**
- * Overwrites the deployment object with a new one.
- *
- * @deprecated This function is deprecated; users should transition to using
- *   the {@link Infrastructure} class constructor instead.
- *
- * @param {Object} opts - Options for the new deployment object.
- * @returns {Deployment} A deployment object.
- */
-function createDeployment(opts) {
-  return new Deployment(opts);
-}
 /**
  * @private
  * @returns {integer} A globally unique integer ID.
@@ -330,16 +283,16 @@ function hash(str) {
  * containers in connections and load balancers are really deployed.
  * @private
  *
- * @param {Deployment} deployment - A deployment object.
+ * @param {Infrastructure} infrastructure - An infrastructure object.
  * @returns {void}
  */
-function vet(deployment) {
-  if (deployment.namespace !== deployment.namespace.toLowerCase()) {
-    throw new Error(`namespace "${deployment.namespace}" contains ` +
+function vet(infrastructure) {
+  if (infrastructure.namespace !== infrastructure.namespace.toLowerCase()) {
+    throw new Error(`namespace "${infrastructure.namespace}" contains ` +
                   'uppercase letters. Namespaces must be lowercase.');
   }
-  const lbHostnames = deployment.loadBalancers.map(l => l.name);
-  const containerHostnames = deployment.containers.map(c => c.hostname);
+  const lbHostnames = infrastructure.loadBalancers.map(l => l.name);
+  const containerHostnames = infrastructure.containers.map(c => c.hostname);
   const hostnames = lbHostnames.concat(containerHostnames);
 
   const hostnameMap = { [publicInternetLabel]: true };
@@ -350,7 +303,7 @@ function vet(deployment) {
     hostnameMap[hostname] = true;
   });
 
-  deployment.connections.forEach((conn) => {
+  infrastructure.connections.forEach((conn) => {
     [conn.from, conn.to].forEach((host) => {
       if (!hostnameMap[host]) {
         throw new Error(`connection ${stringify(conn)} references ` +
@@ -360,7 +313,7 @@ function vet(deployment) {
   });
 
   const dockerfiles = {};
-  deployment.containers.forEach((c) => {
+  infrastructure.containers.forEach((c) => {
     const name = c.image.name;
     if (dockerfiles[name] !== undefined &&
                 dockerfiles[name] !== c.image.dockerfile) {
@@ -371,7 +324,7 @@ function vet(deployment) {
 
   // Check to make sure all machines have the same region and provider.
   let lastMachine;
-  deployment.machines.forEach((m) => {
+  infrastructure.machines.forEach((m) => {
     if (lastMachine !== undefined &&
       (lastMachine.region !== m.region || lastMachine.provider !== m.provider)) {
       throw new Error('All machines must have the same provider and region. '
@@ -411,13 +364,14 @@ class LoadBalancer {
   }
 
   /**
-   * Adds this load balancer to the given deployment.
+   * Adds this load balancer to the given infrastructure.
    *
-   * @param {Deployment} deployment - The Deployment that this should be added to.
+   * @param {Infrastructure} infrastructure - The Infrastructure that this
+   *  should be added to.
    * @returns {void}
    */
-  deploy(deployment) {
-    deployment.loadBalancers.push(this);
+  deploy(infrastructure) {
+    infrastructure.loadBalancers.push(this);
   }
 
   /**
@@ -724,29 +678,24 @@ class Machine {
    * Creates a new Machine object, which represents a machine to be deployed.
    * @constructor
    *
-   * @example <caption>Create a template Machine on Amazon, and then use the
-   * template to create a master and 2 workers. This will use the default size
-   * and region for Amazon.</caption>
+   * @example <caption>Create a Machine on Amazon. This will use the
+   * default size and region for Amazon.</caption>
    * const baseMachine = new Machine({provider: 'Amazon'});
-   * const master = baseMachine.asMaster();
-   * const workers = baseMachine.asWorker().replicate(2);
    *
-   * @example <caption>Create a worker machine with the 'n1-standard-1' size in
+   * @example <caption>Create a machine with the 'n1-standard-1' size in
    * GCE's 'us-east1-b' region.</caption>
    * const googleWorker = new Machine({
    *   provider: 'Google',
    *   region: 'us-east1-b',
    *   size: 'n1-standard-1',
-   *   role: 'Worker',
    * });
    *
-   * @example <caption>Create a DigitalOcean master droplet with the '512mb' size
+   * @example <caption>Create a DigitalOcean droplet with the '512mb' size
    * in the 'sfo1' zone.</caption>
    * const googleWorker = new Machine({
    *   provider: 'DigitalOcean',
    *   region: 'sfo1',
    *   size: '512mb',
-   *   role: 'Master',
    * });
    *
    * @param {Object.<string, string>} [opts] - Optional arguments that
@@ -755,12 +704,6 @@ class Machine {
    *   should be launched in. Accepted values are Amazon, DigitalOcean, Google,
    *   and Vagrant. This argument is optional, but the provider attribute of the
    *   machine must be set before it is deployed.
-   * @param {string} [opts.role] - The role the machine will run as
-   *   (accepted value are Master and Worker). A Machine's role must be set before
-   *   it can be deployed.  This argument is not required, so that users can
-   *   create a template to use for all machines in the cluster;
-   *   {@link Machine#asWorker} and {@link Machine#asMaster} can be called on the
-   *   template to create a machine with the appropriate role, as in the example.
    * @param {string} [opts.region] - The region the machine will run-in
    *   (provider-specific; e.g., for Amazon, this could be 'us-west-2').
    * @param {string} [opts.size] - The instance type (provider-specific).
@@ -897,17 +840,6 @@ class Machine {
   }
 
   /**
-   * Adds this to be deployed as part of the given deployment.
-   *
-   * @param {Deployment} deployment - The Deployment that this machine should be
-   *   added to.
-   * @returns {void}
-   */
-  deploy(deployment) {
-    deployment.machines.push(this);
-  }
-
-  /**
    * @returns {Machine} A new machine with the same attributes.
    */
   clone() {
@@ -916,41 +848,6 @@ class Machine {
     const cloned = _.clone(this);
     cloned.sshKeys = keyClone;
     return new Machine(cloned);
-  }
-
-  /**
-   * Clones this machine, and adds the given role.
-   *
-   * @param {string} role - The role of the machine (either 'Master' or 'Worker').
-   * @returns {Machine} A new machine that has all of the attributes of this machine
-   *   and the given role.
-   */
-  withRole(role) {
-    const copy = this.clone();
-    copy.role = role;
-    return copy;
-  }
-
-  /**
-   * @deprecated Users should no longer use this function directly, and instead
-   * should create infrastructure using the {@link Infrastructure} constructor,
-   * which handles marking the passed-in machines as workers.
-   *
-   * @returns {Machine} A new machine with role Worker.
-   */
-  asWorker() {
-    return this.withRole('Worker');
-  }
-
-  /**
-   * @deprecated Users should no longer use this function directly, and instead
-   * should create infrastructure using the {@link Infrastructure} constructor,
-   * which handles marking the passed-in machines as masters.
-   *
-   * @returns {Machine} A new machine with role Master.
-   */
-  asMaster() {
-    return this.withRole('Master');
   }
 
   /**
@@ -1084,8 +981,8 @@ class Container {
    *   0644 and parent directories are automatically created.
    */
   constructor(hostnamePrefix, image, opts = {}) {
-    // refID is used to distinguish deployments with multiple references to the
-    // same container, and deployments with multiple containers with the exact
+    // refID is used to distinguish infrastructures with multiple references to the
+    // same container, and infrastructures with multiple containers with the exact
     // same attributes.
     this._refID = uniqueID();
 
@@ -1113,7 +1010,7 @@ class Container {
 
     checkExtraKeys(opts, this);
 
-    // When generating the Kelda deployment JSON object, these placements must
+    // When generating the Kelda infrastructure JSON object, these placements must
     // be converted using Container.getPlacementsWithID.
     this.placements = [];
 
@@ -1287,13 +1184,13 @@ class Container {
   }
 
   /**
-   * Adds this Container to be deployed as part of the given deployment.
+   * Adds this Container to be deployed as part of the given infrastructure.
    *
-   * @param {Deployment} deployment - The deployment that this should be added to.
+   * @param {Infrastructure} infrastructure - The infrastructure that this should be added to.
    * @returns {void}
    */
-  deploy(deployment) {
-    deployment.containers.add(this);
+  deploy(infrastructure) {
+    infrastructure.containers.add(this);
   }
 
   /**
@@ -1335,7 +1232,7 @@ class Container {
   }
 
   /**
-   * Converts the Container to the QRI deployment format.
+   * Converts the Container to the JSON format expected by the Kelda go code.
    * @private
    * @returns {Object} A map that can be converted to JSON and interpreted by the Kelda
    *   Go code.
@@ -1504,10 +1401,10 @@ function Port(p) {
 }
 
 /**
- * @returns {Deployment} The global deployment object.
+ * @returns {Infrastructure} The global infrastructure object.
  */
-function getDeployment() {
-  return _keldaDeployment;
+function getInfrastructure() {
+  return _keldaInfrastructure;
 }
 
 /**
@@ -1515,7 +1412,7 @@ function getDeployment() {
  * be converted to JSON and interpreted by the Kelda Go code.
  */
 global.getInfrastructureKeldaRepr = function getInfrastructureKeldaRepr() {
-  const inf = getDeployment();
+  const inf = getInfrastructure();
   return (inf === undefined) ? {} : inf.toKeldaRepresentation();
 };
 
@@ -1532,7 +1429,6 @@ function resetGlobals() {
 
 module.exports = {
   Container,
-  Deployment,
   Infrastructure,
   Image,
   Machine,
@@ -1542,8 +1438,7 @@ module.exports = {
   Secret,
   LoadBalancer,
   allow,
-  createDeployment,
-  getDeployment,
+  getInfrastructure,
   githubKeys,
   publicInternet,
   resetGlobals,

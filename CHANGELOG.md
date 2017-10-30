@@ -30,6 +30,10 @@ JavaScript API-breaking changes:
 containers by looping.
 - Remove the Container.withFiles() method.  Users should use the
 'filepathToContent' optional argument when creating a container instead.
+- Remove the createDeployment() function, the Machine.asMaster(),
+Machine.asWorker(), Machine.deploy(), Machine.asWorker() methods, and
+the Deployment class. Users should use the Infrastructure class instead
+to create an infrastructure and deploy machines.
 
 
 Release 0.4.0

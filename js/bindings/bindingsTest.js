@@ -12,10 +12,11 @@ chai.use(chaiSubset);
 const { expect } = chai;
 
 describe('Bindings', () => {
-  let deployment;
+  let infra;
   beforeEach(() => {
     b.resetGlobals();
-    deployment = new b.Deployment();
+    const machine = new b.Machine({ provider: 'Amazon' });
+    infra = new b.Infrastructure(machine, machine);
   });
 
   const checkSizes = function checkSizes(description, ram, cpu,
@@ -34,32 +35,31 @@ describe('Bindings', () => {
     expect(dummyMachine.size).to.equal(expected);
   };
 
-  const checkMachines = function checkMachines(expected) {
-    const { machines } = deployment.toKeldaRepresentation();
-    expect(machines).to.have.lengthOf(expected.length)
-      .and.containSubset(expected);
+  const checkMachines = function checkMachines(expectedSubset) {
+    const { machines } = infra.toKeldaRepresentation();
+    expect(machines).to.containSubset(expectedSubset);
   };
 
   const checkContainers = function checkContainers(expected) {
-    const { containers } = deployment.toKeldaRepresentation();
+    const { containers } = infra.toKeldaRepresentation();
     expect(containers).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
   const checkPlacements = function checkPlacements(expected) {
-    const { placements } = deployment.toKeldaRepresentation();
+    const { placements } = infra.toKeldaRepresentation();
     expect(placements).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
   const checkLoadBalancers = function checkLoadBalancers(expected) {
-    const { loadBalancers } = deployment.toKeldaRepresentation();
+    const { loadBalancers } = infra.toKeldaRepresentation();
     expect(loadBalancers).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
 
   const checkConnections = function checkConnections(expected) {
-    const { connections } = deployment.toKeldaRepresentation();
+    const { connections } = infra.toKeldaRepresentation();
     expect(connections).to.have.lengthOf(expected.length)
       .and.containSubset(expected);
   };
@@ -138,8 +138,7 @@ describe('Bindings', () => {
         });
     });
     it('basic', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Worker',
+      const machine = new b.Machine({
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
@@ -147,10 +146,13 @@ describe('Bindings', () => {
         ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key1', 'key2'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
+      // Since a separate test suite checks that the Infrastructure constructor
+      // creates the right number and kinds of machines, this and many other
+      // tests only check a subset of the created machines in order to test the
+      // desired parts of the API.
       checkMachines([{
-        id: '951009cc72958434e4c3e52dd0425d086dd45311',
-        role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
@@ -159,105 +161,97 @@ describe('Bindings', () => {
       }]);
     });
     it('chooses size when provided ram and cpu', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Worker',
+      const machine = new b.Machine({
         provider: 'Google',
         cpu: new b.Range(2, 4),
         ram: new b.Range(6, 8),
         sshKeys: ['key1', 'key2'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        role: 'Worker',
         provider: 'Google',
         size: 'n1-standard-2',
       }]);
     });
     it('chooses size when provided only minimum ram and cpu', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Worker',
+      const machine = new b.Machine({
         provider: 'Google',
         cpu: new b.Range(2),
         ram: new b.Range(6),
         sshKeys: ['key1', 'key2'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        role: 'Worker',
         provider: 'Google',
         size: 'n1-standard-2',
       }]);
     });
     it('chooses size when neither ram nor cpu are provided', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Master',
+      const machine = new b.Machine({
         provider: 'Amazon',
         sshKeys: ['key1', 'key2'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        role: 'Master',
         provider: 'Amazon',
         size: 'm3.medium',
       }]);
     });
     it('chooses default region when region is not provided ' +
        'for Google', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Master',
+      const machine = new b.Machine({
         provider: 'Google',
         sshKeys: ['key1', 'key2'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        role: 'Master',
         provider: 'Google',
         region: 'us-east1-b',
       }]);
     });
     it('chooses default region when region is not provided ' +
        'for Amazon', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Master',
+      const machine = new b.Machine({
         provider: 'Amazon',
         sshKeys: ['key1', 'key2'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        role: 'Master',
         provider: 'Amazon',
         region: 'us-west-1',
       }]);
     });
     it('chooses default region when region is not provided ' +
        'for DigitalOcean', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Master',
+      const machine = new b.Machine({
         provider: 'DigitalOcean',
         sshKeys: ['key1', 'key2'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        role: 'Master',
         provider: 'DigitalOcean',
         region: 'sfo1',
       }]);
     });
     it('uses empty string as region for Vagrant', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Master',
+      const machine = new b.Machine({
         provider: 'Vagrant',
         sshKeys: ['key1', 'key2'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        role: 'Master',
         provider: 'Vagrant',
         region: '',
       }]);
     });
     it('uses provided region when region is provided', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Master',
+      const machine = new b.Machine({
         provider: 'Amazon',
         sshKeys: ['key1', 'key2'],
         region: 'eu-west-1',
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        role: 'Master',
         provider: 'Amazon',
         size: 'm3.medium',
         region: 'eu-west-1',
@@ -266,7 +260,6 @@ describe('Bindings', () => {
     it('errors if requested a preemptible instance for a size'
       + ' that cannot be preempted', () => {
       expect(() => new b.Machine({
-        role: 'Worker',
         provider: 'Amazon',
         size: 't2.micro',
         sshKeys: ['key1', 'key2'],
@@ -282,8 +275,7 @@ describe('Bindings', () => {
         .to.throw('Unrecognized keys passed to Machine constructor: ');
     });
     it('hash independent of SSH keys', () => {
-      deployment.deploy([new b.Machine({
-        role: 'Worker',
+      const machine = new b.Machine({
         provider: 'Amazon',
         region: 'us-west-2',
         size: 'm4.large',
@@ -291,7 +283,8 @@ describe('Bindings', () => {
         ram: new b.Range(4, 8),
         diskSize: 32,
         sshKeys: ['key3'],
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
         id: '951009cc72958434e4c3e52dd0425d086dd45311',
         role: 'Worker',
@@ -304,7 +297,7 @@ describe('Bindings', () => {
     });
     it('replicate', () => {
       const baseMachine = new b.Machine({ provider: 'Amazon' });
-      deployment.deploy(baseMachine.asMaster().replicate(2));
+      infra = new b.Infrastructure(baseMachine.replicate(2), baseMachine);
       checkMachines([
         {
           id: 'a45b4bef049ee155e0c481af209bf40fe676fdd1',
@@ -320,9 +313,9 @@ describe('Bindings', () => {
     });
     it('replicate independent', () => {
       const baseMachine = new b.Machine({ provider: 'Amazon' });
-      const machines = baseMachine.asMaster().replicate(2);
+      const machines = baseMachine.replicate(2);
       machines[0].sshKeys.push('key');
-      deployment.deploy(machines);
+      infra = new b.Infrastructure(machines[0], machines[1]);
       checkMachines([
         {
           id: 'a45b4bef049ee155e0c481af209bf40fe676fdd1',
@@ -331,34 +324,33 @@ describe('Bindings', () => {
           sshKeys: ['key'],
         },
         {
-          id: '67abd5ce263a7bae2e9d7b1e20b9e687efbeb658',
-          role: 'Master',
+          id: '7763d2c719512c7dd48f495760baa5b75dd73e7a',
+          role: 'Worker',
           provider: 'Amazon',
         },
       ]);
     });
     it('set floating IP', () => {
-      const baseMachine = new b.Machine({
-        provider: 'Amazon',
-        floatingIp: 'xxx.xxx.xxx.xxx',
-      });
-      deployment.deploy(baseMachine.asMaster());
+      const master = new b.Machine({ provider: 'Amazon' });
+      const machineWithFloatingIP = new b.Machine({
+        provider: 'Amazon', floatingIp: 'xxx.xxx.xxx.xxx' });
+
+      infra = new b.Infrastructure(master, machineWithFloatingIP);
       checkMachines([{
-        id: '8ceb9adb32e66f6b5c8d4f402ddbe2e898bdaacf',
-        role: 'Master',
+        id: 'ac41da1b9623b1d1d368da2c3ca59d98fb0ac4e6',
+        role: 'Worker',
         provider: 'Amazon',
         floatingIp: 'xxx.xxx.xxx.xxx',
         sshKeys: [],
       }]);
     });
     it('preemptible attribute', () => {
-      deployment.deploy(new b.Machine({
+      const machine = new b.Machine({
         provider: 'Amazon',
         preemptible: true,
-      }).asMaster());
+      });
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        id: 'a3ec0cb8dbee293d12239c886a66a31c70d96a02',
-        role: 'Master',
         provider: 'Amazon',
         preemptible: true,
       }]);
@@ -368,7 +360,7 @@ describe('Bindings', () => {
   describe('Container', () => {
     it('basic', () => {
       const container = new b.Container('host', 'image');
-      container.deploy(deployment);
+      container.deploy(infra);
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
         image: new b.Image('image'),
@@ -387,8 +379,8 @@ describe('Bindings', () => {
     });
     it('containers are not duplicated', () => {
       const container = new b.Container('host', 'image');
-      container.deploy(deployment);
-      container.deploy(deployment);
+      container.deploy(infra);
+      container.deploy(infra);
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
         image: new b.Image('image'),
@@ -402,7 +394,7 @@ describe('Bindings', () => {
       const container = new b.Container('host', 'image', {
         command: ['arg1', 'arg2'],
       });
-      container.deploy(deployment);
+      container.deploy(infra);
       checkContainers([{
         id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
         image: new b.Image('image'),
@@ -416,7 +408,7 @@ describe('Bindings', () => {
       const c = new b.Container('host', 'image');
       c.env.foo = 'bar';
       c.env.secretEnv = new b.Secret('secret');
-      c.deploy(deployment);
+      c.deploy(infra);
       checkContainers([{
         id: '4e73e3aa5e1d1d083061ff9ab7b21bbce429f410',
         image: new b.Image('image'),
@@ -431,7 +423,7 @@ describe('Bindings', () => {
     });
     it('hostname', () => {
       const c = new b.Container('host', new b.Image('image'));
-      c.deploy(deployment);
+      c.deploy(infra);
       expect(c.getHostname()).to.equal('host.q');
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
@@ -445,8 +437,8 @@ describe('Bindings', () => {
     it('repeated hostnames don\'t conflict', () => {
       const x = new b.Container('host', 'image');
       const y = new b.Container('host', 'image');
-      x.deploy(deployment);
-      y.deploy(deployment);
+      x.deploy(infra);
+      y.deploy(infra);
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
         image: new b.Image('image'),
@@ -489,16 +481,16 @@ describe('Bindings', () => {
     it('duplicate hostname causes error', () => {
       const x = new b.Container('host', 'image');
       x.hostname = 'host';
-      x.deploy(deployment);
+      x.deploy(infra);
       const y = new b.Container('host', 'image');
       y.hostname = 'host';
-      y.deploy(deployment);
-      expect(() => deployment.toKeldaRepresentation()).to
+      y.deploy(infra);
+      expect(() => infra.toKeldaRepresentation()).to
         .throw('hostname "host" used multiple times');
     });
     it('image dockerfile', () => {
       const z = new b.Container('host', new b.Image('name', 'dockerfile'));
-      z.deploy(deployment);
+      z.deploy(infra);
       checkContainers([{
         id: 'fbc9aedb5af0039b8cf09bca2ef5771467b44085',
         image: new b.Image('name', 'dockerfile'),
@@ -528,7 +520,7 @@ describe('Bindings', () => {
         command,
         filepathToContent,
       }).withEnv(env);
-      container.deploy(deployment);
+      container.deploy(infra);
       checkContainers([{
         id,
         image,
@@ -543,7 +535,7 @@ describe('Bindings', () => {
       const container = new b.Container(hostname, image, {
         command, env, filepathToContent,
       });
-      container.deploy(deployment);
+      container.deploy(infra);
       checkContainers([{
         id,
         hostname,
@@ -559,7 +551,7 @@ describe('Bindings', () => {
     let target;
     beforeEach(() => {
       target = new b.Container('host', 'image');
-      target.deploy(deployment);
+      target.deploy(infra);
     });
     it('MachineRule size, region, provider', () => {
       target.placeOn({
@@ -601,7 +593,7 @@ describe('Bindings', () => {
   describe('LoadBalancer', () => {
     it('basic', () => {
       const lb = new b.LoadBalancer('web_tier', [new b.Container('host', 'nginx')]);
-      lb.deploy(deployment);
+      lb.deploy(infra);
       checkLoadBalancers([{
         name: 'web_tier',
         hostnames: ['host'],
@@ -612,7 +604,7 @@ describe('Bindings', () => {
         new b.Container('host', 'nginx'),
         new b.Container('host', 'nginx'),
       ]);
-      lb.deploy(deployment);
+      lb.deploy(infra);
       checkLoadBalancers([{
         name: 'web_tier',
         hostnames: [
@@ -629,12 +621,12 @@ describe('Bindings', () => {
         new b.Container('host', 'image'); // eslint-disable-line no-new
       }
       const lb = new b.LoadBalancer('foo', [new b.Container('host', 'image')]);
-      lb.deploy(deployment);
+      lb.deploy(infra);
       for (let i = 0; i < 7; i += 1) {
         new b.Container('host', 'image'); // eslint-disable-line no-new
       }
       const lb2 = new b.LoadBalancer('foo', [new b.Container('host', 'image')]);
-      lb2.deploy(deployment);
+      lb2.deploy(infra);
       checkLoadBalancers([
         {
           name: 'foo',
@@ -657,11 +649,11 @@ describe('Bindings', () => {
     let fooLoadBalancer;
     beforeEach(() => {
       foo = new b.Container('foo', 'image');
-      foo.deploy(deployment);
+      foo.deploy(infra);
       fooLoadBalancer = new b.LoadBalancer('fooLoadBalancer', [foo]);
       bar = new b.Container('bar', 'image');
-      bar.deploy(deployment);
-      fooLoadBalancer.deploy(deployment);
+      bar.deploy(infra);
+      fooLoadBalancer.deploy(infra);
     });
     it('autobox port ranges', () => {
       bar.allowFrom(foo, 80);
@@ -759,11 +751,11 @@ describe('Bindings', () => {
       quxQuuzGroup = [qux, quuz];
       lb = new b.LoadBalancer('serv', [foo, bar, qux, quuz]);
 
-      foo.deploy(deployment);
-      bar.deploy(deployment);
-      qux.deploy(deployment);
-      quuz.deploy(deployment);
-      lb.deploy(deployment);
+      foo.deploy(infra);
+      bar.deploy(infra);
+      qux.deploy(infra);
+      quuz.deploy(infra);
+      lb.deploy(infra);
     });
 
     it('both src and dst are lists', () => {
@@ -818,13 +810,15 @@ describe('Bindings', () => {
   });
   describe('Vet', () => {
     let foo;
-    const deploy = () => deployment.toKeldaRepresentation();
+    const deploy = () => infra.toKeldaRepresentation();
     beforeEach(() => {
       foo = new b.LoadBalancer('foo', []);
-      foo.deploy(deployment);
+      foo.deploy(infra);
     });
     it('should error when given namespace contains upper case letters', () => {
-      deployment = new b.Deployment({ namespace: 'BadNamespace' });
+      const machine = new b.Machine({ provider: 'Amazon' });
+      infra = new b.Infrastructure(
+        machine, machine, { namespace: 'BadNamespace' });
       expect(deploy).to.throw('namespace "BadNamespace" contains ' +
                   'uppercase letters. Namespaces must be lowercase.');
     });
@@ -835,67 +829,51 @@ describe('Bindings', () => {
                 '"to":"foo"} references an undefined hostname: baz');
     });
     it('duplicate image', () => {
-      (new b.Container('host', new b.Image('img', 'dk'))).deploy(deployment);
-      (new b.Container('host', new b.Image('img', 'dk'))).deploy(deployment);
+      (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
+      (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
       expect(deploy).to.not.throw();
     });
     it('duplicate image with different Dockerfiles', () => {
-      (new b.Container('host', new b.Image('img', 'dk'))).deploy(deployment);
-      (new b.Container('host', new b.Image('img', 'dk2'))).deploy(deployment);
+      (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
+      (new b.Container('host', new b.Image('img', 'dk2'))).deploy(infra);
       expect(deploy).to.throw('img has differing Dockerfiles');
     });
     it('machines with same regions/providers', () => {
-      deployment.deploy([new b.Machine({
+      const machine = new b.Machine({
         provider: 'Amazon',
         region: 'us-west-2',
-      }), new b.Machine({
-        provider: 'Amazon',
-        region: 'us-west-2',
-      })]);
+      });
+      infra = new b.Infrastructure(machine, machine);
       expect(deploy).to.not.throw();
     });
     it('machines with different regions', () => {
-      deployment.deploy([new b.Machine({
-        provider: 'Amazon',
-        region: 'us-west-2',
-      }), new b.Machine({
-        provider: 'Amazon',
-        region: 'us-east-2',
-      })]);
+      const westMachine = new b.Machine({
+        provider: 'Amazon', region: 'us-west-2' });
+      const eastMachine = new b.Machine({
+        provider: 'Amazon', region: 'us-east-2' });
+
+      infra = new b.Infrastructure(westMachine, eastMachine);
       expect(deploy).to.throw('All machines must have the same provider and region. '
         + 'Found providers \'Amazon\' in region \'us-west-2\' and \'Amazon\' in '
         + 'region \'us-east-2\'.');
     });
     it('machines with different providers', () => {
-      deployment.deploy([new b.Machine({
-        provider: 'Amazon',
-        region: '',
-      }), new b.Machine({
-        provider: 'DigitalOcean',
-        region: '',
-      })]);
+      const amazonMachine = new b.Machine({ provider: 'Amazon', region: '' });
+      const doMachine = new b.Machine({ provider: 'DigitalOcean', region: '' });
+      infra = new b.Infrastructure(amazonMachine, doMachine);
       expect(deploy).to.throw('All machines must have the same provider and region. '
         + 'Found providers \'Amazon\' in region \'us-west-1\' and \'DigitalOcean\' in '
         + 'region \'sfo1\'.');
     });
   });
-  describe('Deployment', () => {
-    it('no args', () => {
-      expect(() => new b.Deployment()).to.not.throw();
-    });
-    it('should error when given invalid arguments', () => {
-      expect(() => new b.Deployment({ badArg: 'foo' }))
-        .to.throw('Unrecognized keys passed to Deployment constructor: badArg');
-    });
-  });
   describe('Infrastructure', () => {
-    it('using Infrastructure constructor overwrites the default Deployment', () => {
+    it('using Infrastructure constructor overwrites the default Infrastructure', () => {
       const namespace = 'testing-namespace';
       const machine = new b.Machine({
         provider: 'Amazon',
         region: 'us-west-2',
       });
-      const infra = new b.Infrastructure([machine], [machine], { namespace });
+      infra = new b.Infrastructure([machine], [machine], { namespace });
       expect(infra.toKeldaRepresentation().namespace).to.equal(namespace);
     });
     it('master and worker machines added correctly', () => {
@@ -903,7 +881,7 @@ describe('Bindings', () => {
         provider: 'Amazon',
         region: 'us-west-2',
       });
-      deployment = new b.Infrastructure([machine], [machine, machine]);
+      infra = new b.Infrastructure([machine], [machine, machine]);
       checkMachines([{
         role: 'Master',
         provider: 'Amazon',
@@ -928,7 +906,7 @@ describe('Bindings', () => {
         provider: 'Amazon',
         region: 'us-west-2',
       });
-      deployment = new b.Infrastructure(machine, machine);
+      infra = new b.Infrastructure(machine, machine);
       checkMachines([{
         role: 'Master',
         provider: 'Amazon',
@@ -962,24 +940,36 @@ describe('Bindings', () => {
       expect(() => new b.Infrastructure(3, [machine]))
         .to.throw('not an array of Machines (was 3)');
     });
+    it('should error when given invalid arguments', () => {
+      const machine = new b.Machine({ provider: 'Amazon' });
+      expect(() => new b.Infrastructure(machine, machine, { badArg: 'foo' }))
+        .to.throw('Unrecognized keys passed to Infrastructure constructor: badArg');
+    });
+    it('should not throw when passed a empty optional argument', () => {
+      const machine = new b.Machine({ provider: 'Amazon' });
+      expect(() => new b.Infrastructure(machine, machine, {})).to.not.throw();
+    });
   });
   describe('Query', () => {
+    const machine = new b.Machine({ provider: 'Amazon' });
     it('namespace', () => {
-      deployment = new b.Deployment({ namespace: 'mynamespace' });
-      expect(deployment.toKeldaRepresentation().namespace).to.equal(
+      infra = new b.Infrastructure(
+        machine, machine, { namespace: 'mynamespace' });
+      expect(infra.toKeldaRepresentation().namespace).to.equal(
         'mynamespace');
     });
     it('default namespace', () => {
-      expect(deployment.toKeldaRepresentation().namespace).to.equal(
+      expect(infra.toKeldaRepresentation().namespace).to.equal(
         'default-namespace');
     });
     it('admin ACL', () => {
-      deployment = new b.Deployment({ adminACL: ['local'] });
-      expect(deployment.toKeldaRepresentation().adminACL).to.eql(
+      infra = new b.Infrastructure(
+        machine, machine, { adminACL: ['local'] });
+      expect(infra.toKeldaRepresentation().adminACL).to.eql(
         ['local']);
     });
     it('default admin ACL', () => {
-      expect(deployment.toKeldaRepresentation().adminACL).to.eql([]);
+      expect(infra.toKeldaRepresentation().adminACL).to.eql([]);
     });
   });
   describe('githubKeys()', () => {});
@@ -1015,13 +1005,13 @@ describe('Bindings', () => {
       expect(expectedFail).to.throw('no infrastructure called foo');
     });
 
-    it('should return the deployment object when the infra exists', () => {
-      const expected = 'someDeployment';
+    it('should return the infrastructure object when the infra exists', () => {
+      const expected = 'someInfrastructure';
       const infraPath = b.getInfraPath('foo');
 
       const getInfraStub = sinon.stub();
       getInfraStub.withArgs(infraPath).returns(expected);
-      const revertGetInfra = b.__set__('getInfraDeployment', getInfraStub);
+      const revertGetInfra = b.__set__('getBaseInfrastructure', getInfraStub);
 
       fsExistsStub.withArgs(infraPath).returns(true);
 
@@ -1038,17 +1028,35 @@ describe('Bindings', () => {
   });
   describe('getInfrastructureKeldaRepr()', () => {
     it('should return an empty object when no Infrastructure was created', () => {
-      b.__set__('_keldaDeployment', undefined);
+      b.__set__('_keldaInfrastructure', undefined);
       expect(global.getInfrastructureKeldaRepr()).to.deep.equal({});
     });
     it('should return the correct infra object when an Infrastructure exists', () => {
-      deployment = new b.Deployment();
+      const machine = new b.Machine({ provider: 'Amazon', size: 'm3.medium' });
+      infra = new b.Infrastructure(machine, machine);
       const expected = {
         adminACL: [],
         connections: [],
         containers: [],
         loadBalancers: [],
-        machines: [],
+        machines: [
+          {
+            preemptible: false,
+            provider: 'Amazon',
+            region: 'us-west-1',
+            role: 'Master',
+            size: 'm3.medium',
+            sshKeys: [],
+          },
+          {
+            preemptible: false,
+            provider: 'Amazon',
+            region: 'us-west-1',
+            role: 'Worker',
+            size: 'm3.medium',
+            sshKeys: [],
+          },
+        ],
         namespace: 'default-namespace',
         placements: [],
       };
