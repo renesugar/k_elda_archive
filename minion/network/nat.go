@@ -261,32 +261,32 @@ func postroutingRules(publicInterface string, containers []db.Container,
 }
 
 type rule struct {
-	table         string
-	chain         string
-	ruleBlueprint []string
+	table  string
+	chain  string
+	action []string
 }
 
 func setDefaultRules(ipt IPTables) error {
 	rules := []rule{
 		{
-			table:         "filter",
-			chain:         "FORWARD",
-			ruleBlueprint: []string{"-j", "ACCEPT"},
+			table:  "filter",
+			chain:  "FORWARD",
+			action: []string{"-j", "ACCEPT"},
 		},
 		{
-			table:         "nat",
-			chain:         "INPUT",
-			ruleBlueprint: []string{"-j", "ACCEPT"},
+			table:  "nat",
+			chain:  "INPUT",
+			action: []string{"-j", "ACCEPT"},
 		},
 		{
-			table:         "nat",
-			chain:         "OUTPUT",
-			ruleBlueprint: []string{"-j", "ACCEPT"},
+			table:  "nat",
+			chain:  "OUTPUT",
+			action: []string{"-j", "ACCEPT"},
 		},
 	}
 	for _, r := range rules {
 		iptC.Inc("Append Unique")
-		err := ipt.AppendUnique(r.table, r.chain, r.ruleBlueprint...)
+		err := ipt.AppendUnique(r.table, r.chain, r.action...)
 		if err != nil {
 			return fmt.Errorf("iptables append: %s", err)
 		}
