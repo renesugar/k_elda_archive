@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -133,26 +132,6 @@ func execCmd(cmd *exec.Cmd, logLineTitle string) (string, string, error) {
 	err = cmd.Wait()
 	l.infoln(fmt.Sprintf("%s: Completed command: %v", logLineTitle, cmd.Args))
 	return stdout, stderr, err
-}
-
-func sshGen(host string, cmd *exec.Cmd) *exec.Cmd {
-	script := "ssh"
-	args := []string{"-o", "UserKnownHostsFile=/dev/null", "-o",
-		"StrictHostKeyChecking=no", fmt.Sprintf("kelda@%s", host)}
-	args = append(args, cmd.Args...)
-	sshCmd := exec.Command(script, args...)
-	return sshCmd
-}
-
-func scp(host string, source string, target string) error {
-	cmd := exec.Command("scp", "-o", "UserKnownHostsFile=/dev/null", "-o",
-		"StrictHostKeyChecking=no", source,
-		fmt.Sprintf("kelda@%s:%s", host, target))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return errors.New(string(out))
-	}
-	return nil
 }
 
 func queryMachines() ([]db.Machine, error) {
