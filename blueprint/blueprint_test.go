@@ -16,30 +16,37 @@ func TestMissingNode(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSecretOrStringString(t *testing.T) {
+func TestContainerValueString(t *testing.T) {
 	t.Parallel()
 
-	secretName := "foo"
-	res := NewSecret(secretName).String()
-	assert.Equal(t, "Secret: "+secretName, res)
+	tests := []struct {
+		val       interface{}
+		expString string
+	}{
+		{Secret{"foo"}, "Secret: foo"},
+		{"bar", "bar"},
+		{RuntimeValue{"baz"}, "RuntimeValue: baz"},
+	}
 
-	stringVal := "bar"
-	res = NewString(stringVal).String()
-	assert.Equal(t, stringVal, res)
+	for _, test := range tests {
+		res := ContainerValue{test.val}.String()
+		assert.Equal(t, test.expString, res)
+	}
 }
 
-// TestStringJSON tests marshalling and unmarshalling secrets.
+// TestSecretJSON tests marshalling and unmarshalling secrets.
 func TestSecretJSON(t *testing.T) {
 	t.Parallel()
 
 	secretName := "foo"
 	secretJSON := fmt.Sprintf(`{"nameOfSecret": "%s"}`, secretName)
 
-	var unmarshalled SecretOrString
+	var unmarshalled ContainerValue
 	assert.NoError(t, json.Unmarshal([]byte(secretJSON), &unmarshalled))
 
-	assert.True(t, unmarshalled.isSecret)
-	assert.Equal(t, secretName, unmarshalled.value)
+	secret, ok := unmarshalled.Value.(Secret)
+	assert.True(t, ok)
+	assert.Equal(t, secretName, secret.NameOfSecret)
 	checkMarshalAndUnmarshal(t, unmarshalled)
 }
 
@@ -50,21 +57,43 @@ func TestStringJSON(t *testing.T) {
 	str := "bar"
 	strJSON := fmt.Sprintf(`"%s"`, str)
 
-	var unmarshalled SecretOrString
+	var unmarshalled ContainerValue
 	assert.NoError(t, json.Unmarshal([]byte(strJSON), &unmarshalled))
 
-	assert.False(t, unmarshalled.isSecret)
-	assert.Equal(t, str, unmarshalled.value)
+	unmarshalledStr, ok := unmarshalled.Value.(string)
+	assert.True(t, ok)
+	assert.Equal(t, str, unmarshalledStr)
 	checkMarshalAndUnmarshal(t, unmarshalled)
 }
 
-// checkMarshalAndUnmarshal checks that that the given SecretOrString marshals
+// TestRuntimeValueJSON tests marshalling and unmarshalling RuntimeValues.
+func TestRuntimeValueJSON(t *testing.T) {
+	t.Parallel()
+
+	// Test unmarshalling an invalid resource key.
+	var unmarshalled ContainerValue
+	err := json.Unmarshal([]byte(`{"resourceKey": "undefined"}`), &unmarshalled)
+	assert.Contains(t, err.Error(), "undefined resource key: undefined")
+
+	// Test the success case.
+	resourceKey := ContainerPubIPKey
+	resourceKeyJSON := fmt.Sprintf(`{"resourceKey": "%s"}`, resourceKey)
+
+	assert.NoError(t, json.Unmarshal([]byte(resourceKeyJSON), &unmarshalled))
+
+	runtimeValue, ok := unmarshalled.Value.(RuntimeValue)
+	assert.True(t, ok)
+	assert.Equal(t, resourceKey, runtimeValue.ResourceKey)
+	checkMarshalAndUnmarshal(t, unmarshalled)
+}
+
+// checkMarshalAndUnmarshal checks that that the given ContainerValue marshals
 // and unmarshals to the same object.
-func checkMarshalAndUnmarshal(t *testing.T, toMarshal SecretOrString) {
+func checkMarshalAndUnmarshal(t *testing.T, toMarshal ContainerValue) {
 	jsonBytes, err := json.Marshal(toMarshal)
 	assert.NoError(t, err)
 
-	var unmarshalled SecretOrString
+	var unmarshalled ContainerValue
 	assert.NoError(t, json.Unmarshal(jsonBytes, &unmarshalled))
 	assert.Equal(t, toMarshal, unmarshalled)
 }

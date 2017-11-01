@@ -15,7 +15,7 @@ func TestContainerString(t *testing.T) {
 	exp := "Container-0{run }"
 	assert.Equal(t, got, exp)
 
-	fakeMap := make(map[string]blueprint.SecretOrString)
+	fakeMap := make(map[string]blueprint.ContainerValue)
 	fakeMap["test"] = blueprint.NewString("tester")
 	fakeTime := time.Now()
 	fakeTimeString := fakeTime.String()
@@ -68,15 +68,17 @@ func TestGetReferencedSecrets(t *testing.T) {
 	secret3 := "secret3"
 	secret4 := "secret4"
 	dbc := Container{
-		Env: map[string]blueprint.SecretOrString{
+		Env: map[string]blueprint.ContainerValue{
 			"key1": blueprint.NewString("ignoreme"),
 			"key2": blueprint.NewSecret(secret1),
 			"key3": blueprint.NewSecret(secret2),
+			"key4": blueprint.NewRuntimeValue("ignoreme"),
 		},
-		FilepathToContent: map[string]blueprint.SecretOrString{
-			"key4": blueprint.NewString("ignoreme2"),
-			"key5": blueprint.NewSecret(secret3),
-			"key6": blueprint.NewSecret(secret4),
+		FilepathToContent: map[string]blueprint.ContainerValue{
+			"key1": blueprint.NewString("ignoreme"),
+			"key2": blueprint.NewRuntimeValue("ignoreme"),
+			"key3": blueprint.NewSecret(secret3),
+			"key4": blueprint.NewSecret(secret4),
 		},
 	}
 	referencedSecrets := dbc.GetReferencedSecrets()

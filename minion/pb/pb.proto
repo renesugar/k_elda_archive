@@ -15,14 +15,15 @@ message MinionConfig {
     string ID = 1;
     Role role = 2;
     string PrivateIP = 3;
-    string Blueprint= 4;
-    string Provider = 5;
-    string Size = 6;
-    string Region = 7;
-    string FloatingIP = 8;
-    repeated string EtcdMembers = 9;
-    repeated string AuthorizedKeys = 10;
-    map<string, string> MinionIPToPublicKey = 11;
+    string PublicIP = 4;
+    string Blueprint= 5;
+    string Provider = 6;
+    string Size = 7;
+    string Region = 8;
+    string FloatingIP = 9;
+    repeated string EtcdMembers = 10;
+    repeated string AuthorizedKeys = 11;
+    map<string, string> MinionIPToPublicKey = 12;
 }
 
 message Reply {

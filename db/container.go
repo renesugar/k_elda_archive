@@ -22,8 +22,8 @@ type Container struct {
 	DockerID          string                              `json:",omitempty"`
 	Status            string                              `json:",omitempty"`
 	Command           []string                            `json:",omitempty"`
-	Env               map[string]blueprint.SecretOrString `json:",omitempty"`
-	FilepathToContent map[string]blueprint.SecretOrString `json:",omitempty"`
+	Env               map[string]blueprint.ContainerValue `json:",omitempty"`
+	FilepathToContent map[string]blueprint.ContainerValue `json:",omitempty"`
 	Hostname          string                              `json:",omitempty"`
 	Created           time.Time                           `json:","`
 
@@ -39,10 +39,10 @@ func (c Container) GetReferencedSecrets() []string {
 		getReferencedSecrets(c.FilepathToContent)...)
 }
 
-func getReferencedSecrets(x map[string]blueprint.SecretOrString) (secrets []string) {
+func getReferencedSecrets(x map[string]blueprint.ContainerValue) (secrets []string) {
 	for _, maybeSecret := range x {
-		if secretName, isSecret := maybeSecret.Value(); isSecret {
-			secrets = append(secrets, secretName)
+		if secret, ok := maybeSecret.Value.(blueprint.Secret); ok {
+			secrets = append(secrets, secret.NameOfSecret)
 		}
 	}
 	return secrets

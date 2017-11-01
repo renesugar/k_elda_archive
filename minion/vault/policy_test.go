@@ -104,7 +104,7 @@ func TestGetDesiredPolicies(t *testing.T) {
 	conn.Txn(db.ContainerTable, db.MinionTable).Run(func(view db.Database) error {
 		dbc := view.InsertContainer()
 		dbc.Minion = scheduledMinion
-		dbc.Env = map[string]blueprint.SecretOrString{
+		dbc.Env = map[string]blueprint.ContainerValue{
 			"aKey": blueprint.NewSecret(secretName),
 		}
 		view.Commit(dbc)

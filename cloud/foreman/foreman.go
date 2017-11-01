@@ -118,6 +118,7 @@ func RunOnce(conn db.Conn) {
 		newConfig := pb.MinionConfig{
 			FloatingIP:          m.machine.FloatingIP,
 			PrivateIP:           m.machine.PrivateIP,
+			PublicIP:            m.machine.PublicIP,
 			Blueprint:           blueprint,
 			Provider:            string(m.machine.Provider),
 			Size:                m.machine.Size,

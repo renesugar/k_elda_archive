@@ -40,11 +40,12 @@ func TestRunContainerOnce(t *testing.T) {
 		dbc.BlueprintID = "12"
 		dbc.Image = "ubuntu"
 		dbc.Command = []string{"1", "2", "3"}
-		dbc.Env = map[string]blueprint.SecretOrString{
-			"red":  blueprint.NewSecret("pill"),
-			"blue": blueprint.NewString("pill"),
+		dbc.Env = map[string]blueprint.ContainerValue{
+			"red":   blueprint.NewSecret("pill"),
+			"blue":  blueprint.NewString("pill"),
+			"green": blueprint.NewRuntimeValue(blueprint.ContainerPubIPKey),
 		}
-		dbc.FilepathToContent = map[string]blueprint.SecretOrString{
+		dbc.FilepathToContent = map[string]blueprint.ContainerValue{
 			"foo": blueprint.NewString("bar"),
 		}
 		view.Commit(dbc)
@@ -70,6 +71,9 @@ func TestRunContainerOnce(t *testing.T) {
         ],
         "Env": {
             "blue": "pill",
+            "green": {
+                "ResourceKey": "host.ip"
+            },
             "red": {
                 "NameOfSecret": "pill"
             }
@@ -95,11 +99,12 @@ func TestRunContainerOnce(t *testing.T) {
 		view.Commit(etcd)
 
 		dbc := view.SelectFromContainer(nil)[0]
-		dbc.Env = map[string]blueprint.SecretOrString{
-			"red":  blueprint.NewSecret("fish"),
-			"blue": blueprint.NewString("fish"),
+		dbc.Env = map[string]blueprint.ContainerValue{
+			"red":   blueprint.NewSecret("fish"),
+			"blue":  blueprint.NewString("fish"),
+			"green": blueprint.NewRuntimeValue("fish"),
 		}
-		dbc.FilepathToContent = map[string]blueprint.SecretOrString{
+		dbc.FilepathToContent = map[string]blueprint.ContainerValue{
 			"bar": blueprint.NewString("baz"),
 		}
 		view.Commit(dbc)
@@ -116,11 +121,12 @@ func TestRunContainerOnce(t *testing.T) {
 		Minion:      "1.2.3.4",
 		Image:       "ubuntu",
 		Command:     []string{"1", "2", "3"},
-		Env: map[string]blueprint.SecretOrString{
-			"red":  blueprint.NewSecret("pill"),
-			"blue": blueprint.NewString("pill"),
+		Env: map[string]blueprint.ContainerValue{
+			"red":   blueprint.NewSecret("pill"),
+			"blue":  blueprint.NewString("pill"),
+			"green": blueprint.NewRuntimeValue(blueprint.ContainerPubIPKey),
 		},
-		FilepathToContent: map[string]blueprint.SecretOrString{
+		FilepathToContent: map[string]blueprint.ContainerValue{
 			"foo": blueprint.NewString("bar"),
 		},
 		Hostname: "host",

@@ -51,12 +51,12 @@ func isWorkerReady(conn db.Conn) bool {
 	return false
 }
 
-func runWorker(conn db.Conn, dk docker.Client, myIP string) {
-	if myIP == "" {
+func runWorker(conn db.Conn, dk docker.Client, myPrivIP, myPubIP string) {
+	if myPrivIP == "" || myPubIP == "" {
 		return
 	}
 	myContainers := func(dbc db.Container) bool {
-		return dbc.IP != "" && dbc.Minion == myIP
+		return dbc.IP != "" && dbc.Minion == myPrivIP
 	}
 
 	vaultClient, err := newVault(conn)
@@ -69,7 +69,7 @@ func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 	// already be installed.  Thus, the first time we run we pre-populate the
 	// OpenFlow table.
 	once.Do(func() {
-		updateOpenflow(conn, myIP)
+		updateOpenflow(conn, myPrivIP)
 	})
 
 	filter := map[string][]string{"label": {labelPair}}
@@ -96,10 +96,10 @@ func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 		conn.Txn(db.ContainerTable).Run(func(view db.Database) error {
 			var readyToRun []evaluatedContainer
 			for _, dbc := range view.SelectFromContainer(myContainers) {
-				resolvedEnv, missingEnv := evaluateSecretOrStrings(
-					dbc.Env, secretMap)
-				resolvedFiles, missingFiles := evaluateSecretOrStrings(
-					dbc.FilepathToContent, secretMap)
+				resolvedEnv, missingEnv := evaluateContainerValues(
+					dbc.Env, secretMap, myPubIP)
+				resolvedFiles, missingFiles := evaluateContainerValues(
+					dbc.FilepathToContent, secretMap, myPubIP)
 
 				missingSecrets := uniqueStrings(
 					append(missingEnv, missingFiles...))
@@ -138,7 +138,7 @@ func runWorker(conn db.Conn, dk docker.Client, myIP string) {
 			time.Since(start))
 	}
 
-	updateOpenflow(conn, myIP)
+	updateOpenflow(conn, myPrivIP)
 }
 
 func syncWorker(dbcs []evaluatedContainer, dkcs []docker.Container) (

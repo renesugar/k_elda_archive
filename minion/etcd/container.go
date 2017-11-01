@@ -85,30 +85,24 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 	key := func(iface interface{}) interface{} {
 		dbc := iface.(db.Container)
 
-		envSecrets, envStrings := splitSecretOrStringMap(dbc.Env)
-		fileSecrets, fileStrings := splitSecretOrStringMap(dbc.FilepathToContent)
 		return struct {
-			Hostname                 string
-			IP                       string
-			BlueprintID              string
-			Image                    string
-			ImageID                  string
-			Command                  string
-			EnvSecrets               string
-			EnvStrings               string
-			FilepathToContentSecrets string
-			FilepathToContentStrings string
+			Hostname          string
+			IP                string
+			BlueprintID       string
+			Image             string
+			ImageID           string
+			Command           string
+			Env               string
+			FilepathToContent string
 		}{
-			Hostname:                 dbc.Hostname,
-			IP:                       dbc.IP,
-			BlueprintID:              dbc.BlueprintID,
-			Image:                    dbc.Image,
-			ImageID:                  dbc.ImageID,
-			Command:                  fmt.Sprintf("%v", dbc.Command),
-			EnvSecrets:               util.MapAsString(envSecrets),
-			EnvStrings:               util.MapAsString(envStrings),
-			FilepathToContentSecrets: util.MapAsString(fileSecrets),
-			FilepathToContentStrings: util.MapAsString(fileStrings),
+			Hostname:          dbc.Hostname,
+			IP:                dbc.IP,
+			BlueprintID:       dbc.BlueprintID,
+			Image:             dbc.Image,
+			ImageID:           dbc.ImageID,
+			Command:           fmt.Sprintf("%v", dbc.Command),
+			Env:               containerValueMapKey(dbc.Env),
+			FilepathToContent: containerValueMapKey(dbc.FilepathToContent),
 		}
 	}
 
@@ -142,21 +136,12 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 	}
 }
 
-// splitSecretOrStringMap divides a map with SecretOrString values into two maps
-// with string values. The first map has only Secret names as values, and the
-// second map has raw strings.
-func splitSecretOrStringMap(x map[string]blueprint.SecretOrString) (
-	secrets map[string]string, strings map[string]string) {
-
-	secrets = map[string]string{}
-	strings = map[string]string{}
-	for key, boxedVal := range x {
-		val, isSecret := boxedVal.Value()
-		if isSecret {
-			secrets[key] = val
-		} else {
-			strings[key] = val
-		}
+// containerValueMapKey converts the given map of strings to ContainerValues
+// into a consistent string.
+func containerValueMapKey(x map[string]blueprint.ContainerValue) string {
+	m := map[string]string{}
+	for key, val := range x {
+		m[key] = fmt.Sprintf("%+v", val)
 	}
-	return secrets, strings
+	return util.MapAsString(m)
 }

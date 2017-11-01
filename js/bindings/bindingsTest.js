@@ -461,14 +461,16 @@ describe('Bindings', () => {
       const c = new b.Container('host', 'image');
       c.env.foo = 'bar';
       c.env.secretEnv = new b.Secret('secret');
+      c.env.ipEnv = b.hostIP;
       c.deploy(infra);
       checkContainers([{
-        id: '4e73e3aa5e1d1d083061ff9ab7b21bbce429f410',
+        id: 'd6eb13faa23199615c6fbecff35ada1626f8ccb6',
         image: new b.Image('image'),
         command: [],
         env: {
           foo: 'bar',
           secretEnv: { nameOfSecret: 'secret' },
+          ipEnv: { resourceKey: 'host.ip' },
         },
         hostname: 'host',
         filepathToContent: {},
@@ -562,13 +564,19 @@ describe('Bindings', () => {
 
     const env = { foo: 'bar' };
 
-    const filepathToContent = { qux: new b.Secret('quuz') };
-    const jsonFilepathToContent = { qux: { nameOfSecret: 'quuz' } };
+    const filepathToContent = {
+      qux: new b.Secret('quuz'),
+      pubIP: b.hostIP,
+    };
+    const jsonFilepathToContent = {
+      qux: { nameOfSecret: 'quuz' },
+      pubIP: { resourceKey: 'host.ip' },
+    };
     it('withEnv', () => {
       // The blueprint ID is different than the Container created with the
       // constructor because the hostname ID increases with each withEnv
       // call.
-      const id = 'd6b685d85b5426f8bf2083cb8394466099aba0e4';
+      const id = '6d9ccb3b68beb44cc372936f66fafbf6deac4a27';
       const container = new b.Container(hostname, image, {
         command,
         filepathToContent,
@@ -584,7 +592,7 @@ describe('Bindings', () => {
       }]);
     });
     it('constructor', () => {
-      const id = 'bcdf48e8ad8247fb0fb2bb4024c184811a7d844e';
+      const id = '254ee1916fecf9811f1b4d02393a1f561ffd86f8';
       const container = new b.Container(hostname, image, {
         command, env, filepathToContent,
       });

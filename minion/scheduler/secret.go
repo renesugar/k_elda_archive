@@ -81,27 +81,35 @@ func getSecret(secretStore vault.SecretStore, name string) (string, error) {
 	return secret, nil
 }
 
-// evaluateSecretOrStrings converts a map with SecretOrString values into raw
-// strings. It does so by looking up the value of secrets in the given secretMap.
+// evaluateContainerValues converts a map with ContainerValue values into raw
+// strings. It does so by looking up the value of secrets in the given secretMap,
+// and converting any RuntimeValue values.
 // Any undefined secrets are returned in the `missing` slice.
-func evaluateSecretOrStrings(toEvaluate map[string]blueprint.SecretOrString,
-	secretMap map[string]string) (resolved map[string]string, missing []string) {
+func evaluateContainerValues(toEvaluate map[string]blueprint.ContainerValue,
+	secretMap map[string]string, myPubIP string) (map[string]string, []string) {
 
-	resolved = map[string]string{}
-	for key, val := range toEvaluate {
-		secretOrString, isSecret := val.Value()
-
-		// If boxedVal is a secret, then we need to look it up in the secretMap.
-		// Otherwise, the value is a raw string, and we can use it directly.
-		if isSecret {
-			secret, ok := secretMap[secretOrString]
+	var missing []string
+	resolved := map[string]string{}
+	for key, valIntf := range toEvaluate {
+		switch val := valIntf.Value.(type) {
+		case blueprint.Secret:
+			secret, ok := secretMap[val.NameOfSecret]
 			if !ok {
-				missing = append(missing, secretOrString)
+				missing = append(missing, val.NameOfSecret)
 				continue
 			}
 			resolved[key] = secret
-		} else {
-			resolved[key] = secretOrString
+		case blueprint.RuntimeValue:
+			if val.ResourceKey == blueprint.ContainerPubIPKey {
+				resolved[key] = myPubIP
+			} else {
+				log.WithField("key", val.ResourceKey).
+					Warn("Unknown RuntimeValue key")
+			}
+		case string:
+			resolved[key] = val
+		default:
+			panic("unexpected container value type")
 		}
 	}
 	return resolved, missing
