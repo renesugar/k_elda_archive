@@ -30,7 +30,7 @@ type Client interface {
 	AssociateAddress(id, allocationID string) error
 	DisassociateAddress(associationID string) error
 
-	DescribeVolumes(id string) ([]*ec2.Volume, error)
+	DescribeVolumes() ([]*ec2.Volume, error)
 }
 
 type awsClient struct {
@@ -162,12 +162,9 @@ func (ac awsClient) DisassociateAddress(associationID string) error {
 	return err
 }
 
-func (ac awsClient) DescribeVolumes(id string) ([]*ec2.Volume, error) {
+func (ac awsClient) DescribeVolumes() ([]*ec2.Volume, error) {
 	c.Inc("List Volumes")
-	resp, err := ac.client.DescribeVolumes(&ec2.DescribeVolumesInput{
-		Filters: []*ec2.Filter{{
-			Name:   aws.String("volume-id"),
-			Values: []*string{&id}}}})
+	resp, err := ac.client.DescribeVolumes(nil)
 	if err != nil {
 		return nil, err
 	}

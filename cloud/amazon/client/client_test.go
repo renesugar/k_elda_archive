@@ -56,6 +56,6 @@ func TestErrors(t *testing.T) {
 	err = ac.DisassociateAddress("")
 	assert.EqualError(t, err, "test")
 
-	_, err = ac.DescribeVolumes("")
+	_, err = ac.DescribeVolumes()
 	assert.EqualError(t, err, "test")
 }

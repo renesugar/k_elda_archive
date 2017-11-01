@@ -71,8 +71,9 @@ func TestList(t *testing.T) {
 			},
 		}, nil,
 	)
-	mc.On("DescribeVolumes", mock.Anything).Return([]*ec2.Volume{{
-		Size: aws.Int64(32)}}, nil)
+	mc.On("DescribeVolumes").Return([]*ec2.Volume{{
+		VolumeId: aws.String("volume-id"),
+		Size:     aws.Int64(32)}}, nil)
 	mc.On("DescribeSpotInstanceRequests", mock.Anything, mock.Anything).Return(
 		[]*ec2.SpotInstanceRequest{
 			// A spot request and a corresponding instance.
@@ -342,6 +343,7 @@ func TestBoot(t *testing.T) {
 		}, nil,
 	)
 	mc.On("DescribeAddresses").Return(nil, nil)
+	mc.On("DescribeVolumes").Return(nil, nil)
 
 	mc.On("DescribeSpotInstanceRequests", mock.Anything, mock.Anything).Return(
 		[]*ec2.SpotInstanceRequest{{
@@ -442,6 +444,7 @@ func TestBootUnsuccessful(t *testing.T) {
 		}, nil,
 	)
 	mc.On("DescribeAddresses").Return(nil, nil)
+	mc.On("DescribeVolumes").Return(nil, nil)
 
 	mc.On("DescribeSpotInstanceRequests", mock.Anything,
 		mock.Anything).Return(nil, nil)
@@ -487,6 +490,7 @@ func TestStop(t *testing.T) {
 		&ec2.DescribeInstancesOutput{}, nil,
 	)
 	mc.On("DescribeAddresses").Return(nil, nil)
+	mc.On("DescribeVolumes").Return(nil, nil)
 
 	amazonProvider := newAmazon(testNamespace, DefaultRegion)
 	amazonProvider.Client = mc
@@ -545,6 +549,7 @@ func TestWaitBoot(t *testing.T) {
 	}
 	mc := new(mocks.Client)
 	mc.On("DescribeAddresses").Return(nil, nil)
+	mc.On("DescribeVolumes").Return(nil, nil)
 	mc.On("DescribeSecurityGroup", mock.Anything).Return([]*ec2.SecurityGroup{{
 		GroupId: aws.String("groupId")}}, nil)
 
@@ -638,6 +643,7 @@ func TestWaitStop(t *testing.T) {
 	)
 
 	mc.On("DescribeAddresses").Return(nil, nil)
+	mc.On("DescribeVolumes").Return(nil, nil)
 
 	describeRequests := mc.On("DescribeSpotInstanceRequests", mock.Anything,
 		mock.Anything)

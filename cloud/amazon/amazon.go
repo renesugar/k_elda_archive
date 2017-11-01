@@ -293,17 +293,19 @@ func (prvdr *Provider) listSpots() (machines []awsMachine, err error) {
 	return machines, nil
 }
 
-func (prvdr *Provider) parseDiskSize(inst ec2.Instance) (int, error) {
+func (prvdr *Provider) parseDiskSize(volumeMap map[string]ec2.Volume, inst ec2.Instance) (
+	int, error) {
 	if len(inst.BlockDeviceMappings) == 0 {
 		return 0, nil
 	}
 
 	volumeID := *inst.BlockDeviceMappings[0].Ebs.VolumeId
-	volumes, err := prvdr.DescribeVolumes(volumeID)
-	if err != nil || len(volumes) == 0 {
-		return 0, err
+	volume, ok := volumeMap[volumeID]
+	if !ok {
+		return 0, fmt.Errorf("no disk information for volume with ID %s",
+			volumeID)
 	}
-	return int(*volumes[0].Size), nil
+	return int(*volume.Size), nil
 }
 
 // `listInstances` fetches and parses all machines in the namespace into a list
@@ -330,9 +332,20 @@ func (prvdr *Provider) listInstances() (instances []awsMachine, err error) {
 		}
 	}
 
+	volumes, err := prvdr.DescribeVolumes()
+	if err != nil {
+		return nil, err
+	}
+	volumeMap := map[string]ec2.Volume{}
+	for _, volume := range volumes {
+		if volume.VolumeId != nil {
+			volumeMap[*volume.VolumeId] = *volume
+		}
+	}
+
 	for _, res := range insts.Reservations {
 		for _, inst := range res.Instances {
-			diskSize, err := prvdr.parseDiskSize(*inst)
+			diskSize, err := prvdr.parseDiskSize(volumeMap, *inst)
 			if err != nil {
 				log.WithError(err).
 					Warn("Error retrieving Amazon machine " +

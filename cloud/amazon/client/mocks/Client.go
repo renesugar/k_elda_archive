@@ -165,13 +165,13 @@ func (_m *Client) DescribeSpotInstanceRequests(ids []string, filters []*ec2.Filt
 	return r0, r1
 }
 
-// DescribeVolumes provides a mock function with given fields: id
-func (_m *Client) DescribeVolumes(id string) ([]*ec2.Volume, error) {
-	ret := _m.Called(id)
+// DescribeVolumes provides a mock function with given fields:
+func (_m *Client) DescribeVolumes() ([]*ec2.Volume, error) {
+	ret := _m.Called()
 
 	var r0 []*ec2.Volume
-	if rf, ok := ret.Get(0).(func(string) []*ec2.Volume); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func() []*ec2.Volume); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*ec2.Volume)
@@ -179,8 +179,8 @@ func (_m *Client) DescribeVolumes(id string) ([]*ec2.Volume, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}
