@@ -191,7 +191,7 @@ function credentialsPrompts(provider) {
   const keyNames = Object.keys(keys);
 
   const credsHelp = `Kelda needs access to your ${provider.getName()} ` +
-  'credientials in order to launch VMs in your account. See details at ' +
+  'credentials in order to launch VMs in your account. See details at ' +
   'http://docs.kelda.io/#cloud-provider-configuration';
 
   keyNames.forEach((keyName) => {
