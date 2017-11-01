@@ -62,6 +62,13 @@ func checkString(t *testing.T, str string) {
 			strings.Contains(line, "WARN [") {
 			t.Errorf("Minion logs has error: %s", line)
 		}
+
+		// The minion logs should not contain any secret values. These secret
+		// values were created in 70-secret-setup/secret_setup_test.go.
+		if strings.Contains(line, "env secret") ||
+			strings.Contains(line, "file secret") {
+			t.Errorf("Minion logs has a secret value: %s", line)
+		}
 	}
 }
 
