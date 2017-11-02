@@ -7,17 +7,17 @@ const image = 'alpine';
 const command = ['tail', '-f', '/dev/null'];
 
 const redContainers = [];
-for (let i = 0; i < 5; i += 1) {
+for (let i = 0; i < infrastructure.nWorker; i += 1) {
   redContainers.push(new kelda.Container('red', image, { command }));
 }
 
 const blueContainers = [];
-for (let i = 0; i < 5; i += 1) {
+for (let i = 0; i < infrastructure.nWorker; i += 1) {
   blueContainers.push(new kelda.Container('blue', image, { command }));
 }
 
 const yellowContainers = [];
-for (let i = 0; i < 5; i += 1) {
+for (let i = 0; i < infrastructure.nWorker; i += 1) {
   yellowContainers.push(new kelda.Container('yellow', image, { command }));
 }
 

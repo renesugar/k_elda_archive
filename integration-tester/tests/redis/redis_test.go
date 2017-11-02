@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/kelda/kelda/integration-tester/util"
@@ -15,8 +16,11 @@ const (
 	// the container that we should run the test from.
 	masterHostname = "redis-master"
 
-	masterPassword     = "password"
-	expConnectedSlaves = 3
+	// The hostname prefix of the workers of the Redis cluster. This is how we
+	// identify the containers that we should connect to the master.
+	workerHostnamePrefix = "redis-wk"
+
+	masterPassword = "password"
 )
 
 var connectedSlavesRegex = regexp.MustCompile(`connected_slaves:(\d+)`)
@@ -34,10 +38,14 @@ func TestRedis(t *testing.T) {
 	}
 
 	var redisMasterID string
+	var expConnectedSlaves int
 	for _, c := range containers {
 		if c.Hostname == masterHostname {
 			redisMasterID = c.BlueprintID
-			break
+		}
+
+		if strings.HasPrefix(c.Hostname, workerHostnamePrefix) {
+			expConnectedSlaves++
 		}
 	}
 	if redisMasterID == "" {

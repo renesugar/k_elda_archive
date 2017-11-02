@@ -6,9 +6,11 @@ const infrastructure = require('../../config/infrastructure.js');
 
 const infra = infrastructure.createTestInfrastructure();
 
-const mongo = new Mongo(3);
+// Mongo supports at most 7 voting members.
+const numMongo = Math.min(7, Math.floor(infrastructure.nWorker / 2));
+const mongo = new Mongo(numMongo);
 const app = new Node({
-  nWorker: 3,
+  nWorker: Math.floor(infrastructure.nWorker / 2),
   repo: 'https://github.com/kelda/node-todo.git',
   env: {
     PORT: '80',

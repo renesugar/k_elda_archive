@@ -4,7 +4,7 @@ const infrastructure = require('../../config/infrastructure.js');
 const infra = infrastructure.createTestInfrastructure();
 
 const containers = [];
-for (let i = 0; i < 4; i += 1) {
+for (let i = 0; i < infrastructure.nWorker; i += 1) {
   containers.push(new kelda.Container('web', 'nginx:1.10', {
     filepathToContent: {
       '/usr/share/nginx/html/index.html':

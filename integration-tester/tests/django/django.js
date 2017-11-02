@@ -6,8 +6,10 @@ const Mongo = require('@kelda/mongo');
 
 const infra = infrastructure.createTestInfrastructure();
 
-const mongo = new Mongo(3);
-const django = new Django(3, 'keldaio/django-polls', mongo);
+// Mongo supports at most 7 voting members.
+const numMongo = Math.min(7, Math.floor(infrastructure.nWorker / 2));
+const mongo = new Mongo(numMongo);
+const django = new Django(Math.floor(infrastructure.nWorker / 2), 'keldaio/django-polls', mongo);
 const proxy = haproxy.simpleLoadBalancer(django.containers);
 proxy.allowFrom(kelda.publicInternet, 80);
 
