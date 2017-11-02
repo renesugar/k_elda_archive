@@ -1,7 +1,21 @@
 const { Infrastructure, Machine } = require('kelda');
 
 /** The number of worker machines to launch to run the tests on. */
-const nWorker = 3;
+const nWorker = getNumberWorkers();
+
+/**
+ * getNumberWorkers returns the number of Kelda workers to boot by parsing
+ * the NUMBER_WORKERS environment variable, and defaulting to 3 if it is not
+ * defined.
+ *
+ * @returns {int} The number of workers to boot.
+ */
+function getNumberWorkers() {
+  if (process.env.NUMBER_WORKERS !== undefined) {
+    return parseInt(process.env.NUMBER_WORKERS, 10);
+  }
+  return 3;
+}
 
 /**
  * Creates an Infrastructure to use to run the Kelda integration tests.
