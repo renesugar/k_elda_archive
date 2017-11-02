@@ -17,14 +17,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// minions is a map from a machine's cloud ID to the minion running on that
-// machine. It must be updated regularly in order to account for changes such as
-// new machines, or changes to a machine's IP address that require obtaining a
-// new client.
-var minions map[string]*minion
-
 // Credentials that the foreman should use to connect to its minions.
-var Credentials connection.Credentials
+var credentials connection.Credentials
 
 type client interface {
 	setMinion(pb.MinionConfig) error
@@ -37,66 +31,151 @@ type clientImpl struct {
 	cc *grpc.ClientConn
 }
 
-type minion struct {
-	client    client
+// The minion information that is shared between threads.
+type minionStatus struct {
 	connected bool
-
-	machine db.Machine
-	config  pb.MinionConfig
-
-	mark bool /* Mark and sweep garbage collection. */
+	role      db.Role
 }
+
+// A map from cloud ID to the corresponding `minionStatus`. This map is shared
+// across threads, so all accesses should be locked with the `statusLock`.
+var minionStatuses = map[string]minionStatus{}
+var statusLock = &sync.Mutex{}
 
 var c = counter.New("Foreman")
 
-// Init the first time the foreman operates on a new namespace.  It queries the currently
-// running VMs for their previously assigned roles, and writes them to the database.
-func Init(conn db.Conn) {
-	c.Inc("Initialize")
+// Run checks for updates to the machine table and starts and stops minion threads
+// in response.
+func Run(conn db.Conn, creds connection.Credentials) {
+	credentials = creds
+	// A map from cloud ID to the stop channel for the corresponding minion thread.
+	minionChans := make(map[string]chan struct{})
 
-	for _, m := range minions {
-		m.client.Close()
-	}
-	minions = map[string]*minion{}
-
-	conn.Txn(db.MachineTable).Run(func(view db.Database) error {
-		machines := view.SelectFromMachine(func(m db.Machine) bool {
+	for range conn.Trigger(db.MachineTable).C {
+		machines := conn.SelectFromMachine(func(m db.Machine) bool {
 			return m.PublicIP != "" && m.PrivateIP != "" &&
 				m.CloudID != "" && m.Status != db.Stopping
 		})
-
-		updateMinionMap(machines)
-		forEachMinion(updateConfig)
-		return nil
-	})
+		updateMinions(conn, machines, minionChans)
+	}
 }
 
-// RunOnce should be called regularly to allow the foreman to update minion cfg.
-func RunOnce(conn db.Conn) {
-	c.Inc("Run")
+func updateMinions(conn db.Conn, machines []db.Machine,
+	minionChans map[string]chan struct{}) {
+
+	seen := make(map[string]struct{})
+	for _, m := range machines {
+		_, ok := minionChans[m.CloudID]
+
+		if !ok {
+			stop := make(chan struct{})
+			minionChans[m.CloudID] = stop
+			go newMinion(conn, m.CloudID, stop)
+		}
+
+		seen[m.CloudID] = struct{}{}
+	}
+
+	for id := range minionChans {
+		if _, ok := seen[id]; !ok {
+			close(minionChans[id])
+			delete(minionChans, id)
+		}
+	}
+}
+
+var newMinion = newMinionImpl
+
+func newMinionImpl(conn db.Conn, cloudID string, stop chan struct{}) {
+	// Threads that aren't currently connected to their minion should run more often.
+	frequentTick := time.NewTicker(5 * time.Second)
+	tableTrigger := conn.TriggerTick(60, db.BlueprintTable, db.MachineTable)
+	defer frequentTick.Stop()
+	defer tableTrigger.Stop()
+
+	var connected bool
+	for {
+		select {
+		case <-stop:
+		case <-frequentTick.C:
+			if connected {
+				continue
+			}
+		case <-tableTrigger.C:
+		}
+
+		// In a race between a closed stop and a trigger, choose stop.
+		select {
+		case <-stop:
+			return
+		default:
+		}
+
+		currConfig, connected := runOnce(conn, cloudID)
+		setMinionStatus(cloudID, currConfig, connected)
+	}
+}
+
+func runOnce(conn db.Conn, cloudID string) (currConfig pb.MinionConfig, connected bool) {
+	currConfig = pb.MinionConfig{}
+	connected = false
 
 	var blueprint string
 	var machines []db.Machine
-	conn.Txn(db.BlueprintTable,
-		db.MachineTable).Run(func(view db.Database) error {
-
-		machines = view.SelectFromMachine(func(m db.Machine) bool {
-			return m.PublicIP != "" && m.PrivateIP != ""
-		})
-
+	conn.Txn(db.BlueprintTable, db.MachineTable).Run(func(view db.Database) error {
 		bp, _ := view.GetBlueprint()
 		blueprint = bp.Blueprint.String()
 
+		machines = view.SelectFromMachine(func(m db.Machine) bool {
+			return m.CloudID != "" && m.PublicIP != "" &&
+				m.PrivateIP != "" && m.Status != db.Stopping
+		})
 		return nil
 	})
 
-	updateMinionMap(machines)
-	forEachMinion(updateConfig)
+	var minionMachine db.Machine
+	var found bool
+	for _, m := range machines {
+		if m.CloudID == cloudID {
+			minionMachine = m
+			found = true
+		}
+	}
+	if !found {
+		log.Debugf("Failed to get machine with ID %s", cloudID)
+		return
+	}
 
-	// Generate the public key and etcd configurations based on the machines in
-	// the database. Note that we can't generate the configuration based on the
-	// minion map because that contains the _connected_ minions, and we should
-	// not alter the configuration because of temporary connectivity issues.
+	cli, err := newClient(minionMachine.PublicIP)
+	if err != nil {
+		log.WithError(err).Debugf("Failed to connect to minion %s", cloudID)
+		return
+	}
+	defer cli.Close()
+
+	currConfig, err = cli.getMinion()
+	if err != nil {
+		log.WithError(err).Debug("Failed to get minion config")
+	}
+
+	connected = err == nil
+	if !connected {
+		return
+	}
+
+	newConfig := makeConfig(machines, minionMachine, blueprint)
+	if !reflect.DeepEqual(currConfig, newConfig) {
+		err = cli.setMinion(newConfig)
+		if err != nil {
+			log.WithError(err).Debug("Failed to set minion config.")
+		}
+	}
+	return
+}
+
+func makeConfig(machines []db.Machine, minionMachine db.Machine,
+	blueprint string) pb.MinionConfig {
+
 	minionIPToPublicKey := map[string]string{}
 	var etcdIPs []string
 	for _, m := range machines {
@@ -109,41 +188,36 @@ func RunOnce(conn db.Conn) {
 		}
 	}
 
-	// Assign all of the minions their new configs
-	forEachMinion(func(m *minion) {
-		if !m.connected {
-			return
-		}
-
-		newConfig := pb.MinionConfig{
-			FloatingIP:          m.machine.FloatingIP,
-			PrivateIP:           m.machine.PrivateIP,
-			PublicIP:            m.machine.PublicIP,
-			Blueprint:           blueprint,
-			Provider:            string(m.machine.Provider),
-			Size:                m.machine.Size,
-			Region:              m.machine.Region,
-			EtcdMembers:         etcdIPs,
-			AuthorizedKeys:      m.machine.SSHKeys,
-			MinionIPToPublicKey: minionIPToPublicKey,
-		}
-
-		if reflect.DeepEqual(newConfig, m.config) {
-			return
-		}
-
-		if err := m.client.setMinion(newConfig); err != nil {
-			log.WithError(err).Error("Failed to set minion config.")
-			return
-		}
-	})
+	return pb.MinionConfig{
+		FloatingIP:          minionMachine.FloatingIP,
+		PrivateIP:           minionMachine.PrivateIP,
+		PublicIP:            minionMachine.PublicIP,
+		Blueprint:           blueprint,
+		Provider:            string(minionMachine.Provider),
+		Size:                minionMachine.Size,
+		Region:              minionMachine.Region,
+		EtcdMembers:         etcdIPs,
+		AuthorizedKeys:      minionMachine.SSHKeys,
+		MinionIPToPublicKey: minionIPToPublicKey,
+	}
 }
 
-// GetMachineRole uses the minion map to find the associated minion with
-// the cloudID, according to the foreman's last update cycle.
+func setMinionStatus(cloudID string, config pb.MinionConfig, isConnected bool) {
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	minionStatuses[cloudID] = minionStatus{
+		connected: isConnected,
+		role:      db.PBToRole(config.Role),
+	}
+}
+
+// GetMachineRole uses the minionStatuses map to find the minion associated with
+// the given cloud ID, according to the minion thread's last update cycle.
 func GetMachineRole(cloudID string) db.Role {
-	if min, ok := minions[cloudID]; ok {
-		return db.PBToRole(min.config.Role)
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	if min, ok := minionStatuses[cloudID]; ok {
+		return min.role
 	}
 	return db.None
 }
@@ -151,76 +225,15 @@ func GetMachineRole(cloudID string) db.Role {
 // IsConnected returns whether the foreman is connected to the minion running
 // on the machine with the given cloud ID.
 func IsConnected(cloudID string) bool {
-	min, ok := minions[cloudID]
-	return ok && min.connected
-}
-
-func updateMinionMap(machines []db.Machine) {
-	for _, m := range machines {
-		min, ok := minions[m.CloudID]
-		if !ok || min.machine.PublicIP != m.PublicIP {
-			client, err := newClient(m.PublicIP)
-			if err != nil {
-				continue
-			}
-			min = &minion{client: client}
-			minions[m.CloudID] = min
-		}
-
-		min.machine = m
-		min.mark = true
-	}
-
-	for k, minion := range minions {
-		if minion.mark {
-			minion.mark = false
-		} else {
-			minion.client.Close()
-			delete(minions, k)
-		}
-	}
-}
-
-func forEachMinion(do func(minion *minion)) {
-	var wg sync.WaitGroup
-	wg.Add(len(minions))
-	for _, m := range minions {
-		go func(m *minion) {
-			do(m)
-			wg.Done()
-		}(m)
-	}
-	wg.Wait()
-}
-
-func updateConfig(m *minion) {
-	var err error
-	m.config, err = m.client.getMinion()
-	if err != nil {
-		if m.connected {
-			log.WithError(err).Error("Failed to get minion config")
-		} else {
-			log.WithError(err).Debug("Failed to get minion config")
-		}
-	}
-
-	connected := err == nil
-	if connected == m.connected {
-		return
-	}
-
-	m.connected = connected
-	if m.connected {
-		c.Inc("Minion Connected")
-		log.WithField("machine", m.machine).Debug("New connection")
-	} else {
-		c.Inc("Minion Disconnected")
-	}
+	statusLock.Lock()
+	defer statusLock.Unlock()
+	minion, ok := minionStatuses[cloudID]
+	return ok && minion.connected
 }
 
 func newClientImpl(ip string) (client, error) {
 	c.Inc("New Minion Client")
-	cc, err := connection.Client("tcp", ip+":9999", Credentials.ClientOpts())
+	cc, err := connection.Client("tcp", ip+":9999", credentials.ClientOpts())
 	if err != nil {
 		c.Inc("New Minion Client Error")
 		return nil, err

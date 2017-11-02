@@ -10,7 +10,6 @@ import (
 	"github.com/kelda/kelda/cloud/foreman"
 	"github.com/kelda/kelda/cloud/google"
 	"github.com/kelda/kelda/cloud/vagrant"
-	"github.com/kelda/kelda/connection"
 	"github.com/kelda/kelda/counter"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/util"
@@ -50,18 +49,14 @@ const defaultDiskSize = 32
 
 // Run continually checks 'conn' for cloud changes and recreates the cloud as
 // needed.
-func Run(conn db.Conn, creds connection.Credentials, adminSSHKey string) {
-	foreman.Credentials = creds
+func Run(conn db.Conn, adminSSHKey string) {
 	adminKey = adminSSHKey
 
 	var ns string
-	foreman.Init(conn)
 	stop := make(chan struct{})
 	for range conn.TriggerTick(60, db.BlueprintTable, db.MachineTable).C {
 		newns, _ := conn.GetBlueprintNamespace()
 		if newns == ns {
-			foreman.RunOnce(conn)
-			sleep(5 * time.Second) // Rate-limit the foreman.
 			continue
 		}
 
@@ -72,7 +67,6 @@ func Run(conn db.Conn, creds connection.Credentials, adminSSHKey string) {
 			close(stop)
 			stop = make(chan struct{})
 			makeClouds(conn, ns, stop)
-			foreman.Init(conn)
 		}
 	}
 }

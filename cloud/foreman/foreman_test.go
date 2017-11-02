@@ -3,6 +3,7 @@ package foreman
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -11,170 +12,207 @@ import (
 )
 
 type clients struct {
-	clients  map[string]*fakeClient
-	newCalls int
+	clients        map[string]*fakeClient
+	newClientError bool
+	getMinionError bool
 }
 
-func TestBoot(t *testing.T) {
-	conn, clients := startTest(t, map[string]pb.MinionConfig_Role{
-		"1.1.1.1": pb.MinionConfig_NONE,
-		"2.2.2.2": pb.MinionConfig_NONE,
+func TestUpdateMinions(t *testing.T) {
+	newMinionCalls := 0
+	newMinion = func(conn db.Conn, cloudID string, stop chan struct{}) {
+		newMinionCalls++
+	}
+	conn := db.New()
+
+	minionChans := make(map[string]chan struct{})
+	machines := []db.Machine{
+		{PublicIP: "1.1.1.1", CloudID: "ID1"},
+		{PublicIP: "2.2.2.2", CloudID: "ID2"},
+	}
+
+	updateMinions(conn, machines, minionChans)
+	// Give the minions time to be created.
+	for i := 0; i < 20 && newMinionCalls < 2; i++ {
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	assert.Equal(t, 2, newMinionCalls)
+	assert.Contains(t, minionChans, "ID1")
+	assert.Contains(t, minionChans, "ID2")
+
+	// Removed machine.
+	machines = []db.Machine{{PublicIP: "2.2.2.2", CloudID: "ID2"}}
+	expectStop := minionChans["ID1"]
+	updateMinions(conn, machines, minionChans)
+	assert.Equal(t, 2, newMinionCalls)
+	assert.NotContains(t, minionChans, "ID1")
+	assert.Contains(t, minionChans, "ID2")
+	_, more := <-expectStop
+	assert.False(t, more)
+
+	// Create a new thread when a machine is replaced by a machine with the same IP.
+	machines = []db.Machine{{PublicIP: "2.2.2.2", CloudID: "ID22"}}
+	expectStop = minionChans["ID2"]
+	updateMinions(conn, machines, minionChans)
+
+	for i := 0; i < 20 && newMinionCalls < 3; i++ {
+		time.Sleep(500 * time.Millisecond)
+	}
+	assert.Equal(t, 3, newMinionCalls)
+	assert.NotContains(t, minionChans, "ID2")
+	assert.Contains(t, minionChans, "ID22")
+	_, more = <-expectStop
+	assert.False(t, more)
+
+	machines = []db.Machine{}
+	expectStop = minionChans["ID22"]
+	updateMinions(conn, machines, minionChans)
+	assert.Equal(t, 3, newMinionCalls)
+	assert.Len(t, minionChans, 0)
+	_, more = <-expectStop
+	assert.False(t, more)
+
+	machines = []db.Machine{{PublicIP: "3.3.3.3", CloudID: "ID3"}}
+	updateMinions(conn, machines, minionChans)
+
+	for i := 0; i < 20 && newMinionCalls < 4; i++ {
+		time.Sleep(500 * time.Millisecond)
+	}
+	assert.Len(t, minionChans, 1)
+	assert.Contains(t, minionChans, "ID3")
+	assert.Equal(t, 4, newMinionCalls)
+}
+
+func TestMakeConfig(t *testing.T) {
+	machine1 := db.Machine{
+		PublicIP:  "1.1.1.1",
+		Role:      db.Worker,
+		PrivateIP: "10.10.10.10",
+		CloudID:   "ID1",
+	}
+
+	machine2 := db.Machine{
+		PublicIP:  "2.2.2.2",
+		Role:      db.Master,
+		PrivateIP: "20.20.20.20",
+		CloudID:   "ID2",
+		PublicKey: "pubKey",
+	}
+	allMachines := []db.Machine{machine1, machine2}
+
+	config := makeConfig(allMachines, machine1, `{"Namespace":"ns"}`)
+	assert.Equal(t, "10.10.10.10", config.PrivateIP)
+	assert.Equal(t, `{"Namespace":"ns"}`, config.Blueprint)
+	assert.Len(t, config.EtcdMembers, 1)
+	assert.Contains(t, config.EtcdMembers, "20.20.20.20")
+	assert.Len(t, config.MinionIPToPublicKey, 1)
+	assert.Contains(t, config.MinionIPToPublicKey, "20.20.20.20")
+	assert.Equal(t, "pubKey", config.MinionIPToPublicKey["20.20.20.20"])
+
+	config = makeConfig(allMachines, machine2, `{"Namespace":"ns"}`)
+	assert.Equal(t, "20.20.20.20", config.PrivateIP)
+	assert.Equal(t, `{"Namespace":"ns"}`, config.Blueprint)
+	assert.Len(t, config.EtcdMembers, 1)
+	assert.Contains(t, config.EtcdMembers, "20.20.20.20")
+	assert.Len(t, config.MinionIPToPublicKey, 1)
+	assert.Contains(t, config.MinionIPToPublicKey, "20.20.20.20")
+	assert.Equal(t, "pubKey", config.MinionIPToPublicKey["20.20.20.20"])
+
+	machine3 := db.Machine{
+		PublicIP:  "3.3.3.3",
+		Role:      db.Master,
+		PrivateIP: "30.30.30.30",
+		CloudID:   "ID3",
+	}
+
+	allMachines = append(allMachines, machine3)
+
+	config = makeConfig(allMachines, machine1, `{"Namespace":"ns"}`)
+	assert.Equal(t, "10.10.10.10", config.PrivateIP)
+	assert.Equal(t, `{"Namespace":"ns"}`, config.Blueprint)
+	assert.Len(t, config.EtcdMembers, 2)
+	assert.Contains(t, config.EtcdMembers, "20.20.20.20")
+	assert.Contains(t, config.EtcdMembers, "30.30.30.30")
+	assert.Len(t, config.MinionIPToPublicKey, 1)
+	assert.Contains(t, config.MinionIPToPublicKey, "20.20.20.20")
+	assert.Equal(t, "pubKey", config.MinionIPToPublicKey["20.20.20.20"])
+
+	allMachines = []db.Machine{machine1, machine3}
+
+	config = makeConfig(allMachines, machine1, `{"Namespace":"ns"}`)
+	assert.Equal(t, "10.10.10.10", config.PrivateIP)
+	assert.Equal(t, `{"Namespace":"ns"}`, config.Blueprint)
+	assert.Len(t, config.EtcdMembers, 1)
+	assert.Contains(t, config.EtcdMembers, "30.30.30.30")
+	assert.Len(t, config.MinionIPToPublicKey, 0)
+}
+
+func TestForemanRunOnce(t *testing.T) {
+	conn := db.New()
+	clients := mock(t, map[string]pb.MinionConfig_Role{
+		"1.1.1.1": pb.MinionConfig_WORKER,
 	})
-	RunOnce(conn)
 
-	assert.Zero(t, clients.newCalls)
+	config, connected := runOnce(conn, "ID1")
+	assert.False(t, connected)
+	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
 
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+	conn.Txn(db.MachineTable, db.BlueprintTable).Run(func(view db.Database) error {
 		m := view.InsertMachine()
 		m.PublicIP = "1.1.1.1"
-		m.PrivateIP = "1.1.1.1."
-		m.CloudID = "ID"
-		view.Commit(m)
-		return nil
-	})
-
-	RunOnce(conn)
-	assert.Equal(t, 1, clients.newCalls)
-	assert.Contains(t, clients.clients, "1.1.1.1")
-
-	RunOnce(conn)
-	assert.Equal(t, 1, clients.newCalls)
-	assert.Contains(t, clients.clients, "1.1.1.1")
-
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		m := view.InsertMachine()
-		m.PublicIP = "2.2.2.2"
-		m.PrivateIP = "2.2.2.2"
-		m.CloudID = "ID2"
-		view.Commit(m)
-		return nil
-	})
-
-	RunOnce(conn)
-	assert.Equal(t, 2, clients.newCalls)
-	assert.Contains(t, clients.clients, "2.2.2.2")
-	assert.Contains(t, clients.clients, "1.1.1.1")
-
-	RunOnce(conn)
-	RunOnce(conn)
-	RunOnce(conn)
-	RunOnce(conn)
-	assert.Equal(t, 2, clients.newCalls)
-	assert.Contains(t, clients.clients, "2.2.2.2")
-	assert.Contains(t, clients.clients, "1.1.1.1")
-
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		machines := view.SelectFromMachine(func(m db.Machine) bool {
-			return m.PublicIP == "1.1.1.1"
-		})
-		view.Remove(machines[0])
-		return nil
-	})
-
-	RunOnce(conn)
-	assert.Equal(t, 2, clients.newCalls)
-	assert.Contains(t, clients.clients, "2.2.2.2")
-	assert.NotContains(t, clients.clients, "1.1.1.1")
-
-	RunOnce(conn)
-	RunOnce(conn)
-	RunOnce(conn)
-	RunOnce(conn)
-	assert.Equal(t, 2, clients.newCalls)
-	assert.Contains(t, clients.clients, "2.2.2.2")
-	assert.NotContains(t, clients.clients, "1.1.1.1")
-}
-
-func TestBootEtcd(t *testing.T) {
-	conn, clients := startTest(t, map[string]pb.MinionConfig_Role{
-		"m1-pub": pb.MinionConfig_MASTER,
-		"m2-pub": pb.MinionConfig_MASTER,
-		"w1-pub": pb.MinionConfig_WORKER,
-	})
-
-	// Test that the worker connects to the master.
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		m := view.InsertMachine()
-		m.Role = db.Master
-		m.PublicIP = "m1-pub"
-		m.PrivateIP = "m1-priv"
-		m.CloudID = "cloud1"
-		view.Commit(m)
-
-		m = view.InsertMachine()
 		m.Role = db.Worker
-		m.PublicIP = "w1-pub"
-		m.PrivateIP = "w1-priv"
-		m.CloudID = "cloud2"
+		m.Size = "size1"
+		m.PrivateIP = "10.10.10.10"
+		m.CloudID = "ID1"
 		view.Commit(m)
 		return nil
 	})
 
-	RunOnce(conn)
-	assert.Equal(t, []string{"m1-priv"}, clients.clients["w1-pub"].mc.EtcdMembers)
+	clients.newClientError = true
+	config, connected = runOnce(conn, "ID1")
+	assert.False(t, connected)
+	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
 
-	// Test that if we add another master, the worker connects to both masters.
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		m := view.InsertMachine()
-		m.Role = db.Master
-		m.PublicIP = "m2-pub"
-		m.PrivateIP = "m2-priv"
-		m.CloudID = "ignored"
-		view.Commit(m)
-		return nil
-	})
-	RunOnce(conn)
-	etcdMembers := clients.clients["w1-pub"].mc.EtcdMembers
-	assert.Len(t, etcdMembers, 2)
-	assert.Contains(t, etcdMembers, "m1-priv")
-	assert.Contains(t, etcdMembers, "m2-priv")
+	clients.newClientError = false
+	config, connected = runOnce(conn, "ID1")
+	assert.True(t, connected)
+	assert.Equal(t, db.Role(db.Worker), db.PBToRole(config.Role))
 
-	// Test that if we remove a master, the worker connects to the remaining master.
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		var toDelete = view.SelectFromMachine(func(m db.Machine) bool {
-			return m.PrivateIP == "m1-priv"
-		})[0]
-		view.Remove(toDelete)
-		return nil
-	})
-	RunOnce(conn)
-	assert.Equal(t, []string{"m2-priv"},
-		clients.clients["w1-pub"].mc.EtcdMembers)
+	minionConf := clients.clients["1.1.1.1"].mc
+	assert.Equal(t, "10.10.10.10", minionConf.PrivateIP)
+	assert.Equal(t, "size1", minionConf.Size)
+
+	clients.getMinionError = true
+	config, connected = runOnce(conn, "ID1")
+	assert.False(t, connected)
+	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
 }
 
 func TestGetMachineRole(t *testing.T) {
-	workerMinion := minion{
-		config: pb.MinionConfig{
-			Role: pb.MinionConfig_WORKER,
-		},
-	}
-	minions = map[string]*minion{
-		"1.1.1.1": &workerMinion,
-	}
+	setMinionStatus("ID1", pb.MinionConfig{Role: pb.MinionConfig_WORKER}, false)
 
-	assert.Equal(t, db.Role(db.Worker), GetMachineRole("1.1.1.1"))
+	assert.Equal(t, db.Role(db.Worker), GetMachineRole("ID1"))
 	assert.Equal(t, db.Role(db.None), GetMachineRole("none"))
-
-	minions = map[string]*minion{}
 }
 
 func TestIsConnected(t *testing.T) {
-	minions = map[string]*minion{}
 	assert.False(t, IsConnected("host"))
 
-	minions["host"] = &minion{connected: false}
+	setMinionStatus("host", pb.MinionConfig{Role: pb.MinionConfig_WORKER}, false)
 	assert.False(t, IsConnected("host"))
 
-	minions["host"].connected = true
+	setMinionStatus("host", pb.MinionConfig{Role: pb.MinionConfig_WORKER}, true)
 	assert.True(t, IsConnected("host"))
 }
 
-func startTest(t *testing.T, roles map[string]pb.MinionConfig_Role) (db.Conn, *clients) {
-	conn := db.New()
-	minions = map[string]*minion{}
-	clients := &clients{make(map[string]*fakeClient), 0}
+func mock(t *testing.T, roles map[string]pb.MinionConfig_Role) *clients {
+	clients := &clients{make(map[string]*fakeClient), false, false}
 	newClient = func(ip string) (client, error) {
-		if fc, ok := clients.clients[ip]; ok {
+		if clients.newClientError {
+			return nil, errors.New("newMinion error")
+		}
+
+		if fc, ok := clients.clients[ip]; ok && !fc.closed {
 			return fc, nil
 		}
 
@@ -188,10 +226,9 @@ func startTest(t *testing.T, roles map[string]pb.MinionConfig_Role) (db.Conn, *c
 			role:    role,
 		}
 		clients.clients[ip] = fc
-		clients.newCalls++
 		return fc, nil
 	}
-	return conn, clients
+	return clients
 }
 
 type fakeClient struct {
@@ -199,8 +236,7 @@ type fakeClient struct {
 	ip      string
 	role    pb.MinionConfig_Role
 	mc      pb.MinionConfig
-
-	getMinionError bool
+	closed  bool
 }
 
 func (fc *fakeClient) setMinion(mc pb.MinionConfig) error {
@@ -209,7 +245,7 @@ func (fc *fakeClient) setMinion(mc pb.MinionConfig) error {
 }
 
 func (fc *fakeClient) getMinion() (pb.MinionConfig, error) {
-	if fc.getMinionError {
+	if fc.clients.getMinionError {
 		return pb.MinionConfig{}, errors.New("mock error")
 	}
 
@@ -219,5 +255,5 @@ func (fc *fakeClient) getMinion() (pb.MinionConfig, error) {
 }
 
 func (fc *fakeClient) Close() {
-	delete(fc.clients.clients, fc.ip)
+	fc.clients.clients[fc.ip].closed = true
 }

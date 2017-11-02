@@ -16,6 +16,7 @@ import (
 	"github.com/kelda/kelda/api/server"
 	cliPath "github.com/kelda/kelda/cli/path"
 	"github.com/kelda/kelda/cloud"
+	"github.com/kelda/kelda/cloud/foreman"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/connection/tls/rsa"
 	"github.com/kelda/kelda/db"
@@ -111,8 +112,9 @@ func (dCmd *Daemon) Run() int {
 		return 1
 	}
 
+	go foreman.Run(conn, creds)
 	go cloud.SyncCredentials(conn, sshKey, ca)
-	cloud.Run(conn, creds, getPublicKey(sshKey))
+	cloud.Run(conn, getPublicKey(sshKey))
 	return 0
 }
 
