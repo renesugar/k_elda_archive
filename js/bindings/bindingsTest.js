@@ -762,8 +762,8 @@ describe('Bindings', () => {
     it('autobox port ranges', () => {
       bar.allowFrom(foo, 80);
       checkConnections([{
-        from: 'foo',
-        to: 'bar',
+        from: ['foo'],
+        to: ['bar'],
         minPort: 80,
         maxPort: 80,
       }]);
@@ -771,8 +771,8 @@ describe('Bindings', () => {
     it('port', () => {
       bar.allowFrom(foo, new b.Port(80));
       checkConnections([{
-        from: 'foo',
-        to: 'bar',
+        from: ['foo'],
+        to: ['bar'],
         minPort: 80,
         maxPort: 80,
       }]);
@@ -780,8 +780,8 @@ describe('Bindings', () => {
     it('port range', () => {
       bar.allowFrom(foo, new b.PortRange(80, 85));
       checkConnections([{
-        from: 'foo',
-        to: 'bar',
+        from: ['foo'],
+        to: ['bar'],
         minPort: 80,
         maxPort: 85,
       }]);
@@ -793,8 +793,8 @@ describe('Bindings', () => {
     it('allow connections to publicInternet', () => {
       b.publicInternet.allowFrom(foo, 80);
       checkConnections([{
-        from: 'foo',
-        to: 'public',
+        from: ['foo'],
+        to: ['public'],
         minPort: 80,
         maxPort: 80,
       }]);
@@ -802,8 +802,8 @@ describe('Bindings', () => {
     it('allow connections from publicInternet', () => {
       foo.allowFrom(b.publicInternet, 80);
       checkConnections([{
-        from: 'public',
-        to: 'foo',
+        from: ['public'],
+        to: ['foo'],
         minPort: 80,
         maxPort: 80,
       }]);
@@ -811,8 +811,8 @@ describe('Bindings', () => {
     it('connect to LoadBalancer', () => {
       fooLoadBalancer.allowFrom(bar, 80);
       checkConnections([{
-        from: 'bar',
-        to: 'fooLoadBalancer',
+        from: ['bar'],
+        to: ['fooLoadBalancer'],
         minPort: 80,
         maxPort: 80,
       }]);
@@ -865,50 +865,46 @@ describe('Bindings', () => {
     it('both src and dst are lists', () => {
       b.allow(quxQuuzGroup, fooBarGroup, 80);
       checkConnections([
-        { from: 'qux', to: 'foo', minPort: 80, maxPort: 80 },
-        { from: 'qux', to: 'bar', minPort: 80, maxPort: 80 },
-        { from: 'quuz', to: 'foo', minPort: 80, maxPort: 80 },
-        { from: 'quuz', to: 'bar', minPort: 80, maxPort: 80 },
+        { from: ['qux', 'quuz'], to: ['foo'], minPort: 80, maxPort: 80 },
+        { from: ['qux', 'quuz'], to: ['bar'], minPort: 80, maxPort: 80 },
       ]);
     });
 
     it('dst is a list', () => {
       b.allow(qux, fooBarGroup, 80);
       checkConnections([
-        { from: 'qux', to: 'foo', minPort: 80, maxPort: 80 },
-        { from: 'qux', to: 'bar', minPort: 80, maxPort: 80 },
+        { from: ['qux'], to: ['foo'], minPort: 80, maxPort: 80 },
+        { from: ['qux'], to: ['bar'], minPort: 80, maxPort: 80 },
       ]);
     });
 
     it('src is a list', () => {
       b.allow(fooBarGroup, qux, 80);
       checkConnections([
-        { from: 'foo', to: 'qux', minPort: 80, maxPort: 80 },
-        { from: 'bar', to: 'qux', minPort: 80, maxPort: 80 },
+        { from: ['foo', 'bar'], to: ['qux'], minPort: 80, maxPort: 80 },
       ]);
     });
 
     it('src is public', () => {
       b.allow(b.publicInternet, fooBarGroup, 80);
       checkConnections([
-        { from: 'public', to: 'foo', minPort: 80, maxPort: 80 },
-        { from: 'public', to: 'bar', minPort: 80, maxPort: 80 },
+        { from: ['public'], to: ['foo'], minPort: 80, maxPort: 80 },
+        { from: ['public'], to: ['bar'], minPort: 80, maxPort: 80 },
       ]);
     });
 
     it('dst is public', () => {
       b.allow(fooBarGroup, b.publicInternet, 80);
       checkConnections([
-        { from: 'foo', to: 'public', minPort: 80, maxPort: 80 },
-        { from: 'bar', to: 'public', minPort: 80, maxPort: 80 },
+        { from: ['foo'], to: ['public'], minPort: 80, maxPort: 80 },
+        { from: ['bar'], to: ['public'], minPort: 80, maxPort: 80 },
       ]);
     });
 
     it('dst is a LoadBalancer', () => {
       b.allow(fooBarGroup, lb, 80);
       checkConnections([
-        { from: 'foo', to: 'serv', minPort: 80, maxPort: 80 },
-        { from: 'bar', to: 'serv', minPort: 80, maxPort: 80 },
+        { from: ['foo', 'bar'], to: ['serv'], minPort: 80, maxPort: 80 },
       ]);
     });
   });
@@ -929,8 +925,8 @@ describe('Bindings', () => {
     it('connect from undeployed container', () => {
       foo.allowFrom(new b.Container('baz', 'image'), 80);
       expect(deploy).to.throw(
-        'connection {"from":"baz","maxPort":80,"minPort":80,' +
-                '"to":"foo"} references an undefined hostname: baz');
+        'connection {"from":["baz"],"maxPort":80,"minPort":80,' +
+                '"to":["foo"]} references an undefined hostname: baz');
     });
     it('duplicate image', () => {
       (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
