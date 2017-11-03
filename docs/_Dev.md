@@ -146,6 +146,51 @@ To run the JavaScript tests for `bindings.js`, use the `jscheck` build target:
 $ make jscheck
 ```
 
+### Running the Integration Tests
+
+Kelda's integration tests are located in the `integration-tester` directory of
+the main repository.  These tests are not run by Travis for each submitted pull
+request, but they are run after each commit to our master branch (by Jenkins).
+To run the integration tests yourself, first install the JavaScript dependencies
+for the tests:
+
+```console
+$ cd integration-tester
+$ npm install .
+```
+
+Each integration test includes a blueprint that creates some infrastructure,
+and a Go test file that checks that the infrastructure was created correctly.
+To run a particular integration test, first run the blueprint, and then run
+the associated Go code.
+
+For example, to run the Spark integration tests, first run the blueprint.
+You'll need to start a `kelda daemon` if you don't already have one running.
+
+```console
+$ kelda daemon
+$ # Open a new window to run the blueprint
+$ kelda run ./tests/20-spark/spark.js
+```
+
+Use `kelda show` to check the status of the blueprint.  Once all of the
+virtual machines and containers are up, run the Go test code:
+
+```console
+$ go test ./tests/20-spark
+```
+
+This command will run all of the test code in the tests/20-spark package.
+You can add the `-v` flag to enable more verbose output:
+
+```console
+$ go test -v ./tests/20-spark
+```
+
+By default, the tests will run in the default namespace.  If you'd like to
+change this, you can do so by editing
+`integration-tester/config/infrastructure.js`.
+
 ## Contributing Code
 
 We highly encourage contributions to Kelda from the Open Source community!
