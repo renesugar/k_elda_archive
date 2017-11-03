@@ -19,22 +19,6 @@ describe('Bindings', () => {
     infra = new b.Infrastructure(machine, machine);
   });
 
-  const checkSizes = function checkSizes(description, ram, cpu,
-    expected) {
-    const dummyMachine = new b.Machine({
-      ram,
-      cpu,
-      provider: 'Amazon',
-      // Specify a placeholder size so that chooseBestSize isn't called
-      // when constructing the machine, and the test can instead call
-      // chooseBestSize with it's own machine descriptions, so we can
-      // test more specific and restricted cases.
-      size: 'm3.medium',
-    });
-    dummyMachine.chooseBestSize(description, cpu, ram);
-    expect(dummyMachine.size).to.equal(expected);
-  };
-
   const checkMachines = function checkMachines(expectedSubset) {
     const { machines } = infra.toKeldaRepresentation();
     expect(machines).to.containSubset(expectedSubset);
@@ -101,42 +85,6 @@ describe('Bindings', () => {
   });
 
   describe('Machine', () => {
-    describe('chooseBestSize', () => {
-      const testDescription = [{ Size: 'size1', Price: 2, RAM: 2, CPU: 2 }];
-      const testDescriptionsMultiple = [
-        { Size: 'size2', Price: 2, RAM: 8, CPU: 4 },
-        { Size: 'size3', Price: 1, RAM: 4, CPU: 4 },
-        { Size: 'size4', Price: 0.5, RAM: 3, CPU: 4 },
-      ];
-      it('all constraints specified', () => {
-        checkSizes(testDescription, new b.Range(1, 3), new b.Range(1, 3), 'size1');
-      });
-      it('no max', () => {
-        checkSizes(testDescription, new b.Range(1, 0), new b.Range(1, 0), 'size1');
-        checkSizes(testDescription, new b.Range(1), new b.Range(1), 'size1');
-      });
-      it('exact match', () => {
-        checkSizes(testDescription, new b.Range(2, 2), new b.Range(2, 2), 'size1');
-      });
-      it('no match', () => {
-        checkSizes(testDescription, new b.Range(3, 3), new b.Range(2, 2), '');
-      });
-      it('multiple matches (should pick cheapest)', () => {
-        checkSizes(testDescriptionsMultiple, new b.Range(4, 0), new b.Range(3, 0),
-          'size3');
-      });
-      it('multiple matches (should pick cheapest)', () => {
-        checkSizes(testDescriptionsMultiple, new b.Range(0, 0), new b.Range(0, 0),
-          'size4');
-      });
-      it('one default range (should pick only on the specified range)',
-        () => {
-          checkSizes(testDescriptionsMultiple, new b.Range(4, 4), new b.Range(0, 0),
-            'size3');
-          checkSizes(testDescriptionsMultiple, new b.Range(3, 3), new b.Range(0, 0),
-            'size4');
-        });
-    });
     it('basic', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
@@ -186,6 +134,60 @@ describe('Bindings', () => {
         size: 'n1-standard-2',
       }]);
     });
+    it('chooses size when ram and cpu do not have max', () => {
+      const machine = new b.Machine({
+        role: 'Worker',
+        provider: 'Google',
+        cpu: new b.Range(1, 0),
+        ram: new b.Range(1, 0),
+        sshKeys: ['key1', 'key2'],
+      });
+      infra = new b.Infrastructure(machine, machine);
+      checkMachines([{
+        provider: 'Google',
+        size: 'g1-small',
+      }]);
+    });
+    it('chooses size when ram and cpu are exact matches', () => {
+      const machine = new b.Machine({
+        role: 'Worker',
+        provider: 'Amazon',
+        cpu: new b.Range(2, 2),
+        ram: new b.Range(8, 8),
+        sshKeys: ['key1', 'key2'],
+      });
+      infra = new b.Infrastructure(machine, machine);
+      checkMachines([{
+        provider: 'Amazon',
+        size: 'm4.large',
+      }]);
+    });
+    it('chooses size when only cpu is specifed', () => {
+      const machine = new b.Machine({
+        role: 'Worker',
+        provider: 'Amazon',
+        cpu: new b.Range(2, 2),
+        sshKeys: ['key1', 'key2'],
+      });
+      infra = new b.Infrastructure(machine, machine);
+      checkMachines([{
+        provider: 'Amazon',
+        size: 'c4.large',
+      }]);
+    });
+    it('chooses size when only ram is specifed', () => {
+      const machine = new b.Machine({
+        role: 'Worker',
+        provider: 'Amazon',
+        ram: new b.Range(8, 8),
+        sshKeys: ['key1', 'key2'],
+      });
+      infra = new b.Infrastructure(machine, machine);
+      checkMachines([{
+        provider: 'Amazon',
+        size: 'm4.large',
+      }]);
+    });
     it('chooses size when neither ram nor cpu are provided', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
@@ -208,6 +210,45 @@ describe('Bindings', () => {
         provider: 'Amazon',
         size: 'm3.medium',
       }]);
+    });
+    it('errors if provided size does not meet RAM or ' +
+       'CPU requirements for DigitalOcean instance', () => {
+      expect(() => new b.Machine({
+        role: 'Worker',
+        provider: 'DigitalOcean',
+        size: 'm-16gb',
+        sshKeys: ['key1', 'key2'],
+        cpu: new b.Range(3, 4),
+        ram: new b.Range(6, 8),
+        preemptible: false,
+      })).to.throw('Requested size \'m-16gb\' does not meet ' +
+                   'RAM \'[6, 8]\' or CPU \'[3, 4]\' requirements. ' +
+                   'Instance RAM: \'16\', Instance CPU: \'2\'');
+    });
+    it('errors if provided size does not meet RAM or ' +
+       'CPU requirements for Amazon instance', () => {
+      expect(() => new b.Machine({
+        role: 'Worker',
+        provider: 'Amazon',
+        size: 'm4.large',
+        sshKeys: ['key1', 'key2'],
+        cpu: 4,
+        ram: 6,
+        preemptible: false,
+      })).to.throw('Requested size \'m4.large\' does not meet ' +
+                   'RAM \'6\' or CPU \'4\' requirements. ' +
+                   'Instance RAM: \'8\', Instance CPU: \'2\'');
+    });
+    it('errors if provided size is not valid', () => {
+      expect(() => new b.Machine({
+        role: 'Worker',
+        provider: 'Google',
+        size: 'badName',
+        sshKeys: ['key1', 'key2'],
+        cpu: 2,
+        ram: 6,
+        preemptible: false,
+      })).to.throw('Invalid machine size "badName" for provider Google');
     });
     it('chooses default region when region is not provided ' +
        'for Google', () => {

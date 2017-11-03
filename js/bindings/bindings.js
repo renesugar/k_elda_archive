@@ -740,11 +740,12 @@ class Machine {
   }
 
   /**
-   * Sets the machine's size attribute to an instance size (e.g., m2.xlarge),
-   * based on the Machine's specified provider, region, and hardware. Throws
-   * an error if provider is not valid or given machine requirements cannot
-   * be satisfied by any size. Also throws an error if the user requests a
-   * preemptible instance for a size that cannot be preempted.
+   * If size is not specified, sets the machine's size attribute to an instance
+   * size (e.g., m2.xlarge), based on the Machine's specified provider, region,
+   * and hardware. Throws an error if provider is not valid. Also throws an error if the
+   * user requests a preemptible instance for a size that cannot be preempted.
+   * If size is specified, verifies the size is valid for the given provider and
+   * meets the CPU and RAM requirements.
    * @private
    * @param {Range} cpu - The desired number of CPUs.
    * @param {Range} ram - The desired amount of RAM in GiB.
@@ -756,26 +757,58 @@ class Machine {
       throw new Error(`Requested size ${this.size} can not be preemptible.` +
         ' Please choose a different size or set preemptible to be False.');
     }
-    if (this.size !== '') return;
+    if (this.provider === 'Vagrant') {
+      this.vagrantSize(cpu, ram);
+      return;
+    }
+    let providerDescriptions;
     switch (this.provider) {
       case 'Amazon':
-        this.chooseBestSize(amazonDescriptions.Descriptions, cpu, ram);
+        providerDescriptions = amazonDescriptions.Descriptions;
         break;
       case 'DigitalOcean':
-        this.chooseBestSize(digitalOceanDescriptions.Descriptions, cpu, ram);
+        providerDescriptions = digitalOceanDescriptions.Descriptions;
         break;
       case 'Google':
-        this.chooseBestSize(googleDescriptions.Descriptions, cpu, ram);
-        break;
-      case 'Vagrant':
-        this.vagrantSize(cpu, ram);
+        providerDescriptions = googleDescriptions.Descriptions;
         break;
       default:
         throw new Error(`Unknown Cloud Provider: ${this.provider}`);
     }
-    if (this.size === '') {
-      throw new Error(`No valid size for Machine ${stringify(this)}`);
+    if (this.size !== '') {
+      this.verifySize(providerDescriptions, cpu, ram);
+      return;
     }
+    this.chooseBestSize(providerDescriptions, cpu, ram);
+  }
+
+  /**
+   * Verifies that user-requested machine size is valid for the given provider.
+   * If so, verifies the requested machine size satisfies CPU and RAM requirements.
+   * @private
+   * @param {description[]} providerDescriptions - Array of descriptions of
+   *   a provider.
+   * @param {Range} cpu - The desired number of CPUs.
+   * @param {Range} ram - The desired amount of RAM in GiB.
+   * @returns {void}
+   */
+  verifySize(providerDescriptions, cpu, ram) {
+    for (let i = 0; i < providerDescriptions.length; i += 1) {
+      const description = providerDescriptions[i];
+      if (this.size !== '' && this.size === description.Size) {
+        if (ram.inRange(description.RAM) &&
+            cpu.inRange(description.CPU)) {
+          return;
+        }
+        throw new Error(`Requested size '${this.size}' does not meet`
+          + ` RAM '${ram}' or`
+          + ` CPU '${cpu}' requirements.`
+          + ` Instance RAM: '${description.RAM}',`
+          + ` Instance CPU: '${description.CPU}'`);
+      }
+    }
+    throw new Error(`Invalid machine size "${this.size}"`
+      + ` for provider ${this.provider}`);
   }
 
   /**
@@ -797,7 +830,8 @@ class Machine {
   /**
    * Iterates through all the decriptions for a given provider, and returns
    * the cheapest option that fits the user's requirements. Ignores non-preemptible
-   * sizes if preemptible flag is set.
+   * sizes if preemptible flag is set. Throws an error if given machine requirements
+   * cannot be satisfied by any size.
    * @private
    * @param {description[]} providerDescriptions - Array of descriptions of
    *   a provider.
@@ -830,6 +864,9 @@ class Machine {
         bestSize = description.Size;
         bestPrice = description.Price;
       }
+    }
+    if (bestSize === '') {
+      throw new Error(`No valid size for Machine ${stringify(this)}`);
     }
     this.size = bestSize;
   }
@@ -1400,6 +1437,19 @@ class Range {
 Range.prototype.inRange = function inRange(x) {
   return (this.min <= x || this.min === undefined) &&
          (this.max === 0 || this.max === undefined || x <= this.max);
+};
+
+/**
+ * @private
+ * @returns {string} The string representation of the Range
+ */
+Range.prototype.toString = function toString() {
+  if (this.max === undefined) {
+    return `[${this.min}, inf]`;
+  } else if (this.max === this.min) {
+    return `${this.max}`;
+  }
+  return `[${this.min}, ${this.max}]`;
 };
 
 const PortRange = Range;
