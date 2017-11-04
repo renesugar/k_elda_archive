@@ -163,7 +163,14 @@ func (table *dnsTable) genResponse(req *dns.Msg) *dns.Msg {
 	if len(req.Question) != 1 {
 		return resp.SetRcode(req, dns.RcodeNotImplemented)
 	}
+
 	q := req.Question[0]
+	// If the request is for an IPv6 address, simply return an empty answer to
+	// indicate that there may be answers for other query types, such as IPv4.
+	if q.Qtype == dns.TypeAAAA {
+		return resp.SetReply(req)
+	}
+
 	if q.Qclass != dns.ClassINET || q.Qtype != dns.TypeA {
 		return resp.SetRcode(req, dns.RcodeNotImplemented)
 	}

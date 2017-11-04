@@ -39,10 +39,17 @@ func TestGenResponse(t *testing.T) {
 	})
 
 	req := &dns.Msg{}
-	req.SetQuestion("foo.", dns.TypeAAAA)
+	req.SetQuestion("foo.", dns.TypeMX)
 	resp := table.genResponse(req)
 	assert.Equal(t, req.Id, resp.Id)
 	assert.Equal(t, resp.Rcode, dns.RcodeNotImplemented)
+
+	req = &dns.Msg{}
+	req.SetQuestion("foo.", dns.TypeAAAA)
+	resp = table.genResponse(req)
+	assert.Equal(t, req.Id, resp.Id)
+	assert.Equal(t, resp.Rcode, dns.RcodeSuccess)
+	assert.Empty(t, resp.Answer)
 
 	req.Question = nil
 	resp = table.genResponse(req)
