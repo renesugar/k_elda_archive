@@ -88,7 +88,6 @@ func (parser readmeParser) blocks() (map[string]string, error) {
 
 var dependencies = `{
   "dependencies": {
-    "kelda": "0.x",
     "@kelda/redis": "kelda/redis"
   }
 }`
@@ -122,11 +121,20 @@ func TestReadme() error {
 		return fmt.Errorf("failed to parse README: %s", err.Error())
 	}
 
+	keldaPath, err := filepath.Abs("../../js/bindings")
+	if err != nil {
+		return err
+	}
+
 	os.Mkdir(workDir, 0755)
 	defer os.RemoveAll(workDir)
 	os.Chdir(workDir)
 	util.WriteFile(filepath.Join(workDir, "package.json"), []byte(dependencies), 0644)
 	if err := run("npm", "install", "."); err != nil {
+		return err
+	}
+
+	if err := run("npm", "install", keldaPath); err != nil {
 		return err
 	}
 
