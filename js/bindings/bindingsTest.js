@@ -1036,4 +1036,23 @@ describe('Bindings', () => {
       revertGetInfra();
     });
   });
+  describe('getInfrastructureKeldaRepr()', () => {
+    it('should return an empty object when no Infrastructure was created', () => {
+      b.__set__('_keldaDeployment', undefined);
+      expect(global.getInfrastructureKeldaRepr()).to.deep.equal({});
+    });
+    it('should return the correct infra object when an Infrastructure exists', () => {
+      deployment = new b.Deployment();
+      const expected = {
+        adminACL: [],
+        connections: [],
+        containers: [],
+        loadBalancers: [],
+        machines: [],
+        namespace: 'default-namespace',
+        placements: [],
+      };
+      expect(global.getInfrastructureKeldaRepr()).to.containSubset(expected);
+    });
+  });
 });

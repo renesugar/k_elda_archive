@@ -24,6 +24,9 @@ const providerDefaultRegions = {
 const githubCache = {};
 const objectHasKey = Object.prototype.hasOwnProperty;
 
+// The default deployment object. The Deployment constructor overwrites this.
+let _keldaDeployment;
+
 class Deployment {
   /**
    * Creates a new deployment object with the given options.
@@ -52,7 +55,7 @@ class Deployment {
     this.containers = new Set();
     this.loadBalancers = [];
 
-    global._keldaDeployment = this;
+    _keldaDeployment = this;
   }
 
   /**
@@ -245,9 +248,6 @@ function baseInfrastructure(name = 'default') {
   }
   return getInfraDeployment(infraPath);
 }
-
-// The default deployment object. The Deployment constructor overwrites this.
-global._keldaDeployment = new Deployment({});
 
 // The name used to refer to the public internet in the JSON description
 // of the network connections (connections to other entities are referenced by
@@ -1507,8 +1507,17 @@ function Port(p) {
  * @returns {Deployment} The global deployment object.
  */
 function getDeployment() {
-  return global._keldaDeployment;
+  return _keldaDeployment;
 }
+
+/**
+ * @returns {Object} A map representing the current infrastructure. The map can
+ * be converted to JSON and interpreted by the Kelda Go code.
+ */
+global.getInfrastructureKeldaRepr = function getInfrastructureKeldaRepr() {
+  const inf = getDeployment();
+  return (inf === undefined) ? {} : inf.toKeldaRepresentation();
+};
 
 /**
  * Resets global unique counters. Used only for unit testing.

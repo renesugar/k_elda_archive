@@ -187,7 +187,7 @@ func FromFile(filename string) (Blueprint, error) {
 		fmt.Sprintf(
 			`require("%s");
 			require('fs').writeFileSync("%s",
-			  JSON.stringify(global._keldaDeployment.toKeldaRepresentation())
+			  JSON.stringify(global.getInfrastructureKeldaRepr())
 		    );`,
 			filename, outFile.Name(),
 		),
