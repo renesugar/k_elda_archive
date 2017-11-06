@@ -3,6 +3,21 @@ Kelda Change Log
 
 Up Next
 -------------
+
+Release 0.5.0
+-------------
+
+Kelda, formerly Quilt, has a brand new name!
+
+Release 0.5.0 includes two major changes: secret support, and a new `kelda
+show` format for listing machines. The new secret feature makes storing and using
+sensitive configuration values a first-level concept of Kelda -- the secrets
+are encrypted at rest and in transit, and access to them is limited based on
+least privilege. `kelda show` now displays the machines that are currently
+running in the cloud, rather than the machines desired by the user. This way,
+if a user removes a machine from a blueprint, `kelda show` will show the
+machine until it is actually removed from the cloud.
+
 - Kelda, formerly Quilt, has a brand new name!
 - Fix a bug where `quilt setup-tls` would fail when writing to a directory whose
 parent does not exist.
