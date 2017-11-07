@@ -76,9 +76,14 @@ func updateACLs(ovsdbClient ovsdb.Client, connections []db.Connection,
 		if _, ok := icmpMatches[icmpMatch]; !ok {
 			icmpMatches[icmpMatch] = struct{}{}
 			expACLs = append(expACLs, directedACLs(
+				// Although the TCP and UDP rules use the "allow"
+				// action, we use "allow-related" for ICMP since
+				// the performance impact is not as large, and
+				// there is no way to restrict ICMP return traffic
+				// based on ports.
 				ovsdb.ACL{
 					Core: ovsdb.ACLCore{
-						Action:   "allow",
+						Action:   "allow-related",
 						Match:    icmpMatch,
 						Priority: 1,
 					},

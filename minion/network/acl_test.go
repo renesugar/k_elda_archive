@@ -71,12 +71,12 @@ func TestUpdateACLs(t *testing.T) {
 		Priority:  1,
 		Direction: "from-lport",
 		Match:     and(from("8.8.8.8"), to("9.9.9.9"), "icmp"),
-		Action:    "allow",
+		Action:    "allow-related",
 	}, {
 		Priority:  1,
 		Direction: "to-lport",
 		Match:     and(from("8.8.8.8"), to("9.9.9.9"), "icmp"),
-		Action:    "allow",
+		Action:    "allow-related",
 	}, {
 		Priority:  1,
 		Direction: "from-lport",

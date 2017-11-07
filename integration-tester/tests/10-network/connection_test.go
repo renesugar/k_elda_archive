@@ -42,8 +42,6 @@ func newConnectionTester(clnt client.Client) (connectionTester, error) {
 	connectionMap := make(map[string][]string)
 	for _, conn := range connections {
 		connectionMap[conn.From] = append(connectionMap[conn.From], conn.To)
-		// Connections are bi-directional.
-		connectionMap[conn.To] = append(connectionMap[conn.To], conn.From)
 	}
 
 	return connectionTester{
