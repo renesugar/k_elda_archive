@@ -65,7 +65,7 @@ func (tester connectionTester) test(t *testing.T, container db.Container) {
 
 	test := func(hostname string) {
 		defer wg.Done()
-		_, err := keldaSSH(container, "ping", "-c", "3", "-W", "1", hostname)
+		output, err := keldaSSH(container, "ping", "-c", "3", "-W", "1", hostname)
 
 		var errStr string
 		reached := err == nil
@@ -80,7 +80,7 @@ func (tester connectionTester) test(t *testing.T, container db.Container) {
 		}
 
 		if errStr != "" {
-			fmt.Println(errStr)
+			fmt.Printf("%s\n%s\n", errStr, output)
 			t.Error(errStr)
 		}
 	}
