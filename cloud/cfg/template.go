@@ -58,6 +58,9 @@ initialize_minion() {
 	# unable to write to the directory.
 	install -d -o kelda -m 755 {{.TLSDir}}
 
+	# Create the etcd data directory.
+	mkdir -p /var/lib/etcd
+
 	cat <<- EOF > /etc/systemd/system/minion.service
 	[Unit]
 	Description=Kelda Minion

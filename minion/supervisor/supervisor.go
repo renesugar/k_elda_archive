@@ -10,6 +10,7 @@ import (
 	"github.com/kelda/kelda/minion/docker"
 	"github.com/kelda/kelda/minion/supervisor/images"
 
+	dkc "github.com/fsouza/go-dockerclient"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -80,10 +81,26 @@ func run(name string, args ...string) {
 		Args:        args,
 		NetworkMode: "host",
 		VolumesFrom: []string{"minion"},
+		Env:         map[string]string{},
 	}
 
 	if name == images.Ovsvswitchd {
 		ro.Privileged = true
+	}
+
+	// Run etcd with a data directory that's mounted on the host disk.
+	// This way, if the container restarts, its previous state will still be
+	// available.
+	if name == images.Etcd {
+		etcdDataDir := "/etcd-data"
+		ro.Mounts = []dkc.HostMount{
+			{
+				Target: etcdDataDir,
+				Source: "/var/lib/etcd",
+				Type:   "bind",
+			},
+		}
+		ro.Env["ETCD_DATA_DIR"] = etcdDataDir
 	}
 
 	log.Infof("Start Container: %s", name)

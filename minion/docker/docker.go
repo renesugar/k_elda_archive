@@ -76,6 +76,7 @@ type RunOptions struct {
 	Privileged  bool
 	VolumesFrom []string
 	CapAdd      []string
+	Mounts      []dkc.HostMount
 }
 
 type client interface {
@@ -129,6 +130,7 @@ func (dk Client) Run(opts RunOptions) (string, error) {
 		DNS:         opts.DNS,
 		DNSSearch:   opts.DNSSearch,
 		CapAdd:      opts.CapAdd,
+		Mounts:      opts.Mounts,
 	}
 
 	var nc *dkc.NetworkingConfig
