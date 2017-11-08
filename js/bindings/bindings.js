@@ -796,7 +796,8 @@ class Machine {
 
   /**
    * Iterates through all the decriptions for a given provider, and returns
-   * the cheapest option that fits the user's requirements.
+   * the cheapest option that fits the user's requirements. Ignores non-preemptible
+   * sizes if preemptible flag is set.
    * @private
    * @param {description[]} providerDescriptions - Array of descriptions of
    *   a provider.
@@ -810,9 +811,22 @@ class Machine {
     let bestPrice = Infinity;
     for (let i = 0; i < providerDescriptions.length; i += 1) {
       const description = providerDescriptions[i];
-      if (ram.inRange(description.RAM) &&
-          cpu.inRange(description.CPU) &&
-          (bestSize === '' || description.Price < bestPrice)) {
+
+      let nonPreemptible = false;
+      if (nonPreemptibleSizes[this.provider] !== undefined) {
+        nonPreemptible = nonPreemptibleSizes[this.provider].includes(description.Size);
+      }
+      if (this.preemptible && nonPreemptible) {
+        continue;
+      }
+
+      const isValid = ram.inRange(description.RAM) &&
+        cpu.inRange(description.CPU);
+      if (!isValid) {
+        continue;
+      }
+
+      if (bestSize === '' || description.Price < bestPrice) {
         bestSize = description.Size;
         bestPrice = description.Price;
       }

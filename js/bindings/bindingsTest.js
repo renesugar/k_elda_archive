@@ -194,6 +194,18 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(machine, machine);
       checkMachines([{
         provider: 'Amazon',
+        size: 't2.micro',
+      }]);
+    });
+    it('ignores non-preemptible machines when preemptible flag is set', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        sshKeys: ['key1', 'key2'],
+        preemptible: true,
+      });
+      infra = new b.Infrastructure(machine, machine);
+      checkMachines([{
+        provider: 'Amazon',
         size: 'm3.medium',
       }]);
     });
@@ -253,7 +265,7 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(machine, machine);
       checkMachines([{
         provider: 'Amazon',
-        size: 'm3.medium',
+        size: 't2.micro',
         region: 'eu-west-1',
       }]);
     });
@@ -300,12 +312,12 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(baseMachine.replicate(2), baseMachine);
       checkMachines([
         {
-          id: 'a45b4bef049ee155e0c481af209bf40fe676fdd1',
+          id: '25e1b32fea4d5c281d46689df5b0211fd0a60c25',
           role: 'Master',
           provider: 'Amazon',
         },
         {
-          id: '67abd5ce263a7bae2e9d7b1e20b9e687efbeb658',
+          id: 'd1ec9f6a7cacfce089dbf4fcd8f776f1af7e8f6f',
           role: 'Master',
           provider: 'Amazon',
         },
@@ -318,13 +330,13 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(machines[0], machines[1]);
       checkMachines([
         {
-          id: 'a45b4bef049ee155e0c481af209bf40fe676fdd1',
+          id: '25e1b32fea4d5c281d46689df5b0211fd0a60c25',
           role: 'Master',
           provider: 'Amazon',
           sshKeys: ['key'],
         },
         {
-          id: '7763d2c719512c7dd48f495760baa5b75dd73e7a',
+          id: '5d0ca19edc4604e7904aa7231b2cb6dabe3cd0dc',
           role: 'Worker',
           provider: 'Amazon',
         },
@@ -337,7 +349,7 @@ describe('Bindings', () => {
 
       infra = new b.Infrastructure(master, machineWithFloatingIP);
       checkMachines([{
-        id: 'ac41da1b9623b1d1d368da2c3ca59d98fb0ac4e6',
+        id: '8dbeae310d16317e7cd195a58848a0b1681eb7ee',
         role: 'Worker',
         provider: 'Amazon',
         floatingIp: 'xxx.xxx.xxx.xxx',
@@ -890,12 +902,12 @@ describe('Bindings', () => {
         // The ID is included here because otherwise the containSubset function
         // used in checkMachines will return true, even if there is only one
         // worker and two masters in the actual output.
-        id: '3e552589b55a5dbb79b18dca93922c8eba9617c3',
+        id: 'babdbbfe1ca4a242353e87cdd03ec538af8b64cf',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
       }, {
-        id: '97ab06b11f9761250ce630d4e55b925826ca6fcd',
+        id: '640dd40d99e4c2c24b1fc16ee327669e9acebc84',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
