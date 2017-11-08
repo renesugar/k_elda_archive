@@ -1,7 +1,6 @@
 package supervisor
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/kelda/kelda/db"
@@ -73,18 +72,4 @@ func (f fakeDocker) running() map[string][]string {
 		res[c.Name] = c.Args
 	}
 	return res
-}
-
-func etcdArgsMaster(ip string, etcdIPs []string) []string {
-	return []string{
-		fmt.Sprintf("--name=master-%s", ip),
-		fmt.Sprintf("--initial-cluster=%s", initialClusterString(etcdIPs)),
-		fmt.Sprintf("--advertise-client-urls=http://%s:2379", ip),
-		fmt.Sprintf("--listen-peer-urls=http://%s:2380", ip),
-		fmt.Sprintf("--initial-advertise-peer-urls=http://%s:2380", ip),
-		"--listen-client-urls=http://0.0.0.0:2379",
-		"--heartbeat-interval=500",
-		"--initial-cluster-state=new",
-		"--election-timeout=5000",
-	}
 }
