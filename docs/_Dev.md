@@ -191,6 +191,13 @@ By default, the tests will run in the default namespace.  If you'd like to
 change this, you can do so by editing
 `integration-tester/config/infrastructure.js`.
 
+### Restart the Daemon After Panic
+
+If the `kelda daemon` encounters a panic and quits, the socket file will still
+exist. Therefore when you start another daemon, you might get an error saying
+`error=listen unix /tmp/kelda.sock: bind: address already in use`. If so, remove
+the socket file by running `rm /tmp/kelda.sock`, then restart the daemon.
+
 ## Contributing Code
 
 We highly encourage contributions to Kelda from the Open Source community!
