@@ -37,7 +37,7 @@ func TestDuplicateCluster(t *testing.T) {
 		if strings.HasPrefix(dbc.Hostname, "spark-master") {
 			id := dbc.BlueprintID
 			masters = append(masters, id)
-		} else {
+		} else if strings.HasPrefix(dbc.Hostname, "spark-worker") {
 			totalWorkers++
 		}
 	}
