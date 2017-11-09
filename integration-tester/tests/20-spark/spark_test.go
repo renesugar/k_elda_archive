@@ -41,6 +41,16 @@ func TestRunShuffleJob(t *testing.T) {
 		t.Fatalf("Failed to run spark job: %s", err.Error())
 	}
 
+	// Make sure that the job ran on multiple machines, instead of just on the
+	// master, by checking for log messages that contain "localhost" (which will
+	// be present when the job runs in local mode). This test assumes that INFO-level
+	// logging is enabled, because the potential log messages containing "localhost"
+	// are at INFO level.
+	if strings.Contains(stderrBytes.String(), "localhost") {
+		t.Fatalf("Spark job expected to run in distributed mode, but it ran " +
+			"in local mode")
+	}
+
 	outputAsStr := strings.Trim(string(stdoutBytes), " \n\t")
 	outputAsNum, err := strconv.Atoi(outputAsStr)
 	if err != nil {
