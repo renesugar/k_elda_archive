@@ -28,7 +28,7 @@ func TestRunShuffleJob(t *testing.T) {
 	keyValuePairsPerMapper := 1000
 	valuesPerKey := 4
 	numReducers := 10
-	cmd := exec.Command("kelda", "ssh", "spark-master", "run-example",
+	cmd := exec.Command("kelda", "ssh", "spark-driver", "run-example",
 		fmt.Sprintf("GroupByTest %d %d %d %d",
 			numMappers, keyValuePairsPerMapper, valuesPerKey, numReducers))
 	stderrBytes := bytes.NewBuffer(nil)
