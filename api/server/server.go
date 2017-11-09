@@ -203,7 +203,12 @@ func (s *server) syncClusterInfoOnce() {
 
 	leaderClient, err := newLeaderClient(machines, s.clientCreds)
 	if err != nil {
-		log.WithError(err).Warn("Failed to connect to leader")
+		if _, ok := err.(client.NoLeaderError); ok {
+			log.WithError(err).Debug("Failed to connect to leader. This " +
+				"should recover soon if the cluster was just booted.")
+		} else {
+			log.WithError(err).Warn("Failed to connect to leader")
+		}
 		return
 	}
 	defer leaderClient.Close()

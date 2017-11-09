@@ -32,12 +32,20 @@ func Leader(machines []db.Machine, creds connection.Credentials) (Client, error)
 		errorStrs = append(errorStrs, fmt.Sprintf("%s - %s", m.PublicIP, err))
 	}
 
+	return nil, NoLeaderError(errorStrs)
+}
+
+// NoLeaderError wraps the errors resulting from trying to find the leader of
+// the cluster. It is exported so that callers can tell whether a call to `Leader`
+// failed because it was unable to find the leader.
+type NoLeaderError []string
+
+func (errorStrs NoLeaderError) Error() string {
 	err := "no leader found"
 	if len(errorStrs) != 0 {
 		err += ": " + strings.Join(errorStrs, "; ")
 	}
-
-	return nil, errors.New(err)
+	return err
 }
 
 // Get the public IP of the lead minion by querying the remote machine's etcd
