@@ -18,25 +18,9 @@ func TestRunShuffleJob(t *testing.T) {
 	}
 	defer clnt.Close()
 
-	containers, err := clnt.QueryContainers()
-	if err != nil {
-		t.Fatalf("couldn't query containers: %s", err.Error())
-	}
-
 	containersPretty, _ := exec.Command("kelda", "ps").Output()
 	fmt.Println("`kelda ps` output:")
 	fmt.Println(string(containersPretty))
-
-	var id string
-	for _, dbc := range containers {
-		if strings.HasPrefix(dbc.Hostname, "spark-ms") {
-			id = dbc.BlueprintID
-			break
-		}
-	}
-	if id == "" {
-		t.Fatal("unable to find BlueprintID of Spark master")
-	}
 
 	// Run a job that shuffles 100,000 key-value pairs using 100 mappers and 10
 	// reducers.
@@ -44,7 +28,7 @@ func TestRunShuffleJob(t *testing.T) {
 	keyValuePairsPerMapper := 1000
 	valuesPerKey := 4
 	numReducers := 10
-	cmd := exec.Command("kelda", "ssh", id, "run-example",
+	cmd := exec.Command("kelda", "ssh", "spark-master", "run-example",
 		fmt.Sprintf("GroupByTest %d %d %d %d",
 			numMappers, keyValuePairsPerMapper, valuesPerKey, numReducers))
 	stderrBytes := bytes.NewBuffer(nil)
