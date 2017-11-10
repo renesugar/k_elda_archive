@@ -22,8 +22,8 @@ and submit a pull request!
 
 ## Overview
 
-* **Run An Application in the Cloud**: Walk through the [Getting Started tutorial](#installing-kelda)
-and learn how to quickly deploy an application to your favorite cloud provider.
+* **Run an Application in the Cloud**: Walk through the [Quick Start](#quick-start)
+tutorial and learn how to quickly deploy an application to your favorite cloud provider.
 * **Reference**: Browse the [Kelda API reference](#kelda-js-api-documentation),
 and check out the [Kelda CLI docs](#kelda-cli) to learn how to easily run and
 manage deployments.

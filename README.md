@@ -32,7 +32,7 @@ Install Kelda with npm:
 ```bash
 $ npm install -g @kelda/install
 ```
-Check out more in our [Getting Started Guide](http://docs.kelda.io/#getting-started).
+Check out more in our [Quick Start tutorial](http://docs.kelda.io/#quick-start).
 
 ## API
 
@@ -101,7 +101,7 @@ This is just a small sample of the Kelda CLI. [Check out more handy commands](ht
 
 ## Get Started
 
-* Get started with [our **tutorial**](http://docs.kelda.io/#getting-started)
+* Get started with [our **tutorial**](http://docs.kelda.io/#quick-start)
 * Check out [our **docs**](http://docs.kelda.io/)
 * [**Contribute** to the project](http://docs.kelda.io/#developing-kelda)
 * Learn more on our [**website**](http://kelda.io)

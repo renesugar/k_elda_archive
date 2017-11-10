@@ -10,7 +10,7 @@ toc_footers:
 
 includes:
   - Introduction
-  - GettingStarted
+  - QuickStart
   - HowKeldaWorks
   - BlueprintWritersGuide
   - BlueprintAPI
