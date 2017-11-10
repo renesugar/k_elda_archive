@@ -114,8 +114,10 @@ class Infrastructure {
       containers.push(c.toKeldaRepresentation());
     });
 
+    const machines = this.machines.map(m => m.toKeldaRepresentation());
+
     const keldaInfrastructure = {
-      machines: this.machines,
+      machines,
       loadBalancers,
       containers,
       connections,
@@ -678,6 +680,8 @@ function getBoolean(argName, arg) {
 class Machine {
   /**
    * Creates a new Machine object, which represents a machine to be deployed.
+   * The constructor will set the Machine's size, region, cpu, and ram properties
+   * based on the cloud virtual machine that will be launched for this Machine.
    * @constructor
    *
    * @example <caption>Create a Machine on Amazon. This will use the
@@ -700,9 +704,8 @@ class Machine {
    *   size: '512mb',
    * });
    *
-   * @param {Object.<string, string>} opts - Arguments that
-   *   modify the machine. Only 'provider' is required; the remaining options
-   *   are optional.
+   * @param {Object.<string, string>} opts - Arguments that modify the machine.
+   *   Only 'provider' is required; the remaining options are optional.
    * @param {string} opts.provider - The cloud provider that the machine
    *   should be launched in. Accepted values are Amazon, DigitalOcean, Google,
    *   and Vagrant.
@@ -734,15 +737,13 @@ class Machine {
     this.diskSize = getNumber('diskSize', opts.diskSize);
     this.sshKeys = getStringArray('sshKeys', opts.sshKeys);
     this.preemptible = getBoolean('preemptible', opts.preemptible);
-    // temporarily keeps cpu and ram for checkExtraKeys
-    this.cpu = opts.cpu;
-    this.ram = opts.ram;
-    checkExtraKeys(opts, this);
-    delete this.cpu;
-    delete this.ram;
 
     this.chooseSize(boxRange(opts.cpu), boxRange(opts.ram));
     this.chooseRegion();
+
+    // Check for extra keys after calling chooseSize, which sets the machine size,
+    // CPU, and RAM.
+    checkExtraKeys(opts, this);
   }
 
   /**
@@ -781,22 +782,32 @@ class Machine {
       default:
         throw new Error(`Unknown Cloud Provider: ${this.provider}`);
     }
+    let machineDescription;
     if (this.size !== '') {
-      this.verifySize(providerDescriptions, cpu, ram);
-      return;
+      machineDescription = this.verifySize(providerDescriptions, cpu, ram);
+    } else {
+      machineDescription = this.chooseBestSize(providerDescriptions, cpu, ram);
     }
-    this.chooseBestSize(providerDescriptions, cpu, ram);
+
+    // Set the machine's attributes based on the description of the cloud provider
+    // VM that will be launched.
+    this.size = machineDescription.Size;
+    this.ram = machineDescription.RAM;
+    this.cpu = machineDescription.CPU;
   }
 
   /**
    * Verifies that user-requested machine size is valid for the given provider.
-   * If so, verifies the requested machine size satisfies CPU and RAM requirements.
+   * If so, verifies the requested machine size satisfies CPU and RAM requirements,
+   * and returns the description of the machine that the provider will launch for
+   * the specified machine size.
    * @private
    * @param {description[]} providerDescriptions - Array of descriptions of
    *   a provider.
    * @param {Range} cpu - The desired number of CPUs.
    * @param {Range} ram - The desired amount of RAM in GiB.
-   * @returns {void}
+   * @returns {Object} - The description of the machine that will be launched
+   *   by the cloud provider.
    */
   verifySize(providerDescriptions, cpu, ram) {
     for (let i = 0; i < providerDescriptions.length; i += 1) {
@@ -804,7 +815,7 @@ class Machine {
       if (this.size !== '' && this.size === description.Size) {
         if (ram.inRange(description.RAM) &&
             cpu.inRange(description.CPU)) {
-          return;
+          return description;
         }
         throw new Error(`Requested size '${this.size}' does not meet`
           + ` RAM '${ram}' or`
@@ -843,12 +854,11 @@ class Machine {
    *   a provider.
    * @param {Range} cpu - The desired number of CPUs.
    * @param {Range} ram - The desired amount of RAM in GiB.
-   * @returns {string} The best size that fits the user's requirements if
+   * @returns {Object} A description of the best size that fits the user's requirements if
    *   provider is available in Kelda, otherwise throws an error.
    */
   chooseBestSize(providerDescriptions, cpu, ram) {
-    let bestSize = '';
-    let bestPrice = Infinity;
+    let bestMachine;
     for (let i = 0; i < providerDescriptions.length; i += 1) {
       const description = providerDescriptions[i];
 
@@ -866,15 +876,14 @@ class Machine {
         continue;
       }
 
-      if (bestSize === '' || description.Price < bestPrice) {
-        bestSize = description.Size;
-        bestPrice = description.Price;
+      if (bestMachine === undefined || description.Price < bestMachine.Price) {
+        bestMachine = description;
       }
     }
-    if (bestSize === '') {
+    if (bestMachine === undefined) {
       throw new Error(`No valid size for Machine ${stringify(this)}`);
     }
-    this.size = bestSize;
+    return bestMachine;
   }
 
   /**
@@ -937,6 +946,20 @@ class Machine {
       diskSize: this.diskSize,
       preemptible: this.preemptible,
     });
+  }
+
+  /**
+   * Converts the Machine to the JSON format expected by the Kelda go code.
+   * @private
+   * @returns {Object} A map that can be converted to JSON and interpreted by the Kelda
+   *   Go code.
+   */
+  toKeldaRepresentation() {
+    // Remove the CPU and RAM attributes, which are only included in the Machine object
+    // for the user's convenience.
+    delete this.cpu;
+    delete this.ram;
+    return this;
   }
 }
 

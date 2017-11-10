@@ -331,6 +331,45 @@ describe('Bindings', () => {
         badArg: 'foo', provider: 'Amazon', alsoBad: 'bar' }))
         .to.throw('Unrecognized keys passed to Machine constructor: ');
     });
+    it('cpu and ram are set based on specified size', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        size: 'm4.large',
+      });
+      // This test can't use checkMachines, because that function uses the Kelda
+      // representation, and the CPU and RAM are removed from the final
+      // representation that is sent to Kelda.
+      expect(machine.cpu).to.equal(2);
+      expect(machine.ram).to.equal(8);
+    });
+    it('cpu and ram are set to exact values when passed in as ranges', () => {
+      // This test verifies that the Machine constructor sets the cpu and ram properties
+      // to be the exact values of the CPU and RAM of of the machine that will be
+      // launched as a result of the passed-in resource constraints.
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        cpu: new b.Range(4, 6),
+        ram: new b.Range(8, 16),
+      });
+      // Like the above test, this test can't use checkMachines.
+      expect(machine.size).to.equal('m4.xlarge');
+      expect(machine.cpu).to.equal(4);
+      expect(machine.ram).to.equal(16);
+    });
+    it('cpu and ram are not included in JSON representation', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        size: 'm4.large',
+      });
+      infra = new b.Infrastructure(machine, machine);
+      expect(machine).to.have.property('cpu');
+      expect(machine).to.have.property('ram');
+      const { machines } = infra.toKeldaRepresentation();
+      machines.forEach((m) => {
+        expect(m).to.not.have.property('cpu');
+        expect(m).to.not.have.property('ram');
+      });
+    });
     it('hash independent of SSH keys', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
