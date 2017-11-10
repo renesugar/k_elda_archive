@@ -48,18 +48,19 @@ func TestWaitFor(t *testing.T) {
 	}
 
 	calls := 0
-	callFourTimes := func() bool {
+	callFiveTimes := func() bool {
 		calls++
-		if calls == 4 {
+		if calls == 5 {
 			return true
 		}
 		return false
 	}
-	err := BackoffWaitFor(callFourTimes, 1*time.Second, 5*time.Second)
+	err := BackoffWaitFor(callFiveTimes, 3*time.Second, 5*time.Second)
 	assert.NoError(t, err)
-	assert.Equal(t, 4, calls, "predicate should be tested 4 times")
+	assert.Equal(t, 5, calls, "predicate should be tested 5 times")
 	assert.True(t, sleepCalls[1] > sleepCalls[0], "sleep interval should increase")
-	assert.True(t, sleepCalls[2] > sleepCalls[1], "sleep interval should increase")
+	assert.Equal(t, sleepCalls[2], 3*time.Second, "sleep interval should be capped")
+	assert.Equal(t, sleepCalls[3], 3*time.Second, "sleep interval should be capped")
 
 	err = BackoffWaitFor(func() bool {
 		return false

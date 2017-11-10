@@ -208,7 +208,11 @@ func BackoffWaitFor(pred func() bool, cap time.Duration, timeout time.Duration) 
 			return errors.New("timed out")
 		}
 		Sleep(interval)
+
 		interval *= 2
+		if interval > cap {
+			interval = cap
+		}
 	}
 }
 
