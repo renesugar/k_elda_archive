@@ -108,6 +108,10 @@ describe('Bindings', () => {
         sshKeys: ['key1', 'key2'],
       }]);
     });
+    it('throws error when no Provider specified', () => {
+      expect(() => new b.Machine({})).to.throw('Machine must specify a provider ' +
+        '(accepted values are Amazon, DigitalOcean, Google, and Vagrant');
+    });
     it('chooses size when provided ram and cpu', () => {
       const machine = new b.Machine({
         provider: 'Google',
@@ -321,7 +325,7 @@ describe('Bindings', () => {
         ' Please choose a different size or set preemptible to be False.');
     });
     it('errors when passed invalid optional arguments', () => {
-      expect(() => new b.Machine({ badArg: 'foo' })).to
+      expect(() => new b.Machine({ provider: 'Amazon', badArg: 'foo' })).to
         .throw('Unrecognized keys passed to Machine constructor: badArg');
       expect(() => new b.Machine({
         badArg: 'foo', provider: 'Amazon', alsoBad: 'bar' }))

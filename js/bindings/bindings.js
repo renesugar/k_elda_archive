@@ -700,12 +700,12 @@ class Machine {
    *   size: '512mb',
    * });
    *
-   * @param {Object.<string, string>} [opts] - Optional arguments that
-   *   modify the machine.
-   * @param {string} [opts.provider] - The cloud provider that the machine
+   * @param {Object.<string, string>} opts - Arguments that
+   *   modify the machine. Only 'provider' is required; the remaining options
+   *   are optional.
+   * @param {string} opts.provider - The cloud provider that the machine
    *   should be launched in. Accepted values are Amazon, DigitalOcean, Google,
-   *   and Vagrant. This argument is optional, but the provider attribute of the
-   *   machine must be set before it is deployed.
+   *   and Vagrant.
    * @param {string} [opts.region] - The region the machine will run-in
    *   (provider-specific; e.g., for Amazon, this could be 'us-west-2').
    * @param {string} [opts.size] - The instance type (provider-specific).
@@ -723,6 +723,10 @@ class Machine {
     this._refID = uniqueID();
 
     this.provider = getString('provider', opts.provider);
+    if (this.provider === '') {
+      throw new Error('Machine must specify a provider (accepted values are Amazon, ' +
+        'DigitalOcean, Google, and Vagrant');
+    }
     this.role = getString('role', opts.role);
     this.region = getString('region', opts.region);
     this.size = getString('size', opts.size);
