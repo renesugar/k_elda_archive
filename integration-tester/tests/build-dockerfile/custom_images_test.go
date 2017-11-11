@@ -9,6 +9,7 @@ import (
 
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/integration-tester/util"
+	"time"
 )
 
 func TestCustomImages(t *testing.T) {
@@ -62,6 +63,11 @@ func TestCustomImages(t *testing.T) {
 	if countErr != nil {
 		t.Error(countErr)
 	}
+
+	parallelErr := checkBuildParallelized(machines, containers)
+	if parallelErr != nil {
+		t.Error(parallelErr)
+	}
 }
 
 func checkReuseImage(dockerfileToImages map[string][]string) error {
@@ -84,10 +90,36 @@ func checkImageCounts(machines []db.Machine, dockerfileCounts map[string]int) er
 		}
 	}
 
-	for i := 0; i < nWorker; i++ {
-		if actual := dockerfileCounts[strconv.Itoa(i)]; actual != 2 {
+	for i := 0; i < len(dockerfileCounts); i++ {
+		if actual := dockerfileCounts[strconv.Itoa(i)]; actual != nWorker {
 			return fmt.Errorf("DockerfileID %d had %d containers, "+
-				"expected %d", i, actual, 2)
+				"expected %d", i, actual, nWorker)
+		}
+	}
+
+	return nil
+}
+
+func checkBuildParallelized(machines []db.Machine, containers []db.Container) error {
+	firstContainer := make(map[string]time.Time)
+	lastContainer := make(map[string]time.Time)
+
+	for _, c := range containers {
+		if t, ok := firstContainer[c.Minion]; !ok || c.Created.Before(t) {
+			firstContainer[c.Minion] = c.Created
+		}
+		if t, ok := lastContainer[c.Minion]; !ok || c.Created.After(t) {
+			lastContainer[c.Minion] = c.Created
+		}
+	}
+
+	for _, m := range machines {
+		first, last := firstContainer[m.PrivateIP], lastContainer[m.PrivateIP]
+		duration := last.Sub(first)
+		maxDuration := 15 * time.Second
+		if duration > maxDuration {
+			return fmt.Errorf("machine %s has containers that started %d ms"+
+				" apart, expected <%d", m.CloudID, duration, maxDuration)
 		}
 	}
 

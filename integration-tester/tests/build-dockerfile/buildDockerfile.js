@@ -3,15 +3,23 @@ const infrastructure = require('../../config/infrastructure.js');
 
 const infra = infrastructure.createTestInfrastructure();
 
-for (let workerIndex = 0; workerIndex < infrastructure.nWorker; workerIndex += 1) {
-  const image = new kelda.Image(`test-custom-image${workerIndex}`,
+const images = [];
+for (let imageIndex = 0; imageIndex < 8; imageIndex += 1) {
+  const image = new kelda.Image(`test-custom-image${imageIndex}`,
     'FROM alpine\n' +
-    `RUN echo ${workerIndex} > /dockerfile-id\n` +
+    `RUN echo ${imageIndex} > /dockerfile-id\n` +
     'RUN echo $(cat /dev/urandom | tr -dc \'a-zA-Z0-9\' | ' +
-    'fold -w 32 | head -n 1) > /image-id');
-  for (let containerIndex = 0; containerIndex < 2; containerIndex += 1) {
+    'fold -w 32 | head -n 1) > /image-id\n' +
+    'RUN sleep 15');
+
+  images.push(image);
+}
+
+
+for (let workerIndex = 0; workerIndex < infrastructure.nWorker; workerIndex += 1) {
+  for (let containerIndex = 0; containerIndex < images.length; containerIndex += 1) {
     const container = new kelda.Container(
-      'bar', image, { command: ['tail', '-f', '/dev/null'] });
+      'bar', images[containerIndex], { command: ['tail', '-f', '/dev/null'] });
     container.deploy(infra);
   }
 }

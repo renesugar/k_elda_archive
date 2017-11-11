@@ -9,6 +9,7 @@ import (
 
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/minion/docker"
+	"sync"
 )
 
 /*
@@ -51,24 +52,41 @@ func syncImages(conn db.Conn, dk docker.Client) {
 		return nil
 	})
 
-	for _, img := range toBuild {
+	var wg sync.WaitGroup
+	wg.Add(len(toBuild))
+	sema := make(chan struct{}, 8)
+
+	builder := func(img db.Image) {
+		sema <- struct{}{}
+		defer func() {
+			writeImage(conn, img)
+			<-sema
+			wg.Done()
+		}()
+
 		img.Status = db.Building
 		writeImage(conn, img)
 
+		log.WithField("image", img.Name).Info("Building image...")
 		id, err := updateRegistry(dk, img)
 		if err != nil {
 			img.Status = "" // Unset the building status.
-			writeImage(conn, img)
 
 			log.WithError(err).WithField("image", img.Name).
 				Error("Failed to update registry")
-			continue
+			return
 		}
 
 		img.DockerID = id
 		img.Status = db.Built
-		writeImage(conn, img)
+
+		log.WithField("image", img.Name).Info("Built image.")
 	}
+
+	for _, img := range toBuild {
+		go builder(img)
+	}
+	wg.Wait()
 }
 
 func updateRegistry(dk docker.Client, img db.Image) (string, error) {
