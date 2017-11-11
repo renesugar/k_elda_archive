@@ -13,7 +13,6 @@ const fs = require('fs');
 
 const inquirer = require('inquirer');
 const consts = require('./constants');
-const util = require('./initUtil');
 const Provider = require('./provider');
 
 
@@ -86,48 +85,22 @@ function questionWithHelp(question, helpstring) {
 // User prompts.
 
 /**
-  * Prompt the user for a valid infrastructure name. Users will use this name in
-  * their blueprints to get the right infrastructure.
+  * If a base infrastructure exists, ask the user if they want to overwrite it.
   *
   * @returns {Promise} A promise that contains the user's answers.
   */
-function infraNamePrompt() {
-  const questions = [
-    questionWithHelp({
-      type: 'input',
-      name: consts.name,
-      message: 'Pick a name for your infrastructure:',
-      default: 'default',
-    }, 'The infrastructure name is used in blueprints to retrieve the ' +
-      'infrastructure. E.g. if you choose the name \'aws-small\', then ' +
-      '`baseInfrastructure(\'aws-small\')` will return this infrastructure.'),
-    {
-      type: 'confirm',
-      name: consts.infraOverwrite,
-      message(answers) {
-        return `"${answers[consts.name]}" already exists. Overwrite?`;
-      },
-      default: false,
-      when(answers) {
-        return fs.existsSync(util.infraPath(answers[consts.name]));
-      },
+function overwritePrompt() {
+  const questions = [{
+    type: 'confirm',
+    name: consts.infraOverwrite,
+    message: 'This will overwrite your existing base infrastructure. Continue?',
+    default: false,
+    when() {
+      return fs.existsSync(consts.baseInfraLocation);
     },
+  },
   ];
-
-  /**
-    * Repeatedly prompt for a name until we get a valid answer.
-    *
-    * @returns {Promise} A promise that contains the user's answers
-    */
-  function confirmIfOverwrite() {
-    return inquirer.prompt(questions).then((answers) => {
-      if (answers[consts.infraOverwrite] === false) {
-        return confirmIfOverwrite();
-      }
-      return answers;
-    });
-  }
-  return confirmIfOverwrite();
+  return inquirer.prompt(questions);
 }
 
 /**
@@ -355,31 +328,31 @@ function machineCountPrompts() {
  */
 function promptUser() {
   const answers = {};
-  return infraNamePrompt()
-    .then((infraAnswers) => {
-      Object.assign(answers, infraAnswers);
-      return getProviderPrompt();
-    })
+  return overwritePrompt()
+    .then((shouldOverwrite) => {
+      if (shouldOverwrite[consts.infraOverwrite] === false) {
+        return { shouldAbort: true };
+      }
+      return getProviderPrompt()
+        .then((providerAnswer) => {
+          Object.assign(answers, providerAnswer);
+          const provider = new Provider(answers[consts.provider]);
+          return credentialsPrompts(provider)
 
+            .then((keyAnswers) => {
+              Object.assign(answers, keyAnswers);
+              return machineConfigPrompts(provider);
+            })
 
-    .then((providerAnswer) => {
-      Object.assign(answers, providerAnswer);
-      const provider = new Provider(answers[consts.provider]);
-      return credentialsPrompts(provider)
+            .then((providerAnswers) => {
+              Object.assign(answers, providerAnswers);
+              return machineCountPrompts();
+            })
 
-        .then((keyAnswers) => {
-          Object.assign(answers, keyAnswers);
-          return machineConfigPrompts(provider);
-        })
-
-        .then((providerAnswers) => {
-          Object.assign(answers, providerAnswers);
-          return machineCountPrompts();
-        })
-
-        .then((machineAnswers) => {
-          Object.assign(answers, machineAnswers);
-          return { provider, answers };
+            .then((machineAnswers) => {
+              Object.assign(answers, machineAnswers);
+              return { provider, answers };
+            });
         });
     });
 }

@@ -41,25 +41,13 @@ The `kelda init` command is a simple way to create reusable infrastructure. The
 command prompts the user for information about their desired infrastructure
 and then creates an infrastructure based on the answers.
 The infrastructure can be used in blueprints by calling
-`baseInfrastructure(NAME)`, where `NAME` is the infrastructure name given to
-`kelda init`.
-
-It is possible to create multiple infrastructures with `kelda init`, but we
-recommend at least having a small infrastructure called `default` with your
-standard configuration. Some example blueprints will assume such a `default`
-infrastructure exists.
+`baseInfrastructure()`.
 
 To edit the infrastructure after creation, either rerun `kelda init`
 using the same name, or directly edit the infrastructure blueprint stored in
-`~/.kelda/infra/<NAME>.js`.
+`~/.kelda/infra/default.js`.
 
-Most of the `kelda init` questions are self-explanatory, but the following might
-warrant a little explanation:
-
-* **Infrastructure Name**: As explained above, the infrastructure name is used
-when retrieving the infrastructure with
-[`baseInfrastructure()`](#kelda-js-api-documentation).
-* **Provider Keys**: In order to launch virtual machines from your account, Kelda needs access to
+ **Provider Keys**: In order to launch virtual machines from your account, Kelda needs access to
 your provider credentials. The credentials are used when Kelda makes API calls
 to the provider. Kelda will not store your credentials, but simply needs
 access to a credentials file on your machine. If there is no existing

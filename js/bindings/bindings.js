@@ -159,34 +159,23 @@ function githubKeys(user) {
   return keys;
 }
 
-// Both infraDirectory and getInfraPath are also defined in init-util.js.
+// Both infraDirectory and baseInfraLocation are also defined in initializer/constants.js.
 // This code duplication is ugly, but it significantly simplifies packaging
 // the `kelda init` code with the "@kelda/install" module.
 const infraDirectory = path.join(os.homedir(), '.kelda', 'infra');
+const baseInfraLocation = path.join(infraDirectory, 'default.js');
 
 /**
- * Returns the absolute path to the infrastructure with the given name.
- * @private
- *
- * @param {string} infraName - The name of the infrastructure.
- * @returns {string} The absolute path to the infrastructure file.
- */
-function getInfraPath(infraName) {
-  return path.join(infraDirectory, `${infraName}.js`);
-}
-
-/**
- * Returns the Infrastructure object exported by the given infrastructure
+ * Returns the Infrastructure object exported by the base infrastructure
  * blueprint.
  * Having this as a separate function simplifies testing baseInfrastructure().
  * @private
  *
- * @param {string} infraPath - Absolute path to the infrastructure blueprint.
  * @returns {Infrastructure} - The Infrastructure exported by the infrastructure
  *  blueprint.
  */
-function getBaseInfrastructure(infraPath) {
-  const infraGetter = require(infraPath); // eslint-disable-line
+function getBaseInfrastructure() {
+  const infraGetter = require(baseInfraLocation); // eslint-disable-line
 
   // By passing this module to the infraGetter, the blueprint doesn't have to
   // require Kelda directly and we thus don't have to `npm install` in the
@@ -198,26 +187,18 @@ function getBaseInfrastructure(infraPath) {
  * Returns a base infrastructure. The base infrastructure could be created
  * with `kelda init`.
  *
- * @example <caption>Retrieve the base infrastructure called NAME, and deploy
+ * @example <caption>Retrieve the base infrastructure, and deploy
  * an nginx container on it.</caption>
- * const inf = baseInfrastructure('NAME');
+ * const inf = baseInfrastructure();
  * (new Container('web', 'nginx')).deploy(inf);
  *
- * @param {string} name - The name of the infrastructure, as passed to
- *   `kelda init`.
  * @returns {Infrastructure} The infrastructure object.
  */
-function baseInfrastructure(name = 'default') {
-  if (typeof name !== 'string') {
-    throw new Error(`name must be a string; was ${stringify(name)}`);
+function baseInfrastructure() {
+  if (!fs.existsSync(baseInfraLocation)) {
+    throw new Error('no base infrastructure. Use `kelda init` to create one.');
   }
-
-  const infraPath = getInfraPath(name);
-  if (!fs.existsSync(infraPath)) {
-    throw new Error(`no infrastructure called ${name}. Use 'kelda init' ` +
-      'to create a new infrastructure.');
-  }
-  return getBaseInfrastructure(infraPath);
+  return getBaseInfrastructure();
 }
 
 // The name used to refer to the public internet in the JSON description
@@ -1562,6 +1543,6 @@ module.exports = {
   hostIP,
   publicInternet,
   resetGlobals,
-  getInfraPath,
+  baseInfraLocation,
   baseInfrastructure,
 };

@@ -6,6 +6,8 @@ Up Next
 
 - Properly set the container's hostname. Before, a container querying its own
 hostname would get its Docker ID, which is meaningless in the Kelda network.
+- Only allow a single base infrastructure. We had no good use case for having
+multiple base infrastructures, and the feature added unnecessary complexity.
 
 Release 0.6.0
 -------------

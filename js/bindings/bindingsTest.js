@@ -1113,34 +1113,24 @@ describe('Bindings', () => {
       fsExistsStub.resetBehavior();
     });
 
-    it('should error if name is not a string', () => {
-      const expectedFail = () => {
-        b.baseInfrastructure(1);
-      };
-      expect(expectedFail).to.throw('name must be a string');
-    });
-
     it('should error when the infrastructure doesn\'t exist', () => {
-      fsExistsStub.withArgs(b.getInfraPath('foo')).returns(false);
-      const expectedFail = () => {
-        b.baseInfrastructure('foo');
-      };
-      expect(expectedFail).to.throw('no infrastructure called foo');
+      fsExistsStub.withArgs(b.baseInfraLocation).returns(false);
+      expect(() => b.baseInfrastructure()).to.throw(
+        'no base infrastructure. Use `kelda init` to create one.');
     });
 
     it('should return the infrastructure object when the infra exists', () => {
       const expected = 'someInfrastructure';
-      const infraPath = b.getInfraPath('foo');
 
       const getInfraStub = sinon.stub();
-      getInfraStub.withArgs(infraPath).returns(expected);
+      getInfraStub.returns(expected);
       const revertGetInfra = b.__set__('getBaseInfrastructure', getInfraStub);
 
-      fsExistsStub.withArgs(infraPath).returns(true);
+      fsExistsStub.withArgs(b.baseInfraLocation).returns(true);
 
       let output;
       const expectedPass = () => {
-        output = b.baseInfrastructure('foo');
+        output = b.baseInfrastructure();
       };
 
       expect(expectedPass).to.not.throw();

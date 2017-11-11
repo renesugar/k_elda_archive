@@ -16,7 +16,6 @@ const handlebars = require('handlebars');
 
 const prompter = require('./prompter');
 const consts = require('./constants');
-const util = require('./initUtil');
 
 const templateDir = path.join(__dirname, 'templates');
 const infraTemplateFile = path.join(templateDir, 'inf_template');
@@ -83,9 +82,9 @@ function writeProviderCreds(provider, answers) {
   */
 function processAnswers(provider, answers) {
   try {
-    fsExtra.mkdirpSync(util.infraDirectory);
+    fsExtra.mkdirpSync(consts.infraDirectory);
   } catch (err) {
-    throw new Error(`failed to create ${util.infraDirectory}: ${err}`);
+    throw new Error(`failed to create ${consts.infraDirectory}: ${err}`);
   }
 
   writeProviderCreds(provider, answers);
@@ -101,12 +100,9 @@ function processAnswers(provider, answers) {
     [consts.workerCount]: answers[consts.workerCount],
   };
 
-  const outputPath = util.infraPath(answers[consts.name]);
-  createFileFromTemplate(infraTemplateFile, config, outputPath);
-  log(`Created infrastructure in ${outputPath}`);
+  createFileFromTemplate(infraTemplateFile, config, consts.baseInfraLocation);
   log('The base infrastructure has been created! Use ' +
-    `baseInfrastructure("${answers[consts.name]}") in your blueprint to ` +
-    'use this infrastructure.');
+    '`baseInfrastructure() in your blueprint to use this infrastructure.');
 }
 
 /**
@@ -116,6 +112,9 @@ function processAnswers(provider, answers) {
 function run() {
   prompter.promptUser()
     .then((result) => {
+      if (result.shouldAbort) {
+        exit(0);
+      }
       processAnswers(result.provider, result.answers);
     })
     .catch((error) => {

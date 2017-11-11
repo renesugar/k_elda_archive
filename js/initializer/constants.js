@@ -1,3 +1,12 @@
+const path = require('path');
+const os = require('os');
+
+// This is also defined in bindings.js. This code duplication is ugly, but it
+// significantly simplifies packaging the `kelda init` code with the
+// "@kelda/install" module.
+const infraDirectory = path.join(os.homedir(), '.kelda', 'infra');
+const baseInfraLocation = path.join(infraDirectory, 'default.js');
+
 // Used in infrastructure template.
 const namespace = 'namespace';
 const provider = 'provider';
@@ -13,7 +22,6 @@ const workerCount = 'workerCount';
 
 
 // Infrastructure.
-const name = 'name';
 const infraOverwrite = 'infraOverwrite';
 
 // Provider.
@@ -27,7 +35,8 @@ const other = 'other';
 const inputCredsPath = 'credsPath';
 
 module.exports = {
-  name,
+  infraDirectory,
+  baseInfraLocation,
   namespace,
   infraOverwrite,
   provider,

@@ -51,9 +51,6 @@ tutorial before running `kelda init`**. In the next step, you will run
     $ kelda init
     ```
 
-**Note!** For the sake of this tutorial, make sure to use the name **`default`**
-when answering the first question from `kelda init`.
-
 **Note!** When asked for credentials, use the provider credentials from the
 previous section.
 

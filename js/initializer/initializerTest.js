@@ -10,7 +10,6 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 
 const consts = require('./constants');
-const util = require('./initUtil');
 
 const initializer = rewire('./initializer');
 const Provider = rewire('./provider');
@@ -161,14 +160,12 @@ describe('Initializer', () => {
       initializer.processAnswers(provider, answers);
       expect(writeCredsStub.getCall(0).args[0]).to.equal(provider);
       expect(writeCredsStub.getCall(0).args[1]).to.equal(answers);
-      expect(writeFileStub.getCall(0).args[0]).to.equal(
-        util.infraPath(answers.name));
+      expect(writeFileStub.getCall(0).args[0]).to.equal(consts.baseInfraLocation);
       expect(writeFileStub.getCall(0).args[1]).to.equal(expInfraFile);
     }
 
     it('should set SSH key and size when provided', () => {
       const answers = {
-        [consts.name]: 'foo',
         [consts.provider]: 'provider',
         [consts.size]: 'big',
         // Size overrides RAM and CPU.
@@ -202,7 +199,6 @@ module.exports = infraGetter;
     it('should omit SSH key and size when not provided and use RAM/CPU ' +
       'instead', () => {
       const answers = {
-        [consts.name]: 'foo',
         [consts.provider]: 'provider',
         [consts.ram]: 2,
         [consts.cpu]: 1,
