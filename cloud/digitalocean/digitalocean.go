@@ -450,9 +450,3 @@ func toRules(acls []acl.ACL) (rules []godo.InboundRule) {
 
 	return rules
 }
-
-func machineAction(m db.Machine, fn func(db.Machine) error) func() error {
-	return func() error {
-		return fn(m)
-	}
-}
