@@ -19,8 +19,6 @@ import (
 	"github.com/kelda/kelda/util"
 
 	"golang.org/x/oauth2"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // DefaultRegion is assigned to Machines without a specified region
@@ -302,7 +300,7 @@ func (prvdr Provider) SetACLs(acls []acl.ACL) error {
 		return err
 	}
 
-	add, remove := syncACLs(acls, firewall.InboundRules)
+	add, remove := prvdr.syncACLs(acls, firewall.InboundRules)
 
 	if len(add) > 0 {
 		if _, err := prvdr.AddRules(firewall.ID, add); err != nil {
@@ -328,6 +326,7 @@ func (prvdr Provider) getCreateFirewall() (*godo.Firewall, error) {
 
 		for _, firewall := range firewalls {
 			if firewall.Name == tagName {
+				fixRulesPortRange(&firewall)
 				return &firewall, nil
 			}
 		}
@@ -343,78 +342,67 @@ func (prvdr Provider) getCreateFirewall() (*godo.Firewall, error) {
 		return nil, err
 	}
 
-	// The outbound rules and inter-droplet inbound rules are generated only
-	// once: when the firewall is first created. If these rules are externally
-	// deleted, there will be errors unless the firewall is destroyed
-	// (and then recreated by the daemon).
-	internalDroplets := &godo.Sources{
-		Tags: []string{tagName},
+	// The outbound rules are generated only once: when the firewall is first
+	// created. If these rules are externally deleted, there will be errors
+	// unless the firewall is destroyed (and then recreated by the daemon).
+	firewall, _, err := prvdr.CreateFirewall(tagName, allowAll, nil)
+	return firewall, err
+}
+
+// The DigitalOcean API is inconsistent for listing rules, and manipulating
+// rules. The listing API represents "all port ranges" with "0", but when
+// adding or removing rules, it requires the string "all" for TCP or UDP, and
+// the empty string for ICMP.
+// Therefore, we convert the rules here so that callers don't have to deal with
+// converting rules into the appropriate form when removing rules from
+// InboundRules.
+func fixRulesPortRange(fw *godo.Firewall) {
+	for i := range fw.InboundRules {
+		if fw.InboundRules[i].PortRange == "0" {
+			if fw.InboundRules[i].Protocol == "icmp" {
+				fw.InboundRules[i].PortRange = ""
+			} else {
+				fw.InboundRules[i].PortRange = "all"
+			}
+		}
 	}
-	allowInternal := []godo.InboundRule{
-		{
+}
+
+func (prvdr Provider) syncACLs(desired []acl.ACL, current []godo.InboundRule) (
+	addRules, removeRules []godo.InboundRule) {
+
+	internalDroplets := &godo.Sources{Tags: []string{prvdr.getTag()}}
+	desiredRules := append(toRules(desired),
+		godo.InboundRule{
 			Protocol:  "tcp",
 			PortRange: "all",
 			Sources:   internalDroplets,
 		},
-		{
+		godo.InboundRule{
 			Protocol:  "udp",
 			PortRange: "all",
 			Sources:   internalDroplets,
-		},
-	}
-	firewall, _, err := prvdr.CreateFirewall(tagName, allowAll, allowInternal)
-	return firewall, err
-}
+		})
 
-func syncACLs(desired []acl.ACL, current []godo.InboundRule) (
-	addRules, removeRules []godo.InboundRule) {
-
-	curACLSet := map[acl.ACL]struct{}{}
-	for _, cur := range current {
-		ports := strings.Split(cur.PortRange, "-")
-		if len(ports) == 1 {
-			ports = []string{ports[0], ports[0]}
-		}
-
-		from, err := strconv.Atoi(ports[0])
-		if err != nil {
-			log.WithError(err).WithField("port", ports[0]).Warn(
-				"Failed to parse from port of InboundRule")
-			continue
-		}
-
-		to, err := strconv.Atoi(ports[1])
-		if err != nil {
-			log.WithError(err).WithField("port", ports[1]).Warn(
-				"Failed to parse to port of InboundRule")
-			continue
-		}
-
-		for _, addr := range cur.Sources.Addresses {
-			key := acl.ACL{
-				CidrIP:  addr,
-				MinPort: int(from),
-				MaxPort: int(to),
-			}
-			curACLSet[key] = struct{}{}
+	key := func(intf interface{}) interface{} {
+		rule := intf.(godo.InboundRule)
+		return struct {
+			PortRange, Protocol, Addresses, Tags string
+		}{
+			rule.PortRange, rule.Protocol,
+			strings.Join(rule.Sources.Addresses, ","),
+			strings.Join(rule.Sources.Tags, ","),
 		}
 	}
-
-	var curACLs acl.Slice
-	for key := range curACLSet {
-		curACLs = append(curACLs, key)
-	}
-
-	_, toAdd, toRemove := join.HashJoin(acl.Slice(desired), curACLs, nil, nil)
-
-	var add, remove []acl.ACL
+	_, toAdd, toRemove := join.HashJoin(inboundRuleSlice(desiredRules),
+		inboundRuleSlice(current), key, key)
 	for _, intf := range toAdd {
-		add = append(add, intf.(acl.ACL))
+		addRules = append(addRules, intf.(godo.InboundRule))
 	}
 	for _, intf := range toRemove {
-		remove = append(remove, intf.(acl.ACL))
+		removeRules = append(removeRules, intf.(godo.InboundRule))
 	}
-	return toRules(add), toRules(remove)
+	return addRules, removeRules
 }
 
 func toRules(acls []acl.ACL) (rules []godo.InboundRule) {
@@ -425,9 +413,6 @@ func toRules(acls []acl.ACL) (rules []godo.InboundRule) {
 			portRange := fmt.Sprintf("%d-%d", acl.MinPort, acl.MaxPort)
 			if acl.MinPort == acl.MaxPort {
 				portRange = fmt.Sprintf("%d", acl.MinPort)
-				if acl.MinPort == 0 {
-					portRange = "all"
-				}
 			}
 
 			if proto == "icmp" {
@@ -449,4 +434,14 @@ func toRules(acls []acl.ACL) (rules []godo.InboundRule) {
 	}
 
 	return rules
+}
+
+type inboundRuleSlice []godo.InboundRule
+
+func (slc inboundRuleSlice) Get(ii int) interface{} {
+	return slc[ii]
+}
+
+func (slc inboundRuleSlice) Len() int {
+	return len(slc)
 }

@@ -329,11 +329,24 @@ func TestSetACLs(t *testing.T) {
 		},
 	}
 
+	internalDroplets := &godo.Sources{Tags: []string{tagName}}
+	internalTrafficRules := []godo.InboundRule{
+		{
+			Protocol:  "tcp",
+			PortRange: "all",
+			Sources:   internalDroplets,
+		},
+		{
+			Protocol:  "udp",
+			PortRange: "all",
+			Sources:   internalDroplets,
+		},
+	}
+
 	// Test that creating new ACLs works as expected.
 	mc.On("CreateTag", tagName).Return(
 		&godo.Tag{Name: tagName}, nil, nil).Once()
-	mc.On("CreateFirewall", tagName, allowAll,
-		mock.AnythingOfType("[]godo.InboundRule")).Return(
+	mc.On("CreateFirewall", tagName, allowAll, nil).Return(
 		&godo.Firewall{ID: "test", OutboundRules: allowAll}, nil, nil).Once()
 	mc.On("ListFirewalls", mock.Anything).Return(
 		[]godo.Firewall{
@@ -341,79 +354,41 @@ func TestSetACLs(t *testing.T) {
 		}, nil, nil).Once()
 	mc.On("AddRules", "test",
 		mock.AnythingOfType("[]godo.InboundRule")).Return(nil, nil).Once()
-
 	mc.On("RemoveRules", "test", []godo.InboundRule(nil)).Return(nil, nil).Once()
 
 	err = doPrvdr.SetACLs(acls)
 	assert.NoError(t, err)
+	checkFirewallRuleCall(t, mc, "AddRules",
+		append(toRules(acls), internalTrafficRules...))
 
 	mc = new(mocks.Client)
 	doPrvdr.Client = mc
 
 	// Check that ACLs are both created and removed when not in the requested list.
+	extraRules := append(toRules([]acl.ACL{
+		{
+			CidrIP:  "12.0.0.0/29",
+			MinPort: 100,
+			MaxPort: 200,
+		}}),
+		godo.InboundRule{Sources: &godo.Sources{Tags: []string{"random-tag"}}})
 	mc.On("ListFirewalls", mock.Anything).Return([]godo.Firewall{
 		{
 			Name:          tagName,
 			ID:            "test",
 			OutboundRules: allowAll,
-			InboundRules: []godo.InboundRule{
-				{
-					Protocol:  "tcp",
-					PortRange: "22-22",
-					Sources: &godo.Sources{
-						Addresses: []string{"11.0.0.0/27"},
-					},
-				},
-				{
-					Protocol:  "udp",
-					PortRange: "22-22",
-					Sources: &godo.Sources{
-						Addresses: []string{"11.0.0.0/27"},
-					},
-				},
-				{
-					Protocol:  "icmp",
-					PortRange: "22-22",
-					Sources: &godo.Sources{
-						Addresses: []string{"11.0.0.0/27"},
-					},
-				},
-				{
-					Protocol:  "tcp",
-					PortRange: "100-200",
-					Sources: &godo.Sources{
-						Addresses: []string{"12.0.0.0/29"},
-					},
-				},
-				{
-					Protocol:  "udp",
-					PortRange: "100-200",
-					Sources: &godo.Sources{
-						Addresses: []string{"12.0.0.0/29"},
-					},
-				},
-				{
-					Protocol:  "icmp",
-					PortRange: "100-200",
-					Sources: &godo.Sources{
-						Addresses: []string{"12.0.0.0/29"},
-					},
-				},
-			},
+			InboundRules: append(internalTrafficRules,
+				append(toRules([]acl.ACL{acls[1]}), extraRules...)...),
 		},
 	}, nil, nil).Once()
 
-	mc.On("AddRules", "test", toRules([]acl.ACL{acls[0]})).Return(nil, nil).Once()
-	mc.On("RemoveRules", "test", toRules([]acl.ACL{
-		{
-			CidrIP:  "12.0.0.0/29",
-			MinPort: 100,
-			MaxPort: 200,
-		},
-	})).Return(nil, nil).Once()
+	mc.On("AddRules", "test", mock.Anything).Return(nil, nil).Once()
+	mc.On("RemoveRules", "test", mock.Anything).Return(nil, nil).Once()
 
 	err = doPrvdr.SetACLs(acls)
 	assert.NoError(t, err)
+	checkFirewallRuleCall(t, mc, "AddRules", toRules([]acl.ACL{acls[0]}))
+	checkFirewallRuleCall(t, mc, "RemoveRules", extraRules)
 
 	mc = new(mocks.Client)
 	doPrvdr.Client = mc
@@ -460,13 +435,48 @@ func TestSetACLs(t *testing.T) {
 	assert.Equal(t, "testCorrect", fw.ID)
 }
 
+// checkFirewallRuleCall asserts that the given firewall API call was called
+// with the given rules. It ignores the order of the rules.
+func checkFirewallRuleCall(t *testing.T, mc *mocks.Client, method string,
+	expRules []godo.InboundRule) {
+	call, err := getCall(mc, method)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	assert.Len(t, call.Arguments, 2)
+	actualRules := call.Arguments[1].([]godo.InboundRule)
+	assert.Len(t, actualRules, len(expRules))
+	assert.Subset(t, actualRules, expRules)
+}
+
+func getCall(mc *mocks.Client, method string) (mock.Call, error) {
+	var desiredCall mock.Call
+	var foundCall bool
+	for _, call := range mc.Calls {
+		if call.Method == method {
+			if foundCall {
+				return mock.Call{}, fmt.Errorf(
+					"%q called multiple times", method)
+			}
+			foundCall = true
+			desiredCall = call
+		}
+	}
+
+	if !foundCall {
+		return mock.Call{}, fmt.Errorf("failed to find %q call", method)
+	}
+	return desiredCall, nil
+}
+
 func TestToRules(t *testing.T) {
 	// Test converting ACLs with a variety of port ranges.
 	acls := []acl.ACL{
 		{CidrIP: "1.0.0.0/8", MinPort: 80, MaxPort: 100},
 		{CidrIP: "2.0.0.0/8", MinPort: 80, MaxPort: 80},
 		{CidrIP: "3.0.0.0/8", MinPort: 0, MaxPort: 100},
-		{CidrIP: "4.0.0.0/8", MinPort: 0, MaxPort: 0},
 		{CidrIP: "1.0.0.0/8", MinPort: 4000, MaxPort: 4000},
 		{CidrIP: "1.0.0.0/8", MinPort: 500, MaxPort: 600},
 	}
@@ -485,10 +495,6 @@ func TestToRules(t *testing.T) {
 		{Protocol: "tcp", PortRange: "0-100", Sources: srcForIP("3.0.0.0/8")},
 		{Protocol: "udp", PortRange: "0-100", Sources: srcForIP("3.0.0.0/8")},
 		{Protocol: "icmp", Sources: srcForIP("3.0.0.0/8")},
-
-		{Protocol: "tcp", PortRange: "all", Sources: srcForIP("4.0.0.0/8")},
-		{Protocol: "udp", PortRange: "all", Sources: srcForIP("4.0.0.0/8")},
-		{Protocol: "icmp", Sources: srcForIP("4.0.0.0/8")},
 
 		{Protocol: "tcp", PortRange: "4000", Sources: srcForIP("1.0.0.0/8")},
 		{Protocol: "udp", PortRange: "4000", Sources: srcForIP("1.0.0.0/8")},
