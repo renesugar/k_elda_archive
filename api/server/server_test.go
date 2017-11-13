@@ -217,6 +217,30 @@ func TestDeploy(t *testing.T) {
 	assert.Equal(t, exp, bp.Blueprint)
 }
 
+func TestDeployChangeNamespace(t *testing.T) {
+	t.Parallel()
+
+	conn := db.New()
+	conn.Txn(db.BlueprintTable, db.MachineTable).Run(func(view db.Database) error {
+		bp := view.InsertBlueprint()
+		bp.Namespace = "old"
+		view.Commit(bp)
+
+		dbm := view.InsertMachine()
+		view.Commit(dbm)
+		return nil
+	})
+	s := server{conn: conn, runningOnDaemon: true}
+
+	newNamespaceBlueprint := `{"Namespace":"new"}`
+	_, err := s.Deploy(context.Background(),
+		&pb.DeployRequest{Deployment: newNamespaceBlueprint})
+	assert.NoError(t, err)
+
+	// The machines in the database should be removed.
+	assert.Empty(t, conn.SelectFromMachine(nil))
+}
+
 func TestVagrantDeployment(t *testing.T) {
 	conn := db.New()
 	s := server{conn: conn, runningOnDaemon: true}

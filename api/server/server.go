@@ -228,19 +228,26 @@ func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 		}
 	}
 
-	err = s.conn.Txn(db.BlueprintTable).Run(func(view db.Database) error {
+	s.conn.Txn(db.BlueprintTable, db.MachineTable).Run(func(view db.Database) error {
 		bp, err := view.GetBlueprint()
 		if err != nil {
 			bp = view.InsertBlueprint()
+		} else {
+			// If the namespace changed, remove all the machines from the
+			// database since those applied to the old namespace, and leaving
+			// them in the database will cause incorrect behavior such as
+			// sending the new blueprint to the old machines.
+			if bp.Namespace != newBlueprint.Namespace {
+				for _, dbm := range view.SelectFromMachine(nil) {
+					view.Remove(dbm)
+				}
+			}
 		}
 
 		bp.Blueprint = newBlueprint
 		view.Commit(bp)
 		return nil
 	})
-	if err != nil {
-		return &pb.DeployReply{}, err
-	}
 
 	// XXX: Remove this error when the Vagrant provider is done.
 	for _, machine := range newBlueprint.Machines {
