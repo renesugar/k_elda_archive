@@ -71,7 +71,11 @@ func runBlueprint(blueprint string) (string, string, error) {
 
 // runKeldaDaemon starts the daemon.
 func runKeldaDaemon() {
-	os.Remove(api.DefaultSocket[len("unix://"):])
+	socket := os.Getenv("KELDA_HOST")
+	if socket == "" {
+		socket = api.DefaultSocket
+	}
+	os.Remove(socket[len("unix://"):])
 
 	args := []string{"-l", "debug", "daemon"}
 	cmd := exec.Command("kelda", args...)

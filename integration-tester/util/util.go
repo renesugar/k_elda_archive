@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -28,7 +29,11 @@ func GetDefaultDaemonClient() (client.Client, error) {
 		return nil, err
 	}
 
-	return client.New(api.DefaultSocket, creds)
+	socket := os.Getenv("KELDA_HOST")
+	if socket == "" {
+		socket = api.DefaultSocket
+	}
+	return client.New(socket, creds)
 }
 
 // CheckPublicConnections test that HTTP GETs against all ports that are

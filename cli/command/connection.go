@@ -2,6 +2,7 @@ package command
 
 import (
 	"flag"
+	"os"
 
 	"github.com/kelda/kelda/api"
 	"github.com/kelda/kelda/api/client"
@@ -15,7 +16,14 @@ type connectionFlags struct {
 }
 
 func (cf *connectionFlags) InstallFlags(flags *flag.FlagSet) {
-	flags.StringVar(&cf.host, "H", api.DefaultSocket, "the host to connect to")
+	defaultSocket := os.Getenv("KELDA_HOST")
+	if defaultSocket == "" {
+		defaultSocket = api.DefaultSocket
+	}
+	flags.StringVar(&cf.host, "H", defaultSocket, "the host to connect to. This "+
+		"flag can also be specified by setting the KELDA_HOST environment "+
+		"variable. If the flag is set using both the environment variable and a "+
+		"command line argument, the command line value takes precedence.")
 }
 
 type connectionHelper struct {

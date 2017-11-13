@@ -8,6 +8,13 @@ Up Next
 hostname would get its Docker ID, which is meaningless in the Kelda network.
 - Only allow a single base infrastructure. We had no good use case for having
 multiple base infrastructures, and the feature added unnecessary complexity.
+- Allow configuring the Kelda daemon host socket with the `KELDA_HOST`
+environment variable. While using the default socket is sufficient for most
+scenarios, using a non-default socket path is useful for connecting to a remote
+daemon, or running multiple daemons on the same machine. Setting the socket
+path using an environment variable allows users to simply set the environment
+variable once, and not worry about setting the correct flags in all `kelda`
+commands.
 
 Release 0.6.0
 -------------
