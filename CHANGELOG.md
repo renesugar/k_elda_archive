@@ -7,7 +7,7 @@ Up Next
 - The Kelda command line utility now accepts container names in addition to
 IDs.  For example, `kelda ssh spark-master` can be used instead of
 `kelda ssh 6cf081531346`.
-- Allow containers to reference its public IP via an environment variable or
+- Allow containers to reference their public IP via an environment variable or
 file. For example, to create a container with its public IP in SPARK_PUBLIC_DNS:
 ```
 new kelda.Container('spark', 'keldaio/spark', {
