@@ -364,13 +364,13 @@ and not the default Kelda minion image, follow these steps:
 
 1. Create a new empty repository on your favorite registry -
 [docker hub](https://hub.docker.com/) for example.
-2. Modify `keldaImage` in [cfg.go](../cloud/cfg/cfg.go) to
+2. Modify `keldaImage` in `cloud/cfg/cfg.go` to
 point to your repo.
-3. Modify `Version` in [version.go](../version/version.go) to be "latest".
+3. Modify `Version` in `version/version.go` to be "latest".
 This ensures that you will be using the most recent version of the minion
 image that you are pushing up to your registry.
 4. Create a `.mk` file (for example: `local.mk`) to override variables
-defined in [Makefile](../Makefile). Set `REPO` to your own repository
+defined in `Makefile`. Set `REPO` to your own repository
 (for example: `REPO = sample_repo`) inside the `.mk` file you created.
 5. Create the docker image: `make docker-build-kelda`
    * Docker for Mac and Windows is in beta. See the
