@@ -59,8 +59,6 @@ class Infrastructure {
     this.containers = new Set();
     this.loadBalancers = [];
 
-    _keldaInfrastructure = this;
-
     const boxedMasters = boxObjects(masters, Machine);
     const boxedWorkers = boxObjects(workers, Machine);
     if (boxedMasters.length < 1) {
@@ -81,6 +79,12 @@ class Infrastructure {
       this.machines.push(machineWithRole(master, 'Master')));
     boxedWorkers.forEach(worker =>
       this.machines.push(machineWithRole(worker, 'Worker')));
+
+    if (_keldaInfrastructure !== undefined) {
+      throw new Error('the Infrastructure constructor has already been called once ' +
+        '(each Kelda blueprint can only define one Infrastructure).');
+    }
+    _keldaInfrastructure = this;
   }
 
   /**
@@ -1539,6 +1543,7 @@ global.getInfrastructureKeldaRepr = function getInfrastructureKeldaRepr() {
 function resetGlobals() {
   uniqueIDCounter = 0;
   hostnameCount = {};
+  _keldaInfrastructure = undefined;
 }
 
 module.exports = {

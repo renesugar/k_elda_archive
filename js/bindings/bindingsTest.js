@@ -13,11 +13,13 @@ const { expect } = chai;
 
 describe('Bindings', () => {
   let infra;
-  beforeEach(() => {
-    b.resetGlobals();
+
+  const createBasicInfra = function createBasicInfra() {
     const machine = new b.Machine({ provider: 'Amazon' });
     infra = new b.Infrastructure(machine, machine);
-  });
+  };
+
+  beforeEach(b.resetGlobals);
 
   const checkMachines = function checkMachines(expectedSubset) {
     const { machines } = infra.toKeldaRepresentation();
@@ -454,6 +456,7 @@ describe('Bindings', () => {
   });
 
   describe('Container', () => {
+    beforeEach(createBasicInfra);
     it('basic', () => {
       const container = new b.Container('host', 'image');
       container.deploy(infra);
@@ -615,6 +618,7 @@ describe('Bindings', () => {
       qux: { nameOfSecret: 'quuz' },
       pubIP: { resourceKey: 'host.ip' },
     };
+    beforeEach(createBasicInfra);
     it('withEnv', () => {
       // The blueprint ID is different than the Container created with the
       // constructor because the hostname ID increases with each withEnv
@@ -654,6 +658,7 @@ describe('Bindings', () => {
   describe('Placement', () => {
     let target;
     beforeEach(() => {
+      createBasicInfra();
       target = new b.Container('host', 'image');
       target.deploy(infra);
     });
@@ -695,6 +700,7 @@ describe('Bindings', () => {
     });
   });
   describe('LoadBalancer', () => {
+    beforeEach(createBasicInfra);
     it('basic', () => {
       const lb = new b.LoadBalancer('web_tier', [new b.Container('host', 'nginx')]);
       lb.deploy(infra);
@@ -752,6 +758,7 @@ describe('Bindings', () => {
     let bar;
     let fooLoadBalancer;
     beforeEach(() => {
+      createBasicInfra();
       foo = new b.Container('foo', 'image');
       foo.deploy(infra);
       fooLoadBalancer = new b.LoadBalancer('fooLoadBalancer', [foo]);
@@ -846,6 +853,8 @@ describe('Bindings', () => {
     let quxQuuzGroup;
     let lb;
     beforeEach(() => {
+      createBasicInfra();
+
       foo = new b.Container('foo', 'image');
       bar = new b.Container('bar', 'image');
       qux = new b.Container('qux', 'image');
@@ -909,12 +918,7 @@ describe('Bindings', () => {
     });
   });
   describe('Vet', () => {
-    let foo;
     const deploy = () => infra.toKeldaRepresentation();
-    beforeEach(() => {
-      foo = new b.LoadBalancer('foo', []);
-      foo.deploy(infra);
-    });
     it('should error when given namespace contains upper case letters', () => {
       const machine = new b.Machine({ provider: 'Amazon' });
       infra = new b.Infrastructure(
@@ -923,17 +927,23 @@ describe('Bindings', () => {
                   'uppercase letters. Namespaces must be lowercase.');
     });
     it('connect from undeployed container', () => {
+      createBasicInfra();
+      const foo = new b.LoadBalancer('foo', []);
+      foo.deploy(infra);
+
       foo.allowFrom(new b.Container('baz', 'image'), 80);
       expect(deploy).to.throw(
         'connection {"from":["baz"],"maxPort":80,"minPort":80,' +
                 '"to":["foo"]} references an undefined hostname: baz');
     });
     it('duplicate image', () => {
+      createBasicInfra();
       (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
       (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
       expect(deploy).to.not.throw();
     });
     it('duplicate image with different Dockerfiles', () => {
+      createBasicInfra();
       (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
       (new b.Container('host', new b.Image('img', 'dk2'))).deploy(infra);
       expect(deploy).to.throw('img has differing Dockerfiles');
@@ -975,6 +985,17 @@ describe('Bindings', () => {
       });
       infra = new b.Infrastructure([machine], [machine], { namespace });
       expect(infra.toKeldaRepresentation().namespace).to.equal(namespace);
+    });
+    it('constructor errors when it would overwrite an existing Infrastructure', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+
+      infra = new b.Infrastructure([machine], [machine], { namespace: 'n1' });
+      expect(() => new b.Infrastructure([machine], [machine], { namespace: 'n2' }))
+        .to.throw('the Infrastructure constructor has already been called once ' +
+          '(each Kelda blueprint can only define one Infrastructure)');
     });
     it('master and worker machines added correctly', () => {
       const machine = new b.Machine({
@@ -1059,6 +1080,7 @@ describe('Bindings', () => {
         'mynamespace');
     });
     it('default namespace', () => {
+      createBasicInfra();
       expect(infra.toKeldaRepresentation().namespace).to.equal(
         'default-namespace');
     });
@@ -1069,6 +1091,7 @@ describe('Bindings', () => {
         ['local']);
     });
     it('default admin ACL', () => {
+      createBasicInfra();
       expect(infra.toKeldaRepresentation().adminACL).to.eql([]);
     });
   });
