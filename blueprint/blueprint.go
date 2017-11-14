@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 // A Blueprint is an abstract representation of the policy language.
@@ -116,6 +117,12 @@ var lookPath = exec.LookPath
 
 // FromFile gets a Blueprint handle from a file on disk.
 func FromFile(filename string) (Blueprint, error) {
+	return FromFileWithArgs(filename, nil)
+}
+
+// FromFileWithArgs gets a Blueprint handle from a file on disk, passing the
+// given arguments to the node process.
+func FromFileWithArgs(filename string, cmdLineArgs []string) (Blueprint, error) {
 	if _, err := lookPath("node"); err != nil {
 		return Blueprint{}, errors.New(
 			"failed to locate Node.js. Is it installed and in your PATH?")
@@ -129,15 +136,26 @@ func FromFile(filename string) (Blueprint, error) {
 	defer outFile.Close()
 	defer os.Remove(outFile.Name())
 
-	cmd := exec.Command("node", "-e",
-		fmt.Sprintf(
-			`require("%s");
-			require('fs').writeFileSync("%s",
-			  JSON.stringify(global.getInfrastructureKeldaRepr())
-		    );`,
-			filename, outFile.Name(),
-		),
-	)
+	absPath, err := filepath.Abs(filename)
+	if err != nil {
+		return Blueprint{}, fmt.Errorf(
+			"failed to get path to blueprint: %s", err)
+	}
+	args := []string{"-e", fmt.Sprintf(
+		`// Normally, when users run a node process, process.argv[1] is the
+                // absolute path to the node script. However, when running node with
+                // the -e flag, the script name naturally isn't part of process.argv.
+                // To emulate the "normal" process.argv, which most users will be
+                // familiar with, we insert their blueprint path at index 1.
+                process.argv.splice(1, 0, "%s");
+
+                require("%s");
+                require('fs').writeFileSync("%s",
+                  JSON.stringify(global.getInfrastructureKeldaRepr())
+            );`, absPath, filename, outFile.Name())}
+	args = append(args, cmdLineArgs...)
+
+	cmd := exec.Command("node", args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	if err := cmd.Run(); err != nil {

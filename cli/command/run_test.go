@@ -187,7 +187,7 @@ func TestPromptsUser(t *testing.T) {
 		confirm = oldConfirm
 	}()
 
-	compile = func(path string) (blueprint.Blueprint, error) {
+	compile = func(path string, args []string) (blueprint.Blueprint, error) {
 		return blueprint.Blueprint{}, nil
 	}
 
@@ -223,11 +223,28 @@ func TestRunFlags(t *testing.T) {
 
 	expBlueprint := "blueprint"
 	checkRunParsing(t, []string{"-blueprint", expBlueprint},
-		Run{blueprint: expBlueprint}, nil)
-	checkRunParsing(t, []string{expBlueprint}, Run{blueprint: expBlueprint}, nil)
+		Run{blueprint: expBlueprint, blueprintArgs: []string{}}, nil)
+	checkRunParsing(t, []string{expBlueprint}, Run{blueprint: expBlueprint,
+		blueprintArgs: []string{}}, nil)
 	checkRunParsing(t, []string{"-f", expBlueprint},
-		Run{force: true, blueprint: expBlueprint}, nil)
+		Run{force: true, blueprint: expBlueprint,
+			blueprintArgs: []string{}}, nil)
 	checkRunParsing(t, []string{}, Run{}, errors.New("no blueprint specified"))
+}
+
+func TestRunArgs(t *testing.T) {
+	t.Parallel()
+
+	expBlueprint := "blueprint"
+	checkRunParsing(t, []string{expBlueprint, "hello", "world"},
+		Run{blueprint: expBlueprint,
+			blueprintArgs: []string{"hello", "world"}}, nil)
+	checkRunParsing(t, []string{"-blueprint", expBlueprint, "hello", "world"},
+		Run{blueprint: expBlueprint,
+			blueprintArgs: []string{"hello", "world"}}, nil)
+	checkRunParsing(t, []string{"-f", "-blueprint", expBlueprint, "hello", "world"},
+		Run{force: true, blueprint: expBlueprint,
+			blueprintArgs: []string{"hello", "world"}}, nil)
 }
 
 func checkRunParsing(t *testing.T, args []string, expFlags Run, expErr error) {
@@ -244,5 +261,6 @@ func checkRunParsing(t *testing.T, args []string, expFlags Run, expErr error) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, expFlags.blueprint, runCmd.blueprint)
+	assert.Equal(t, expFlags.blueprintArgs, runCmd.blueprintArgs)
 	assert.Equal(t, expFlags.force, runCmd.force)
 }

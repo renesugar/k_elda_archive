@@ -10,10 +10,12 @@ import (
 	"github.com/kelda/kelda/util"
 )
 
-var inspCommands = "kelda inspect BLUEPRINT OUTPUT_FORMAT"
+var inspCommands = "kelda inspect BLUEPRINT OUTPUT_FORMAT [BLUEPRINT_ARGS...]"
 var inspExplanation = `Visualize a blueprint.
 
 OUTPUT_FORMAT can be pdf, ascii, or graphviz.
+BLUEPRINT_ARGS are the command line arguments that should be passed to the blueprint,
+similar to when the blueprint is run with 'kelda run'.
 
 Dependencies:
  - easy-graph (install Graph::Easy from cpan)
@@ -21,8 +23,9 @@ Dependencies:
 
 // Inspect contains the options for inspecting Blueprints.
 type Inspect struct {
-	configPath string
-	outputType string
+	configPath    string
+	outputType    string
+	blueprintArgs []string
 }
 
 // InstallFlags sets up parsing for command line flags.
@@ -43,10 +46,10 @@ func (iCmd *Inspect) Parse(args []string) error {
 	iCmd.outputType = args[1]
 	switch iCmd.outputType {
 	case "pdf", "ascii", "graphviz":
+		iCmd.blueprintArgs = args[2:]
 		return nil
-	default:
-		return errors.New("output type not supported")
 	}
+	return errors.New("output type not supported")
 }
 
 // BeforeRun makes any necessary post-parsing transformations.
@@ -61,7 +64,7 @@ func (iCmd *Inspect) AfterRun() error {
 
 // Run inspects the provided Blueprint.
 func (iCmd *Inspect) Run() int {
-	bp, err := blueprint.FromFile(iCmd.configPath)
+	bp, err := blueprint.FromFileWithArgs(iCmd.configPath, iCmd.blueprintArgs)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

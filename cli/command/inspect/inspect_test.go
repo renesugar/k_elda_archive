@@ -87,4 +87,14 @@ func TestParse(t *testing.T) {
 	cmd := &Inspect{}
 	assert.Error(t, cmd.Parse([]string{"test.js"}), "")
 	assert.Error(t, cmd.Parse([]string{"test.js", "not_a_format"}), "")
+
+	cmd.Parse([]string{"test.js", "pdf"})
+	assert.Equal(t, cmd.configPath, "test.js")
+	assert.Equal(t, cmd.outputType, "pdf")
+	assert.Equal(t, cmd.blueprintArgs, []string{})
+
+	cmd.Parse([]string{"test.js", "pdf", "bpArg0", "bpArg1"})
+	assert.Equal(t, cmd.configPath, "test.js")
+	assert.Equal(t, cmd.outputType, "pdf")
+	assert.Equal(t, cmd.blueprintArgs, []string{"bpArg0", "bpArg1"})
 }

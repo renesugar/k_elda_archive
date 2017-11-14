@@ -22,8 +22,9 @@ import (
 
 // Run contains the options for running blueprints.
 type Run struct {
-	blueprint string
-	force     bool
+	blueprint     string
+	force         bool
+	blueprintArgs []string
 
 	connectionHelper
 }
@@ -33,8 +34,10 @@ func NewRunCommand() *Run {
 	return &Run{}
 }
 
-var runCommands = `kelda run [OPTIONS] BLUEPRINT`
+var runCommands = `kelda run [OPTIONS] BLUEPRINT [BLUEPRINT_ARGS...]`
 var runExplanation = `Compile a blueprint, and deploy the system it describes.
+
+BLUEPRINT_ARGS are the command line arguments that should be passed to the blueprint.
 
 Confirmation is required if deploying the blueprint would change an existing
 deployment. Confirmation can be skipped with the -f flag.`
@@ -58,18 +61,22 @@ func (rCmd *Run) Parse(args []string) error {
 			return errors.New("no blueprint specified")
 		}
 		rCmd.blueprint = args[0]
+		rCmd.blueprintArgs = args[1:]
+	} else {
+		// When the blueprint is passed as a flag value, rather than as an
+		// argument, all args are blueprint args.
+		rCmd.blueprintArgs = args
 	}
-
 	return nil
 }
 
 var errNoBlueprint = errors.New("no blueprint")
 
-var compile = blueprint.FromFile
+var compile = blueprint.FromFileWithArgs
 
 // Run starts the run for the provided Blueprint.
 func (rCmd *Run) Run() int {
-	compiled, err := compile(rCmd.blueprint)
+	compiled, err := compile(rCmd.blueprint, rCmd.blueprintArgs)
 	if err != nil {
 		log.Error(err)
 		return 1
