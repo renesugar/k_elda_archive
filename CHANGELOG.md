@@ -4,6 +4,12 @@ Kelda Change Log
 Up Next
 -------------
 
+Release 0.6.0
+-------------
+
+Release 0.6.0 simplifies the `kelda ssh` command and allows containers to reference
+their public IP.
+
 - The Kelda command line utility now accepts container names in addition to
 IDs.  For example, `kelda ssh spark-master` can be used instead of
 `kelda ssh 6cf081531346`.
