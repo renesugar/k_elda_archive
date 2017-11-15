@@ -14,12 +14,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kelda/kelda/blueprint"
 	cliPath "github.com/kelda/kelda/cli/path"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
-	"github.com/kelda/kelda/db"
 	testerUtil "github.com/kelda/kelda/integration-tester/util"
-	"github.com/kelda/kelda/join"
 	"github.com/kelda/kelda/util"
 )
 
@@ -291,7 +288,7 @@ func (ts *testSuite) run() error {
 	runBlueprint(ts.blueprint)
 
 	l.infoln("Waiting for containers to start up")
-	if err := waitForContainers(ts.blueprint); err != nil {
+	if err := testerUtil.WaitForContainers(ts.blueprint); err != nil {
 		l.println(".. Containers never started: " + err.Error())
 		ts.passed = false
 		return err
@@ -316,39 +313,6 @@ func (ts *testSuite) run() error {
 	}
 
 	return err
-}
-
-func waitForContainers(blueprintPath string) error {
-	stc, err := blueprint.FromFile(blueprintPath)
-	if err != nil {
-		return err
-	}
-
-	c, err := testerUtil.GetDefaultDaemonClient()
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-
-	return util.BackoffWaitFor(func() bool {
-		curr, err := c.QueryContainers()
-		if err != nil {
-			return false
-		}
-
-		// Only match containers that have the same blueprint ID, and have been
-		// booted.
-		key := func(tgtIntf, actualIntf interface{}) int {
-			tgt := tgtIntf.(blueprint.Container)
-			actual := actualIntf.(db.Container)
-			if tgt.ID == actual.BlueprintID && !actual.Created.IsZero() {
-				return 0
-			}
-			return -1
-		}
-		_, unbooted, _ := join.Join(stc.Containers, curr, key)
-		return len(unbooted) == 0
-	}, 15*time.Second, 10*time.Minute)
 }
 
 func runTest(testPath string) (string, error) {

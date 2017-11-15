@@ -5,14 +5,18 @@ import (
 	"net/http"
 	"strconv"
 	"testing"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kelda/kelda/api"
 	"github.com/kelda/kelda/api/client"
+	"github.com/kelda/kelda/blueprint"
 	cliPath "github.com/kelda/kelda/cli/path"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/db"
+	"github.com/kelda/kelda/join"
+	"github.com/kelda/kelda/util"
 	"github.com/kelda/kelda/util/str"
 )
 
@@ -55,6 +59,41 @@ func CheckPublicConnections(t *testing.T, machines []db.Machine,
 			tryGet(t, contIP+":"+strconv.Itoa(port))
 		}
 	}
+}
+
+// WaitForContainers blocks until either all containers in the given blueprint
+// have been booted, or 10 minutes have passed.
+func WaitForContainers(blueprintPath string) error {
+	bp, err := blueprint.FromFile(blueprintPath)
+	if err != nil {
+		return fmt.Errorf("failed to compile blueprint: %s", err.Error())
+	}
+
+	c, err := GetDefaultDaemonClient()
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	return util.BackoffWaitFor(func() bool {
+		curr, err := c.QueryContainers()
+		if err != nil {
+			return false
+		}
+
+		// Only match containers that have the same blueprint ID, and have been
+		// booted.
+		key := func(tgtIntf, actualIntf interface{}) int {
+			tgt := tgtIntf.(blueprint.Container)
+			actual := actualIntf.(db.Container)
+			if tgt.ID == actual.BlueprintID && !actual.Created.IsZero() {
+				return 0
+			}
+			return -1
+		}
+		_, unbooted, _ := join.Join(bp.Containers, curr, key)
+		return len(unbooted) == 0
+	}, 15*time.Second, 10*time.Minute)
 }
 
 func tryGet(t *testing.T, ip string) {
