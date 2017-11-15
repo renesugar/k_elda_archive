@@ -970,9 +970,11 @@ class Image {
    *   'FROM nginx\n' +
    *   'RUN cd /web_root && git clone github.com/my/web_repo');
    *
-   * @example <caption>Create an image named my-inage-name that's built using a
+   * @example <caption>Create an image named my-image-name that's built using a
    * Dockerfile saved locally at 'Dockerfile'.</caption>
-   * const container = new Image('my-image-name', fs.readFileSync('./Dockerfile'));
+   * const fs = require('fs');
+   * const container = new Image('my-image-name',
+   *   fs.readFileSync('./Dockerfile', { encoding: 'utf8' }));
    *
    * @param {string} name - The name to use for the Docker image, or if no
    *   Dockerfile is specified, the repository to get the image from. The repository
