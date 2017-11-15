@@ -18,7 +18,7 @@ import (
 // machines have connected back to the daemon, or 500 seconds have passed.
 func runBlueprintUntilConnected(blueprint string) (string, string, error) {
 	cmd := exec.Command("kelda", "run", "-f", blueprint)
-	stdout, stderr, err := execCmd(cmd, "INFRA")
+	stdout, stderr, err := execCmd(cmd, "INFRA", log.cmdLogger)
 	if err != nil {
 		return stdout, stderr, err
 	}
@@ -47,7 +47,7 @@ func runBlueprintUntilConnected(blueprint string) (string, string, error) {
 func stop(namespace string) (string, string, error) {
 	cmd := exec.Command("kelda", "stop", namespace)
 
-	stdout, stderr, err := execCmd(cmd, "STOP")
+	stdout, stderr, err := execCmd(cmd, "STOP", log.cmdLogger)
 	if err != nil {
 		return stdout, stderr, err
 	}
@@ -59,14 +59,14 @@ func stop(namespace string) (string, string, error) {
 // npmInstall installs the npm dependencies in the current directory.
 func npmInstall() (string, string, error) {
 	cmd := exec.Command("npm", "install", ".")
-	return execCmd(cmd, "NPM-INSTALL")
+	return execCmd(cmd, "NPM-INSTALL", log.cmdLogger)
 }
 
 // runBlueprint runs the given blueprint. Note that it does not block on the connection
 // status of the machines.
 func runBlueprint(blueprint string) (string, string, error) {
 	cmd := exec.Command("kelda", "run", "-f", blueprint)
-	return execCmd(cmd, "RUN")
+	return execCmd(cmd, "RUN", log.cmdLogger)
 }
 
 // runKeldaDaemon starts the daemon.
@@ -75,7 +75,7 @@ func runKeldaDaemon() {
 
 	args := []string{"-l", "debug", "daemon"}
 	cmd := exec.Command("kelda", args...)
-	execCmd(cmd, "KELDA")
+	execCmd(cmd, "KELDA", log.daemonLogger)
 }
 
 func logAndUpdate(sc bufio.Scanner, l fileLogger, logFmt string) chan string {
@@ -101,9 +101,7 @@ func logAndUpdate(sc bufio.Scanner, l fileLogger, logFmt string) chan string {
 
 // execCmd executes the given command, and returns the stdout and stderr output.
 // `logLineTitle` is the prefix for logging to the container log.
-func execCmd(cmd *exec.Cmd, logLineTitle string) (string, string, error) {
-	l := log.cmdLogger
-
+func execCmd(cmd *exec.Cmd, logLineTitle string, l fileLogger) (string, string, error) {
 	l.infoln(fmt.Sprintf("%s: Starting command: %v", logLineTitle, cmd.Args))
 
 	stdoutPipe, err := cmd.StdoutPipe()

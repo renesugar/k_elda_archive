@@ -12,15 +12,11 @@ import (
 )
 
 func TestCmdExec(t *testing.T) {
-	log = logger{
-		cmdLogger: fileLogger{ioutil.Discard},
-	}
-
 	expStdout := "standard out"
 	expStderr := "standard error"
 	cmd := exec.Command("sh", "-c",
 		fmt.Sprintf("echo %s ; echo %s 1>&2", expStdout, expStderr))
-	stdout, stderr, err := execCmd(cmd, "PREFIX")
+	stdout, stderr, err := execCmd(cmd, "PREFIX", fileLogger{ioutil.Discard})
 
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err.Error())

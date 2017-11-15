@@ -274,7 +274,7 @@ func (ts *testSuite) run() error {
 		logsPath := filepath.Join(os.Getenv("WORKSPACE"), ts.name+"_debug_logs")
 		cmd := exec.Command("kelda", "-v", "debug-logs", "-tar=false",
 			"-o="+logsPath, "-all")
-		stdout, stderr, err := execCmd(cmd, "DEBUG LOGS")
+		stdout, stderr, err := execCmd(cmd, "DEBUG LOGS", log.cmdLogger)
 		if err != nil {
 			l.errorln(fmt.Sprintf("Debug logs encountered an error:"+
 				" %v\nstdout: %s\nstderr: %s", err, stdout, stderr))

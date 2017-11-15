@@ -17,6 +17,7 @@ var appFs = afero.NewOsFs()
 type logger struct {
 	cmdLogger    fileLogger
 	testerLogger fileLogger
+	daemonLogger fileLogger
 }
 
 // Create a new logger that will log in the proper directory.
@@ -28,9 +29,16 @@ func newLogger() (logger, error) {
 		return logger{}, err
 	}
 
+	daemonLoggerPath := filepath.Join(os.Getenv("WORKSPACE"), "daemonOutput.log")
+	daemonLoggerFile, err := os.Create(daemonLoggerPath)
+	if err != nil {
+		return logger{}, err
+	}
+
 	return logger{
 		testerLogger: fileLogger{os.Stdout},
 		cmdLogger:    fileLogger{cmdLoggerFile},
+		daemonLogger: fileLogger{daemonLoggerFile},
 	}, nil
 }
 
