@@ -80,16 +80,26 @@ func TestList(t *testing.T) {
 				State: aws.String(
 					ec2.SpotInstanceStateActive),
 				InstanceId: aws.String("inst1"),
+				LaunchSpecification: &ec2.LaunchSpecification{
+					InstanceType: aws.String("size"),
+				},
 			}, {
 				SpotInstanceRequestId: aws.String("spot2"),
 				State: aws.String(
 					ec2.SpotInstanceStateActive),
 				InstanceId: aws.String("inst2"),
+				LaunchSpecification: &ec2.LaunchSpecification{
+					InstanceType: aws.String("size2"),
+				},
 			},
 			// A spot request that hasn't been booted yet.
 			{
 				SpotInstanceRequestId: aws.String("spot3"),
-				State: aws.String(ec2.SpotInstanceStateOpen)}}, nil)
+				State: aws.String(ec2.SpotInstanceStateOpen),
+				LaunchSpecification: &ec2.LaunchSpecification{
+					InstanceType: aws.String("size3"),
+				},
+			}}, nil)
 
 	mc.On("DescribeAddresses").Return([]*ec2.Address{{
 		InstanceId: aws.String("inst2"),
@@ -135,6 +145,7 @@ func TestList(t *testing.T) {
 			Provider:    "Amazon",
 			Region:      "us-west-1",
 			CloudID:     "spot3",
+			Size:        "size3",
 			Preemptible: true,
 		},
 	}, machines)

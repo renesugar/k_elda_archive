@@ -264,6 +264,10 @@ func (prvdr *Provider) listSpots() (machines []awsMachine, err error) {
 	for _, spot := range spots {
 		machines = append(machines, awsMachine{
 			spotID: resolveString(spot.SpotInstanceRequestId),
+			machine: db.Machine{
+				Size: resolveString(spot.LaunchSpecification.
+					InstanceType),
+			},
 		})
 	}
 	return machines, nil
