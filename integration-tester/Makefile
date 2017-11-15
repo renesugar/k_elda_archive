@@ -9,4 +9,4 @@ test_binaries := $(foreach name, $(suites_with_test_files), tests/$(name)/$(name
 tests: $(test_binaries)
 
 %.test:
-	cd $(@D) && go test -v -c .
+	cd $(@D) && go test -v -i -c .
