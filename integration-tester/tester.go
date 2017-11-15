@@ -14,6 +14,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/kelda/kelda/blueprint"
 	cliPath "github.com/kelda/kelda/cli/path"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	testerUtil "github.com/kelda/kelda/integration-tester/util"
@@ -287,8 +288,14 @@ func (ts *testSuite) run() error {
 
 	runBlueprint(ts.blueprint)
 
+	bp, err := blueprint.FromFile(ts.blueprint)
+	if err != nil {
+		l.infoln(fmt.Sprintf("Error compiling blueprint: %s", err.Error()))
+		return err
+	}
+
 	l.infoln("Waiting for containers to start up")
-	if err := testerUtil.WaitForContainers(ts.blueprint); err != nil {
+	if err = testerUtil.WaitForContainers(bp); err != nil {
 		l.println(".. Containers never started: " + err.Error())
 		ts.passed = false
 		return err
@@ -297,7 +304,6 @@ func (ts *testSuite) run() error {
 	// Wait a little bit longer for any container bootstrapping after boot.
 	time.Sleep(90 * time.Second)
 
-	var err error
 	if ts.test != "" {
 		l.infoln("Starting Test")
 		l.println(".. " + filepath.Base(ts.test))

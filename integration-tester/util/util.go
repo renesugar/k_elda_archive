@@ -63,12 +63,7 @@ func CheckPublicConnections(t *testing.T, machines []db.Machine,
 
 // WaitForContainers blocks until either all containers in the given blueprint
 // have been booted, or 10 minutes have passed.
-func WaitForContainers(blueprintPath string) error {
-	bp, err := blueprint.FromFile(blueprintPath)
-	if err != nil {
-		return fmt.Errorf("failed to compile blueprint: %s", err.Error())
-	}
-
+func WaitForContainers(bp blueprint.Blueprint) error {
 	c, err := GetDefaultDaemonClient()
 	if err != nil {
 		return err
