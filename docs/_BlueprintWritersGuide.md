@@ -177,6 +177,9 @@ variable that can be used to connect containers to any IP address:
 ```javascript
 lobsters.allowFrom(publicInternet, 3000);
 ```
+
+If you're having trouble determining which ports your application needs, take
+a look at [How to Debug Network Connectivity Problems](#how-to-debug-network-connectivity-problems).
     
 ### Deploying the application on infrastructure
 

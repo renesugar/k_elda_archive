@@ -292,3 +292,127 @@ onto the filesystem.
     
 5. To change the secret value, run `kelda secret githubToken <newValue>`
    again, and the container will restart with the new value within a minute.
+
+## How to Debug Network Connectivity Problems
+
+One common problem when writing a Kelda blueprint is that the blueprint doesn't
+open all of the ports necessary for the application. This typically manifests as
+an application not starting properly or as the application logging messages
+about being unable to connect to something. This can be difficult to debug
+without a deep familiarity of which ports a particular application needs open.
+One helpful way to debug this is to use the `lsof` command line tool, which can
+be used to show which ports applications are trying to communicate on. The
+instructions below describe how to install `lsof` and use the output to solve
+a few different connectivity problems.
+
+Suppose a blueprint includes a container called `buggyContainer` that is not
+running properly because the network is not correctly setup:
+
+```js
+const buggyContainer = new kelda.Container('buggyContainer', ...);
+```
+
+Start by enabling that container to access port 80 on the public internet, so
+that the container can download the `lsof` tool, by adding the following code to
+the blueprint:
+
+```js
+kelda.publicInternet.allowFrom(buggyContainer, 80);
+```
+
+Re-run the blueprint so that Kelda will update the container's network access:
+
+```console
+$ kelda run <path to blueprint>
+```
+
+Next, login to the container and install the `lsof` tool.
+
+```console
+$ kelda ssh buggyContainer
+# apt-get update
+# apt-get install lsof
+```
+
+Use `lsof` to determine which ports the application in
+`buggyContainer` is trying to access:
+
+```console
+# lsof -i -P -n
+COMMAND PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+java      8 root   34u  IPv4  88572      0t0  TCP 10.14.9.118:56902->151.101.41.128:443 (SYN_SENT)
+```
+
+The useful output is the `NAME` column, which shows the source network address
+(in this case, port 56902 on address 10.14.9.118) and the destination address
+(in this case, port 443 on address 151.101.41.128). The `COMMAND` column may
+also be useful; in this case, it shows that the network connection was initiated
+by a Java process.  `SYN_SENT` means that the container tried to initiate a
+connection, but the machine at 151.101.41.128 never replied (in this case
+because the Kelda firewall blocked the connection). For this output, the way to
+fix the problem is to enable the container to access the public internet at
+port 443 by adding the following line to the blueprint:
+
+```js
+kelda.publicInternet.allowFrom(buggyContainer, 443);
+```
+
+After re-running the blueprint, the container will be able to access port
+443, which fixes this connectivity problem.
+
+The output from `lsof` may instead show that the application
+is trying to listen for connections on a particular port:
+
+```console
+# lsof -i -P -n
+COMMAND PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+java     47 root  101u  IPv4 116320      0t0  TCP *:3000 (LISTEN)
+```
+
+In this case, there is a Java process that is running a web application on
+port 3000, and the container will need to enable public access on port
+3000 in order for users to access the application:
+
+```js
+buggyContainer.allowFrom(kelda.publicInternet, 3000);
+```
+
+`lsof` may also show that internal containers are trying to communicate:
+
+```console
+# lsof -i -P -n
+COMMAND PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+java     47 root  115u  IPv4 117041      0t0  TCP 10.181.11.2:60088->10.32.155.142:5432 (SYN_SENT)
+```
+
+In this case, the fact that the destination IP address begins with 10 signifies
+that the destination is another container in the deployment, because IP
+addresses beginning with 10 are private IP addresses (in the context of Kelda,
+these are typically container IP addresses). This problem is somewhat
+harder to debug because `kelda show` doesn't show each container's private IP
+address, but it's often possible to determine which other container
+`buggyContainer` is trying to connect to based on the application logs or
+the port that `buggyContainer` is trying to connect to.  To see the application
+logs:
+
+```console
+$ kelda logs buggyContainer
+```
+
+In this case, `buggyContainer` needs access to port 5432 on a container that
+runs a postgres database (postgres runs on port 5432 by default), which can be
+fixed by enabling access between those two containers:
+
+```js
+postgresContainer.allowFrom(buggyContainer, 5432);
+```
+
+If you're curious, `lsof` lists all open files, which includes network
+connections because Linux treats network connections as file handles.  The `-i`
+argument tells `lsof` to only show IP files -- i.e., to only show network
+connections.  The `-P` argument specifies to show port numbers rather than port
+names, which is more useful here because Kelda relies on port numbers, not
+names, to enable network connections.  Finally, the `-n` argument specifies to
+show IP addresses rather than hostnames (the hostnames output by `lsof` are
+unfortunately not the same hostnames assigned by Kelda, and are not helpful
+as a result).
