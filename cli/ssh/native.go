@@ -73,12 +73,21 @@ func defaultSigners() []ssh.Signer {
 	for _, identityPath := range pathsToTry {
 		key, err := signerFromFile(identityPath)
 		if err != nil {
-			if os.IsNotExist(err) {
+			// We look for SSH keys in many places; for most of these places,
+			// we don't typically expect to find an SSH key that Kelda can
+			// use, so log a debug message. We _do_ expect to, in most cases,
+			// find a key at cliPath.DefaultSSHKeyPath, because this is the
+			// path where Kelda automatically generates an SSH key, so log
+			// a warning if no key is found there.
+			if identityPath == cliPath.DefaultSSHKeyPath {
+				log.WithError(err).WithField("path", identityPath).Warn(
+					"Unable to load default identity file")
+			} else if os.IsNotExist(err) {
 				log.WithField("path", identityPath).
 					Debug("Key does not exist")
 			} else {
 				log.WithError(err).WithField("path", identityPath).
-					Warn("Unable to load default identity file")
+					Debug("Unable to load identity file")
 			}
 			continue
 		}

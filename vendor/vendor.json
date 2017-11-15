@@ -837,6 +837,12 @@
 			"revisionTime": "2017-08-22T13:27:46Z"
 		},
 		{
+			"checksumSHA1": "Kt+BhrXMyYvOc9TGiBVOSNn6wcc=",
+			"path": "github.com/sirupsen/logrus/hooks/test",
+			"revision": "89742aefa4b206dcf400792f3bd35b542998eb3b",
+			"revisionTime": "2017-08-22T13:27:46Z"
+		},
+		{
 			"checksumSHA1": "i1IXs5Zp2VX1F8Y1KXFHcoC8R9c=",
 			"comment": "v0.1-9-gd4b9e7a",
 			"path": "github.com/socketplane/libovsdb",

@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+	logrusTest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 
 	cliPath "github.com/kelda/kelda/cli/path"
@@ -45,6 +47,63 @@ func TestDefaultKeys(t *testing.T) {
 
 	signers := defaultSigners()
 	assert.Len(t, signers, 3)
+}
+
+func TestErrorsLoggedWhenFindingKeys(t *testing.T) {
+	// This test calls defaultSigners() when there are three problems with
+	// the keys: (1) the default Kelda key doesn't exist; (2) some of the places
+	// Kelda looks for keys don't contain anything (there's no file there); and
+	// (3) one of the places Kelda looks for a key has a password-protected key.
+	// This test ensures that Kelda logs a debug message for (2) and (3), and logs
+	// a warning only for (1).
+
+	// Capture all of the log messages so we can test them.
+	logrus.SetLevel(logrus.DebugLevel)
+	hook := logrusTest.NewGlobal()
+
+	util.AppFs = afero.NewMemMapFs()
+
+	// Don't pull in keys from the host OS. Setting this environment variable
+	// is safe because it won't affect the parent shell.
+	os.Setenv("SSH_AUTH_SOCK", "")
+
+	dir, err := homedir.Dir()
+	assert.NoError(t, err, "Failed to get homedir")
+
+	sshDir := filepath.Join(dir, ".ssh")
+	err = util.AppFs.MkdirAll(sshDir, 0600)
+	assert.NoError(t, err, "Failed to create SSH directory")
+
+	// Write one password-protected key.
+	err = writeRandomKey(filepath.Join(sshDir, "id_rsa"), true)
+	assert.NoError(t, err, "Failed to write key")
+
+	signers := defaultSigners()
+	assert.Len(t, signers, 0)
+
+	defaultErrorLogged := false
+	unableToLoadLogged := false
+	doesNotExistLogged := false
+	for _, entry := range hook.AllEntries() {
+		if entry.Level == logrus.WarnLevel {
+			// Only the message about the default file should be at
+			// Warn level (all of the other messages should be at Debug).
+			assert.Equal(t, "Unable to load default identity file",
+				entry.Message)
+			defaultErrorLogged = true
+		} else {
+			assert.Equal(t, logrus.DebugLevel, entry.Level)
+			if entry.Message == "Unable to load identity file" {
+				// This error occurs for the password-protected key.
+				unableToLoadLogged = true
+			} else if entry.Message == "Key does not exist" {
+				doesNotExistLogged = true
+			}
+		}
+	}
+	assert.True(t, defaultErrorLogged)
+	assert.True(t, unableToLoadLogged)
+	assert.True(t, doesNotExistLogged)
 }
 
 func TestEncryptedKey(t *testing.T) {
