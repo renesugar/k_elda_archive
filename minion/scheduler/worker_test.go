@@ -264,6 +264,7 @@ func TestSyncJoinScore(t *testing.T) {
 
 	dbc := evaluatedContainer{
 		Container: db.Container{
+			Hostname: "hostname",
 			IP:       "1.2.3.4",
 			Image:    "Image",
 			Command:  []string{"cmd"},
@@ -273,10 +274,11 @@ func TestSyncJoinScore(t *testing.T) {
 		resolvedFilepathToContent: map[string]string{"c": "d"},
 	}
 	dkc := docker.Container{
-		IP:    "1.2.3.4",
-		Image: dbc.Image,
-		Args:  dbc.Command,
-		Env:   dbc.resolvedEnv,
+		Hostname: "hostname.q",
+		IP:       "1.2.3.4",
+		Image:    dbc.Image,
+		Args:     dbc.Command,
+		Env:      dbc.resolvedEnv,
 		Labels: map[string]string{
 			filesKey: filesHash(dbc.resolvedFilepathToContent),
 		},

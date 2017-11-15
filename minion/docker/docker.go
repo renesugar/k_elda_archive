@@ -27,20 +27,21 @@ var ErrNoSuchContainer = errors.New("container does not exist")
 
 // A Container as returned by the docker client API.
 type Container struct {
-	ID      string
-	EID     string
-	Name    string
-	Image   string
-	ImageID string
-	IP      string
-	Mac     string
-	Path    string
-	Status  string
-	Args    []string
-	Pid     int
-	Env     map[string]string
-	Labels  map[string]string
-	Created time.Time
+	ID       string
+	EID      string
+	Name     string
+	Image    string
+	ImageID  string
+	IP       string
+	Hostname string
+	Mac      string
+	Path     string
+	Status   string
+	Args     []string
+	Pid      int
+	Env      map[string]string
+	Labels   map[string]string
+	Created  time.Time
 }
 
 // ContainerSlice is an alias for []Container to allow for joins
@@ -68,6 +69,7 @@ type RunOptions struct {
 	FilepathToContent map[string]string
 
 	IP          string
+	Hostname    string
 	NetworkMode string
 	DNS         []string
 	DNSSearch   []string
@@ -146,8 +148,8 @@ func (dk Client) Run(opts RunOptions) (string, error) {
 		}
 	}
 
-	id, err := dk.create(opts.Name, opts.Image, opts.Args, opts.Labels, env,
-		opts.FilepathToContent, hc, nc)
+	id, err := dk.create(opts.Name, opts.Image, opts.Hostname, opts.Args,
+		opts.Labels, env, opts.FilepathToContent, hc, nc)
 	if err != nil {
 		return "", err
 	}
@@ -339,20 +341,21 @@ func (dk Client) Get(id string) (Container, error) {
 	}
 
 	c := Container{
-		Name:    dkc.Name,
-		ID:      dkc.ID,
-		IP:      dkc.NetworkSettings.IPAddress,
-		Mac:     dkc.NetworkSettings.MacAddress,
-		EID:     dkc.NetworkSettings.EndpointID,
-		Image:   dkc.Config.Image,
-		ImageID: dkc.Image,
-		Path:    dkc.Path,
-		Args:    dkc.Args,
-		Pid:     dkc.State.Pid,
-		Env:     env,
-		Labels:  dkc.Config.Labels,
-		Status:  dkc.State.Status,
-		Created: dkc.Created,
+		Name:     dkc.Name,
+		ID:       dkc.ID,
+		Hostname: dkc.Config.Hostname,
+		IP:       dkc.NetworkSettings.IPAddress,
+		Mac:      dkc.NetworkSettings.MacAddress,
+		EID:      dkc.NetworkSettings.EndpointID,
+		Image:    dkc.Config.Image,
+		ImageID:  dkc.Image,
+		Path:     dkc.Path,
+		Args:     dkc.Args,
+		Pid:      dkc.State.Pid,
+		Env:      env,
+		Labels:   dkc.Config.Labels,
+		Status:   dkc.State.Status,
+		Created:  dkc.Created,
 	}
 
 	networks := keys(dkc.NetworkSettings.Networks)
@@ -388,7 +391,7 @@ func (dk Client) IsRunning(name string) (bool, error) {
 	return len(containers) != 0, nil
 }
 
-func (dk Client) create(name, image string, args []string,
+func (dk Client) create(name, image, hostname string, args []string,
 	labels map[string]string, env []string, filepathToContent map[string]string,
 	hc *dkc.HostConfig, nc *dkc.NetworkingConfig) (string, error) {
 
@@ -399,10 +402,11 @@ func (dk Client) create(name, image string, args []string,
 	container, err := dk.CreateContainer(dkc.CreateContainerOptions{
 		Name: name,
 		Config: &dkc.Config{
-			Image:  string(image),
-			Cmd:    args,
-			Labels: labels,
-			Env:    env},
+			Image:    string(image),
+			Hostname: hostname,
+			Cmd:      args,
+			Labels:   labels,
+			Env:      env},
 		HostConfig:       hc,
 		NetworkingConfig: nc,
 	})

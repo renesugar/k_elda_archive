@@ -109,12 +109,12 @@ func TestCreateGet(t *testing.T) {
 	md, dk := NewMock()
 
 	md.PullError = true
-	_, err := dk.create("name", "image", nil, nil, nil, nil, nil, nil)
+	_, err := dk.create("name", "image", "hostname", nil, nil, nil, nil, nil, nil)
 	assert.NotNil(t, err)
 	md.PullError = false
 
 	md.CreateError = true
-	_, err = dk.create("name", "image", nil, nil, nil, nil, nil, nil)
+	_, err = dk.create("name", "image", "hostname", nil, nil, nil, nil, nil, nil)
 	assert.NotNil(t, err)
 	md.CreateError = false
 
@@ -124,19 +124,21 @@ func TestCreateGet(t *testing.T) {
 	args := []string{"arg1"}
 	env := []string{"envA=B"}
 	labels := map[string]string{"label": "foo"}
-	id, err := dk.create("name", "image", args, labels, env, nil, nil, nil)
+	id, err := dk.create("name", "image", "hostname", args, labels, env, nil,
+		nil, nil)
 	assert.Nil(t, err)
 
 	container, err := dk.Get(id)
 	assert.Nil(t, err)
 
 	expContainer := Container{
-		Name:   "name",
-		ID:     id,
-		Image:  "image",
-		Args:   args,
-		Env:    map[string]string{"envA": "B"},
-		Labels: labels,
+		Name:     "name",
+		ID:       id,
+		Image:    "image",
+		Args:     args,
+		Env:      map[string]string{"envA": "B"},
+		Labels:   labels,
+		Hostname: "hostname",
 	}
 	assert.Equal(t, expContainer, container)
 }

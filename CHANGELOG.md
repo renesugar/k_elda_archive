@@ -4,6 +4,9 @@ Kelda Change Log
 Up Next
 -------------
 
+- Properly set the container's hostname. Before, a container querying its own
+hostname would get its Docker ID, which is meaningless in the Kelda network.
+
 Release 0.6.0
 -------------
 
