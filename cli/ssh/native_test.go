@@ -26,22 +26,15 @@ func TestDefaultKeys(t *testing.T) {
 	os.Setenv("SSH_AUTH_SOCK", "")
 
 	dir, err := homedir.Dir()
-	if err != nil {
-		t.Errorf("Failed to get homedir: %q", err.Error())
-		return
-	}
+	assert.NoError(t, err, "Failed to get homedir")
 
 	sshDir := filepath.Join(dir, ".ssh")
-	if err := util.AppFs.MkdirAll(sshDir, 0600); err != nil {
-		t.Errorf("Failed to create SSH directory: %q", err.Error())
-		return
-	}
+	err = util.AppFs.MkdirAll(sshDir, 0600)
+	assert.NoError(t, err, "Failed to create SSH directory")
 
 	for _, key := range []string{"id_rsa", "id_dsa", "ignored"} {
-		if err := writeRandomKey(filepath.Join(sshDir, key), false); err != nil {
-			t.Errorf("Failed to write key: %q", err.Error())
-			return
-		}
+		err := writeRandomKey(filepath.Join(sshDir, key), false)
+		assert.NoError(t, err, "Failed to write key")
 	}
 
 	err = util.AppFs.MkdirAll(filepath.Dir(cliPath.DefaultSSHKeyPath), 0600)
@@ -58,22 +51,15 @@ func TestEncryptedKey(t *testing.T) {
 	util.AppFs = afero.NewMemMapFs()
 
 	dir, err := homedir.Dir()
-	if err != nil {
-		t.Errorf("Failed to get homedir: %q", err.Error())
-		return
-	}
+	assert.NoError(t, err, "Failed to get homedir")
 
 	sshDir := filepath.Join(dir, ".ssh")
-	if err := util.AppFs.MkdirAll(sshDir, 0600); err != nil {
-		t.Errorf("Failed to create SSH directory: %q", err.Error())
-		return
-	}
+	err = util.AppFs.MkdirAll(sshDir, 0600)
+	assert.NoError(t, err, "Failed to create SSH directory")
 
 	keyPath := filepath.Join(sshDir, "key")
-	if err := writeRandomKey(keyPath, true); err != nil {
-		t.Errorf("Failed to write key: %q", err.Error())
-		return
-	}
+	err = writeRandomKey(keyPath, true)
+	assert.NoError(t, err, "Failed to write key")
 
 	_, err = signerFromFile(keyPath)
 
