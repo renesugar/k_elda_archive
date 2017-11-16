@@ -453,6 +453,7 @@ function boxObjects(x, type) {
 /**
  * Checks that `array` is an array of `type` objects, and throws an
  * error if it is not.
+ * @private
  *
  * @param {Object[]} array - An array of objects to check the type of.
  * @param {Object} type - The constructor to check that all items in `array`
