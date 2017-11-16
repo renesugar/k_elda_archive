@@ -1353,8 +1353,17 @@ class RuntimeValue {
   }
 }
 
-// hostIP is the RuntimeValue for the public IP of the machine the container is
-// running on.
+/**
+ * hostIP is the {@link RuntimeValue} for the public IP of the machine the container is
+ * running on.
+ *
+ * @example <caption>Set the environment variable HOST_IP of myContainer1 and myContainer2
+ * to be the public IP of the machine that each container is running on. If myContainer1
+ * and myContainer2 are launched on different machines, they will be assigned different
+ * HOST_IP values accordingly.</caption>
+ * myContainer1.setEnv('HOST_IP', hostIP);
+ * myContainer2.setEnv('HOST_IP', hostIP);
+ */
 const hostIP = new RuntimeValue('host.ip');
 
 /**
