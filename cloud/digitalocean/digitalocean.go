@@ -115,7 +115,7 @@ func (prvdr Provider) List() (machines []db.Machine, err error) {
 
 	// Keep track of the page we're on.
 	// DigitalOcean's API has a paginated list of droplets.
-	dropletListOpt := &godo.ListOptions{PerPage: 200}
+	dropletListOpt := &godo.ListOptions{Page: 1, PerPage: 200}
 	for {
 		droplets, resp, err := prvdr.ListDroplets(dropletListOpt)
 		if err != nil {
@@ -160,7 +160,7 @@ func (prvdr Provider) List() (machines []db.Machine, err error) {
 }
 
 func (prvdr Provider) getFloatingIPs() (map[int]string, error) {
-	floatingIPListOpt := &godo.ListOptions{PerPage: 200}
+	floatingIPListOpt := &godo.ListOptions{Page: 1, PerPage: 200}
 	floatingIPs := map[int]string{}
 	for {
 		ips, resp, err := prvdr.ListFloatingIPs(floatingIPListOpt)
@@ -318,7 +318,7 @@ func (prvdr Provider) SetACLs(acls []acl.ACL) error {
 
 func (prvdr Provider) getCreateFirewall() (*godo.Firewall, error) {
 	tagName := prvdr.getTag()
-	firewallListOpt := &godo.ListOptions{PerPage: 200}
+	firewallListOpt := &godo.ListOptions{Page: 1, PerPage: 200}
 	for {
 		firewalls, resp, err := prvdr.ListFirewalls(firewallListOpt)
 		if err != nil {

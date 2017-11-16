@@ -101,7 +101,7 @@ func TestList(t *testing.T) {
 		Links: &godo.Links{},
 	}
 
-	reqFirst := &godo.ListOptions{PerPage: 200}
+	reqFirst := &godo.ListOptions{Page: 1, PerPage: 200}
 	mc.On("ListDroplets", reqFirst).Return(dropFirst, respFirst, nil).Once()
 
 	reqLast := &godo.ListOptions{
@@ -421,7 +421,7 @@ func TestSetACLs(t *testing.T) {
 	}
 	respLast := &godo.Response{Links: &godo.Links{}}
 
-	reqFirst := &godo.ListOptions{PerPage: 200}
+	reqFirst := &godo.ListOptions{Page: 1, PerPage: 200}
 	mc.On("ListFirewalls", reqFirst).Return(fwFirst, respFirst, nil).Once()
 
 	reqLast := &godo.ListOptions{
