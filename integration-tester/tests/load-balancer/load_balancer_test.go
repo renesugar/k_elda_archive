@@ -1,13 +1,14 @@
 package main
 
 import (
-	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
 
-	util "github.com/kelda/kelda/integration-tester/util"
+	"github.com/kelda/kelda/db"
+	"github.com/kelda/kelda/integration-tester/util"
 )
 
 const (
@@ -32,12 +33,22 @@ func TestLoadBalancer(t *testing.T) {
 		t.Fatalf("couldn't get load balancers: %s", err)
 	}
 
-	var fetcherID string
+	machines, err := c.QueryMachines()
+	if err != nil {
+		t.Fatalf("couldn't get machines: %s", err)
+	}
+
+	var fetcher *db.Container
 	for _, c := range containers {
 		if c.Image == fetcherImage {
-			fetcherID = c.BlueprintID
+			fetcherCopy := c
+			fetcher = &fetcherCopy
 			break
 		}
+	}
+
+	if fetcher == nil {
+		t.Fatal("couldn't find fetcher")
 	}
 
 	var loadBalancedContainers []string
@@ -47,26 +58,33 @@ func TestLoadBalancer(t *testing.T) {
 			break
 		}
 	}
-
 	log.WithField("expected unique responses", len(loadBalancedContainers)).
 		Info("Starting fetching..")
 
-	if fetcherID == "" {
-		t.Fatal("couldn't find fetcher")
-	}
-
+	sshUtil := util.NewSSHUtil(machines)
 	loadBalancedCounts := map[string]int{}
+	var loadBalancedCountsLock sync.Mutex
+	var wg sync.WaitGroup
 	for i := 0; i < len(loadBalancedContainers)*15; i++ {
-		outBytes, err := exec.Command("kelda", "ssh", fetcherID,
-			"wget", "-q", "-O", "-", loadBalancedLabel+".q").
-			CombinedOutput()
-		if err != nil {
-			t.Errorf("Unable to GET: %s", err)
-			continue
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 
-		loadBalancedCounts[strings.TrimSpace(string(outBytes))]++
+			output, err := sshUtil.SSH(*fetcher, "wget", "-q", "-O", "-",
+				loadBalancedLabel+".q")
+			if err != nil {
+				t.Errorf("Unable to GET: %s", err)
+				log.WithError(err).WithField("output", output).
+					Error("Unable to GET")
+				return
+			}
+
+			loadBalancedCountsLock.Lock()
+			loadBalancedCounts[strings.TrimSpace(output)]++
+			loadBalancedCountsLock.Unlock()
+		}()
 	}
+	wg.Wait()
 
 	log.WithField("counts", loadBalancedCounts).Info("Fetching completed")
 	if len(loadBalancedCounts) < len(loadBalancedContainers) {
