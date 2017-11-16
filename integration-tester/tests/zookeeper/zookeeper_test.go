@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/kelda/kelda/db"
@@ -24,6 +24,11 @@ func TestZookeeper(t *testing.T) {
 		t.Fatalf("couldn't query containers: %s", err)
 	}
 
+	machines, err := clnt.QueryMachines()
+	if err != nil {
+		t.Fatalf("couldn't query machines: %s", err)
+	}
+
 	var zkContainers []db.Container
 	for _, c := range containers {
 		if strings.Contains(c.Image, "zookeeper") {
@@ -31,37 +36,49 @@ func TestZookeeper(t *testing.T) {
 		}
 	}
 
-	test(t, zkContainers)
+	test(t, util.NewSSHUtil(machines), zkContainers)
 }
 
 // Write a random key value pair to each zookeeper node, and then ensure that
 // all nodes can retrieve all the written keys.
-func test(t *testing.T, containers []db.Container) {
+func test(t *testing.T, sshUtil util.SSHUtil, containers []db.Container) {
+	var wg sync.WaitGroup
 	expData := map[string]string{}
 	for _, c := range containers {
 		key := "/" + uuid.NewV4().String()
-		expData[key] = uuid.NewV4().String()
+		val := uuid.NewV4().String()
+		expData[key] = val
 
-		fmt.Printf("Writing %s to key %s from %s\n",
-			expData[key], key, c.BlueprintID)
-		out, err := exec.Command("kelda", "ssh", c.BlueprintID,
-			"bin/zkCli.sh", "create", key, expData[key]).CombinedOutput()
-		if err != nil {
-			t.Errorf("unable to create key: %s", err)
-			fmt.Println(string(out))
-		}
+		wg.Add(1)
+		go func(c db.Container) {
+			defer wg.Done()
+
+			out, err := sshUtil.SSH(c, "bin/zkCli.sh", "create", key, val)
+			if err != nil {
+				t.Errorf("unable to create key: %s", err)
+				fmt.Printf("Failed to create key (%s): %s\n", err, out)
+			}
+		}(c)
 	}
+	wg.Wait()
 
 	for _, c := range containers {
 		for key, val := range expData {
-			fmt.Printf("Getting key %s from %s: expect %s\n",
-				key, c.BlueprintID, val)
-			out, err := exec.Command("kelda", "ssh", c.BlueprintID,
-				"bin/zkCli.sh", "get", key).CombinedOutput()
-			if err != nil || !strings.Contains(string(out), val) {
-				t.Errorf("unexpected value: %s", err)
-				fmt.Println(string(out))
-			}
+			wg.Add(1)
+			go func(c db.Container, key, val string) {
+				defer wg.Done()
+
+				out, err := sshUtil.SSH(c, "bin/zkCli.sh", "get", key)
+				if err != nil || !strings.Contains(out, val) {
+					t.Errorf("unexpected value: %s", err)
+					fmt.Printf("%s: Key %s had wrong value.\n"+
+						"Expected %s.\n"+
+						"Error: %s.\n"+
+						"Output: %s\n",
+						c.Hostname, key, val, err, out)
+				}
+			}(c, key, val)
 		}
 	}
+	wg.Wait()
 }
