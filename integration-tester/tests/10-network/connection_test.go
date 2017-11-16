@@ -8,14 +8,17 @@ import (
 
 	"github.com/kelda/kelda/api/client"
 	"github.com/kelda/kelda/db"
+	"github.com/kelda/kelda/integration-tester/util"
 )
 
 type connectionTester struct {
 	connectionMap map[string][]string
 	allHostnames  []string
+	sshUtil       util.SSHUtil
 }
 
-func newConnectionTester(clnt client.Client) (connectionTester, error) {
+func newConnectionTester(clnt client.Client, sshUtil util.SSHUtil) (
+	connectionTester, error) {
 	loadBalancers, err := clnt.QueryLoadBalancers()
 	if err != nil {
 		return connectionTester{}, err
@@ -49,6 +52,7 @@ func newConnectionTester(clnt client.Client) (connectionTester, error) {
 	return connectionTester{
 		connectionMap: connectionMap,
 		allHostnames:  allHostnames,
+		sshUtil:       sshUtil,
 	}, nil
 }
 
@@ -65,7 +69,8 @@ func (tester connectionTester) test(t *testing.T, container db.Container) {
 
 	test := func(hostname string) {
 		defer wg.Done()
-		output, err := keldaSSH(container, "ping", "-c", "3", "-W", "1", hostname)
+		output, err := tester.sshUtil.SSH(container,
+			"ping", "-c", "3", "-W", "1", hostname)
 
 		var errStr string
 		reached := err == nil

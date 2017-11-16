@@ -9,6 +9,7 @@ import (
 
 	"github.com/kelda/kelda/api/client"
 	"github.com/kelda/kelda/db"
+	"github.com/kelda/kelda/integration-tester/util"
 )
 
 // anyIPAllowed is used to indicate that any non-error response is okay for an external
@@ -19,9 +20,10 @@ var externalHostnames = []string{"google.com", "facebook.com", "en.wikipedia.org
 
 type dnsTester struct {
 	hostnameIPMap map[string]string
+	sshUtil       util.SSHUtil
 }
 
-func newDNSTester(clnt client.Client) (dnsTester, error) {
+func newDNSTester(clnt client.Client, sshUtil util.SSHUtil) (dnsTester, error) {
 	loadBalancers, err := clnt.QueryLoadBalancers()
 	if err != nil {
 		return dnsTester{}, err
@@ -47,7 +49,7 @@ func newDNSTester(clnt client.Client) (dnsTester, error) {
 		}
 	}
 
-	return dnsTester{hostnameIPMap}, nil
+	return dnsTester{hostnameIPMap, sshUtil}, nil
 }
 
 func (tester dnsTester) test(t *testing.T, container db.Container) {
@@ -56,7 +58,7 @@ func (tester dnsTester) test(t *testing.T, container db.Container) {
 	test := func(hostname string) {
 		defer wg.Done()
 
-		ip, err := lookup(container, hostname)
+		ip, err := tester.lookup(container, hostname)
 
 		expIP := tester.hostnameIPMap[hostname]
 		if err == nil && expIP != anyIPAllowed && ip != expIP {
@@ -79,8 +81,8 @@ func (tester dnsTester) test(t *testing.T, container db.Container) {
 	wg.Wait()
 }
 
-func lookup(dbc db.Container, hostname string) (string, error) {
-	stdout, err := keldaSSH(dbc, "getent", "hosts", hostname)
+func (tester dnsTester) lookup(dbc db.Container, hostname string) (string, error) {
+	stdout, err := tester.sshUtil.SSH(dbc, "getent", "hosts", hostname)
 	if err != nil {
 		return "", err
 	}
