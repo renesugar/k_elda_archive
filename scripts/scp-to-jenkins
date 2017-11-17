@@ -15,5 +15,5 @@ cd ..
 tar --exclude='*/node_modules' --exclude='*/node_modules/*' -czf ${tarOut} ${base}
 cd ${base}
 
-scp -i ${keyPath} -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ../${tarOut} releaser@jenkins.kelda.io:
+scp -i ${keyPath} -P 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ../${tarOut} releaser@jenkins.kelda.io:releases/
 rm ../${tarOut}
