@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/kelda/kelda/db"
@@ -22,21 +21,30 @@ func TestEtcd(t *testing.T) {
 		t.Fatalf("couldn't query containers: %s", err)
 	}
 
-	test(t, containers)
+	machines, err := clnt.QueryMachines()
+	if err != nil {
+		t.Fatalf("couldn't query machines: %s", err)
+	}
+
+	test(t, util.NewSSHUtil(machines), containers)
 }
 
-func test(t *testing.T, containers []db.Container) {
+func test(t *testing.T, sshUtil util.SSHUtil, containers []db.Container) {
+	var wg sync.WaitGroup
 	for _, c := range containers {
 		if !strings.Contains(c.Image, "etcd") {
 			continue
 		}
 
-		fmt.Printf("Checking etcd health from %s\n", c.BlueprintID)
-		out, err := exec.Command("kelda", "ssh", c.BlueprintID,
-			"etcdctl", "cluster-health").CombinedOutput()
-		fmt.Println(string(out))
-		if err != nil || !strings.Contains(string(out), "cluster is healthy") {
-			t.Errorf("cluster is unhealthy: %s", err)
-		}
+		wg.Add(1)
+		go func(c db.Container) {
+			defer wg.Done()
+			out, err := sshUtil.SSH(c, "etcdctl", "cluster-health")
+			if err != nil || !strings.Contains(out, "cluster is healthy") {
+				t.Errorf("cluster is unhealthy when checked from %s "+
+					"(%s): %s", c.Hostname, err, out)
+			}
+		}(c)
 	}
+	wg.Wait()
 }
