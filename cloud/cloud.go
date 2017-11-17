@@ -75,47 +75,28 @@ func Run(conn db.Conn, adminSSHKey string) {
 		if ns != "" {
 			close(stop)
 			stop = make(chan struct{})
-			makeClouds(conn, ns, stop)
+			startClouds(conn, ns, stop)
 		}
 	}
 }
 
-func makeClouds(conn db.Conn, ns string, stop chan struct{}) {
+func startClouds(conn db.Conn, ns string, stop chan struct{}) {
 	for _, p := range db.AllProviders {
 		for _, r := range validRegions(p) {
 			go func(p db.ProviderName, r string) {
-				cld, err := newCloud(conn, p, r, ns)
-				if err != nil {
-					log.WithFields(log.Fields{
-						"error":  err,
-						"region": cld.String(),
-					}).Debug("failed to create cloud provider")
-					return
+				cld := cloud{
+					conn:         conn,
+					namespace:    ns,
+					region:       r,
+					providerName: p,
 				}
-
 				cld.run(stop)
 			}(p, r)
 		}
 	}
 }
 
-func newCloud(conn db.Conn, pName db.ProviderName, region, ns string) (cloud, error) {
-	cld := cloud{
-		conn:         conn,
-		namespace:    ns,
-		region:       region,
-		providerName: pName,
-	}
-
-	var err error
-	cld.provider, err = newProvider(pName, ns, region)
-	if err != nil {
-		return cld, fmt.Errorf("failed to connect: %s", err)
-	}
-	return cld, nil
-}
-
-func (cld cloud) run(stop <-chan struct{}) {
+func (cld *cloud) run(stop <-chan struct{}) {
 	log.Debugf("Start Cloud %s", cld)
 
 	// Note that we need to be fairly conservative about running due to request
@@ -163,6 +144,8 @@ func (cld cloud) run(stop <-chan struct{}) {
 }
 
 /* This function performs the following actions:
+ * - Initialize the connection to the cloud provider (if it hasn't been initialized
+ *   already).
  * - Get the current set of machines and ACLs from the cloud provider.
  * - Get the current policy from the database.
  * - Compute a diff.
@@ -177,7 +160,28 @@ func (cld cloud) run(stop <-chan struct{}) {
  * `runOnce()` returns a hint as to whether or not this region is `active` (i.e. it has
  * machines).  Callers may want to call `runOnce()` more frequently on `active` regions
  * than they would run empty ones. */
-func (cld cloud) runOnce() (active bool) {
+func (cld *cloud) runOnce() (active bool) {
+	// If the provider is not initialized, try to do so. We do this here
+	// so that we keep trying when there's an error.
+	if cld.provider == nil {
+		provider, err := newProvider(cld.providerName, cld.namespace, cld.region)
+		if err != nil {
+			logger := log.WithFields(log.Fields{
+				"provider": cld.String(),
+				"error":    err,
+			})
+			message := "failed to initialize cloud provider %s(will keep " +
+				"retrying)"
+			if cld.usedByCurrentBlueprint() {
+				logger.Errorf(message, "used by the current blueprint ")
+				return true
+			}
+			logger.Debugf(message, "")
+			return false
+		}
+		cld.provider = provider
+	}
+
 	jr, err := cloudJoin(cld)
 	if err != nil {
 		// Could have failed due to a misconfiguration (bad keys, network
@@ -210,6 +214,29 @@ func (cld cloud) runOnce() (active bool) {
 	return jr.isActive
 }
 
+// usedByCurrentBlueprint returns whether this cloud provider is used by machines
+// in the blueprint that is currently active.
+func (cld *cloud) usedByCurrentBlueprint() bool {
+	var bp db.Blueprint
+	var err error
+	cld.conn.Txn(db.BlueprintTable).Run(
+		func(view db.Database) error {
+			bp, err = view.GetBlueprint()
+			return nil
+		})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"provider": cld.String(),
+			"error":    err,
+		}).Warn("failed to determine whether cloud provider " +
+			"is used by the current blueprint")
+		// If we're not sure if the cloud provider is used,
+		// conservatively assume that it is.
+		return true
+	}
+	return len(cld.desiredMachines(bp.Blueprint.Machines)) > 0
+}
+
 func sanitizeMachines(machines []db.Machine) []db.Machine {
 	// As a defensive measure, we only copy over the fields that the underlying
 	// provider should care about instead of passing `machines` to updateCloud
@@ -231,7 +258,7 @@ func sanitizeMachines(machines []db.Machine) []db.Machine {
 	return cloudMachines
 }
 
-func (cld cloud) updateCloud(jr joinResult) {
+func (cld *cloud) updateCloud(jr joinResult) {
 	logAttempt := func(count int, action string, err error) {
 		c.Inc(action)
 		logFields := log.Fields{
@@ -310,7 +337,7 @@ func (cld cloud) updateCloud(jr joinResult) {
 	log.Debug("Finished waiting for updates.")
 }
 
-func (cld cloud) syncACLs(unresolvedACLs []acl.ACL) {
+func (cld *cloud) syncACLs(unresolvedACLs []acl.ACL) {
 	var acls []acl.ACL
 	for _, acl := range unresolvedACLs {
 		if acl.CidrIP == "local" {
@@ -360,7 +387,7 @@ func validRegionsImpl(p db.ProviderName) []string {
 	}
 }
 
-func (cld cloud) String() string {
+func (cld *cloud) String() string {
 	return fmt.Sprintf("%s-%s-%s", cld.providerName, cld.region, cld.namespace)
 }
 

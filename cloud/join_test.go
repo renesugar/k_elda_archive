@@ -14,18 +14,18 @@ import (
 func TestJoin(t *testing.T) {
 	cld := newTestCloud(FakeAmazon, testRegion, "ns")
 	cld.provider.(*fakeProvider).listError = errors.New("listError")
-	_, err := joinImpl(*cld)
+	_, err := joinImpl(cld)
 	assert.EqualError(t, err, "listError")
 	cld.provider.(*fakeProvider).listError = nil
 
-	_, err = joinImpl(*cld)
+	_, err = joinImpl(cld)
 	assert.EqualError(t, err, "no blueprints found")
 
 	cld.conn.Txn(db.BlueprintTable).Run(func(view db.Database) error {
 		view.InsertBlueprint()
 		return nil
 	})
-	_, err = joinImpl(*cld)
+	_, err = joinImpl(cld)
 	assert.EqualError(t, err, "namespace change during a cloud run")
 
 	cld.conn.Txn(db.BlueprintTable).Run(func(view db.Database) error {
@@ -39,7 +39,7 @@ func TestJoin(t *testing.T) {
 		view.Commit(bp)
 		return nil
 	})
-	_, err = joinImpl(*cld)
+	_, err = joinImpl(cld)
 	assert.NoError(t, err)
 }
 

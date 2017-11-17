@@ -1,15 +1,20 @@
 package cloud
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	logrusTest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/cloud/acl"
 	"github.com/kelda/kelda/db"
 )
@@ -112,10 +117,17 @@ func (p *fakeProvider) Cleanup() error {
 	return nil
 }
 
-func newTestCloud(provider db.ProviderName, region, namespace string) *cloud {
+func newTestCloud(providerName db.ProviderName, region, namespace string) *cloud {
 	sleep = func(t time.Duration) {}
 	mock()
-	cld, _ := newCloud(db.New(), provider, region, namespace)
+	cld := cloud{
+		conn:         db.New(),
+		namespace:    namespace,
+		region:       region,
+		providerName: providerName,
+	}
+	provider, _ := newProvider(cld.providerName, cld.namespace, cld.region)
+	cld.provider = provider
 	return &cld
 }
 
@@ -128,7 +140,103 @@ func TestPanicBadProvider(t *testing.T) {
 	}()
 	db.AllProviders = []db.ProviderName{FakeAmazon}
 	conn := db.New()
-	newCloud(conn, FakeAmazon, testRegion, "test")
+	cld := cloud{
+		conn:         conn,
+		namespace:    "test",
+		region:       testRegion,
+		providerName: FakeAmazon,
+	}
+	cld.runOnce()
+}
+
+func TestCloudRunOnceInitializesProvider(t *testing.T) {
+	mock()
+	provider := FakeAmazon
+	cld := cloud{
+		conn:         db.New(),
+		namespace:    "test",
+		region:       testRegion,
+		providerName: provider,
+	}
+	cld.runOnce()
+
+	assert.NotNil(t, cld.provider)
+	assert.Equal(t, provider, cld.provider.(*fakeProvider).providerName)
+}
+
+func TestCloudRunOnceProviderInitializationFailure(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
+	hook := logrusTest.NewGlobal()
+
+	// Mock newProvider (which is called by runOnce) to return an error.
+	errorMessage := "test error message"
+	newProvider = func(p db.ProviderName, namespace,
+		region string) (provider, error) {
+		// Return a Provider, so we can make sure that runOnce doesn't
+		// use the returned provider when there's an error.
+		return &fakeProvider{}, errors.New(errorMessage)
+	}
+
+	providerName := FakeAmazon
+	conn := db.New()
+
+	// Insert a blueprint in the database that uses the same provider
+	// as the test cloud.
+	conn.Txn(db.BlueprintTable).Run(func(view db.Database) error {
+		bp := view.InsertBlueprint()
+		bp.Blueprint.Machines = []blueprint.Machine{{
+			Provider: string(providerName),
+			Region:   testRegion,
+			Size:     "1",
+		}}
+		view.Commit(bp)
+		return nil
+	})
+
+	cld := cloud{
+		conn:         conn,
+		namespace:    "test",
+		region:       testRegion,
+		providerName: providerName,
+	}
+	cldIsActive := cld.runOnce()
+	assert.True(t, cldIsActive)
+	assert.Nil(t, cld.provider)
+
+	checkForLogMessage := func(expectedMessage string, level logrus.Level) {
+		entryFound := false
+		for _, entry := range hook.Entries {
+			actualMessage, _ := entry.String()
+			if strings.Contains(actualMessage, expectedMessage) {
+				assert.Equal(t, level, entry.Level)
+				entryFound = true
+			}
+		}
+		assert.True(t, entryFound)
+	}
+
+	// Make sure that an error is logged (we can't check that there's just one
+	// log entry, because the database will log messages, and depending on the
+	// timing, those may appear here).
+	checkForLogMessage(errorMessage, logrus.ErrorLevel)
+
+	// Check that if the active blueprint uses a different provider, the message
+	// is logged at debug instead of error level.
+	hook.Reset()
+	conn.Txn(db.BlueprintTable).Run(func(view db.Database) error {
+		bp, _ := view.GetBlueprint()
+		bp.Blueprint.Machines = []blueprint.Machine{{
+			Provider: string(FakeVagrant),
+			Region:   testRegion,
+			Size:     "1",
+		}}
+		view.Commit(bp)
+		return nil
+	})
+	cldIsActive = cld.runOnce()
+	assert.False(t, cldIsActive)
+	assert.Nil(t, cld.provider)
+	checkForLogMessage(errorMessage, logrus.DebugLevel)
 }
 
 func TestCloudRunOnce(t *testing.T) {
@@ -162,7 +270,7 @@ func TestCloudRunOnce(t *testing.T) {
 	}
 
 	var jr joinResult
-	cloudJoin = func(cld cloud) (joinResult, error) { return jr, nil }
+	cloudJoin = func(cld *cloud) (joinResult, error) { return jr, nil }
 
 	jr.boot = []db.Machine{{
 		Provider: FakeAmazon,
@@ -211,9 +319,9 @@ func TestACLs(t *testing.T) {
 	assert.Equal(t, exp, actual)
 }
 
-func TestMakeClouds(t *testing.T) {
+func TestStartClouds(t *testing.T) {
 	stop := make(chan struct{})
-	makeClouds(db.New(), "ns", stop)
+	startClouds(db.New(), "ns", stop)
 
 	// Give the clouds time to be created.
 	for i := 0; i < 20 && len(instantiatedProviders) < 3; i++ {

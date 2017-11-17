@@ -29,7 +29,7 @@ type joinResult struct {
 
 var cloudJoin = joinImpl
 
-func joinImpl(cld cloud) (joinResult, error) {
+func joinImpl(cld *cloud) (joinResult, error) {
 	machines, err := cld.provider.List()
 	if err != nil {
 		log.WithError(err).Error("Failed to list machines")
@@ -69,7 +69,7 @@ func joinImpl(cld cloud) (joinResult, error) {
 
 // syncDBWithCloud updates the machines in the database, based on the ground truth
 // from the cloud provider about which machines are running.
-func (cld cloud) syncDBWithCloud(view db.Database, cloudMachines []db.Machine) {
+func (cld *cloud) syncDBWithCloud(view db.Database, cloudMachines []db.Machine) {
 	dbms := cld.selectMachines(view)
 
 	pairs, extraDBMs, missingCMs := join.Join(dbms, cloudMachines, machineScore)
@@ -95,7 +95,7 @@ func (cld cloud) syncDBWithCloud(view db.Database, cloudMachines []db.Machine) {
 	}
 }
 
-func (cld cloud) syncDBWithBlueprint(view db.Database) joinResult {
+func (cld *cloud) syncDBWithBlueprint(view db.Database) joinResult {
 	var res joinResult
 
 	bp, err := view.GetBlueprint()
@@ -203,7 +203,7 @@ func machineScore(left, right interface{}) int {
 	return score
 }
 
-func (cld cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
+func (cld *cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
 	var dbms []db.Machine
 	for _, bpm := range bpms {
 		region := bpm.Region
@@ -263,7 +263,7 @@ func connectionStatus(m db.Machine) string {
 	return ""
 }
 
-func (cld cloud) desiredACLs(bp db.Blueprint) map[acl.ACL]struct{} {
+func (cld *cloud) desiredACLs(bp db.Blueprint) map[acl.ACL]struct{} {
 	aclSet := map[acl.ACL]struct{}{}
 
 	// Always allow traffic from the Kelda controller, so we append local.
@@ -290,7 +290,7 @@ func (cld cloud) desiredACLs(bp db.Blueprint) map[acl.ACL]struct{} {
 	return aclSet
 }
 
-func (cld cloud) selectMachines(view db.Database) []db.Machine {
+func (cld *cloud) selectMachines(view db.Database) []db.Machine {
 	return view.SelectFromMachine(func(dbm db.Machine) bool {
 		return dbm.Provider == cld.providerName && dbm.Region == cld.region
 	})
