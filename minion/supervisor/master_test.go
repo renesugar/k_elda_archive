@@ -227,6 +227,7 @@ func TestEtcdRemove(t *testing.T) {
 
 func etcdArgsMaster(ip string, etcdIPs []string) []string {
 	return []string{
+		"etcd",
 		fmt.Sprintf("--name=master-%s", ip),
 		fmt.Sprintf("--initial-cluster=%s", initialClusterString(etcdIPs)),
 		fmt.Sprintf("--advertise-client-urls=http://%s:2379", ip),

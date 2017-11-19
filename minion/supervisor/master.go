@@ -48,7 +48,7 @@ func runMasterOnce() {
 		return
 	}
 
-	run(images.Etcd, fmt.Sprintf("--name=master-%s", IP),
+	run(images.Etcd, "etcd", fmt.Sprintf("--name=master-%s", IP),
 		fmt.Sprintf("--initial-cluster=%s", initialClusterString(etcdIPs)),
 		fmt.Sprintf("--advertise-client-urls=http://%s:2379", IP),
 		fmt.Sprintf("--listen-peer-urls=http://%s:2380", IP),

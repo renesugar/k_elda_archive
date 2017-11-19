@@ -215,7 +215,7 @@ func startVaultContainer(dk docker.Client, listenAddr string) error {
 	ro := docker.RunOptions{
 		Name:        ContainerName,
 		NetworkMode: "host",
-		Image:       "vault:0.8.3",
+		Image:       "vault:0.9.0",
 		Args:        []string{"server"},
 		Env:         map[string]string{"VAULT_LOCAL_CONFIG": config},
 		FilepathToContent: map[string]string{

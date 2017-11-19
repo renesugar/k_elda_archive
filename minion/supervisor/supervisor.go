@@ -21,12 +21,12 @@ const ovsImage = "keldaio/ovs"
 const tunnelingProtocol = "stt"
 
 var imageMap = map[string]string{
-	images.Etcd:          "quay.io/coreos/etcd:v3.0.2",
+	images.Etcd:          "quay.io/coreos/etcd:v3.2.10",
 	images.Ovncontroller: ovsImage,
 	images.Ovnnorthd:     ovsImage,
 	images.Ovsdb:         ovsImage,
 	images.Ovsvswitchd:   ovsImage,
-	images.Registry:      "registry:2",
+	images.Registry:      "registry:2.6.2",
 }
 
 const etcdHeartbeatInterval = "500"

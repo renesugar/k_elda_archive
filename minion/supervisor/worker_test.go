@@ -163,6 +163,7 @@ func ovsExecArgs(ip, leader string) [][]string {
 
 func etcdArgsWorker(etcdIPs []string) []string {
 	return []string{
+		"etcd",
 		fmt.Sprintf("--initial-cluster=%s", initialClusterString(etcdIPs)),
 		"--heartbeat-interval=500",
 		"--election-timeout=5000",

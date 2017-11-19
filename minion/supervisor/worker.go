@@ -72,7 +72,7 @@ func runWorkerOnce() {
 
 	oldEtcdIPs = etcdIPs
 
-	run(images.Etcd,
+	run(images.Etcd, "etcd",
 		fmt.Sprintf("--initial-cluster=%s", initialClusterString(etcdIPs)),
 		"--heartbeat-interval="+etcdHeartbeatInterval,
 		"--election-timeout="+etcdElectionTimeout,
