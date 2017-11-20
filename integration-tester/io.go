@@ -59,13 +59,6 @@ func (l fileLogger) println(msg string) {
 	fmt.Fprintln(l.out, msg)
 }
 
-func overwrite(file string, message string) error {
-	a := afero.Afero{
-		Fs: appFs,
-	}
-	return a.WriteFile(file, []byte(message), 0666)
-}
-
 func fileContents(file string) (string, error) {
 	a := afero.Afero{
 		Fs: appFs,
@@ -75,19 +68,4 @@ func fileContents(file string) (string, error) {
 		return "", err
 	}
 	return string(contents), nil
-}
-
-// Update the given blueprint to have the given namespace.
-func updateNamespace(blueprintFile string, namespace string) error {
-	blueprintContents, err := fileContents(blueprintFile)
-	if err != nil {
-		return err
-	}
-
-	// Set the namespace of the global deployment to be `namespace`.
-	updatedBlueprint := blueprintContents +
-		fmt.Sprintf("; require('kelda').getInfrastructure()."+
-			"namespace = %q;", namespace)
-
-	return overwrite(blueprintFile, updatedBlueprint)
 }

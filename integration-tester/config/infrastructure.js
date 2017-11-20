@@ -30,7 +30,9 @@ function createTestInfrastructure() {
     }
     workers.push(worker);
   }
-  return new Infrastructure(baseMachine, workers);
+
+  return new Infrastructure(baseMachine, workers,
+    { namespace: process.env.TESTING_NAMESPACE });
 }
 
 module.exports = { createTestInfrastructure, nWorker };

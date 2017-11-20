@@ -7,7 +7,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,31 +26,6 @@ func TestCmdExec(t *testing.T) {
 	}
 	if stderr != expStderr {
 		t.Errorf("Stderr didn't match: expected %s, got %s", expStderr, stderr)
-	}
-}
-
-func TestUpdateNamespace(t *testing.T) {
-	appFs = afero.NewMemMapFs()
-
-	blueprintPath := "/test.blueprint"
-	err := overwrite(blueprintPath, `require("spark");
-var infra = new Infrastructure(new Machine(), new Machine(), {namespace: "replace"});`)
-	if err != nil {
-		t.Errorf("Unexpected error: %s", err.Error())
-	}
-	updateNamespace(blueprintPath, "test-namespace")
-
-	res, err := fileContents(blueprintPath)
-	exp := `require("spark");
-var infra = new Infrastructure(new Machine(), new Machine(), {namespace: "replace"});; ` +
-		`require('kelda').getInfrastructure().namespace = "test-namespace";`
-	if err != nil {
-		t.Errorf("Unexpected error: %s", err.Error())
-		return
-	}
-	if res != exp {
-		t.Errorf("Namespace didn't properly update, expected %s, got %s",
-			exp, res)
 	}
 }
 

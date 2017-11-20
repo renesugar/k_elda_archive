@@ -115,14 +115,6 @@ func (t *tester) generateTestSuites(testRoot string) error {
 			switch {
 			case strings.HasSuffix(file.Name(), ".js"):
 				blueprint = path
-				err := updateNamespace(blueprint, t.namespace)
-				if err != nil {
-					l.infoln(fmt.Sprintf(
-						"Error updating namespace for %s.",
-						blueprint))
-					l.errorln(err.Error())
-					return err
-				}
 			// If the file is executable by everyone, and is not a directory.
 			case (file.Mode()&1 != 0) && !file.IsDir():
 				test = path
@@ -216,12 +208,6 @@ func (t *tester) setup() error {
 	l.infoln("Booting the machines the test suites will run on, and waiting " +
 		"for them to connect back.")
 	l.infoln("Begin " + infrastructureBlueprint)
-	if err := updateNamespace(infrastructureBlueprint, t.namespace); err != nil {
-		l.infoln(fmt.Sprintf("Error updating namespace for %s.",
-			infrastructureBlueprint))
-		l.errorln(err.Error())
-		return err
-	}
 	contents, _ := fileContents(infrastructureBlueprint)
 	l.println(contents)
 	l.infoln("End " + infrastructureBlueprint)
