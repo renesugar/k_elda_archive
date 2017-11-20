@@ -1,6 +1,6 @@
 export GO15VENDOREXPERIMENT=1
 PACKAGES=$(shell govendor list -no-status +local)
-NOVENDOR=$(shell find . -path -prune -o -path ./vendor -prune -o -name '*.go' -print)
+NOVENDOR=$(shell find . -path -prune -o -path '*/vendor' -prune -o -name '*.go' -print)
 LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 		    ./cloud/amazon/client/mocks/% \
 		    ./cloud/cfg/template.go \
@@ -8,7 +8,6 @@ LINE_LENGTH_EXCLUDE=./api/pb/pb.pb.go \
 		    ./cloud/google/client/mocks/% \
 		    ./cloud/machine/amazon.go \
 		    ./cloud/machine/google.go \
-		    ./integration-tester/tests/zookeeper/vendor/% \
 		    ./minion/network/link_test.go \
 		    ./minion/ovsdb/mock_transact_test.go \
 		    ./minion/ovsdb/mocks/Client.go \
@@ -109,7 +108,7 @@ check-blueprints: build-blueprints-tester
 lint: golint jslint misspell
 
 misspell:
-	find . \( -path ./vendor -or -path '*/node_modules/*' -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error
+	find . \( -path '*/vendor' -or -path '*/node_modules/*' -or -path ./docs/build \) -prune -or -name '*' -type f -print | xargs misspell -error
 
 jslint:
 	$(JS_LINT_COMMAND)
