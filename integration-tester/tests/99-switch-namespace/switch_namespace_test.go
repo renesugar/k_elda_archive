@@ -19,8 +19,6 @@ import (
 
 // TestSwitchNamespace tests that if a user switches namespaces then runs the
 // same blueprint, containers are not restarted.
-// XXX: Switching namespaces currently causes the minion to log error messages,
-// so we have to run it after the logs test.
 func TestSwitchNamespace(t *testing.T) {
 	clnt, err := testerUtil.GetDefaultDaemonClient()
 	assert.NoError(t, err)
