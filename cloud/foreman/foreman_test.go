@@ -147,13 +147,37 @@ func TestMakeConfig(t *testing.T) {
 	assert.Len(t, config.MinionIPToPublicKey, 0)
 }
 
+func TestClusterReady(t *testing.T) {
+	t.Parallel()
+
+	readyMachine := db.Machine{
+		PrivateIP: "ip",
+		PublicKey: "key",
+		Role:      db.Master,
+	}
+
+	missingIP := readyMachine
+	missingIP.PrivateIP = ""
+	assert.False(t, clusterReady([]db.Machine{readyMachine, missingIP}))
+
+	missingKey := readyMachine
+	missingKey.PublicKey = ""
+	assert.False(t, clusterReady([]db.Machine{readyMachine, missingKey}))
+
+	missingRole := readyMachine
+	missingRole.Role = db.None
+	assert.False(t, clusterReady([]db.Machine{readyMachine, missingRole}))
+
+	assert.True(t, clusterReady([]db.Machine{readyMachine}))
+}
+
 func TestForemanRunOnce(t *testing.T) {
 	conn := db.New()
 	clients := mock(t, map[string]pb.MinionConfig_Role{
 		"1.1.1.1": pb.MinionConfig_WORKER,
 	})
 
-	config, connected := runOnce(conn, "ID1")
+	config, connected := runOnce(time.Time{}, conn, "ID1")
 	assert.False(t, connected)
 	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
 
@@ -169,12 +193,12 @@ func TestForemanRunOnce(t *testing.T) {
 	})
 
 	clients.newClientError = true
-	config, connected = runOnce(conn, "ID1")
+	config, connected = runOnce(time.Time{}, conn, "ID1")
 	assert.False(t, connected)
 	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
 
 	clients.newClientError = false
-	config, connected = runOnce(conn, "ID1")
+	config, connected = runOnce(time.Time{}, conn, "ID1")
 	assert.True(t, connected)
 	assert.Equal(t, db.Role(db.Worker), db.PBToRole(config.Role))
 
@@ -183,7 +207,7 @@ func TestForemanRunOnce(t *testing.T) {
 	assert.Equal(t, "size1", minionConf.Size)
 
 	clients.getMinionError = true
-	config, connected = runOnce(conn, "ID1")
+	config, connected = runOnce(time.Time{}, conn, "ID1")
 	assert.False(t, connected)
 	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
 }

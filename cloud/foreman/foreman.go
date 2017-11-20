@@ -93,6 +93,14 @@ func newMinionImpl(conn db.Conn, cloudID string, stop chan struct{}) {
 	defer frequentTick.Stop()
 	defer tableTrigger.Stop()
 
+	// If the other machines in the cluster are not ready by this time, we will
+	// configure the cluster as if they were not part of it. This grace period
+	// is useful for dealing with race conditions when the cluster is first
+	// being connected to. During this time, we don't want to configure etcd
+	// with a portion of the masters just to restart it when the rest of the
+	// masters finish connecting shortly after.
+	waitForMachinesCutoff := time.Now().Add(5 * time.Minute)
+
 	var connected bool
 	for {
 		select {
@@ -111,12 +119,13 @@ func newMinionImpl(conn db.Conn, cloudID string, stop chan struct{}) {
 		default:
 		}
 
-		currConfig, connected := runOnce(conn, cloudID)
+		currConfig, connected := runOnce(waitForMachinesCutoff, conn, cloudID)
 		setMinionStatus(cloudID, currConfig, connected)
 	}
 }
 
-func runOnce(conn db.Conn, cloudID string) (currConfig pb.MinionConfig, connected bool) {
+func runOnce(waitForMachinesCutoff time.Time, conn db.Conn, cloudID string) (
+	currConfig pb.MinionConfig, connected bool) {
 	currConfig = pb.MinionConfig{}
 	connected = false
 
@@ -163,6 +172,15 @@ func runOnce(conn db.Conn, cloudID string) (currConfig pb.MinionConfig, connecte
 		return
 	}
 
+	// If there isn't enough information to generate a complete minion config
+	// yet, then don't try to set it. However, if enough time has elapsed, then
+	// go ahead and use the limited information we have to set the config. This
+	// way, if machines fail and never connect, the rest of the cluster can
+	// still operate.
+	if !clusterReady(machines) && time.Now().Before(waitForMachinesCutoff) {
+		return
+	}
+
 	newConfig := makeConfig(machines, minionMachine, blueprint)
 	if !reflect.DeepEqual(currConfig, newConfig) {
 		err = cli.setMinion(newConfig)
@@ -171,6 +189,18 @@ func runOnce(conn db.Conn, cloudID string) (currConfig pb.MinionConfig, connecte
 		}
 	}
 	return
+}
+
+// clusterReady returns whether we have enough information to generate a minion
+// config. For example, if there are machines with an unknown role, they might
+// cause an etcd restart once they connect since the EtcdMembers will change.
+func clusterReady(machines []db.Machine) bool {
+	for _, m := range machines {
+		if m.Role == db.None || m.PrivateIP == "" || m.PublicKey == "" {
+			return false
+		}
+	}
+	return true
 }
 
 func makeConfig(machines []db.Machine, minionMachine db.Machine,
