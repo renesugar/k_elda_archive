@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/kelda/kelda/util"
 )
 
 // A Blueprint is an abstract representation of the policy language.
@@ -123,9 +125,9 @@ func FromFile(filename string) (Blueprint, error) {
 // FromFileWithArgs gets a Blueprint handle from a file on disk, passing the
 // given arguments to the node process.
 func FromFileWithArgs(filename string, cmdLineArgs []string) (Blueprint, error) {
-	if _, err := lookPath("node"); err != nil {
-		return Blueprint{}, errors.New(
-			"failed to locate Node.js. Is it installed and in your PATH?")
+	nodeBinary, err := util.GetNodeBinary()
+	if err != nil {
+		return Blueprint{}, err
 	}
 
 	outFile, err := ioutil.TempFile("", "kelda-out")
@@ -155,7 +157,7 @@ func FromFileWithArgs(filename string, cmdLineArgs []string) (Blueprint, error) 
             );`, absPath, filename, outFile.Name())}
 	args = append(args, cmdLineArgs...)
 
-	cmd := exec.Command("node", args...)
+	cmd := exec.Command(nodeBinary, args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	if err := cmd.Run(); err != nil {

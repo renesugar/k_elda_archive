@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -208,4 +209,20 @@ func JoinNotifiers(a, b chan struct{}) chan struct{} {
 		}
 	}()
 	return c
+}
+
+// GetNodeBinary returns the name of the Node.js binary.
+// Even though `node` is the blessed name for the Node.js binary, some package
+// managers (e.g. apt-get) install the binary as `nodejs`. The `nodejs` name is
+// used by package managers that already had a package named `node`, so to avoid
+// accidentally executing the wrong `node` binary, we try the `nodejs` binary first.
+func GetNodeBinary() (string, error) {
+	if _, err := exec.LookPath("nodejs"); err == nil {
+		return "nodejs", nil
+	}
+	if _, err := exec.LookPath("node"); err == nil {
+		return "node", nil
+	}
+	return "", errors.New(
+		"failed to locate Node.js. Is it installed and in your PATH?")
 }

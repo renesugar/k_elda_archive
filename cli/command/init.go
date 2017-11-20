@@ -49,13 +49,8 @@ func (iCmd *Init) Run() int {
 	// somewhere as `kelda-initializer.js`. This is done automatically for users by
 	// npm when installed.
 	executable := "kelda-initializer.js"
-	cmd := exec.Command(executable)
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	if _, err := exec.LookPath(executable); err != nil {
+	executablePath, err := exec.LookPath(executable)
+	if err != nil {
 		log.Errorf("%s: Make sure that "+
 			"js/initializer/initializer.js is installed in your $PATH as "+
 			"%s. This is done automatically with "+
@@ -66,6 +61,18 @@ func (iCmd *Init) Run() int {
 			err, executable, executable)
 		return 1
 	}
+
+	nodeBinary, err := util.GetNodeBinary()
+	if err != nil {
+		log.Error(err)
+		return 1
+	}
+
+	cmd := exec.Command(nodeBinary, executablePath)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
 	if err := cmd.Run(); err != nil {
 		return 1
