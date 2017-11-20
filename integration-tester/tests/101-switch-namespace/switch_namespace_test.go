@@ -61,6 +61,16 @@ func TestSwitchNamespace(t *testing.T) {
 			fmt.Println("Failed to list containers:", err)
 			return false
 		}
+
+		// If the DockerID isn't set, either the container has not been started
+		// yet, or the query response did not contact the Worker. Either way,
+		// the container response is incomplete, so we should wait until the
+		// container is booted, or the daemon connects to the worker.
+		for _, c := range containers {
+			if c.DockerID == "" {
+				return false
+			}
+		}
 		return len(containers) == len(initialBlueprint.Containers)
 	}
 	err = util.BackoffWaitFor(containersUp, 30*time.Second, 3*time.Minute)
