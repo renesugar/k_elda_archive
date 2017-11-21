@@ -11,10 +11,11 @@ import (
 	"github.com/kelda/kelda/api"
 	"github.com/kelda/kelda/db"
 	testerUtil "github.com/kelda/kelda/integration-tester/util"
+	"github.com/kelda/kelda/util"
 )
 
-// stop stops the given namespace, and waits 2 minutes for the command
-// to take effect.
+// stop stops the given namespace, and waits up to 5 minutes for the command to
+// take effect.
 func stop(namespace string) (string, string, error) {
 	cmd := exec.Command("kelda", "stop", namespace)
 
@@ -23,8 +24,19 @@ func stop(namespace string) (string, string, error) {
 		return stdout, stderr, err
 	}
 
+	// Sleep 2 minutes to give the daemon ample time to do the first query of
+	// the current machines in the cloud.
 	time.Sleep(2 * time.Minute)
-	return stdout, stderr, nil
+
+	// Now that we can trust that the machines returned by the daemon are
+	// really the machines running in the cloud, block until there are not any
+	// machines.
+	noMachines := func() bool {
+		machines, err := queryMachines()
+		return err == nil && len(machines) == 0
+	}
+	err = util.BackoffWaitFor(noMachines, 15*time.Second, 3*time.Minute)
+	return stdout, stderr, err
 }
 
 // npmInstall installs the npm dependencies in the current directory.
