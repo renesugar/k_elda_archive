@@ -39,7 +39,7 @@ class Infrastructure {
    *   use as the workers.  Worker machines are responsible for running application containers.
    * @param {Object} [opts] - Optional arguments to tweak the behavior
    *   of the namespace.
-   * @param {string} [opts.namespace=default-namespace] - The name of the
+   * @param {string} [opts.namespace=kelda] - The name of the
    *   namespace that the blueprint should operate in.
    * @param {string[]} [opts.adminACL] - A list of IP addresses that are
    *   allowed to access the deployed machines.  The IP of the machine where the
@@ -50,7 +50,7 @@ class Infrastructure {
    *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
    */
   constructor(masters, workers, opts = {}) {
-    this.namespace = opts.namespace || 'default-namespace';
+    this.namespace = opts.namespace || 'kelda';
     this.adminACL = getStringArray('adminACL', opts.adminACL);
 
     checkExtraKeys(opts, this);

@@ -1082,7 +1082,7 @@ describe('Bindings', () => {
     it('default namespace', () => {
       createBasicInfra();
       expect(infra.toKeldaRepresentation().namespace).to.equal(
-        'default-namespace');
+        'kelda');
     });
     it('admin ACL', () => {
       infra = new b.Infrastructure(
@@ -1170,7 +1170,7 @@ describe('Bindings', () => {
             sshKeys: [],
           },
         ],
-        namespace: 'default-namespace',
+        namespace: 'kelda',
         placements: [],
       };
       expect(global.getInfrastructureKeldaRepr()).to.containSubset(expected);
