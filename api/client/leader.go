@@ -21,7 +21,7 @@ func Leader(machines []db.Machine, creds connection.Credentials) (Client, error)
 
 	// Try to figure out the lead minion's IP by asking each of the machines.
 	for _, m := range machines {
-		if m.PublicIP == "" || m.Status == db.Stopping {
+		if m.PublicIP == "" || m.Status != db.Connected {
 			continue
 		}
 

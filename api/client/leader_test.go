@@ -36,12 +36,19 @@ func TestLeader(t *testing.T) {
 
 	res, err := Leader([]db.Machine{
 		{
+			PublicIP: "7.7.7.7",
+			Status:   db.Connecting,
+		},
+		{
 			PublicIP: "8.8.8.8",
+			Status:   db.Connected,
 		},
 		{
 			PublicIP: "9.9.9.9",
+			Status:   db.Connected,
 		},
 		{
+			Status:    db.Connected,
 			PublicIP:  "leader",
 			PrivateIP: "leader-priv",
 		},
@@ -62,9 +69,11 @@ func TestNoLeader(t *testing.T) {
 
 	_, err := Leader([]db.Machine{
 		{
+			Status:   db.Connected,
 			PublicIP: "8.8.8.8",
 		},
 		{
+			Status:   db.Connected,
 			PublicIP: "9.9.9.9",
 		},
 	}, nil)
@@ -76,4 +85,30 @@ func TestNoLeader(t *testing.T) {
 func TestLeaderNoMachines(t *testing.T) {
 	_, err := Leader(nil, nil)
 	assert.EqualError(t, err, "no machines to query")
+}
+
+func TestNoConnectedMachines(t *testing.T) {
+	newClient = func(host string, _ connection.Credentials) (Client, error) {
+		t.Fatalf("Unexpected call to newClient with host %s. newClient should "+
+			"not be called since no machines have been connected to.", host)
+		return nil, nil
+	}
+
+	Leader([]db.Machine{
+		{
+			PublicIP: "7.7.7.7",
+		},
+		{
+			Status:   db.Connecting,
+			PublicIP: "8.8.8.8",
+		},
+		{
+			PublicIP: "9.9.9.9",
+			Status:   db.Reconnecting,
+		},
+		{
+			Status:   db.Stopping,
+			PublicIP: "10.10.10.10",
+		},
+	}, nil)
 }
