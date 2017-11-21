@@ -188,8 +188,7 @@ describe('Initializer', () => {
 
   return new kelda.Infrastructure(
     vmTemplate.replicate(1),
-    vmTemplate.replicate(2),
-    {namespace: 'kelda-deployment'});
+    vmTemplate.replicate(2));
 }
 
 module.exports = infraGetter;
@@ -220,8 +219,7 @@ module.exports = infraGetter;
 
   return new kelda.Infrastructure(
     vmTemplate.replicate(1),
-    vmTemplate.replicate(2),
-    {namespace: 'kelda-deployment'});
+    vmTemplate.replicate(2));
 }
 
 module.exports = infraGetter;

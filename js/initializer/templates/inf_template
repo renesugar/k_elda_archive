@@ -16,8 +16,7 @@ function infraGetter(kelda) {
 
   return new kelda.Infrastructure(
     vmTemplate.replicate({{masterCount}}),
-    vmTemplate.replicate({{workerCount}}),
-    {namespace: 'kelda-deployment'});
+    vmTemplate.replicate({{workerCount}}));
 }
 
 module.exports = infraGetter;
