@@ -66,6 +66,7 @@ var (
 
 	// A list of commands to output various machine logs.
 	machineCmds = []logCmd{
+		{"cloud-init", "sudo cat /var/log/cloud-init-output.log"},
 		{"docker-ps", "docker ps -a"},
 		{"minion", "docker logs minion"},
 		{images.Etcd, "docker logs " + images.Etcd},
