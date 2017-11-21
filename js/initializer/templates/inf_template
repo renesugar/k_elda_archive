@@ -1,6 +1,9 @@
+/**
+  * @param {Object} kelda - A Kelda module as returned by require('kelda').
+  * @returns {kelda.Infrastructure} A Kelda infrastructure.
+  */
 function infraGetter(kelda) {
-
-  var vmTemplate = new kelda.Machine({
+  const vmTemplate = new kelda.Machine({
     provider: '{{provider}}',
   {{#if region}}
     region: '{{region}}',
@@ -11,7 +14,7 @@ function infraGetter(kelda) {
     ram: {{ram}},
     cpu: {{cpu}},
   {{/if}}
-    preemptible: {{preemptible}}
+    preemptible: {{preemptible}},
   });
 
   return new kelda.Infrastructure(

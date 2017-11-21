@@ -177,13 +177,16 @@ describe('Initializer', () => {
         [consts.workerCount]: 2,
       };
 
-      const expInfraFile = `function infraGetter(kelda) {
-
-  var vmTemplate = new kelda.Machine({
+      const expInfraFile = `/**
+  * @param {Object} kelda - A Kelda module as returned by require('kelda').
+  * @returns {kelda.Infrastructure} A Kelda infrastructure.
+  */
+function infraGetter(kelda) {
+  const vmTemplate = new kelda.Machine({
     provider: 'provider',
     region: 'somewhere',
     size: 'big',
-    preemptible: true
+    preemptible: true,
   });
 
   return new kelda.Infrastructure(
@@ -207,14 +210,17 @@ module.exports = infraGetter;
         [consts.workerCount]: 2,
       };
 
-      const expInfraFile = `function infraGetter(kelda) {
-
-  var vmTemplate = new kelda.Machine({
+      const expInfraFile = `/**
+  * @param {Object} kelda - A Kelda module as returned by require('kelda').
+  * @returns {kelda.Infrastructure} A Kelda infrastructure.
+  */
+function infraGetter(kelda) {
+  const vmTemplate = new kelda.Machine({
     provider: 'provider',
     region: 'somewhere',
     ram: 2,
     cpu: 1,
-    preemptible: true
+    preemptible: true,
   });
 
   return new kelda.Infrastructure(
