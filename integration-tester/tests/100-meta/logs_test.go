@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -27,32 +31,56 @@ func TestMinionLogs(t *testing.T) {
 
 	for _, machine := range machines {
 		fmt.Println(machine)
-		logsOutput, err := exec.Command("kelda", "ssh", machine.CloudID,
+		logOutput, err := exec.Command("kelda", "ssh", machine.CloudID,
 			"sudo", "journalctl", "-o", "cat", "-u", "minion").
 			CombinedOutput()
 		if err != nil {
 			t.Errorf("unable to get minion logs: %s", err.Error())
 			continue
 		}
-		outputStr := string(logsOutput)
-		fmt.Println(outputStr)
-		checkString(t, outputStr)
+		logOutputStr := string(logOutput)
+		fmt.Println(logOutputStr)
+		checkLogs(t, logOutputStr)
 	}
 }
 
-func checkString(t *testing.T, str string) {
+func TestDaemonLogs(t *testing.T) {
+	daemonLoggerPath := filepath.Join(os.Getenv("WORKSPACE"), "daemonOutput.log")
+	daemonLogOutput, err := ioutil.ReadFile(daemonLoggerPath)
+	if err != nil {
+		t.Fatalf("couldn't read daemon output: %s", err.Error())
+	}
+
+	checkLogs(t, string(daemonLogOutput))
+}
+
+var ignoreRegexes = []*regexp.Regexp{
+	// DigitalOcean API calls sometimes randomly fail with a 500 error:
+	regexp.MustCompile("(?:ERROR|WARNING) \\[.*? 500 Server was " +
+		"unable to give you a response\\.$"),
+
+	// This is a seemingly harmless DigitalOcean API error, cause unknown.
+	regexp.MustCompile("(?:ERROR|WARNING) \\[.*? invalid character '<' " +
+		"looking for beginning of value$"),
+
+	// Errors pulling an image are completely out of our control.
+	regexp.MustCompile("pull image error"),
+}
+
+func checkLogs(t *testing.T, str string) {
+outer:
 	for _, line := range strings.Split(str, "\n") {
-		// Errors pulling an image are completely out of our control.  They
-		// should still be logged as warnings to the user, but they shouldn't
-		// cause a test failure.
-		if strings.Contains(line, "pull image error") {
-			fmt.Printf("Ignoring pull image error: %s\n", line)
-			continue
+		// Ignore lines that match any of the 'ignore patterns'.
+		for _, regex := range ignoreRegexes {
+			if regex.MatchString(line) {
+				fmt.Printf("Ignoring line: %s\n", line)
+				continue outer
+			}
 		}
 
 		// "goroutine 0" is the main goroutine and is printed in stacktraces.
 		if strings.Contains(line, "goroutine 0") {
-			t.Error("Minion logs has a stack trace")
+			t.Error("Logs have a stack trace")
 		}
 
 		// The trailing open bracket is necessary to filter out false positives
@@ -60,14 +88,14 @@ func checkString(t *testing.T, str string) {
 		// status string NOERROR is printed.
 		if strings.Contains(line, "ERROR [") ||
 			strings.Contains(line, "WARNING [") {
-			t.Errorf("Minion logs has error: %s", line)
+			t.Errorf("Logs have an error: %s", line)
 		}
 
 		// The minion logs should not contain any secret values. These secret
 		// values were created in 70-secret-setup/secret_setup_test.go.
 		if strings.Contains(line, "env secret") ||
 			strings.Contains(line, "file secret") {
-			t.Errorf("Minion logs has a secret value: %s", line)
+			t.Errorf("Logs have a secret value: %s", line)
 		}
 	}
 }
