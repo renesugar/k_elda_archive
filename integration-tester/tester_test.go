@@ -39,6 +39,10 @@ func TestPriorityPrefix(t *testing.T) {
 	checkSort(t, []string{"100-foo", "50-bar"}, []string{"50-bar", "100-foo"})
 	checkSort(t, []string{"50-bar", "100-foo"}, []string{"50-bar", "100-foo"})
 
+	// Order based on priority with leading zeros.
+	checkSort(t, []string{"100-foo", "05-bar", "00-baz"},
+		[]string{"00-baz", "05-bar", "100-foo"})
+
 	// Order based on name.
 	checkSort(t, []string{"50-foo", "50-bar"}, []string{"50-bar", "50-foo"})
 

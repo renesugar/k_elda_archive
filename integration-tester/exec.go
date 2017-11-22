@@ -9,44 +9,9 @@ import (
 	"time"
 
 	"github.com/kelda/kelda/api"
-	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/db"
 	testerUtil "github.com/kelda/kelda/integration-tester/util"
-	"github.com/kelda/kelda/util"
 )
-
-// runBlueprintUntilConnected runs the given blueprint, and blocks until either all
-// machines have connected back to the daemon, or 500 seconds have passed.
-func runBlueprintUntilConnected(blueprintPath string) (string, string, error) {
-	cmd := exec.Command("kelda", "run", "-f", blueprintPath)
-	stdout, stderr, err := execCmd(cmd, "INFRA", log.cmdLogger)
-	if err != nil {
-		return stdout, stderr, err
-	}
-
-	compiledBlueprint, err := blueprint.FromFile(blueprintPath)
-	if err != nil {
-		return "", "", fmt.Errorf("parse blueprint: %s", err)
-	}
-
-	allMachinesConnected := func() bool {
-		machines, err := queryMachines()
-		if err != nil || len(compiledBlueprint.Machines) != len(machines) {
-			return false
-		}
-
-		for _, m := range machines {
-			if m.Status != db.Connected {
-				return false
-			}
-		}
-
-		return true
-	}
-
-	err = util.BackoffWaitFor(allMachinesConnected, 15*time.Second, 8*time.Minute)
-	return stdout, stderr, err
-}
 
 // stop stops the given namespace, and waits 2 minutes for the command
 // to take effect.

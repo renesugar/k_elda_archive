@@ -21,10 +21,6 @@ import (
 	"github.com/kelda/kelda/util"
 )
 
-var (
-	infrastructureBlueprint = "./config/infrastructureRunner.js"
-)
-
 // The global logger for this CI run.
 var log logger
 
@@ -203,27 +199,6 @@ func (t *tester) setup() error {
 		l.infoln(fmt.Sprintf("Error stopping: %s", err.Error()))
 		return err
 	}
-
-	// Setup infrastructure.
-	l.infoln("Booting the machines the test suites will run on, and waiting " +
-		"for them to connect back.")
-	l.infoln("Begin " + infrastructureBlueprint)
-	contents, _ := fileContents(infrastructureBlueprint)
-	l.println(contents)
-	l.infoln("End " + infrastructureBlueprint)
-
-	_, _, err = runBlueprintUntilConnected(infrastructureBlueprint)
-	if err != nil {
-		l.infoln("Failed to setup infrastructure")
-		l.errorln(err.Error())
-		return err
-	}
-
-	l.infoln("Booted Kelda")
-	l.infoln("Machines")
-	machines, _ := queryMachines()
-	l.println(fmt.Sprintf("%v", machines))
-
 	return nil
 }
 
