@@ -3,6 +3,12 @@ const { Infrastructure, Machine } = require('kelda');
 /** The number of worker machines to launch to run the tests on. */
 const nWorker = getNumberWorkers();
 
+const providerToFloatingIp = {
+  Amazon: '13.57.99.49', // us-west-1
+  Google: '104.196.11.66', // us-east1-b
+  DigitalOcean: '138.68.203.188', // sfo1
+};
+
 /**
  * getNumberWorkers returns the number of Kelda workers to boot by parsing
  * the NUMBER_WORKERS environment variable, and defaulting to 3 if it is not
@@ -44,6 +50,7 @@ function createTestInfrastructure() {
     }
     workers.push(worker);
   }
+  workers[0].floatingIp = providerToFloatingIp[baseMachine.provider];
 
   return new Infrastructure(baseMachine, workers,
     { namespace: process.env.TESTING_NAMESPACE });
