@@ -257,7 +257,8 @@ func (ts *testSuite) run() error {
 
 	l.infoln("Waiting for containers to start up")
 	if err = testerUtil.WaitForContainers(bp); err != nil {
-		l.println(".. Containers never started: " + err.Error())
+		ts.output = "Containers never started: " + err.Error()
+		l.println(".. " + ts.output)
 		return err
 	}
 
