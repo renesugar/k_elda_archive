@@ -258,6 +258,12 @@ func TestTrigger(t *testing.T) {
 	ct := conn.Trigger(BlueprintTable)
 	ct2 := conn.Trigger(BlueprintTable)
 
+	// The initial ticks.
+	triggerRecv(t, mt)
+	triggerRecv(t, mt2)
+	triggerRecv(t, ct)
+	triggerRecv(t, ct2)
+
 	triggerNoRecv(t, mt)
 	triggerNoRecv(t, mt2)
 	triggerNoRecv(t, ct)

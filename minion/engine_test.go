@@ -18,6 +18,8 @@ const testImage = "alpine"
 func TestContainerTxn(t *testing.T) {
 	conn := db.New()
 	trigg := conn.Trigger(db.ContainerTable).C
+	// Drain the initial trigger.
+	<-trigg
 
 	testContainerTxn(t, conn, blueprint.Blueprint{})
 	assert.False(t, fired(trigg))
@@ -260,6 +262,8 @@ func testContainerTxn(t *testing.T, conn db.Conn, bp blueprint.Blueprint) {
 func TestConnectionTxn(t *testing.T) {
 	conn := db.New()
 	trigg := conn.Trigger(db.ConnectionTable).C
+	// Drain the initial trigger.
+	<-trigg
 
 	testConnectionTxn(t, conn, blueprint.Blueprint{})
 	assert.False(t, fired(trigg))

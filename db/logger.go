@@ -11,7 +11,11 @@ func (conn Conn) runLogger() {
 	for _, t := range AllTables {
 		t := t
 		go func() {
-			for range conn.Trigger(t).C {
+			trigger := conn.Trigger(t).C
+			// Drain the initial trigger to avoid logging the empty database
+			// tables.
+			<-trigger
+			for range trigger {
 				conn.logTable(t)
 			}
 		}()

@@ -103,7 +103,8 @@ func (tr Transaction) Run(do func(db Database) error) error {
 
 // Trigger registers a new database trigger that watches changes to 'tableName'.  Any
 // change to the table, including row insertions, deletions, and modifications, will
-// cause a notification on 'Trigger.C'.
+// cause a notification on 'Trigger.C'. So that clients properly initialize,
+// Trigger() sends an initialization tick at startup.
 func (cn Conn) Trigger(tt ...TableType) Trigger {
 	trigger := Trigger{C: make(chan struct{}, 1), stop: make(chan struct{})}
 	cn.Txn(tt...).Run(func(db Database) error {
@@ -113,6 +114,8 @@ func (cn Conn) Trigger(tt ...TableType) Trigger {
 		}
 		return nil
 	})
+	trigger.C <- struct{}{}
+	c.Inc("Trigger")
 
 	return trigger
 }
@@ -129,15 +132,15 @@ func (cn Conn) TriggerTick(seconds int, tt ...TableType) Trigger {
 
 		for {
 			select {
-			case trigger.C <- struct{}{}:
-				c.Inc("Trigger")
-			default:
-			}
-
-			select {
 			case <-ticker.C:
 			case <-trigger.stop:
 				return
+			}
+
+			select {
+			case trigger.C <- struct{}{}:
+				c.Inc("Trigger")
+			default:
 			}
 		}
 	}()
