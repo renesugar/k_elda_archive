@@ -258,14 +258,18 @@ func (ts *testSuite) run() error {
 	l.infoln("Waiting for containers to start up")
 	if err = testerUtil.WaitForContainers(bp); err != nil {
 		l.println(".. Containers never started: " + err.Error())
-		ts.passed = false
 		return err
 	}
 
-	// Wait a little bit longer for any container bootstrapping after boot.
-	time.Sleep(90 * time.Second)
+	if ts.test == "" {
+		// If the test doesn't have any test binaries, then successfully
+		// booting the blueprint is a "pass".
+		l.println(".... Passed")
+		ts.passed = true
+	} else {
+		// Wait a little bit longer for any container bootstrapping after boot.
+		time.Sleep(90 * time.Second)
 
-	if ts.test != "" {
 		l.infoln("Starting Test")
 		l.println(".. " + filepath.Base(ts.test))
 
@@ -275,7 +279,6 @@ func (ts *testSuite) run() error {
 			ts.passed = true
 		} else {
 			l.println(".... Failed")
-			ts.passed = false
 		}
 	}
 

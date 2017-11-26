@@ -29,11 +29,6 @@ type TestCase struct {
 func newJUnitReport(tests []*testSuite) JUnitReport {
 	report := JUnitReport{NumTests: len(tests)}
 	for _, t := range tests {
-		// Ignore test suites that are solely for setup, and do not test anything.
-		if t.test == "" {
-			continue
-		}
-
 		junitResult := TestCase{
 			Name:        t.name,
 			ClassName:   "tests",
