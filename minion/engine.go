@@ -6,10 +6,29 @@ import (
 	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/join"
+	"github.com/kelda/kelda/util"
 	"github.com/kelda/kelda/util/str"
 
 	log "github.com/sirupsen/logrus"
 )
+
+func syncPolicy(conn db.Conn) {
+	loopLog := util.NewEventTimer("Minion-Update")
+	for range conn.Trigger(db.MinionTable, db.EtcdTable).C {
+		loopLog.LogStart()
+		txn := conn.Txn(db.ConnectionTable, db.ContainerTable, db.MinionTable,
+			db.EtcdTable, db.PlacementTable, db.ImageTable,
+			db.LoadBalancerTable)
+		txn.Run(func(view db.Database) error {
+			minion := view.MinionSelf()
+			if view.EtcdLeader() {
+				updatePolicy(view, minion.Blueprint)
+			}
+			return nil
+		})
+		loopLog.LogEnd()
+	}
+}
 
 func updatePolicy(view db.Database, bp string) {
 	compiled, err := blueprint.FromJSON(bp)

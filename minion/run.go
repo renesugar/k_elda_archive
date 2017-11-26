@@ -87,6 +87,8 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 	go apiServer.Run(conn, fmt.Sprintf("tcp://0.0.0.0:%d", api.DefaultRemotePort),
 		false, creds)
 
+	go syncPolicy(conn)
+
 	// Vault must be started after the credentials are resolved because it also
 	// makes use of the credentials.
 	if role == db.Master {
@@ -97,24 +99,7 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 	// Don't start scheduling containers until after Vault has booted (i.e.
 	// until after vault.Start has returned). This way, workers never attempt
 	// to access secrets before Vault has started.
-	go scheduler.Run(conn, dk)
-
-	loopLog := util.NewEventTimer("Minion-Update")
-
-	for range conn.Trigger(db.MinionTable, db.EtcdTable).C {
-		loopLog.LogStart()
-		txn := conn.Txn(db.ConnectionTable, db.ContainerTable, db.MinionTable,
-			db.EtcdTable, db.PlacementTable, db.ImageTable,
-			db.LoadBalancerTable)
-		txn.Run(func(view db.Database) error {
-			minion := view.MinionSelf()
-			if view.EtcdLeader() {
-				updatePolicy(view, minion.Blueprint)
-			}
-			return nil
-		})
-		loopLog.LogEnd()
-	}
+	scheduler.Run(conn, dk)
 }
 
 func runProfiler(duration time.Duration) {
