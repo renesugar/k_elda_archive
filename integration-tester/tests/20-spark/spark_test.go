@@ -35,7 +35,7 @@ func TestRunShuffleJob(t *testing.T) {
 	cmd.Stderr = stderrBytes
 
 	stdoutBytes, err := cmd.Output()
-	t.Log(stderrBytes.String())
+	fmt.Println(stderrBytes.String())
 	fmt.Println(string(stdoutBytes))
 	if err != nil {
 		t.Fatalf("Failed to run spark job: %s", err.Error())
