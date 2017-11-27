@@ -186,13 +186,21 @@ func machineScore(left, right interface{}) int {
 		return -1
 	case l.CloudID != "" && r.CloudID != "" && l.CloudID == r.CloudID:
 		return 0
-	case l.FloatingIP != "" && r.FloatingIP != "" && l.FloatingIP == r.FloatingIP:
-		return 1
-	case l.Role != db.None && r.Role != db.None:
-		return 2 // Prefer to match pairs that have a role assigned.
-	default:
-		return 3
 	}
+
+	score := 10
+	// Pairs with matching roles should be prioritized over pairs with matching
+	// floating IPs.
+	if l.Role != db.None && r.Role != db.None {
+		score -= 2
+	}
+
+	// Given that the role matches, pairs with matching floating IPs are valued
+	// more.
+	if l.FloatingIP != "" && r.FloatingIP != "" && l.FloatingIP == r.FloatingIP {
+		score--
+	}
+	return score
 }
 
 func (cld cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
