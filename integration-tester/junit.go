@@ -26,21 +26,20 @@ type TestCase struct {
 	Output      string    `xml:"system-out"`
 }
 
-func newJUnitReport(tests []*testSuite) JUnitReport {
-	report := JUnitReport{NumTests: len(tests)}
-	for _, t := range tests {
-		junitResult := TestCase{
-			Name:        t.name,
-			ClassName:   "tests",
-			Output:      t.output,
-			TimeElapsed: fmt.Sprintf("%f", t.timeElapsed.Seconds()),
-		}
-		if !t.passed {
-			junitResult.Failure = &struct{}{}
-		}
-		report.TestResults = append(report.TestResults, junitResult)
+func newJUnitReport(t testSuite) JUnitReport {
+	junitResult := TestCase{
+		Name:        t.name,
+		ClassName:   "tests",
+		Output:      t.output,
+		TimeElapsed: fmt.Sprintf("%f", t.timeElapsed.Seconds()),
 	}
-	return report
+	if !t.passed {
+		junitResult.Failure = &struct{}{}
+	}
+	return JUnitReport{
+		NumTests:    1,
+		TestResults: []TestCase{junitResult},
+	}
 }
 
 func writeJUnitReport(filename string, report JUnitReport) {

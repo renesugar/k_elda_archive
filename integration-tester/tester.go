@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 
 	"github.com/kelda/kelda/blueprint"
 	cliPath "github.com/kelda/kelda/cli/path"
@@ -51,7 +52,7 @@ func main() {
 
 type tester struct {
 	preserveFailed bool
-	junitOut       string
+	junitOutDir    string
 
 	testSuites  []*testSuite
 	initialized bool
@@ -67,15 +68,25 @@ func newTester(namespace string) (tester, error) {
 		"the root directory containing the integration tests")
 	flag.BoolVar(&t.preserveFailed, "preserve-failed", false,
 		"don't destroy machines on failed tests")
-	flag.StringVar(&t.junitOut, "junitOut", "",
-		"location to write junit report")
+	flag.StringVar(&t.junitOutDir, "junitOut", "",
+		"directory to write junit reports")
 	flag.Parse()
 
 	if *testRoot == "" {
 		return tester{}, errors.New("testRoot is required")
 	}
 
-	err := t.generateTestSuites(*testRoot)
+	if t.junitOutDir == "" {
+		return tester{}, errors.New("junitOut is required")
+	}
+
+	err := afero.Afero{Fs: util.AppFs}.MkdirAll(t.junitOutDir, 0755)
+	if err != nil {
+		return tester{}, fmt.Errorf(
+			"failed to create junit output directory: %s", err)
+	}
+
+	err = t.generateTestSuites(*testRoot)
 	if err != nil {
 		return tester{}, err
 	}
@@ -116,10 +127,13 @@ func (t *tester) generateTestSuites(testRoot string) error {
 				test = path
 			}
 		}
+
+		name := filepath.Base(testSuiteFolder)
 		newSuite := testSuite{
-			name:      filepath.Base(testSuiteFolder),
-			blueprint: "./" + blueprint,
-			test:      test,
+			name:         name,
+			blueprint:    "./" + blueprint,
+			test:         test,
+			junitOutFile: filepath.Join(t.junitOutDir, name+".xml"),
 		}
 		t.testSuites = append(t.testSuites, &newSuite)
 	}
@@ -129,14 +143,9 @@ func (t *tester) generateTestSuites(testRoot string) error {
 
 func (t tester) run() error {
 	defer func() {
-		junitReport := newJUnitReport(t.testSuites)
-		if t.junitOut != "" {
-			writeJUnitReport(t.junitOut, junitReport)
-		}
-
 		failed := false
-		for _, result := range junitReport.TestResults {
-			if result.Failure != nil {
+		for _, result := range t.testSuites {
+			if !result.passed {
 				failed = true
 				break
 			}
@@ -220,6 +229,9 @@ type testSuite struct {
 	output      string
 	passed      bool
 	timeElapsed time.Duration
+
+	// The path to write the JUnit result file.
+	junitOutFile string
 }
 
 func (ts *testSuite) run() error {
@@ -228,6 +240,8 @@ func (ts *testSuite) run() error {
 
 	defer func() {
 		ts.timeElapsed = time.Since(testStart)
+		junitReport := newJUnitReport(*ts)
+		writeJUnitReport(ts.junitOutFile, junitReport)
 	}()
 	defer func() {
 		logsPath := filepath.Join(os.Getenv("WORKSPACE"), ts.name+"_debug_logs")
