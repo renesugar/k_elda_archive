@@ -129,7 +129,13 @@ func (cld cloud) syncDBWithBlueprint(view db.Database) joinResult {
 		}
 		view.Commit(dbm)
 
-		if bpm.FloatingIP != dbm.FloatingIP {
+		// Only update IPs once the roles are set. This way, we avoid assigning
+		// a floating IP to a machine that is going to connect with the other
+		// role, which will require reassigning the IP. This also prevents the
+		// cloud code from attempting to assign floating IPs while machines are
+		// still booting, which can be a problem for Amazon preemptible
+		// instances.
+		if dbm.Role != db.None && bpm.FloatingIP != dbm.FloatingIP {
 			dbm.FloatingIP = bpm.FloatingIP
 			res.updateIPs = append(res.updateIPs, dbm)
 		}

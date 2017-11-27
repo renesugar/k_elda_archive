@@ -107,6 +107,7 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 		}, {
 			Provider:   string(FakeAmazon),
 			Region:     testRegion,
+			Role:       db.Worker,
 			FloatingIP: "5.6.7.8",
 			Size:       "3",
 		}}
@@ -123,6 +124,7 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 		m.Region = testRegion
 		m.Size = "3"
 		m.PublicIP = "1.2.3.4"
+		m.Role = db.Worker
 		view.Commit(m)
 
 		res := cld.syncDBWithBlueprint(view)
@@ -140,10 +142,68 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 		assert.Equal(t, []db.Machine{{
 			Provider:   FakeAmazon,
 			Region:     testRegion,
+			Role:       db.Worker,
 			Size:       "3",
 			PublicIP:   "1.2.3.4",
 			FloatingIP: "5.6.7.8",
 			Status:     db.Connected}}, scrubID(res.updateIPs))
+
+		return nil
+	})
+}
+
+func TestSyncDBWithBlueprintFloatingIP(t *testing.T) {
+	cld := newTestCloud(FakeAmazon, testRegion, "ns")
+
+	isConnected = func(s string) bool { return false }
+
+	desiredFloatingIP := "floatingIP"
+	cld.conn.Txn(db.BlueprintTable,
+		db.MachineTable).Run(func(view db.Database) error {
+
+		bp := view.InsertBlueprint()
+		bp.Blueprint.Machines = []blueprint.Machine{{
+			Role:     db.Master,
+			Provider: string(FakeAmazon),
+			Region:   testRegion,
+		}, {
+			Role:       db.Worker,
+			Provider:   string(FakeAmazon),
+			Region:     testRegion,
+			FloatingIP: desiredFloatingIP,
+		}}
+		view.Commit(bp)
+
+		// When the machine has not yet connected, don't attempt to update
+		// floating IPs.
+		master := view.InsertMachine()
+		master.Provider = FakeAmazon
+		master.Role = db.Master
+		master.Region = testRegion
+		view.Commit(master)
+
+		worker := view.InsertMachine()
+		worker.Provider = FakeAmazon
+		worker.Region = testRegion
+		view.Commit(worker)
+
+		res := cld.syncDBWithBlueprint(view)
+		assert.Empty(t, res.boot)
+		assert.Empty(t, res.terminate)
+		assert.Empty(t, res.updateIPs)
+
+		// Once the machine has a role, update its floating IP.
+		worker.Role = db.Worker
+		view.Commit(worker)
+		res = cld.syncDBWithBlueprint(view)
+		assert.Subset(t, scrubID(res.updateIPs), []db.Machine{
+			{
+				Provider:   FakeAmazon,
+				Region:     testRegion,
+				Role:       db.Worker,
+				FloatingIP: desiredFloatingIP,
+			},
+		})
 
 		return nil
 	})
