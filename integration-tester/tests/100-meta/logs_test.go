@@ -59,7 +59,7 @@ func checkString(t *testing.T, str string) {
 		// in the log output. For example, as part of logging DNS requests, the
 		// status string NOERROR is printed.
 		if strings.Contains(line, "ERROR [") ||
-			strings.Contains(line, "WARN [") {
+			strings.Contains(line, "WARNING [") {
 			t.Errorf("Minion logs has error: %s", line)
 		}
 
