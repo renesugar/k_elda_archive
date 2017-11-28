@@ -43,7 +43,7 @@ func TestJoin(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestUpdateDBMachines(t *testing.T) {
+func TestSyncDBWithCloud(t *testing.T) {
 	cld := newTestCloud(FakeAmazon, testRegion, "ns")
 	cld.conn.Txn(db.MachineTable).Run(func(view db.Database) error {
 		m := view.InsertMachine()
@@ -71,7 +71,7 @@ func TestUpdateDBMachines(t *testing.T) {
 			Size:     "3",
 		}}
 
-		cld.updateDBMachines(view, cloudMachines)
+		cld.syncDBWithCloud(view, cloudMachines)
 
 		dbms := scrubID(db.SortMachines(view.SelectFromMachine(nil)))
 		assert.Equal(t, []db.Machine{{

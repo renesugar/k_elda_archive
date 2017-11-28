@@ -52,7 +52,7 @@ func joinImpl(cld cloud) (joinResult, error) {
 			return err
 		}
 
-		cld.updateDBMachines(view, machines)
+		cld.syncDBWithCloud(view, machines)
 		res = cld.planUpdates(view)
 
 		// Regions with no machines in them should have their ACLs cleared.
@@ -67,7 +67,9 @@ func joinImpl(cld cloud) (joinResult, error) {
 	return res, err
 }
 
-func (cld cloud) updateDBMachines(view db.Database, cloudMachines []db.Machine) {
+// syncDBWithCloud updates the machines in the database, based on the ground truth
+// from the cloud provider about which machines are running.
+func (cld cloud) syncDBWithCloud(view db.Database, cloudMachines []db.Machine) {
 	dbms := cld.selectMachines(view)
 
 	pairs, dbmis, cmis := join.Join(dbms, cloudMachines, machineScore)
