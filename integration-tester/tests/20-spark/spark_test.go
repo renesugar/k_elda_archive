@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kelda/kelda/api/client"
 	testerUtil "github.com/kelda/kelda/integration-tester/util"
 )
 
@@ -60,6 +61,8 @@ func TestRunShuffleJob(t *testing.T) {
 			"in local mode")
 	}
 
+	outputWorkerLogs(t, clnt)
+
 	outputAsStr := strings.Trim(string(stdoutBytes), " \n\t")
 	outputAsNum, err := strconv.Atoi(outputAsStr)
 	if err != nil {
@@ -75,5 +78,57 @@ func TestRunShuffleJob(t *testing.T) {
 	if outputAsNum < minOutput || outputAsNum > maxOutput {
 		t.Fatalf("Spark shuffle job result (%d) was not in the expected range",
 			outputAsNum)
+	}
+}
+
+// outputWorkerLogs prints the logs from all of the workers (Spark logs this output in a
+// special file, so it's not automatically included in the logs that Jenkins saves after
+// running each test).
+func outputWorkerLogs(t *testing.T, clnt client.Client) {
+	containers, err := clnt.QueryContainers()
+	if err != nil {
+		t.Fatalf("Failed to query containers: %s", err.Error())
+	}
+
+	failedToGetLogs := false
+	for _, container := range containers {
+		if !strings.Contains(container.Hostname, "spark-worker") {
+			continue
+		}
+		// Get the most recent Spark application that ran (this handles the case
+		// where a user runs the integration tests multiple times, using the
+		// same set of containers).
+		cmd := exec.Command("kelda", "ssh", container.Hostname,
+			"ls", "-t", "spark/work")
+		outAndErrBytes, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Errorf("Failed to list logs in spark/work on %s: %s\n%s",
+				container.Hostname, outAndErrBytes, err)
+			failedToGetLogs = true
+			continue
+		}
+		appName := strings.Split(
+			strings.Trim(string(outAndErrBytes), " \n\t"),
+			"\n")[0]
+		// Print the logs for all executors for the application (there may be
+		// multiple if some failed and the driver re-started them). This command
+		// needs to use bash because the default shell doesn't evaluate the
+		// wildcard correctly.
+		catCmd := fmt.Sprintf(`bash -c "cat spark/work/%s/*/stderr"`, appName)
+		cmd = exec.Command("kelda", "ssh", container.Hostname, catCmd)
+		outAndErrBytes, err = cmd.CombinedOutput()
+		if err != nil {
+			t.Errorf("Failed to get worker logs on %s: %s\n%s",
+				container.Hostname, outAndErrBytes, err.Error())
+			failedToGetLogs = true
+			continue
+		}
+		fmt.Printf("Spark log output for worker %s:\n%s\n", container.Hostname,
+			outAndErrBytes)
+	}
+
+	if failedToGetLogs {
+		t.Fatalf("Failed to get logs from one or more workers (see errors " +
+			"above).")
 	}
 }
