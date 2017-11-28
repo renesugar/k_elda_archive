@@ -57,7 +57,7 @@ func test(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 		go func(c db.Container) {
 			defer wg.Done()
 
-			out, err := sshUtil.SSH(c, "wget", "-T", "2", "-O", "-", testHost)
+			out, err := sshUtil.SSH(c, "wget", "-T", "10", "-O", "-", testHost)
 			errored := err != nil
 
 			var errMsg string
