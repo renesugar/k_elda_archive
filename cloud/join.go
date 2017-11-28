@@ -53,7 +53,7 @@ func joinImpl(cld cloud) (joinResult, error) {
 		}
 
 		cld.syncDBWithCloud(view, machines)
-		res = cld.planUpdates(view)
+		res = cld.syncDBWithBlueprint(view)
 
 		// Regions with no machines in them should have their ACLs cleared.
 		if len(machines) > 0 {
@@ -95,7 +95,7 @@ func (cld cloud) syncDBWithCloud(view db.Database, cloudMachines []db.Machine) {
 	}
 }
 
-func (cld cloud) planUpdates(view db.Database) joinResult {
+func (cld cloud) syncDBWithBlueprint(view db.Database) joinResult {
 	var res joinResult
 
 	bp, err := view.GetBlueprint()

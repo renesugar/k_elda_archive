@@ -91,7 +91,7 @@ func TestSyncDBWithCloud(t *testing.T) {
 	})
 }
 
-func TestPlanUpdates(t *testing.T) {
+func TestSyncDBWithBlueprint(t *testing.T) {
 	cld := newTestCloud(FakeAmazon, testRegion, "ns")
 
 	isConnected = func(s string) bool { return true }
@@ -125,7 +125,7 @@ func TestPlanUpdates(t *testing.T) {
 		m.PublicIP = "1.2.3.4"
 		view.Commit(m)
 
-		res := cld.planUpdates(view)
+		res := cld.syncDBWithBlueprint(view)
 		assert.Equal(t, []db.Machine{{
 			Provider: FakeAmazon,
 			Region:   testRegion,
@@ -295,7 +295,7 @@ func TestDesiredACLs(t *testing.T) {
 	assert.Equal(t, exp, acls)
 }
 
-// Test that planUpdates properly syncs the SSH key information to the database.
+// Test that syncDBWithBlueprint properly syncs the SSH key information to the database.
 func TestJoinSSHKeys(t *testing.T) {
 	cld := newTestCloud(FakeAmazon, testRegion, "ns")
 
@@ -320,7 +320,7 @@ func TestJoinSSHKeys(t *testing.T) {
 		m.SSHKeys = []string{"wrong", "ssh", "keys"}
 		view.Commit(m)
 
-		cld.planUpdates(view)
+		cld.syncDBWithBlueprint(view)
 		assert.Equal(t, expSSHKeys, view.SelectFromMachine(nil)[0].SSHKeys)
 
 		return nil
