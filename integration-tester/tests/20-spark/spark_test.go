@@ -41,6 +41,15 @@ func TestRunShuffleJob(t *testing.T) {
 		t.Fatalf("Failed to run spark job: %s", err.Error())
 	}
 
+	// Check for exceptions (this catches a case where a task failed, but then was
+	// re-run successfully on a different executor).
+	if strings.Contains(stderrBytes.String(), "Exception") ||
+		strings.Contains(stderrBytes.String(), "Lost task") {
+		t.Fatalf("Exception or lost task found in Spark job output; no " +
+			"exceptions or task failures should occur during this test. " +
+			"Run tests with -v to see job output.")
+	}
+
 	// Make sure that the job ran on multiple machines, instead of just on the
 	// master, by checking for log messages that contain "localhost" (which will
 	// be present when the job runs in local mode). This test assumes that INFO-level
