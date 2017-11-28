@@ -145,13 +145,10 @@ func (table *dnsTable) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 	dnsC.Inc("Request")
 	defer w.Close()
 
-	log.Debug("DNS Request: ", req)
-
 	resp := table.genResponse(req)
 	if resp == nil {
 		return
 	}
-	log.Debug("DNS Response: ", resp)
 
 	if err := w.WriteMsg(resp); err != nil {
 		log.WithError(err).Error("Failed to send DNS response")
