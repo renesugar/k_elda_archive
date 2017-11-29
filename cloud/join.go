@@ -72,14 +72,14 @@ func joinImpl(cld cloud) (joinResult, error) {
 func (cld cloud) syncDBWithCloud(view db.Database, cloudMachines []db.Machine) {
 	dbms := cld.selectMachines(view)
 
-	pairs, dbmis, cmis := join.Join(dbms, cloudMachines, machineScore)
+	pairs, extraDBMs, missingCMs := join.Join(dbms, cloudMachines, machineScore)
 
-	for _, cmi := range cmis {
-		pairs = append(pairs, join.Pair{L: view.InsertMachine(), R: cmi})
+	for _, cm := range missingCMs {
+		pairs = append(pairs, join.Pair{L: view.InsertMachine(), R: cm})
 	}
 
-	for _, dbmi := range dbmis {
-		view.Remove(dbmi.(db.Machine))
+	for _, dbm := range extraDBMs {
+		view.Remove(dbm.(db.Machine))
 	}
 
 	for _, pair := range pairs {
@@ -111,7 +111,7 @@ func (cld cloud) syncDBWithBlueprint(view db.Database) joinResult {
 		res.isActive = true
 	}
 
-	pairs, bpmis, dbmis := join.Join(bpms, dbms, machineScore)
+	pairs, missingBPMs, extraDBMs := join.Join(bpms, dbms, machineScore)
 
 	for _, p := range pairs {
 		bpm := p.L.(db.Machine)
@@ -135,16 +135,16 @@ func (cld cloud) syncDBWithBlueprint(view db.Database) joinResult {
 		}
 	}
 
-	for _, dbmi := range dbmis {
-		dbm := dbmi.(db.Machine)
+	for _, extraDBM := range extraDBMs {
+		dbm := extraDBM.(db.Machine)
 		dbm.Status = db.Stopping
 		view.Commit(dbm)
 
 		res.terminate = append(res.terminate, dbm)
 	}
 
-	for _, bpmi := range bpmis {
-		bpm := bpmi.(db.Machine)
+	for _, missingBPM := range missingBPMs {
+		bpm := missingBPM.(db.Machine)
 		dbm := view.InsertMachine()
 		bpm.ID = dbm.ID
 		bpm.Status = db.Booting
