@@ -407,7 +407,7 @@ func mock() {
 		return &ret, nil
 	}
 
-	validRegions = fakeValidRegions
+	ValidRegions = fakeValidRegions
 	db.AllProviders = []db.ProviderName{FakeAmazon, FakeVagrant}
 	getMachineRole = func(cloudID string) db.Role {
 		for _, prvdr := range instantiatedProviders {

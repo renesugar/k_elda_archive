@@ -13,6 +13,7 @@ import (
 	"github.com/kelda/kelda/api/client"
 	"github.com/kelda/kelda/api/pb"
 	"github.com/kelda/kelda/blueprint"
+	"github.com/kelda/kelda/cloud"
 	"github.com/kelda/kelda/connection"
 	"github.com/kelda/kelda/counter"
 	"github.com/kelda/kelda/db"
@@ -225,6 +226,25 @@ func (s server) Deploy(cts context.Context, deployReq *pb.DeployRequest) (
 		if _, err := reference.ParseAnyReference(c.Image.Name); err != nil {
 			return &pb.DeployReply{}, fmt.Errorf("could not parse "+
 				"container image %s: %s", c.Image.Name, err.Error())
+		}
+	}
+
+	// Ensure that the region is valid
+	if len(newBlueprint.Machines) > 0 {
+		// Since the Javascript code ensures that all machines have the same
+		// region and provider, we only need to check the region of the first
+		// machine is valid for its provider.
+		first := newBlueprint.Machines[0]
+		regionValid := false
+		for _, r := range cloud.ValidRegions(db.ProviderName(first.Provider)) {
+			if r == first.Region {
+				regionValid = true
+			}
+		}
+		if !regionValid {
+			return &pb.DeployReply{}, fmt.Errorf("region: %s is "+
+				"not supported for provider: %s", first.Region,
+				first.Provider)
 		}
 	}
 

@@ -194,10 +194,12 @@ func TestDeploy(t *testing.T) {
 	{"Machines":[
 		{"Provider":"Amazon",
 		"Role":"Master",
-		"Size":"m4.large"
+		"Size":"m4.large",
+		"Region":"us-west-1"
 	}, {"Provider":"Amazon",
 		"Role":"Worker",
-		"Size":"m4.large"
+		"Size":"m4.large",
+		"Region":"us-west-1"
 	}]}`
 
 	_, err := s.Deploy(context.Background(),
@@ -215,6 +217,29 @@ func TestDeploy(t *testing.T) {
 	exp, err := blueprint.FromJSON(createMachineDeployment)
 	assert.NoError(t, err)
 	assert.Equal(t, exp, bp.Blueprint)
+}
+
+func TestDeployUnsupportedRegion(t *testing.T) {
+	conn := db.New()
+	s := server{conn: conn, runningOnDaemon: true}
+
+	createMachineDeployment := `
+	{"Machines":[
+		{"Provider":"Amazon",
+		"Role":"Master",
+		"Size":"m4.large",
+		"Region":"FakeRegion"
+	}, {"Provider":"Amazon",
+		"Role":"Worker",
+		"Size":"m4.large",
+		"Region":"FakeRegion"
+	}]}`
+
+	_, err := s.Deploy(context.Background(),
+		&pb.DeployRequest{Deployment: createMachineDeployment})
+
+	assert.EqualError(t, err, "region: FakeRegion is not supported "+
+		"for provider: Amazon")
 }
 
 func TestDeployChangeNamespace(t *testing.T) {

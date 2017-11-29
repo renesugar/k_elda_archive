@@ -83,7 +83,7 @@ func Run(conn db.Conn, adminSSHKey string) {
 
 func startClouds(conn db.Conn, ns string, stop chan struct{}) {
 	for _, p := range db.AllProviders {
-		for _, r := range validRegions(p) {
+		for _, r := range ValidRegions(p) {
 			go func(p db.ProviderName, r string) {
 				cld := cloud{
 					conn:         conn,
@@ -435,5 +435,7 @@ func (cld *cloud) String() string {
 
 // Stored in variables so they may be mocked out
 var newProvider = newProviderImpl
-var validRegions = validRegionsImpl
 var getMachineRole = foreman.GetMachineRole
+
+// ValidRegions returns a list of supported regions for a given cloud provider
+var ValidRegions = validRegionsImpl
