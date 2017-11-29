@@ -37,7 +37,6 @@ func TestOutboundPublic(t *testing.T) {
 }
 
 var testPort = 80
-var testHost = fmt.Sprintf("google.com:%d", testPort)
 
 func test(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 	connections []db.Connection) {
@@ -53,31 +52,33 @@ func test(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 
 	var wg sync.WaitGroup
 	for _, c := range containers {
-		wg.Add(1)
-		go func(c db.Container) {
-			defer wg.Done()
+		for _, host := range []string{"google.com", "wikipedia.org"} {
+			wg.Add(1)
+			go func(c db.Container, host string) {
+				defer wg.Done()
 
-			out, err := sshUtil.SSH(c, "curl", "--connect-timeout", "10",
-				"--verbose", testHost)
-			errored := err != nil
+				out, err := sshUtil.SSH(c, "curl", "--connect-timeout",
+					"10", "--verbose", host)
+				errored := err != nil
 
-			var errMsg string
-			_, shouldPass := connected[c.Hostname]
-			if shouldPass && errored {
-				errMsg = "Fetch failed unexpectedly"
-			} else if !shouldPass && !errored {
-				errMsg = "Fetch succeeded unexpectedly"
-			}
+				var errMsg string
+				_, shouldPass := connected[c.Hostname]
+				if shouldPass && errored {
+					errMsg = "Fetch failed unexpectedly"
+				} else if !shouldPass && !errored {
+					errMsg = "Fetch succeeded unexpectedly"
+				}
 
-			if errMsg != "" {
-				failMsg := fmt.Sprintf("%s: %s\n"+
-					"Error: %s\n"+
-					"Output: %s\n",
-					c.Hostname, errMsg, err, out)
-				fmt.Println(failMsg)
-				t.Error(failMsg)
-			}
-		}(c)
+				if errMsg != "" {
+					failMsg := fmt.Sprintf("%s -> %s: %s\n"+
+						"Error: %s\n"+
+						"Output: %s\n",
+						c.Hostname, host, errMsg, err, out)
+					fmt.Println(failMsg)
+					t.Error(failMsg)
+				}
+			}(c, host)
+		}
 	}
 	wg.Wait()
 }
