@@ -119,7 +119,8 @@ func newMinionImpl(conn db.Conn, cloudID string, stop chan struct{}) {
 		default:
 		}
 
-		currConfig, connected := runOnce(waitForMachinesCutoff, conn, cloudID)
+		var currConfig pb.MinionConfig
+		currConfig, connected = runOnce(waitForMachinesCutoff, conn, cloudID)
 		setMinionStatus(cloudID, currConfig, connected)
 	}
 }
