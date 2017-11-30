@@ -10,6 +10,9 @@ import (
 	"github.com/kelda/kelda/cloud/cfg"
 	"github.com/kelda/kelda/cloud/google/client/mocks"
 	"github.com/kelda/kelda/db"
+
+	"github.com/sirupsen/logrus"
+	logrusTest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	compute "google.golang.org/api/compute/v1"
@@ -66,8 +69,8 @@ func TestList(t *testing.T) {
 func TestListBadNetworkInterface(t *testing.T) {
 	mc, gce := getProvider()
 
-	// Tests that List returns an error when no network interfaces are
-	// configured.
+	// Test that List does not return an error (but it logs a warning) when
+	// there are no IPs configured.
 	mc.On("ListInstances", "zone-1", gce.network).Return(&compute.InstanceList{
 		Items: []*compute.Instance{
 			{
@@ -77,10 +80,21 @@ func TestListBadNetworkInterface(t *testing.T) {
 			},
 		},
 	}, nil)
+	hook := logrusTest.NewGlobal()
 
-	_, err := gce.List()
-	assert.EqualError(t, err, "Google instances are expected to have exactly 1 "+
-		"interface; for instance name-1, found 0")
+	machines, err := gce.List()
+	assert.NoError(t, err)
+	assert.Equal(t, []db.Machine{
+		{
+			Provider: db.Google,
+			Region:   "zone-1",
+			Size:     "type-1",
+			CloudID:  "name-1",
+		},
+	}, machines)
+	assert.Len(t, hook.Entries, 1)
+	assert.Equal(t, hook.Entries[0].Level, logrus.WarnLevel)
+	assert.Equal(t, hook.Entries[0].Message, "Failed to get machine IP")
 }
 
 func TestParseACL(t *testing.T) {

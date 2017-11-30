@@ -102,23 +102,25 @@ func (prvdr *Provider) List() ([]db.Machine, error) {
 		machineSplitURL := strings.Split(instance.MachineType, "/")
 		mtype := machineSplitURL[len(machineSplitURL)-1]
 
+		var publicIP, privateIP, floatingIP string
 		iface, accessConfig, err := getNetworkConfig(instance)
-		if err != nil {
-			return nil, err
-		}
-
-		floatingIP := ""
-		if accessConfig.Name == floatingIPName {
-			floatingIP = accessConfig.NatIP
+		if err == nil {
+			if accessConfig.Name == floatingIPName {
+				floatingIP = accessConfig.NatIP
+			}
+			publicIP = accessConfig.NatIP
+			privateIP = iface.NetworkIP
+		} else {
+			log.WithError(err).Warn("Failed to get machine IP")
 		}
 
 		machines = append(machines, db.Machine{
 			Provider:   db.Google,
 			Region:     prvdr.zone,
 			CloudID:    instance.Name,
-			PublicIP:   accessConfig.NatIP,
+			PublicIP:   publicIP,
 			FloatingIP: floatingIP,
-			PrivateIP:  iface.NetworkIP,
+			PrivateIP:  privateIP,
 			Size:       mtype,
 		})
 	}
