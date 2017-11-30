@@ -29,6 +29,7 @@ func getProvider() (*mocks.Client, Provider) {
 		namespace: "namespace",
 		network:   "network",
 		zone:      "zone-1",
+		region:    "region-1",
 	}
 }
 
@@ -443,5 +444,72 @@ func TestCreateNetwork(t *testing.T) {
 	mc.On("InsertNetwork", &compute.Network{
 		Name: gce.network, IPv4Range: ipv4Range}).Return(nil, nil)
 	assert.NoError(t, gce.createNetwork())
+	mc.AssertExpectations(t)
+}
+
+func TestUpdateFloatingIP(t *testing.T) {
+	mc, gce := getProvider()
+
+	desiredIP := "8.8.8.8"
+	// Test that attempting to assign an IP that is not reserved by the user
+	// throws an error.
+	mc.On("ListFloatingIPs", gce.region).Return(&compute.AddressList{}, nil).Once()
+	err := gce.UpdateFloatingIPs([]db.Machine{{FloatingIP: desiredIP}})
+	assert.EqualError(t, err, "8.8.8.8 is not reserved")
+
+	// Test that attempting to assign an IP that is already assigned throws an
+	// error.
+	mc.On("ListFloatingIPs", gce.region).Return(&compute.AddressList{
+		Items: []*compute.Address{
+			{Address: desiredIP, Status: "ASSIGNED"},
+		},
+	}, nil).Once()
+	err = gce.UpdateFloatingIPs([]db.Machine{{FloatingIP: desiredIP}})
+	assert.EqualError(t, err, "8.8.8.8 is already assigned")
+
+	// Test that an IP in another invalid state throws an error.
+	mc.On("ListFloatingIPs", gce.region).Return(&compute.AddressList{
+		Items: []*compute.Address{
+			{Address: desiredIP, Status: "PENDING"},
+		},
+	}, nil).Once()
+	err = gce.UpdateFloatingIPs([]db.Machine{{FloatingIP: desiredIP}})
+	assert.EqualError(t, err, "8.8.8.8 is not ready to be assigned "+
+		"(current IP status: PENDING)")
+
+	// Test the success case.
+	cloudID := "cloudID"
+	networkIntfName := "eth0"
+	mc.On("ListFloatingIPs", gce.region).Return(&compute.AddressList{
+		Items: []*compute.Address{
+			{Address: desiredIP, Status: "RESERVED"},
+		},
+	}, nil).Once()
+	mc.On("GetInstance", gce.zone, cloudID).Return(&compute.Instance{
+		NetworkInterfaces: []*compute.NetworkInterface{
+			{
+				Name: networkIntfName,
+				AccessConfigs: []*compute.AccessConfig{
+					{Name: ephemeralIPName},
+				},
+			},
+		},
+	}, nil).Once()
+
+	// The old access config should be removed, and an access config for the
+	// new IP should be added.
+	expAccessConfig := &compute.AccessConfig{
+		Name:  floatingIPName,
+		Type:  "ONE_TO_ONE_NAT",
+		NatIP: desiredIP,
+	}
+	mc.On("AddAccessConfig", gce.zone, cloudID, networkIntfName,
+		expAccessConfig).Return(&compute.Operation{Zone: gce.zone}, nil).Once()
+	mc.On("DeleteAccessConfig", gce.zone, cloudID, ephemeralIPName,
+		networkIntfName).Return(&compute.Operation{Zone: gce.zone}, nil).Once()
+
+	err = gce.UpdateFloatingIPs([]db.Machine{
+		{CloudID: cloudID, FloatingIP: desiredIP}})
+	assert.NoError(t, err)
 	mc.AssertExpectations(t)
 }

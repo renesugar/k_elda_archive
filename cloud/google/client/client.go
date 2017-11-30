@@ -28,8 +28,10 @@ type Client interface {
 		accessConfig *compute.AccessConfig) (*compute.Operation, error)
 	DeleteAccessConfig(zone, instance, accessConfig,
 		networkInterface string) (*compute.Operation, error)
+	GetZone(zone string) (*compute.Zone, error)
 	GetZoneOperation(zone, operation string) (*compute.Operation, error)
 	GetGlobalOperation(operation string) (*compute.Operation, error)
+	ListFloatingIPs(region string) (*compute.AddressList, error)
 	ListFirewalls(description string) (*compute.FirewallList, error)
 	InsertFirewall(firewall *compute.Firewall) (*compute.Operation, error)
 	DeleteFirewall(firewall string) (*compute.Operation, error)
@@ -129,6 +131,11 @@ func (ci *client) DeleteAccessConfig(zone, instance, accessConfig,
 		accessConfig, networkInterface).Do()
 }
 
+func (ci *client) GetZone(zone string) (*compute.Zone, error) {
+	c.Inc("Get Zone")
+	return ci.gce.Zones.Get(ci.projID, zone).Do()
+}
+
 func (ci *client) GetZoneOperation(zone, operation string) (
 	*compute.Operation, error) {
 	c.Inc("Get Zone Op")
@@ -139,6 +146,11 @@ func (ci *client) GetGlobalOperation(operation string) (*compute.Operation,
 	error) {
 	c.Inc("Get Global Op")
 	return ci.gce.GlobalOperations.Get(ci.projID, operation).Do()
+}
+
+func (ci *client) ListFloatingIPs(region string) (*compute.AddressList, error) {
+	c.Inc("List Floating IPs")
+	return ci.gce.Addresses.List(ci.projID, region).Do()
 }
 
 func (ci *client) ListFirewalls(description string) (*compute.FirewallList, error) {

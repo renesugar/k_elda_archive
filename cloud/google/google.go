@@ -45,7 +45,13 @@ type Provider struct {
 
 	namespace string // client namespace
 	network   string // gce identifier for the network
-	zone      string // gce boot region
+
+	// Google resources may be in either a region or zone. A zone is a subset
+	// of a region -- for example, us-central1-a is a zone in the us-central1
+	// region. Instances and firewalls are managed at the zone level, while
+	// floating IPs must be listed at the region level.
+	zone   string
+	region string
 }
 
 // New creates a GCE client.
@@ -58,11 +64,23 @@ func New(namespace, zone string) (*Provider, error) {
 		return nil, fmt.Errorf("failed to initialize GCE client: %s", err.Error())
 	}
 
+	zoneMetadata, err := gce.GetZone(zone)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get metadata about zone %s: %s",
+			zone, err)
+	}
+
+	// The region is returned as a URL of the form
+	// https://www.googleapis.com/compute/v1/projects/proj-id/regions/us-east1.
+	regionURLParts := strings.Split(zoneMetadata.Region, "/")
+	region := regionURLParts[len(regionURLParts)-1]
+
 	prvdr := Provider{
 		Client:    gce,
 		namespace: namespace,
 		network:   fmt.Sprintf("kelda-%s-%s", namespace, zone),
 		zone:      zone,
+		region:    region,
 	}
 
 	return &prvdr, nil
@@ -366,7 +384,29 @@ func (prvdr *Provider) planSetACLs(cloudFWs []*compute.Firewall, acls []acl.ACL)
 
 // UpdateFloatingIPs updates IPs of machines by recreating their network interfaces.
 func (prvdr *Provider) UpdateFloatingIPs(machines []db.Machine) error {
+	allIPs, err := prvdr.ListFloatingIPs(prvdr.region)
+	if err != nil {
+		return fmt.Errorf("list ips: %s", err)
+	}
+
+	ipToStatus := map[string]string{}
+	for _, addr := range allIPs.Items {
+		ipToStatus[addr.Address] = addr.Status
+	}
+
 	for _, m := range machines {
+		if m.FloatingIP != "" {
+			if status, ok := ipToStatus[m.FloatingIP]; !ok {
+				return fmt.Errorf("%s is not reserved", m.FloatingIP)
+			} else if status == "ASSIGNED" {
+				return fmt.Errorf("%s is already assigned",
+					m.FloatingIP)
+			} else if status != "RESERVED" {
+				return fmt.Errorf("%s is not ready to be assigned "+
+					"(current IP status: %s)", m.FloatingIP, status)
+			}
+		}
+
 		instance, err := prvdr.GetInstance(prvdr.zone, m.CloudID)
 		if err != nil {
 			return err

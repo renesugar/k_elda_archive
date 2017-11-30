@@ -171,6 +171,29 @@ func (_m *Client) GetInstance(zone string, id string) (*compute.Instance, error)
 	return r0, r1
 }
 
+// GetZone provides a mock function with given fields: zone
+func (_m *Client) GetZone(zone string) (*compute.Zone, error) {
+	ret := _m.Called(zone)
+
+	var r0 *compute.Zone
+	if rf, ok := ret.Get(0).(func(string) *compute.Zone); ok {
+		r0 = rf(zone)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*compute.Zone)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(zone)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetZoneOperation provides a mock function with given fields: zone, operation
 func (_m *Client) GetZoneOperation(zone string, operation string) (*compute.Operation, error) {
 	ret := _m.Called(zone, operation)
@@ -279,6 +302,29 @@ func (_m *Client) ListFirewalls(description string) (*compute.FirewallList, erro
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(description)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListFloatingIPs provides a mock function with given fields: region
+func (_m *Client) ListFloatingIPs(region string) (*compute.AddressList, error) {
+	ret := _m.Called(region)
+
+	var r0 *compute.AddressList
+	if rf, ok := ret.Get(0).(func(string) *compute.AddressList); ok {
+		r0 = rf(region)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*compute.AddressList)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(region)
 	} else {
 		r1 = ret.Error(1)
 	}
