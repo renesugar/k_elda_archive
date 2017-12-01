@@ -93,6 +93,7 @@ func TestSyncDBWithCloud(t *testing.T) {
 
 func TestSyncDBWithBlueprint(t *testing.T) {
 	cld := newTestCloud(FakeAmazon, testRegion, "ns")
+	adminKey = ""
 
 	isConnected = func(s string) bool { return true }
 
@@ -288,37 +289,6 @@ func TestMachineScore(t *testing.T) {
 
 	assert.True(t, machineScore(desired, workerWithBadIP) <
 		machineScore(desired, masterToBeWithCorrectIP))
-}
-
-func TestDesiredMachines(t *testing.T) {
-	cld := newTestCloud(FakeAmazon, testRegion, "ns")
-	adminKey = "bar"
-
-	res := cld.desiredMachines([]blueprint.Machine{{
-		Provider: "Google", // Wrong Provider
-		Region:   "zone-1",
-	}, {
-		Provider: string(FakeAmazon),
-		Region:   testRegion,
-		Role:     "invalid",
-	}, {
-		Provider:    string(FakeAmazon),
-		Region:      testRegion,
-		Size:        "m4.lage",
-		Preemptible: true,
-		FloatingIP:  "1.2.3.4",
-		Role:        db.Worker,
-		SSHKeys:     []string{"foo"},
-	}})
-	assert.Equal(t, []db.Machine{{
-		Provider:    FakeAmazon,
-		Region:      testRegion,
-		Size:        "m4.lage",
-		Preemptible: true,
-		FloatingIP:  "1.2.3.4",
-		Role:        db.Worker,
-		DiskSize:    defaultDiskSize,
-		SSHKeys:     []string{"foo", "bar"}}}, res)
 }
 
 func TestConnectionStatus(t *testing.T) {

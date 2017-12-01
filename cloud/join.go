@@ -203,44 +203,6 @@ func machineScore(left, right interface{}) int {
 	return score
 }
 
-func (cld *cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
-	var dbms []db.Machine
-	for _, bpm := range bpms {
-		region := bpm.Region
-		if bpm.Provider != string(cld.providerName) || region != cld.region {
-			continue
-		}
-
-		role, err := db.ParseRole(bpm.Role)
-		if err != nil {
-			log.WithError(err).Error("Parse error: ", bpm.Role)
-			continue
-		}
-
-		dbm := db.Machine{
-			Region:      region,
-			FloatingIP:  bpm.FloatingIP,
-			Role:        role,
-			Provider:    db.ProviderName(bpm.Provider),
-			Preemptible: bpm.Preemptible,
-			Size:        bpm.Size,
-			DiskSize:    bpm.DiskSize,
-			SSHKeys:     bpm.SSHKeys,
-		}
-
-		if dbm.DiskSize == 0 {
-			dbm.DiskSize = defaultDiskSize
-		}
-
-		if adminKey != "" {
-			dbm.SSHKeys = append(dbm.SSHKeys, adminKey)
-		}
-
-		dbms = append(dbms, dbm)
-	}
-	return dbms
-}
-
 func connectionStatus(m db.Machine) string {
 	// "Connected" takes priority over other statuses.
 	connected := m.PublicIP != "" && isConnected(m.CloudID)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/cloud/acl"
 	"github.com/kelda/kelda/cloud/amazon"
 	"github.com/kelda/kelda/cloud/digitalocean"
@@ -235,6 +236,47 @@ func (cld *cloud) usedByCurrentBlueprint() bool {
 		return true
 	}
 	return len(cld.desiredMachines(bp.Blueprint.Machines)) > 0
+}
+
+// desiredMachines takes a list of all machines specified by a blueprint, and returns
+// a list of database machines that includes only the machines for this cloud's
+// provider and region.
+func (cld *cloud) desiredMachines(bpms []blueprint.Machine) []db.Machine {
+	var dbms []db.Machine
+	for _, bpm := range bpms {
+		region := bpm.Region
+		if bpm.Provider != string(cld.providerName) || region != cld.region {
+			continue
+		}
+
+		role, err := db.ParseRole(bpm.Role)
+		if err != nil {
+			log.WithError(err).Error("Parse error: ", bpm.Role)
+			continue
+		}
+
+		dbm := db.Machine{
+			Region:      region,
+			FloatingIP:  bpm.FloatingIP,
+			Role:        role,
+			Provider:    db.ProviderName(bpm.Provider),
+			Preemptible: bpm.Preemptible,
+			Size:        bpm.Size,
+			DiskSize:    bpm.DiskSize,
+			SSHKeys:     bpm.SSHKeys,
+		}
+
+		if dbm.DiskSize == 0 {
+			dbm.DiskSize = defaultDiskSize
+		}
+
+		if adminKey != "" {
+			dbm.SSHKeys = append(dbm.SSHKeys, adminKey)
+		}
+
+		dbms = append(dbms, dbm)
+	}
+	return dbms
 }
 
 func sanitizeMachines(machines []db.Machine) []db.Machine {
