@@ -384,7 +384,6 @@ describe('Bindings', () => {
       });
       infra = new b.Infrastructure(machine, machine);
       checkMachines([{
-        id: '951009cc72958434e4c3e52dd0425d086dd45311',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
@@ -398,12 +397,10 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(baseMachine.replicate(2), baseMachine);
       checkMachines([
         {
-          id: '25e1b32fea4d5c281d46689df5b0211fd0a60c25',
           role: 'Master',
           provider: 'Amazon',
         },
         {
-          id: 'd1ec9f6a7cacfce089dbf4fcd8f776f1af7e8f6f',
           role: 'Master',
           provider: 'Amazon',
         },
@@ -416,13 +413,11 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(machines[0], machines[1]);
       checkMachines([
         {
-          id: '25e1b32fea4d5c281d46689df5b0211fd0a60c25',
           role: 'Master',
           provider: 'Amazon',
           sshKeys: ['key'],
         },
         {
-          id: '5d0ca19edc4604e7904aa7231b2cb6dabe3cd0dc',
           role: 'Worker',
           provider: 'Amazon',
         },
@@ -435,7 +430,6 @@ describe('Bindings', () => {
 
       infra = new b.Infrastructure(master, machineWithFloatingIP);
       checkMachines([{
-        id: '8dbeae310d16317e7cd195a58848a0b1681eb7ee',
         role: 'Worker',
         provider: 'Amazon',
         floatingIp: 'xxx.xxx.xxx.xxx',
@@ -1011,12 +1005,10 @@ describe('Bindings', () => {
         // The ID is included here because otherwise the containSubset function
         // used in checkMachines will return true, even if there is only one
         // worker and two masters in the actual output.
-        id: 'babdbbfe1ca4a242353e87cdd03ec538af8b64cf',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',
       }, {
-        id: '640dd40d99e4c2c24b1fc16ee327669e9acebc84',
         role: 'Worker',
         provider: 'Amazon',
         region: 'us-west-2',

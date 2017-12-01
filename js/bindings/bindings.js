@@ -95,7 +95,6 @@ class Infrastructure {
    *   Go code.
    */
   toKeldaRepresentation() {
-    setKeldaIDs(this.machines);
     setKeldaIDs(this.containers);
 
     const loadBalancers = [];
