@@ -86,7 +86,14 @@ initialize_minion() {
 	EOF
 }
 
-install_docker() {
+install_docker() (
+	# Fail immediately if any of commands error. If this flag were not set,
+	# every command would have to check whether it failed in order to
+	# propagate the proper exit status to the caller. Note that we set this
+	# within a subshell, so commands outside this function will not cause
+	# the shell to exit on failure.
+	set -e
+
 	# The expected key is documented by Docker here:
 	# https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-using-the-repository
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -102,7 +109,7 @@ install_docker() {
 	apt-get update
 	apt-get install docker-ce=17.09.0~ce-0~ubuntu -y
 	systemctl stop docker.service
-}
+)
 
 setup_user() {
 	user=$1
@@ -129,7 +136,13 @@ export DEBIAN_FRONTEND=noninteractive
 ssh_keys="{{.SSHKeys}}"
 setup_user kelda "$ssh_keys"
 
-install_docker
+# Docker sometimes fails to install because of temporary network issues
+# connecting to the Docker apt server.
+while ! install_docker ; do
+  echo "Docker failed to install. Retrying in 30 seconds."
+  sleep 30
+done
+
 initialize_ovs
 initialize_docker
 initialize_minion
