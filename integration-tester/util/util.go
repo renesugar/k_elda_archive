@@ -1,6 +1,7 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -94,6 +95,20 @@ func WaitForContainers(bp blueprint.Blueprint) error {
 		_, unbooted, _ := join.Join(bp.Containers, curr, key)
 		return len(unbooted) == 0
 	}, 15*time.Second, 10*time.Minute)
+}
+
+// GetCurrentBlueprint returns the blueprint currently deployed by the daemon.
+func GetCurrentBlueprint(c client.Client) (blueprint.Blueprint, error) {
+	bps, err := c.QueryBlueprints()
+	if err != nil {
+		return blueprint.Blueprint{}, err
+	}
+
+	if len(bps) != 1 {
+		return blueprint.Blueprint{}, errors.New(
+			"unexpected number of blueprints")
+	}
+	return bps[0].Blueprint, nil
 }
 
 func tryGet(t *testing.T, ip string) {

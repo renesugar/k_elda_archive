@@ -1,15 +1,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"testing"
 	"time"
 
-	"github.com/kelda/kelda/api/client"
-	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/db"
 	testerUtil "github.com/kelda/kelda/integration-tester/util"
 	"github.com/kelda/kelda/util"
@@ -23,7 +20,7 @@ func TestSwitchNamespace(t *testing.T) {
 	clnt, err := testerUtil.GetDefaultDaemonClient()
 	assert.NoError(t, err)
 
-	initialBlueprint, err := getCurrentBlueprint(clnt)
+	initialBlueprint, err := testerUtil.GetCurrentBlueprint(clnt)
 	assert.NoError(t, err)
 
 	initialContainers, err := clnt.QueryContainers()
@@ -91,17 +88,4 @@ func scrubIDs(dbcs []db.Container) (scrubbed []db.Container) {
 		scrubbed = append(scrubbed, c)
 	}
 	return scrubbed
-}
-
-func getCurrentBlueprint(c client.Client) (blueprint.Blueprint, error) {
-	bps, err := c.QueryBlueprints()
-	if err != nil {
-		return blueprint.Blueprint{}, err
-	}
-
-	if len(bps) != 1 {
-		return blueprint.Blueprint{}, errors.New(
-			"unexpected number of blueprints")
-	}
-	return bps[0].Blueprint, nil
 }
