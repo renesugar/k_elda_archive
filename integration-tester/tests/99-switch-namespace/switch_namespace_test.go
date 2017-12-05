@@ -27,7 +27,7 @@ func TestSwitchNamespace(t *testing.T) {
 	assert.NoError(t, err)
 
 	fmt.Println("Simulating switching namespaces by running `kelda stop`")
-	cmd := exec.Command("kelda", "stop", "random-namespace")
+	cmd := exec.Command("kelda", "stop", "-f", "random-namespace")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	assert.NoError(t, cmd.Run())

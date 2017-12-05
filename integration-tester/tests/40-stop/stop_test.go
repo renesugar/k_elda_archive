@@ -15,7 +15,7 @@ import (
 )
 
 func TestStopContainer(t *testing.T) {
-	if err := exec.Command("kelda", "stop", "-containers").Run(); err != nil {
+	if err := exec.Command("kelda", "stop", "-f", "-containers").Run(); err != nil {
 		t.Fatalf("couldn't run stop command: %s", err.Error())
 	}
 

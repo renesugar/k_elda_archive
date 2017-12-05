@@ -17,7 +17,7 @@ import (
 // stop stops the given namespace, and waits up to 5 minutes for the command to
 // take effect.
 func stop(namespace string) (string, string, error) {
-	cmd := exec.Command("kelda", "stop", namespace)
+	cmd := exec.Command("kelda", "stop", "-f", namespace)
 
 	stdout, stderr, err := execCmd(cmd, "STOP", log.cmdLogger)
 	if err != nil {
