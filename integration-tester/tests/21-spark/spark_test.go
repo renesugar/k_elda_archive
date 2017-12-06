@@ -42,14 +42,7 @@ func TestRunShuffleJob(t *testing.T) {
 		t.Fatalf("Failed to run spark job: %s", err.Error())
 	}
 
-	// Check for exceptions (this catches a case where a task failed, but then was
-	// re-run successfully on a different executor).
-	if strings.Contains(stderrBytes.String(), "Exception") ||
-		strings.Contains(stderrBytes.String(), "Lost task") {
-		t.Fatalf("Exception or lost task found in Spark job output; no " +
-			"exceptions or task failures should occur during this test. " +
-			"Run tests with -v to see job output.")
-	}
+	checkForExceptions(t, stderrBytes.String())
 
 	// Make sure that the job ran on multiple machines, instead of just on the
 	// master, by checking for log messages that contain "localhost" (which will
@@ -78,6 +71,40 @@ func TestRunShuffleJob(t *testing.T) {
 	if outputAsNum < minOutput || outputAsNum > maxOutput {
 		t.Fatalf("Spark shuffle job result (%d) was not in the expected range",
 			outputAsNum)
+	}
+}
+
+func TestReadFromS3(t *testing.T) {
+	clnt, err := testerUtil.GetDefaultDaemonClient()
+	if err != nil {
+		t.Fatalf("couldn't get api client: %s", err.Error())
+	}
+	defer clnt.Close()
+
+	// Run a job that reads a file from S3.
+	cmd := exec.Command("kelda", "ssh", "spark-driver", "run-example",
+		fmt.Sprintf("HdfsTest s3a://kelda-spark-test/sonnets.txt"))
+
+	outBytes, err := cmd.CombinedOutput()
+	fmt.Println(string(outBytes))
+	if err != nil {
+		t.Fatalf("Failed to run Spark job: %s", err.Error())
+	}
+
+	checkForExceptions(t, string(outBytes))
+	outputWorkerLogs(t, clnt)
+}
+
+// checkForExceptions looks for exceptions and errors in the Spark output (this catches
+// a case where a task failed, but then was re-run successfully on a different executor,
+// in which case the Spark job will complete successfully and the tests may pass in
+// spite of a problem that occurred).
+func checkForExceptions(t *testing.T, output string) {
+	if strings.Contains(output, "Exception") ||
+		strings.Contains(output, "Lost task") {
+		t.Fatalf("Exception or lost task found in Spark job output; no " +
+			"exceptions or task failures should occur during this test. " +
+			"Run tests with -v to see job output.")
 	}
 }
 
