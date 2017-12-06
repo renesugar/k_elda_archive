@@ -133,13 +133,14 @@ func (prvdr *Provider) List() ([]db.Machine, error) {
 		}
 
 		machines = append(machines, db.Machine{
-			Provider:   db.Google,
-			Region:     prvdr.zone,
-			CloudID:    instance.Name,
-			PublicIP:   publicIP,
-			FloatingIP: floatingIP,
-			PrivateIP:  privateIP,
-			Size:       mtype,
+			Provider:    db.Google,
+			Region:      prvdr.zone,
+			CloudID:     instance.Name,
+			PublicIP:    publicIP,
+			FloatingIP:  floatingIP,
+			PrivateIP:   privateIP,
+			Size:        mtype,
+			Preemptible: instance.Scheduling.Preemptible,
 		})
 	}
 	return machines, nil
@@ -155,15 +156,12 @@ func (prvdr *Provider) Boot(bootSet []db.Machine) ([]string, error) {
 	errChan := make(chan error)
 
 	for _, m := range bootSet {
-		if m.Preemptible {
-			return nil, errors.New("preemptible vms are not implemented")
-		}
-
 		name := randName()
 		names = append(names, name)
 
 		go func(m db.Machine) {
-			icfg := prvdr.instanceConfig(name, m.Size, cfg.Ubuntu(m, ""))
+			icfg := prvdr.instanceConfig(name, m.Size, cfg.Ubuntu(m, ""),
+				m.Preemptible)
 			_, err := prvdr.InsertInstance(prvdr.zone, icfg)
 			errChan <- err
 		}(m)
@@ -223,7 +221,8 @@ func (prvdr *Provider) operationWait(ops ...*compute.Operation) (err error) {
 	}, 10*time.Second, 3*time.Minute)
 }
 
-func (prvdr Provider) instanceConfig(name, size, cloudConfig string) *compute.Instance {
+func (prvdr Provider) instanceConfig(name, size, cloudConfig string,
+	preemptible bool) *compute.Instance {
 	return &compute.Instance{
 		Name:        name,
 		Description: prvdr.network,
@@ -242,6 +241,9 @@ func (prvdr Provider) instanceConfig(name, size, cloudConfig string) *compute.In
 			}},
 			Network: prvdr.networkURL(),
 		}},
+		Scheduling: &compute.Scheduling{
+			Preemptible: preemptible,
+		},
 		Metadata: &compute.Metadata{
 			Items: []*compute.MetadataItems{{
 				Key:   "startup-script",
