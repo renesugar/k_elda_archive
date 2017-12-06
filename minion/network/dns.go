@@ -203,8 +203,8 @@ func (table *dnsTable) genResponse(req *dns.Msg) *dns.Msg {
 }
 
 func (table *dnsTable) lookupA(name string) []net.IP {
-	dnsC.Inc("Lookup External")
 	if strings.HasSuffix(name, ".q.") {
+		dnsC.Inc("Lookup Internal")
 		table.recordLock.Lock()
 		ip := table.records[name]
 		table.recordLock.Unlock()
@@ -214,6 +214,7 @@ func (table *dnsTable) lookupA(name string) []net.IP {
 		return []net.IP{ip}
 	}
 
+	dnsC.Inc("Lookup External")
 	ipStrs, err := lookupHost(strings.TrimRight(name, "."))
 	if err != nil {
 		log.WithError(err).Debug("Failed to lookup external record: ", name)
