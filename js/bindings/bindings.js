@@ -837,6 +837,10 @@ class Machine {
     for (let i = 0; i < providerDescriptions.length; i += 1) {
       const description = providerDescriptions[i];
 
+      if (description.IgnoredByKelda) {
+        continue;
+      }
+
       const isValid = ram.inRange(description.RAM) &&
         cpu.inRange(description.CPU);
       if (!isValid) {

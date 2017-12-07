@@ -202,6 +202,19 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(machine, machine);
       checkMachines([{
         provider: 'Amazon',
+        // This should choose m3.medium and not t2.micro (because
+        // IgnoredByKelda is set to true for t2.micro).
+        size: 'm3.medium',
+      }]);
+    });
+    it('t2.micro can be used if explicitly specified by user', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        size: 't2.micro',
+      });
+      infra = new b.Infrastructure(machine, machine);
+      checkMachines([{
+        provider: 'Amazon',
         size: 't2.micro',
       }]);
     });
@@ -300,7 +313,6 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(machine, machine);
       checkMachines([{
         provider: 'Amazon',
-        size: 't2.micro',
         region: 'eu-west-1',
       }]);
     });

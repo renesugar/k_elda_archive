@@ -100,8 +100,8 @@ The output looks similar to this:
     ```console
     $ kelda show
     MACHINE    ROLE      PROVIDER    REGION       SIZE        PUBLIC IP    STATUS
-               Master    Amazon      us-west-2    t2.micro                 booting
-               Worker    Amazon      us-west-2    t2.micro                 booting
+               Master    Amazon      us-west-2    m3.medium                booting
+               Worker    Amazon      us-west-2    m3.medium                booting
     ```
 
     `kelda show` might temporarily show an error message starting with
@@ -114,8 +114,8 @@ both containers' `STATUS` are `running`:
     ```console
     $ kelda show
     MACHINE         ROLE      PROVIDER    REGION       SIZE        PUBLIC IP         STATUS
-    i-0e8b292380    Master    Amazon      us-west-2    t2.micro    54.149.231.255    connected
-    i-0fee34512f    Worker    Amazon      us-west-2    t2.micro    54.214.109.175    connected
+    i-0e8b292380    Master    Amazon      us-west-2    m3.medium   54.149.231.255    connected
+    i-0fee34512f    Worker    Amazon      us-west-2    m3.medium   54.214.109.175    connected
 
     CONTAINER       MACHINE         COMMAND                    HOSTNAME     STATUS     CREATED               PUBLIC IP
     703ed73b87ee    i-0fee34512f    keldaio/mongo              mongo        running    About a minute ago

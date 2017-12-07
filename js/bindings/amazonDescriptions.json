@@ -1,7 +1,7 @@
 {
   "Descriptions": [
-    {"Size": "t2.micro", "CPU": 1, "RAM": 1, "Disk": "ebsonly", "Region": "us-east-1", "Price": 0.0116},
-    {"Size": "t2.small", "CPU": 1, "RAM": 2, "Disk": "ebsonly", "Region": "us-east-1", "Price": 0.023},
+    {"Size": "t2.micro", "CPU": 1, "RAM": 1, "Disk": "ebsonly", "Region": "us-east-1", "Price": 0.0116, "IgnoredByKelda": true},
+    {"Size": "t2.small", "CPU": 1, "RAM": 2, "Disk": "ebsonly", "Region": "us-east-1", "Price": 0.023, "IgnoredByKelda": true},
     {"Size": "m4.large", "CPU": 2, "RAM": 8, "Disk": "ebsonly", "Region": "us-east-1", "Price": 0.12},
     {"Size": "m4.xlarge", "CPU": 4, "RAM": 16, "Disk": "ebsonly", "Region": "us-east-1", "Price": 0.239},
     {"Size": "m4.2xlarge", "CPU": 8, "RAM": 32, "Disk": "ebsonly", "Region": "us-east-1", "Price": 0.479},
