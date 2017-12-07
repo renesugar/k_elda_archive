@@ -205,18 +205,6 @@ describe('Bindings', () => {
         size: 't2.micro',
       }]);
     });
-    it('ignores non-preemptible machines when preemptible flag is set', () => {
-      const machine = new b.Machine({
-        provider: 'Amazon',
-        sshKeys: ['key1', 'key2'],
-        preemptible: true,
-      });
-      infra = new b.Infrastructure(machine, machine);
-      checkMachines([{
-        provider: 'Amazon',
-        size: 'm3.medium',
-      }]);
-    });
     it('errors if provided size does not meet RAM or ' +
        'CPU requirements for DigitalOcean instance', () => {
       expect(() => new b.Machine({
@@ -315,16 +303,6 @@ describe('Bindings', () => {
         size: 't2.micro',
         region: 'eu-west-1',
       }]);
-    });
-    it('errors if requested a preemptible instance for a size'
-      + ' that cannot be preempted', () => {
-      expect(() => new b.Machine({
-        provider: 'Amazon',
-        size: 't2.micro',
-        sshKeys: ['key1', 'key2'],
-        preemptible: true,
-      })).to.throw('Requested size t2.micro can not be preemptible.' +
-        ' Please choose a different size or set preemptible to be False.');
     });
     it('errors when passed invalid optional arguments', () => {
       expect(() => new b.Machine({ provider: 'Amazon', badArg: 'foo' })).to

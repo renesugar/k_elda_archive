@@ -12,7 +12,6 @@ let fs = require('fs'); // eslint-disable-line prefer-const
 const googleDescriptions = require('./googleDescriptions');
 const amazonDescriptions = require('./amazonDescriptions');
 const digitalOceanDescriptions = require('./digitalOceanDescriptions');
-const nonPreemptibleSizes = require('./nonPreemptibleSizes');
 
 const providerDefaultRegions = {
   Amazon: 'us-west-1',
@@ -732,21 +731,15 @@ class Machine {
   /**
    * If size is not specified, sets the machine's size attribute to an instance
    * size (e.g., m2.xlarge), based on the Machine's specified provider, region,
-   * and hardware. Throws an error if provider is not valid. Also throws an error if the
-   * user requests a preemptible instance for a size that cannot be preempted.
-   * If size is specified, verifies the size is valid for the given provider and
-   * meets the CPU and RAM requirements.
+   * and hardware. Throws an error if provider is not valid. If size is specified,
+   * verifies the size is valid for the given provider and meets the CPU and RAM
+   * requirements.
    * @private
    * @param {Range} cpu - The desired number of CPUs.
    * @param {Range} ram - The desired amount of RAM in GiB.
    * @returns {void}
    */
   chooseSize(cpu, ram) {
-    if (this.preemptible && this.size !== ''
-        && nonPreemptibleSizes[this.provider].includes(this.size)) {
-      throw new Error(`Requested size ${this.size} can not be preemptible.` +
-        ' Please choose a different size or set preemptible to be False.');
-    }
     if (this.provider === 'Vagrant') {
       this.vagrantSize(cpu, ram);
       return;
@@ -829,9 +822,8 @@ class Machine {
 
   /**
    * Iterates through all the decriptions for a given provider, and returns
-   * the cheapest option that fits the user's requirements. Ignores non-preemptible
-   * sizes if preemptible flag is set. Throws an error if given machine requirements
-   * cannot be satisfied by any size.
+   * the cheapest option that fits the user's requirements. Throws an error if given
+   * machine requirements cannot be satisfied by any size.
    * @private
    * @param {description[]} providerDescriptions - Array of descriptions of
    *   a provider.
@@ -844,14 +836,6 @@ class Machine {
     let bestMachine;
     for (let i = 0; i < providerDescriptions.length; i += 1) {
       const description = providerDescriptions[i];
-
-      let nonPreemptible = false;
-      if (nonPreemptibleSizes[this.provider] !== undefined) {
-        nonPreemptible = nonPreemptibleSizes[this.provider].includes(description.Size);
-      }
-      if (this.preemptible && nonPreemptible) {
-        continue;
-      }
 
       const isValid = ram.inRange(description.RAM) &&
         cpu.inRange(description.CPU);
