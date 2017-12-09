@@ -60,6 +60,7 @@ var (
 	// A list of commands to run on the daemon. These must be formatted with
 	// the host address of the daemon. They will be prepended with 'kelda'.
 	daemonCmds = []logCmd{
+		{"counters", "counters -H=%s -all"},
 		{"ps", "ps -H=%s"},
 		{"version", "version -H=%s"},
 	}
