@@ -3,7 +3,6 @@ package command
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"testing"
 
 	"github.com/kelda/kelda/api/client/mocks"
@@ -94,7 +93,6 @@ func TestPrintCounters(t *testing.T) {
 
 	var b bytes.Buffer
 	printCounters(&b, counters)
-	fmt.Println(b.String())
 	assert.Equal(t, `COUNTER                  VALUE  DELTA
                                 
 PkgA                              
