@@ -52,7 +52,7 @@ func (cmd *Counters) Parse(args []string) error {
 	return nil
 }
 
-// Run retrieves and prints all machines and containers.
+// Run fetches and prints the desired counters.
 func (cmd *Counters) Run() int {
 	var errorCount int
 	for i, target := range cmd.targets {
