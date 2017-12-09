@@ -31,13 +31,16 @@ func TestParse(t *testing.T) {
 	assert.Error(t, counters.Parse(nil), "")
 
 	assert.NoError(t, counters.Parse([]string{"host"}))
-	assert.Equal(t, "host", counters.target)
+	assert.Equal(t, []string{"host"}, counters.targets)
+
+	assert.NoError(t, counters.Parse([]string{"host1", "host2"}))
+	assert.Equal(t, []string{"host1", "host2"}, counters.targets)
 }
 
 func TestRunQueryDaemon(t *testing.T) {
 	t.Parallel()
 
-	counters := &Counters{target: daemonTarget}
+	counters := &Counters{targets: []string{daemonTarget}}
 	mock := new(mocks.Client)
 	counters.client = mock
 
@@ -51,7 +54,7 @@ func TestRunQueryDaemon(t *testing.T) {
 func TestRunQueryMinion(t *testing.T) {
 	t.Parallel()
 
-	counters := &Counters{target: "minion"}
+	counters := &Counters{targets: []string{"minion"}}
 	mock := new(mocks.Client)
 	counters.client = mock
 
@@ -92,8 +95,9 @@ func TestPrintCounters(t *testing.T) {
 		PrevValue: 0}}
 
 	var b bytes.Buffer
-	printCounters(&b, counters)
-	assert.Equal(t, `COUNTER                  VALUE  DELTA
+	printCounters(&b, "daemon", counters)
+	assert.Equal(t, `daemon
+COUNTER                  VALUE  DELTA
                                 
 PkgA                              
     NameA                100    44

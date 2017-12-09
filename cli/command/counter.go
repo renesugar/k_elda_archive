@@ -14,20 +14,23 @@ import (
 	apiUtil "github.com/kelda/kelda/api/util"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/util"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const daemonTarget = "daemon"
 
-var counterCommands = "kelda counters [OPTIONS] TARGET"
+var counterCommands = "kelda counters [OPTIONS] TARGETS"
 var counterExplanation = fmt.Sprintf(`Display internal counters tracked for
-debugging purposes.  Most users will not need this command.
+developer debugging purposes.  Most users will not need this command.
 
-TARGET should be %q to retrieve the counters for the daemon. To retrieve the
-counters for a machine, use the machine's ID as TARGET.`, daemonTarget)
+TARGETS specifies the targets that counters should be fetched from, and can be
+a machine's ID or %q for the daemon (the command fetches all counters tracked
+on the given target).`, daemonTarget)
 
 // Counters implements the `kelda counters` command.
 type Counters struct {
-	target string
+	targets []string
 
 	connectionHelper
 }
@@ -42,30 +45,31 @@ func (cmd *Counters) InstallFlags(flags *flag.FlagSet) {
 
 // Parse parses the command line arguments for the counters command.
 func (cmd *Counters) Parse(args []string) error {
-	if len(args) == 0 {
+	cmd.targets = args
+	if len(cmd.targets) == 0 {
 		return errors.New("must specify a target")
 	}
-	cmd.target = args[0]
 	return nil
 }
 
 // Run retrieves and prints all machines and containers.
 func (cmd *Counters) Run() int {
-	if err := cmd.run(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		return 1
-	}
-	return 0
-}
+	var errorCount int
+	for i, target := range cmd.targets {
+		counters, err := queryCounters(cmd.client, target)
+		if err != nil {
+			log.WithError(err).WithField("target", target).
+				Warn("Failed to query counters")
+			errorCount++
+			continue
+		}
 
-func (cmd *Counters) run() error {
-	counters, err := queryCounters(cmd.client, cmd.target)
-	if err != nil {
-		return fmt.Errorf("error querying debug counters: %s", err)
+		if i != 0 {
+			fmt.Println()
+		}
+		printCounters(os.Stdout, target, counters)
 	}
-
-	printCounters(os.Stdout, counters)
-	return nil
+	return errorCount
 }
 
 func queryCounters(c client.Client, tgt string) ([]pb.Counter, error) {
@@ -85,10 +89,11 @@ func queryCounters(c client.Client, tgt string) ([]pb.Counter, error) {
 	return c.QueryMinionCounters(ip)
 }
 
-func printCounters(out io.Writer, counters []pb.Counter) {
+func printCounters(out io.Writer, target string, counters []pb.Counter) {
 	w := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	defer w.Flush()
 
+	fmt.Fprintln(w, target)
 	fmt.Fprintf(w, "COUNTER\tVALUE\tDELTA\n\t\t\n")
 
 	byPkg := map[string][]pb.Counter{}
