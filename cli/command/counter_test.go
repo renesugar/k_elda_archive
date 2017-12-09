@@ -75,6 +75,41 @@ func TestRunQueryMinion(t *testing.T) {
 	assert.Zero(t, counters.Run())
 }
 
+// Test that when the all flag is true, the daemon and all minion counters are
+// queried.
+func TestRunQueryAll(t *testing.T) {
+	t.Parallel()
+
+	counters := &Counters{
+		all: true,
+
+		// When all is true, the command line arguments are ignored.
+		targets: []string{"ignoreme"},
+	}
+	mock := new(mocks.Client)
+	counters.client = mock
+
+	// Needed by the implementation of util.FuzzyLookup.
+	mock.On("QueryContainers").Return(nil, nil)
+
+	pubIP := "pubIP"
+	mock.On("QueryMachines").Return([]db.Machine{
+		{CloudID: "minion", PublicIP: pubIP},
+	}, nil)
+
+	// Even if the daemon counter query fails, the minion should still be queried.
+	mock.On("QueryCounters").Return(nil, assert.AnError).Once()
+	mock.On("QueryMinionCounters", pubIP).Return(nil, nil)
+
+	// The exit code should be 1 because the daemon counter query failed.
+	assert.Equal(t, 1, counters.Run())
+	mock.AssertExpectations(t)
+
+	// Now that the daemon counter query succeeds, the exit should be zero.
+	mock.On("QueryCounters").Return(nil, nil).Once()
+	assert.Zero(t, counters.Run())
+}
+
 func TestPrintCounters(t *testing.T) {
 	t.Parallel()
 

@@ -31,6 +31,7 @@ on the given target).`, daemonTarget)
 // Counters implements the `kelda counters` command.
 type Counters struct {
 	targets []string
+	all     bool
 
 	connectionHelper
 }
@@ -38,6 +39,8 @@ type Counters struct {
 // InstallFlags sets up parsing for command line flags.
 func (cmd *Counters) InstallFlags(flags *flag.FlagSet) {
 	cmd.connectionHelper.InstallFlags(flags)
+	flags.BoolVar(&cmd.all, "all", false,
+		"whether to fetch counters from all sources")
 	flags.Usage = func() {
 		util.PrintUsageString(counterCommands, counterExplanation, flags)
 	}
@@ -46,7 +49,7 @@ func (cmd *Counters) InstallFlags(flags *flag.FlagSet) {
 // Parse parses the command line arguments for the counters command.
 func (cmd *Counters) Parse(args []string) error {
 	cmd.targets = args
-	if len(cmd.targets) == 0 {
+	if len(cmd.targets) == 0 && !cmd.all {
 		return errors.New("must specify a target")
 	}
 	return nil
@@ -54,8 +57,22 @@ func (cmd *Counters) Parse(args []string) error {
 
 // Run fetches and prints the desired counters.
 func (cmd *Counters) Run() int {
+	targets := cmd.targets
+	if cmd.all {
+		targets = []string{daemonTarget}
+		machines, err := cmd.client.QueryMachines()
+		if err == nil {
+			for _, m := range machines {
+				targets = append(targets, m.CloudID)
+			}
+		} else {
+			log.WithError(err).Warn("Failed to query machines. " +
+				"Only retrieving daemon counters.")
+		}
+	}
+
 	var errorCount int
-	for i, target := range cmd.targets {
+	for i, target := range targets {
 		counters, err := queryCounters(cmd.client, target)
 		if err != nil {
 			log.WithError(err).WithField("target", target).
