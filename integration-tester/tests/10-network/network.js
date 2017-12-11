@@ -29,10 +29,6 @@ kelda.allow(blueContainers, redContainers, 80);
 kelda.allow(redContainers, yellowContainers, 80);
 kelda.allow(blueContainers, yellowContainers, 80);
 
-const redLB = new kelda.LoadBalancer('red-lb', redContainers);
-redLB.allowFrom(blueContainers, 80);
-
 redContainers.forEach(container => container.deploy(infra));
 yellowContainers.forEach(container => container.deploy(infra));
 blueContainers.forEach(container => container.deploy(infra));
-redLB.deploy(infra);
