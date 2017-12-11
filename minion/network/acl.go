@@ -117,12 +117,16 @@ func syncAddressSets(ovsdbClient ovsdb.Client, expSets []ovsdb.AddressSet) {
 		toCreate = append(toCreate, set.(ovsdb.AddressSet))
 	}
 
-	if err := ovsdbClient.DeleteAddressSets(toDelete); err != nil {
-		log.WithError(err).Warn("Error deleting address set")
+	if len(toDelete) > 0 {
+		if err := ovsdbClient.DeleteAddressSets(toDelete); err != nil {
+			log.WithError(err).Warn("Error deleting address set")
+		}
 	}
 
-	if err := ovsdbClient.CreateAddressSets(toCreate); err != nil {
-		log.WithError(err).Warn("Error adding address set")
+	if len(toCreate) > 0 {
+		if err := ovsdbClient.CreateAddressSets(toCreate); err != nil {
+			log.WithError(err).Warn("Error adding address set")
+		}
 	}
 }
 
@@ -202,12 +206,16 @@ func syncACLs(ovsdbClient ovsdb.Client, connections []connection) {
 		toCreate = append(toCreate, acl.(ovsdb.ACL).Core)
 	}
 
-	if err := ovsdbClient.DeleteACLs(lSwitch, toDelete); err != nil {
-		log.WithError(err).Warn("Error deleting ACL")
+	if len(toDelete) > 0 {
+		if err := ovsdbClient.DeleteACLs(lSwitch, toDelete); err != nil {
+			log.WithError(err).Warn("Error deleting ACL")
+		}
 	}
 
-	if err := ovsdbClient.CreateACLs(lSwitch, toCreate); err != nil {
-		log.WithError(err).Warn("Error adding ACLs")
+	if len(toCreate) > 0 {
+		if err := ovsdbClient.CreateACLs(lSwitch, toCreate); err != nil {
+			log.WithError(err).Warn("Error adding ACLs")
+		}
 	}
 }
 
