@@ -63,7 +63,7 @@ before_deploy:
     # Setup the NPM auth token so that we can publish during deploy.
     - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
     # Log in to Docker so that we can push the minion image.
-    - docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+    - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 
 deploy:
     - provider: script
