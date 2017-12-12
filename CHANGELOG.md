@@ -4,6 +4,9 @@ Kelda Change Log
 Up Next
 -------------
 
+Release 0.7.0
+-------------
+
 - Properly set the container's hostname. Before, a container querying its own
 hostname would get its Docker ID, which is meaningless in the Kelda network.
 - Only allow a single base infrastructure. We had no good use case for having
