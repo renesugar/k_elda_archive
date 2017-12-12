@@ -8,6 +8,7 @@ Up Next
 hostname would get its Docker ID, which is meaningless in the Kelda network.
 - Only allow a single base infrastructure. We had no good use case for having
 multiple base infrastructures, and the feature added unnecessary complexity.
+- Allow blueprints to accept command line arguments.
 - Allow configuring the Kelda daemon host socket with the `KELDA_HOST`
 environment variable. While using the default socket is sufficient for most
 scenarios, using a non-default socket path is useful for connecting to a remote
