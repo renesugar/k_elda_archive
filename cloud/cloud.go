@@ -103,13 +103,10 @@ func (cld *cloud) run(stop <-chan struct{}) {
 	// Note that we need to be fairly conservative about running due to request
 	// limits enforced by the cloud providers.  On unused regions we run very rarely
 	// as a result.
-	fast := time.NewTicker(5 * time.Second)
-	slow := time.NewTicker(2 * time.Minute)
+	fast := cld.conn.TriggerTick(5, db.BlueprintTable, db.MachineTable)
+	slow := cld.conn.TriggerTick(5*60, db.BlueprintTable)
 	defer fast.Stop()
 	defer slow.Stop()
-
-	trigger := cld.conn.Trigger(db.BlueprintTable, db.MachineTable)
-	defer trigger.Stop()
 
 	// This loop executes runOnce() whenever the database triggers, or a tick fires.
 	// We choose a fast tick in those regions that have machines, and a slow tick in
@@ -121,16 +118,8 @@ func (cld *cloud) run(stop <-chan struct{}) {
 			tick = fast.C
 		}
 
-		// If we switched tickers, there may be a stale tick to drain.  If
-		// there's no tick, fall through immediately.
-		select {
-		case <-tick:
-		default:
-		}
-
 		select {
 		case <-stop:
-		case <-trigger.C:
 		case <-tick:
 		}
 
