@@ -103,8 +103,10 @@ This is just a small sample of the Kelda CLI. [Check out more handy commands](ht
 
 * Get started with [our **tutorial**](http://docs.kelda.io/#quick-start)
 * Check out [our **docs**](http://docs.kelda.io/)
-* [**Contribute** to the project](http://docs.kelda.io/#developing-kelda)
+* [**Contribute** to the project](http://docs.kelda.io/#developing-kelda). The
+[issues page](https://github.com/kelda/kelda/issues) has some great issues to
+get started with.
 * Learn more on our [**website**](http://kelda.io)
-* [**Get in touch!**](http://kelda.io/#contact)
+* [**Join our Slack!**](http://slack.kelda.io)
 
 We would love to hear if you have any questions, suggestions, or other comments!
