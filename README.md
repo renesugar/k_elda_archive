@@ -5,6 +5,9 @@
 # Kelda
 _Formerly known as Quilt._
 
+Dead simple containers in the cloud.
+
+## Why Kelda?
 Deploying applications to the cloud can be painful. Booting virtual machines, configuring
 networks, and setting up databases, requires massive amounts of specialized knowledge —
 knowledge that’s scattered across documentation, blog posts, tutorials, and source code.
