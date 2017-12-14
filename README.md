@@ -37,6 +37,10 @@ $ npm install -g @kelda/install
 ```
 Check out more in our [Quick Start tutorial](http://docs.kelda.io/#quick-start).
 
+## Example
+For a great example of how Kelda simplifies running complex applications, see
+[how easy it is to run and manage Spark clusters with Kelda](https://github.com/kelda/spark).
+
 ## API
 
 Run any container.
