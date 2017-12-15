@@ -6,6 +6,7 @@
     "@kelda/django": "kelda/django#7fc1b59",
     "@kelda/elasticsearch": "kelda/elasticsearch",
     "@kelda/etcd": "kelda/etcd",
+    "@kelda/hadoop": "kelda/hadoop",
     "@kelda/haproxy": "kelda/haproxy",
     "@kelda/lobsters": "kelda/lobsters",
     "@kelda/mongo": "kelda/mongo",
