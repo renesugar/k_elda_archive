@@ -1027,7 +1027,7 @@ class Container {
    *   boot, or a string with the name of a Docker image (that exists in
    *   Docker Hub) that the container should boot.
    * @param {Object} [opts] - Additional, named, optional arguments.
-   * @param {string} [opts.command] - The command to use when starting
+   * @param {string[]} [opts.command] - The command to use when starting
    *   the container.
    * @param {Object.<string, string|Secret|RuntimeValue>} [opts.env] -
    *   Environment variables to set in the booted container. The key is the name
