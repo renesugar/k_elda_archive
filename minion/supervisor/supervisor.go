@@ -21,7 +21,7 @@ const ovsImage = "keldaio/ovs"
 const tunnelingProtocol = "stt"
 
 var imageMap = map[string]string{
-	images.Etcd:          "quay.io/coreos/etcd:v3.2.11",
+	images.Etcd:          "quay.io/coreos/etcd:v3.3",
 	images.Ovncontroller: ovsImage,
 	images.Ovnnorthd:     ovsImage,
 	images.Ovsdb:         ovsImage,
