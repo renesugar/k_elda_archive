@@ -15,6 +15,7 @@
     "kelda": "../js/bindings",
     "@kelda/redis": "kelda/redis",
     "@kelda/spark": "kelda/spark",
-    "@kelda/zookeeper": "kelda/zookeeper"
+    "@kelda/zookeeper": "kelda/zookeeper",
+    "@kelda/haproxy_auto_https": "kelda/haproxy_auto_https"
   }
 }
