@@ -203,6 +203,7 @@ func (table *dnsTable) genResponse(req *dns.Msg) *dns.Msg {
 }
 
 func (table *dnsTable) lookupA(name string) []net.IP {
+	name = strings.ToLower(name)
 	if strings.HasSuffix(name, ".q.") {
 		dnsC.Inc("Lookup Internal")
 		table.recordLock.Lock()
@@ -246,6 +247,7 @@ func hostnamesToDNS(hostnames []db.Hostname) map[string]net.IP {
 	records := map[string]net.IP{}
 	for _, hn := range hostnames {
 		if ip := net.ParseIP(hn.IP); ip != nil {
+			hn.Hostname = strings.ToLower(hn.Hostname)
 			records[hn.Hostname+".q."] = ip
 		}
 	}

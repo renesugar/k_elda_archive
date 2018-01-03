@@ -87,6 +87,7 @@ func TestLookupA(t *testing.T) {
 
 	assert.Empty(t, table.lookupA("bad.q."))
 	assert.Equal(t, []net.IP{net.IPv4(1, 2, 3, 4)}, table.lookupA("a.q."))
+	assert.Equal(t, []net.IP{net.IPv4(1, 2, 3, 4)}, table.lookupA("A.Q."))
 
 	lookupHost = func(string) ([]string, error) { return nil, assert.AnError }
 	assert.Empty(t, table.lookupA("kelda.io."))
