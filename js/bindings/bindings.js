@@ -421,6 +421,9 @@ class LoadBalancer {
    */
   allowFrom(srcArg, portRange) {
     let src;
+    if (portRange === undefined || portRange === null) {
+      throw new Error('a port or port range is required');
+    }
     try {
       src = boxObjects(srcArg, Container);
     } catch (err) {
@@ -473,6 +476,11 @@ publicInternet = {
    */
   allowFrom(srcArg, portRange) {
     let src;
+
+    if (portRange === undefined || portRange === null) {
+      throw new Error('a port or port range is required');
+    }
+
     try {
       src = boxObjects(srcArg, Container);
     } catch (err) {
@@ -1236,6 +1244,9 @@ class Container {
    * @returns {void}
    */
   allowFrom(srcArg, portRange) {
+    if (portRange === undefined || portRange === null) {
+      throw new Error('a port or port range is required');
+    }
     if (srcArg === publicInternet) {
       this.allowFromPublic(portRange);
       return;

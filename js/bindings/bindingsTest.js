@@ -777,6 +777,15 @@ describe('Bindings', () => {
         maxPort: 85,
       }]);
     });
+    it('connect to undefined port range', () => {
+      expect(() => foo.allowFrom(bar)).to
+        .throw('a port or port range is required');
+    });
+    it('allow connections to undefined port range on publicInternet', () => {
+      expect(() =>
+        b.publicInternet.allowFrom(foo)).to
+        .throw('a port or port range is required');
+    });
     it('connect to invalid port range', () => {
       expect(() => foo.allowFrom(bar, true)).to
         .throw('Input argument must be a number or a Range');
