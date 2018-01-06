@@ -178,9 +178,7 @@ var staticFlows = []string{
 	"table=3,priority=900,arp,actions=output:LOCAL",
 }
 
-// ReplaceFlows adds flows associated with the provided containers, and removes all
-// other flows.
-func ReplaceFlows(containers []Container) error {
+func replaceFlows(containers []Container) error {
 	c.Inc("Replace Flows")
 	ofports, err := openflowPorts()
 	if err != nil {

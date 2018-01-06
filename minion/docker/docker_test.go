@@ -125,21 +125,20 @@ func TestCreateGet(t *testing.T) {
 	env := []string{"envA=B"}
 	labels := map[string]string{"label": "foo"}
 	id, err := dk.create("name", "image", "hostname", args, labels, env, nil,
-		&dkc.HostConfig{Privileged: true}, nil)
+		nil, nil)
 	assert.Nil(t, err)
 
 	container, err := dk.Get(id)
 	assert.Nil(t, err)
 
 	expContainer := Container{
-		Name:       "name",
-		ID:         id,
-		Image:      "image",
-		Args:       args,
-		Env:        map[string]string{"envA": "B"},
-		Labels:     labels,
-		Hostname:   "hostname",
-		Privileged: true,
+		Name:     "name",
+		ID:       id,
+		Image:    "image",
+		Args:     args,
+		Env:      map[string]string{"envA": "B"},
+		Labels:   labels,
+		Hostname: "hostname",
 	}
 	assert.Equal(t, expContainer, container)
 }
@@ -327,7 +326,7 @@ func TestBuild(t *testing.T) {
 	t.Parallel()
 	md, dk := NewMock()
 
-	_, err := dk.Build("foo", "bar", false)
+	err := dk.Build("foo", "bar", false)
 	assert.NoError(t, err)
 	assert.Equal(t, map[BuildImageOptions]struct{}{
 		{
@@ -337,12 +336,8 @@ func TestBuild(t *testing.T) {
 		}: {},
 	}, md.Built)
 
-	md.InspectImageError = true
-	_, err = dk.Build("foo", "bar", false)
-	assert.NotNil(t, err)
-
 	md.BuildError = true
-	_, err = dk.Build("foo", "bar", false)
+	err = dk.Build("foo", "bar", false)
 	assert.NotNil(t, err)
 }
 
@@ -350,10 +345,11 @@ func TestPush(t *testing.T) {
 	t.Parallel()
 	md, dk := NewMock()
 
-	_, err := dk.Build("bar:baz", "dockerfile", false)
+	err := dk.Build("bar:baz", "dockerfile", false)
 	assert.NoError(t, err)
 
-	err = dk.Push("foo", "bar:baz")
+	repoDigest, err := dk.Push("foo", "bar:baz")
+	assert.NotEmpty(t, repoDigest)
 	assert.NoError(t, err)
 	assert.Equal(t, map[dkc.PushImageOptions]struct{}{
 		{
@@ -364,7 +360,7 @@ func TestPush(t *testing.T) {
 	}, md.Pushed)
 
 	md.PushError = true
-	err = dk.Push("foo", "bar")
+	_, err = dk.Push("foo", "bar")
 	assert.NotNil(t, err)
 }
 

@@ -16,7 +16,7 @@ const noMountPrefix = "no-mount"
 const mountedPath = "/docker.sock"
 
 func TestVolume(t *testing.T) {
-	client, err := util.GetDefaultDaemonClient()
+	client, _, err := util.GetDefaultDaemonClient()
 	assert.NoError(t, err)
 	defer client.Close()
 

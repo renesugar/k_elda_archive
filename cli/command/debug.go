@@ -80,17 +80,22 @@ var (
 	}
 
 	// A list of commands to output machine logs specific to Master machines.
-	masterMachineCmds = logsForContainers(supervisor.OvnnorthdName,
-		supervisor.RegistryName)
+	masterMachineCmds = append(logsForContainers(supervisor.OvnnorthdName,
+		supervisor.RegistryName, supervisor.KubeAPIServerName,
+		supervisor.KubeControllerManagerName, supervisor.KubeSchedulerName),
+		logCmd{"kube-cluster-info", fmt.Sprintf("docker exec %s "+
+			"kubectl cluster-info dump", supervisor.KubeAPIServerName)},
+		logCmd{"kube-resources", fmt.Sprintf("docker exec %s kubectl get "+
+			"all --export=true -o=yaml", supervisor.KubeAPIServerName)})
 
 	// A list of commands to output machine logs specific to Worker machines.
 	workerMachineCmds = logsForContainers(supervisor.OvncontrollerName,
-		supervisor.OvsvswitchdName)
+		supervisor.OvsvswitchdName, supervisor.KubeletName)
 
 	// A list of commands to output various container logs. Container commands
-	// need to be formatted with the DockerID.
+	// are formatted with the PodID, and are executed on the leader.
 	containerCmds = []logCmd{
-		{"logs", "docker logs %s"},
+		{"logs", "docker exec kube-apiserver kubectl logs %s"},
 	}
 )
 
@@ -170,33 +175,38 @@ func (dCmd Debug) Run() int {
 	// we might be unable to query the current containers because the master
 	// minion crashed, in which case the machine logs would be very useful.
 	var numQueryErrors int
-	machines, err := dCmd.client.QueryMachines()
-	if err != nil {
-		machines = nil
+	machines, machinesErr := dCmd.client.QueryMachines()
+	if machinesErr != nil {
 		numQueryErrors++
-		log.Error(err)
+		log.Error(machinesErr)
 	}
 
-	containers, err := dCmd.client.QueryContainers()
-	if err != nil {
-		containers = nil
+	containers, containersErr := dCmd.client.QueryContainers()
+	if containersErr != nil {
 		numQueryErrors++
-		log.Error(err)
+		log.Error(containersErr)
 	}
 
-	ipMap := map[string]string{}
-	for _, m := range machines {
-		ipMap[m.PrivateIP] = m.PublicIP
+	leaderIP, leaderIPErr := getLeaderIP(machines, dCmd.creds)
+	if leaderIPErr != nil {
+		numQueryErrors++
+		log.WithError(leaderIPErr).Error("Failed to find leader machine")
 	}
 
 	dCmd.machines = dCmd.machines || dCmd.all
 	dCmd.containers = dCmd.containers || dCmd.all
 
-	var targets []logTarget
-	mTargets := machinesToTargets(machines)
-	cTargets := containersToTargets(containers, ipMap)
+	var mTargets, cTargets, targets []logTarget
+	if machinesErr == nil {
+		mTargets = machinesToTargets(machines)
+	}
+	if containersErr == nil && leaderIPErr == nil {
+		cTargets = containersToTargets(leaderIP, containers)
+	}
+
 	if !(dCmd.machines || dCmd.containers) {
 		targets = append(append(targets, cTargets...), mTargets...)
+		var err error
 		if targets, err = filterTargets(targets, dCmd.ids); err != nil {
 			log.Error(err)
 			return 1
@@ -313,27 +323,21 @@ func machinesToTargets(machines []db.Machine) []logTarget {
 	return targets
 }
 
-func containersToTargets(containers []db.Container, ips map[string]string) []logTarget {
+func containersToTargets(leaderIP string, containers []db.Container) []logTarget {
 	targets := []logTarget{}
 	for _, c := range containers {
 		if c.Minion == "" {
 			continue
 		}
 
-		ip, ok := ips[c.Minion]
-		if !ok {
-			log.Errorf("No machine with private IP %s", c.Minion)
-			continue
-		}
-
 		t := logTarget{
-			ip:   ip,
+			ip:   leaderIP,
 			dir:  containerDir,
 			id:   c.Hostname,
 			cmds: nil,
 		}
 		for _, cmd := range containerCmds {
-			cmd.cmd = fmt.Sprintf(cmd.cmd, c.DockerID)
+			cmd.cmd = fmt.Sprintf(cmd.cmd, c.PodName)
 			t.cmds = append(t.cmds, cmd)
 		}
 		targets = append(targets, t)

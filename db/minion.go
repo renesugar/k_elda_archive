@@ -5,9 +5,8 @@ package db
 type Minion struct {
 	ID int `json:"-"`
 
-	Self                bool              `json:"-"`
-	AuthorizedKeys      string            `json:"-" rowStringer:"omit"`
-	MinionIPToPublicKey map[string]string `json:"-" rowStringer:"omit"`
+	Self           bool   `json:"-"`
+	AuthorizedKeys string `json:"-" rowStringer:"omit"`
 
 	// Below fields are included in the JSON encoding.
 	Role        Role

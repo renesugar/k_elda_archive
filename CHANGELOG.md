@@ -4,6 +4,8 @@ Kelda Change Log
 Up Next
 -------------
 
+- Replace the custom Kelda scheduler for managing containers with Kubernetes.
+
 Release 0.12.0
 -------------
 

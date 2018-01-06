@@ -2,6 +2,7 @@ package ovsdb
 
 import (
 	"errors"
+	"sort"
 	"testing"
 
 	ovs "github.com/socketplane/libovsdb"
@@ -694,6 +695,50 @@ func TestDeleteLoadBalancer(t *testing.T) {
 	assert.NoError(t, err)
 
 	api.AssertExpectations(t)
+}
+
+func TestListPortsByTag(t *testing.T) {
+	t.Parallel()
+
+	api := new(mockTransact)
+	odb := Client(client{api})
+
+	tagName := "key"
+	tagValue := "value"
+	op := ovs.Operation{
+		Op:    "select",
+		Table: "Port",
+		Where: newCondition("external_ids", "includes",
+			ovs.OvsMap{GoMap: map[interface{}]interface{}{
+				tagName: tagValue}}),
+	}
+
+	// Test a transaction failure.
+	api.On("Transact", "Open_vSwitch", op).Return(
+		nil, errors.New("err")).Once()
+	_, err := odb.ListPortsByTag(tagName, tagValue)
+	assert.EqualError(t, err, "transaction error: list ports: err")
+
+	// Test a malformed reply.
+	api.On("Transact", "Open_vSwitch", op).Return(
+		[]ovs.OperationResult{
+			{Rows: []map[string]interface{}{
+				{"name": 1},
+			}}}, nil).Once()
+	_, err = odb.ListPortsByTag("key", "value")
+	assert.EqualError(t, err, "malformed port in reply: map[name:1]")
+
+	// Test the success case.
+	api.On("Transact", "Open_vSwitch", op).Return(
+		[]ovs.OperationResult{
+			{Rows: []map[string]interface{}{
+				{"name": "port1"},
+				{"name": "port2"},
+			}}}, nil).Once()
+	ports, err := odb.ListPortsByTag("key", "value")
+	assert.NoError(t, err)
+	sort.Strings(ports)
+	assert.Equal(t, []string{"port1", "port2"}, ports)
 }
 
 func TestOvsStringSetToSlice(t *testing.T) {

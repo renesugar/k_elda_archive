@@ -1118,7 +1118,7 @@ class Container {
    *   the path on the container where the text file should be installed, and
    *   the value is the contents of the text file. If the file content specified
    *   by this argument changes and the blueprint is re-run, Kelda will re-start
-   *   the container using the new files.  Files are installed with permissions
+   *   the container using the new files. Files are installed with permissions
    *   0644 and parent directories are automatically created.
    * @param {VolumeMount[]} [args.volumeMounts] - A list of volumes to mount
    *   within the container. Referenced volumes are automatically created by
