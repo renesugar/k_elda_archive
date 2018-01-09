@@ -215,26 +215,20 @@ func updateConnections(view db.Database, bp blueprint.Blueprint) {
 	}
 
 	vcs := view.SelectFromConnection(nil)
-	pairs, blueprints, dbcs := join.HashJoin(
-		scs, db.ConnectionSlice(vcs), bpKey, dbcKey)
+	_, bpcs, dbcs := join.HashJoin(scs, db.ConnectionSlice(vcs), bpKey, dbcKey)
 
 	for _, dbc := range dbcs {
 		view.Remove(dbc.(db.Connection))
 	}
 
-	for _, blueprintc := range blueprints {
-		pairs = append(pairs,
-			join.Pair{L: blueprintc, R: view.InsertConnection()})
-	}
+	for _, newbpconn := range bpcs {
+		bpc := newbpconn.(blueprint.Connection)
+		dbc := view.InsertConnection()
 
-	for _, pair := range pairs {
-		blueprintc := pair.L.(blueprint.Connection)
-		dbc := pair.R.(db.Connection)
-
-		dbc.From = blueprintc.From
-		dbc.To = blueprintc.To
-		dbc.MinPort = blueprintc.MinPort
-		dbc.MaxPort = blueprintc.MaxPort
+		dbc.From = bpc.From
+		dbc.To = bpc.To
+		dbc.MinPort = bpc.MinPort
+		dbc.MaxPort = bpc.MaxPort
 		view.Commit(dbc)
 	}
 }
