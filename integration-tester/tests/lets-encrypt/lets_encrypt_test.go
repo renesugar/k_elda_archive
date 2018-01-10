@@ -105,7 +105,7 @@ func checkResponse(t *testing.T, domain string,
 
 	resp, err := client.Get(url)
 	assert.NoError(t, err, "request failed")
-	assert.Equal(t, 200, "bad status code")
+	assert.Equal(t, 200, resp.StatusCode, "bad status code")
 
 	body, err := getBody(resp)
 	assert.NoError(t, err, "couldn't read response body")
