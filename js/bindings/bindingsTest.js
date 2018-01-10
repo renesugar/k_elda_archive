@@ -828,6 +828,128 @@ describe('Bindings', () => {
                     'or other object.');
     });
   });
+  describe('allowTraffic', () => {
+    let foo;
+    let bar;
+    let fooLoadBalancer;
+    beforeEach(() => {
+      createBasicInfra();
+      foo = new b.Container('foo', 'image');
+      foo.deploy(infra);
+      fooLoadBalancer = new b.LoadBalancer('fooLB', [foo]);
+      bar = new b.Container('bar', 'image');
+      bar.deploy(infra);
+      fooLoadBalancer.deploy(infra);
+    });
+    it('autobox port ranges', () => {
+      infra.allowTraffic(foo, bar, 80);
+      checkConnections([{
+        from: ['foo'],
+        to: ['bar'],
+        minPort: 80,
+        maxPort: 80,
+      }]);
+    });
+    it('port', () => {
+      infra.allowTraffic(foo, bar, new b.Port(80));
+      checkConnections([{
+        from: ['foo'],
+        to: ['bar'],
+        minPort: 80,
+        maxPort: 80,
+      }]);
+    });
+    it('port range', () => {
+      infra.allowTraffic(foo, bar, new b.PortRange(80, 85));
+      checkConnections([{
+        from: ['foo'],
+        to: ['bar'],
+        minPort: 80,
+        maxPort: 85,
+      }]);
+    });
+    it('port range required', () => {
+      expect(() => infra.allowTraffic(foo, bar)).to
+        .throw('a port or port range is required');
+    });
+    it('connect to invalid port range', () => {
+      expect(() => infra.allowTraffic(foo, bar, true)).to
+        .throw('Input argument must be a number or a Range');
+    });
+    it('allow connections to publicInternet', () => {
+      infra.allowTraffic(foo, b.publicInternet, 80);
+      checkConnections([{
+        from: ['foo'],
+        to: ['public'],
+        minPort: 80,
+        maxPort: 80,
+      }]);
+    });
+    it('allow connections from publicInternet', () => {
+      infra.allowTraffic(b.publicInternet, foo, 80);
+      checkConnections([{
+        from: ['public'],
+        to: ['foo'],
+        minPort: 80,
+        maxPort: 80,
+      }]);
+    });
+    it('connect to LoadBalancer', () => {
+      infra.allowTraffic(bar, fooLoadBalancer, 80);
+      checkConnections([{
+        from: ['bar'],
+        to: ['fooLB'],
+        minPort: 80,
+        maxPort: 80,
+      }]);
+    });
+    it('cannot connect from LoadBalancer', () => {
+      expect(() =>
+        infra.allowTraffic(fooLoadBalancer, bar, 80)).to
+        .throw('LoadBalancers can not make outgoing connections; ' +
+          'item at index 0 is not valid');
+    });
+    it('connect to publicInternet port range', () => {
+      expect(() =>
+        infra.allowTraffic(foo, b.publicInternet, new b.PortRange(80, 81))).to
+        .throw('public internet can only connect to single ports ' +
+          'and not to port ranges');
+    });
+    it('connect from publicInternet port range', () => {
+      expect(() =>
+        infra.allowTraffic(b.publicInternet, foo, new b.PortRange(80, 81))).to
+        .throw('public internet can only connect to single ports ' +
+          'and not to port ranges');
+    });
+    it('connect from publicInternet port range with others', () => {
+      expect(() =>
+        infra.allowTraffic([b.publicInternet, bar], foo, new b.PortRange(80, 81))).to
+        .throw('public internet can only connect to single ports ' +
+          'and not to port ranges');
+    });
+    it('does not allow connections between non-Connectables', () => {
+      expect(() => infra.allowTraffic(10, 10, 10)).to
+        .throw('not an array of connectable objects (was 10)');
+    });
+    it('both src and dst are lists', () => {
+      infra.allowTraffic([foo, bar], [fooLoadBalancer, b.publicInternet], 80);
+      checkConnections([
+        { from: ['foo', 'bar'], to: ['fooLB', 'public'], minPort: 80, maxPort: 80 },
+      ]);
+    });
+    it('src is a list', () => {
+      infra.allowTraffic([foo, bar], b.publicInternet, 80);
+      checkConnections([
+        { from: ['foo', 'bar'], to: ['public'], minPort: 80, maxPort: 80 },
+      ]);
+    });
+    it('dst is a list', () => {
+      infra.allowTraffic(b.publicInternet, [foo, bar], 80);
+      checkConnections([
+        { from: ['public'], to: ['foo', 'bar'], minPort: 80, maxPort: 80 },
+      ]);
+    });
+  });
   describe('allow', () => {
     let foo;
     let bar;

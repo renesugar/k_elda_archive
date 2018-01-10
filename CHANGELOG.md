@@ -4,6 +4,11 @@ Kelda Change Log
 Up Next
 -------------
 
+JavaScript API changes:
+- Add `allowTraffic` method to allow network traffic and connections between two
+sets of `Connectable`s (i.e. `publicInternet`, `LoadBalancer`, and `Container`).
+- Deprecate `Connectable.allowFrom()` method in favor of `allowTraffic`.
+
 Release 0.7.0
 -------------
 

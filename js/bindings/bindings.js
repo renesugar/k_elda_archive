@@ -27,6 +27,8 @@ const objectHasKey = Object.prototype.hasOwnProperty;
 // this.
 let _keldaInfrastructure;
 
+let publicInternet;
+
 class Infrastructure {
   /**
    * Creates a new Infrastructure with the given options.
@@ -57,6 +59,7 @@ class Infrastructure {
     this.machines = [];
     this.containers = new Set();
     this.loadBalancers = [];
+    this.connections = [];
 
     const boxedMasters = boxObjects(masters, Machine);
     const boxedWorkers = boxObjects(workers, Machine);
@@ -87,6 +90,52 @@ class Infrastructure {
   }
 
   /**
+   * Allows traffic from a Connectable or set of Connectables to another
+   * Connectable or set of Connectables. A LoadBalancer cannot make outbound connections,
+   * so it may not be included in `src`. Connectables have a default-deny firewall,
+   * meaning that unless traffic is explicitly allowed to or from a Connectable (by
+   * calling this function) they will not be allowed.
+   *
+   * @param {Connectable|Connectable[]} src - the Connectables that can send outgoing
+   *  traffic to those listed in `dst`. LoadBalancers cannot make outgoing
+   *  connections, so they may not be included in `src`.
+   * @param {Connectable|Connectable[]} dst - the Connectables that can accept inbound
+   *  traffic from those listed in `src`.
+   * @param {int|Port|PortRange} portRange - The ports on which Connectables can
+   *   send traffic.
+   * @returns {void}
+   */
+  allowTraffic(src, dst, portRange) {
+    if (portRange === undefined || portRange === null) {
+      throw new Error('a port or port range is required');
+    }
+
+    const srcArr = boxConnectable(src);
+    const dstArr = boxConnectable(dst);
+    const ports = boxRange(portRange);
+
+    for (let i = 0; i < srcArr.length; i += 1) {
+      if (srcArr[i] instanceof LoadBalancer) {
+        throw new Error('LoadBalancers can not make outgoing connections; item ' +
+          `at index ${i} is not valid`);
+      }
+    }
+
+    if ((srcArr.includes(publicInternet) || dstArr.includes(publicInternet)) &&
+      (ports.min !== ports.max)) {
+      throw new Error('public internet can only connect to single ports ' +
+        'and not to port ranges');
+    }
+
+    this.connections.push({
+      from: srcArr.map(c => c.getConnectableName()),
+      to: dstArr.map(c => c.getConnectableName()),
+      minPort: ports.min,
+      maxPort: ports.max,
+    });
+  }
+
+  /**
    * Converts the infrastructure to the JSON format expected by the Kelda go
    * code.
    * @private
@@ -97,7 +146,7 @@ class Infrastructure {
     setKeldaIDs(this.containers);
 
     const loadBalancers = [];
-    let connections = [];
+    let connections = this.connections.slice();
     let placements = [];
     const containers = [];
 
@@ -362,6 +411,7 @@ class LoadBalancer {
   /**
    * Allows inbound connections to the load balancer. Note that this does not
    * allow direct connections to the containers behind the load balancer.
+   * @deprecated
    *
    * @param {Container|Container[]} srcArg - The containers that can open
    *   connections to this load balancer.
@@ -381,6 +431,13 @@ class LoadBalancer {
 
     this.allowedInboundConnections.push(
       new Connection(src, boxRange(portRange)));
+  }
+
+  /**
+   * @returns {string} the name of this LoadBalancer for use in connections
+   */
+  getConnectableName() {
+    return this.name;
   }
 
   /**
@@ -404,8 +461,10 @@ class LoadBalancer {
 /**
  * @implements {Connectable}
  */
-const publicInternet = {
+publicInternet = {
   /**
+   * @deprecated
+   *
    * @param {Container|Container[]} srcArg - A Container or list of Containers
    *   that should be allowed to connect to the public internet.
    * @param {number|Range|PortRange} portRange - A port or range of ports that the
@@ -425,6 +484,13 @@ const publicInternet = {
     src.forEach((c) => {
       c.allowOutboundPublic(portRange);
     });
+  },
+
+  /**
+   * @returns {string} A name representing the public internet for connection purposes.
+   */
+  getConnectableName() {
+    return publicInternetLabel;
   },
 };
 
@@ -1161,6 +1227,7 @@ class Container {
    * port or port range.  Containers have a default-deny firewall, meaning that
    * unless connections are explicitly allowed to a container (by calling this
    * function) they will not be allowed.
+   * @deprecated
    *
    * @param {Container|Container[]|publicInternet} srcArg - An entity that should
    *   be allowed to connect to this Container.
@@ -1221,6 +1288,13 @@ class Container {
               'and not to port ranges');
     }
     this.incomingPublic.push(range);
+  }
+
+  /**
+   * @returns {string} the name of this Container for use in connections
+   */
+  getConnectableName() {
+    return this.hostname;
   }
 
   /**
@@ -1337,7 +1411,7 @@ const hostIP = new RuntimeValue('host.ip');
 
 /**
  * Attempts to convert `objects` into an array of objects that
- * define allowFrom.
+ * define getConnectableName.
  * If `objects` is an Array, it asserts that each element is connectable. If
  * it's just a single object, boxConnectable asserts that it is connectable,
  * and if so, returns it as a single-element Array.
@@ -1376,12 +1450,20 @@ function boxConnectable(objects) {
 class Connectable {
   /**
    * Allows traffic from src on port
+   * @deprecated
    *
    * @param {Container} src - The container that can initiate connections.
    * @param {int|Port|PortRange} port - The ports to allow traffic on.
    * @returns {void}
    */
   allowFrom(src, port) { // eslint-disable-line
+    throw new Error('not implemented');
+  }
+
+  /**
+   * @returns {string} a string representation for use in connections
+   */
+  getConnectableName() { // eslint-disable-line class-methods-use-this
     throw new Error('not implemented');
   }
 }
@@ -1394,12 +1476,13 @@ class Connectable {
  * @returns {boolean} Whether x can be connected to
  */
 function isConnectable(x) {
-  return typeof (x.allowFrom) === 'function';
+  return typeof (x.getConnectableName) === 'function';
 }
 
 /**
  * allow is a utility function to allow calling `allowFrom` on groups of
  * containers.
+ * @deprecated
  *
  * @param {Container|publicInternet} src - The containers that can
  *   initiate a connection.
