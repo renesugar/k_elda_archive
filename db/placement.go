@@ -6,13 +6,14 @@ package db
 type Placement struct {
 	ID int
 
+	// The hostname of the container this placement rule applies to.
 	TargetContainer string
 
 	Exclusive bool
 
 	// Constraint based on co-location with another container. If Exclusive is
 	// true, then the TargetContainer cannot be placed on the same machine as
-	// OtherContainer.
+	// OtherContainer. OtherContainer must be a hostname.
 	OtherContainer string
 
 	// Machine Constraints

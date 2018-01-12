@@ -112,7 +112,7 @@ class Infrastructure {
 
     this.containers.forEach((c) => {
       connections = connections.concat(c.getKeldaConnections());
-      placements = placements.concat(c.getPlacementsWithID());
+      placements = placements.concat(c.placements);
       containers.push(c.toKeldaRepresentation());
     });
 
@@ -1070,10 +1070,7 @@ class Container {
 
     checkExtraKeys(opts, this);
 
-    // When generating the Kelda infrastructure JSON object, these placements must
-    // be converted using Container.getPlacementsWithID.
     this.placements = [];
-
     this.allowedInboundConnections = [];
     this.outgoingPublic = [];
     this.incomingPublic = [];
@@ -1150,27 +1147,12 @@ class Container {
    */
   placeOn(machineAttrs) {
     this.placements.push({
+      targetContainer: this.hostname,
       exclusive: false,
       provider: getString('provider', machineAttrs.provider),
       size: getString('size', machineAttrs.size),
       region: getString('region', machineAttrs.region),
       floatingIp: getString('floatingIp', machineAttrs.floatingIp),
-    });
-  }
-
-  /**
-   * Set the targetContainer of the placement rules to be this container. This
-   * cannot be done when `placeOn` is called because the container ID is not
-   * determined until after all user code has executed.
-   * @private
-   *
-   * @returns {Object} The placements in the form required by the deployment
-   *   engine.
-   */
-  getPlacementsWithID() {
-    return this.placements.map((plcm) => {
-      plcm.targetContainerID = this.id; // eslint-disable-line no-param-reassign
-      return plcm;
     });
   }
 

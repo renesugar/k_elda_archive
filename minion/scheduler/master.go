@@ -111,10 +111,10 @@ func canBeColocated(constraint db.Placement, toPlace db.Container,
 	}
 
 	for _, p := range peers {
-		toPlaceIsTarget := toPlace.BlueprintID == constraint.TargetContainer
-		peerIsTarget := p.BlueprintID == constraint.TargetContainer
-		toPlaceIsOther := toPlace.BlueprintID == constraint.OtherContainer
-		peerIsOther := p.BlueprintID == constraint.OtherContainer
+		toPlaceIsTarget := toPlace.Hostname == constraint.TargetContainer
+		peerIsTarget := p.Hostname == constraint.TargetContainer
+		toPlaceIsOther := toPlace.Hostname == constraint.OtherContainer
+		peerIsOther := p.Hostname == constraint.OtherContainer
 		if (toPlaceIsTarget && peerIsOther) || (peerIsTarget && toPlaceIsOther) {
 			return false
 		}
@@ -132,7 +132,7 @@ func validPlacement(constraints []db.Placement, m minion, peers []*db.Container,
 			}
 		}
 
-		if dbc.BlueprintID != constraint.TargetContainer {
+		if dbc.Hostname != constraint.TargetContainer {
 			continue
 		}
 
