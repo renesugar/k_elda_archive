@@ -75,7 +75,12 @@ func TestLetsEncrypt(t *testing.T) {
 	tr := &http.Transport{
 		TLSClientConfig: tlsConfig,
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{
+		Transport: tr,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 
 	// Test HTTPS requests to both domain names. The http.Client for these requests
 	// has an x509 Root CertPool that only includes the Let's Encrypt Staging Root.
@@ -92,6 +97,9 @@ func TestLetsEncrypt(t *testing.T) {
 	}
 	checkResponse(t, domainA, expectedA, client)
 	checkResponse(t, domainB, expectedB, client)
+
+	checkHTTPRedirect(t, domainA, client)
+	checkHTTPRedirect(t, domainB, client)
 }
 
 func getProvider(t *testing.T, machines []db.Machine) string {
@@ -103,6 +111,13 @@ func getProvider(t *testing.T, machines []db.Machine) string {
 
 	t.Fatalf("no worker with a floating IP")
 	return ""
+}
+
+func checkHTTPRedirect(t *testing.T, domain string, client *http.Client) {
+	url := "http://" + domain + "/"
+	resp, err := client.Get(url)
+	assert.NoError(t, err, "request failed")
+	assert.Equal(t, 301, resp.StatusCode, "bad status code: expecting redirect")
 }
 
 func checkResponse(t *testing.T, domain string,
