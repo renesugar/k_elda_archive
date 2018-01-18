@@ -95,7 +95,6 @@ var (
 	// need to be formatted with the DockerID.
 	containerCmds = []logCmd{
 		{"logs", "docker logs %s"},
-		{"etc.tar", "docker cp %s:/etc -"},
 	}
 )
 
