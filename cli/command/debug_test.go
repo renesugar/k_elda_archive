@@ -31,11 +31,11 @@ func checkDebugParsing(t *testing.T, args []string, expArgs Debug, expErrMsg str
 	}
 
 	assert.NoError(t, err)
-	assert.Equal(t, expArgs.all, debugCmd.all)
-	assert.Equal(t, expArgs.containers, debugCmd.containers)
-	assert.Equal(t, expArgs.machines, debugCmd.machines)
-	assert.Equal(t, expArgs.privateKey, debugCmd.privateKey)
-	assert.Equal(t, expArgs.ids, debugCmd.ids)
+
+	// Ignore fields that aren't related to parsing.
+	debugCmd.sshGetter = expArgs.sshGetter
+	debugCmd.host = expArgs.host
+	assert.Equal(t, &expArgs, debugCmd)
 }
 
 func TestDebugFlags(t *testing.T) {
