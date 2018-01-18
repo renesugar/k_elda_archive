@@ -112,6 +112,8 @@ To fetch debug logs from specific containers or machines, pass in the relevant
 IDs. If no IDs are provided, either the -all, -containers, or -machines flag must be
 set.
 
+Containers are referenced by their hostname, _not_ their blueprint ID.
+
 If -all is supplied, all other arguments are ignored. If -containers or
 -machines are supplied, the list of IDs is ignored, but they do not override
 each other. It follows that the below commands are equivalent:
@@ -323,7 +325,7 @@ func containersToTargets(containers []db.Container, ips map[string]string) []log
 		t := logTarget{
 			ip:   ip,
 			dir:  containerDir,
-			id:   c.BlueprintID,
+			id:   c.Hostname,
 			cmds: nil,
 		}
 		for _, cmd := range containerCmds {

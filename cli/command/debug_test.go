@@ -155,8 +155,8 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -182,8 +182,8 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -207,8 +207,8 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -237,8 +237,8 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "8.7.6.5"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "8.7.6.5"},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -261,10 +261,10 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
-				{BlueprintID: "4", DockerID: "c", Minion: "4.3.2.1"},
-				{BlueprintID: "5", DockerID: "d", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "4", DockerID: "c", Minion: "4.3.2.1"},
+				{Hostname: "5", DockerID: "d", Minion: "4.3.2.1"},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -288,10 +288,10 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
-				{BlueprintID: "4", DockerID: "c", Minion: "4.3.2.1"},
-				{BlueprintID: "5", DockerID: "d", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "4", DockerID: "c", Minion: "4.3.2.1"},
+				{Hostname: "5", DockerID: "d", Minion: "4.3.2.1"},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -315,10 +315,10 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
-				{BlueprintID: "41", DockerID: "c", Minion: "4.3.2.1"},
-				{BlueprintID: "5", DockerID: "d", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "41", DockerID: "c", Minion: "4.3.2.1"},
+				{Hostname: "5", DockerID: "d", Minion: "4.3.2.1"},
 			},
 			expSSH:    false,
 			expReturn: 1,
@@ -338,10 +338,10 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
-				{BlueprintID: "41", DockerID: "c", Minion: "4.3.2.1"},
-				{BlueprintID: "5", DockerID: "d", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "41", DockerID: "c", Minion: "4.3.2.1"},
+				{Hostname: "5", DockerID: "d", Minion: "4.3.2.1"},
 			},
 			expSSH:    false,
 			expReturn: 1,
@@ -361,10 +361,10 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
-				{BlueprintID: "4", DockerID: "c", Minion: "4.3.2.1"},
-				{BlueprintID: "5", DockerID: "d", Minion: ""},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "4", DockerID: "c", Minion: "4.3.2.1"},
+				{Hostname: "5", DockerID: "d", Minion: ""},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -394,7 +394,7 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -417,8 +417,8 @@ func TestDebug(t *testing.T) {
 				},
 			},
 			containers: []db.Container{
-				{BlueprintID: "2", DockerID: "a", Minion: "4.3.2.1"},
-				{BlueprintID: "3", DockerID: "b", Minion: "4.3.2.1"},
+				{Hostname: "2", DockerID: "a", Minion: "4.3.2.1"},
+				{Hostname: "3", DockerID: "b", Minion: "4.3.2.1"},
 			},
 			expSSH:    true,
 			expReturn: 0,
@@ -497,8 +497,8 @@ func listFiles() (files []string, err error) {
 	return files, err
 }
 
-func containerFiles(rootDir, id string) []string {
-	return withParentFolder(rootDir, containerDir, id, containerCmds)
+func containerFiles(rootDir, hostname string) []string {
+	return withParentFolder(rootDir, containerDir, hostname, containerCmds)
 }
 
 func commonMachineFiles(rootDir, id string) []string {
