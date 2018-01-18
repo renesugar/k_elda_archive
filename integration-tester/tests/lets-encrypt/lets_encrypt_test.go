@@ -3,9 +3,11 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/integration-tester/util"
@@ -44,6 +46,10 @@ idWw1VrejtwclobqNMVtG3EiPUIpJGpbMcJgbiLSmKkrvQtGng==
 -----END CERTIFICATE-----`
 
 func TestLetsEncrypt(t *testing.T) {
+	fmt.Println("Sleeping two minutes to give keldaio/haproxy_auto_https " +
+		"time to obtain a certificate")
+	time.Sleep(2 * time.Minute)
+
 	clnt, err := util.GetDefaultDaemonClient()
 	if err != nil {
 		t.Fatalf("couldn't get api client: %s", err)
