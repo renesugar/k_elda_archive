@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	cliPath "github.com/kelda/kelda/cli/path"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/minion/docker"
@@ -183,17 +184,17 @@ func startAndBootstrapVault(dk docker.Client, listenAddr string) (APIClient, boo
 // startVaultContainer reads the minion's TLS certificates, places them into
 // the Vault filesystem, and boots the Vault container in server mode.
 func startVaultContainer(dk docker.Client, listenAddr string) error {
-	caCert, err := util.ReadFile(tlsIO.CACertPath(tlsIO.MinionTLSDir))
+	caCert, err := util.ReadFile(tlsIO.CACertPath(cliPath.MinionTLSDir))
 	if err != nil {
 		return fmt.Errorf("failed to read Vault CA: %s", err)
 	}
 
-	serverCert, err := util.ReadFile(tlsIO.SignedCertPath(tlsIO.MinionTLSDir))
+	serverCert, err := util.ReadFile(tlsIO.SignedCertPath(cliPath.MinionTLSDir))
 	if err != nil {
 		return fmt.Errorf("failed to read Vault server certificate: %s", err)
 	}
 
-	serverKey, err := util.ReadFile(tlsIO.SignedKeyPath(tlsIO.MinionTLSDir))
+	serverKey, err := util.ReadFile(tlsIO.SignedKeyPath(cliPath.MinionTLSDir))
 	if err != nil {
 		return fmt.Errorf("failed to read Vault server key: %s", err)
 	}

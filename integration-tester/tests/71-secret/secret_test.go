@@ -151,9 +151,9 @@ func tryFetchSecret(machineID, vaultAddr, secretName string) ([]byte, error) {
 
 	vaultOpts := fmt.Sprintf("-address=%s -ca-cert=%s -client-cert=%s -client-key=%s",
 		vaultAddr,
-		tlsIO.CACertPath(tlsIO.MinionTLSDir),
-		tlsIO.SignedCertPath(tlsIO.MinionTLSDir),
-		tlsIO.SignedKeyPath(tlsIO.MinionTLSDir))
+		tlsIO.CACertPath(cliPath.MinionTLSDir),
+		tlsIO.SignedCertPath(cliPath.MinionTLSDir),
+		tlsIO.SignedKeyPath(cliPath.MinionTLSDir))
 	vaultCmd := fmt.Sprintf("vault auth -method=cert %[1]s && "+
 		"vault read %[1]s /secret/kelda/%[2]s",
 		vaultOpts, secretName)

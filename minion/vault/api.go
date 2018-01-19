@@ -5,6 +5,7 @@ package vault
 import (
 	"fmt"
 
+	cliPath "github.com/kelda/kelda/cli/path"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/counter"
 
@@ -42,9 +43,9 @@ func newVaultAPIClientImpl(ip string) (APIClient, error) {
 		Address: fmt.Sprintf("https://%s:%d", ip, vaultPort),
 	}
 	err := clientConfig.ConfigureTLS(&vaultAPI.TLSConfig{
-		CACert:     tlsIO.CACertPath(tlsIO.MinionTLSDir),
-		ClientCert: tlsIO.SignedCertPath(tlsIO.MinionTLSDir),
-		ClientKey:  tlsIO.SignedKeyPath(tlsIO.MinionTLSDir),
+		CACert:     tlsIO.CACertPath(cliPath.MinionTLSDir),
+		ClientCert: tlsIO.SignedCertPath(cliPath.MinionTLSDir),
+		ClientKey:  tlsIO.SignedKeyPath(cliPath.MinionTLSDir),
 	})
 	if err != nil {
 		return nil, err

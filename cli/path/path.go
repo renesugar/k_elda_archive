@@ -19,3 +19,11 @@ var (
 	// to access Kelda will be stored.
 	DefaultSSHKeyPath = filepath.Join(keldaHome, "ssh_key")
 )
+
+var (
+	minionHome = "/home/kelda/.kelda"
+
+	// MinionTLSDir is the directory in which the daemon will place TLS
+	// credentials on cloud machines.
+	MinionTLSDir = filepath.Join(minionHome, "tls")
+)

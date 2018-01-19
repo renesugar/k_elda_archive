@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	cliPath "github.com/kelda/kelda/cli/path"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/minion/docker"
 	"github.com/kelda/kelda/minion/vault/mocks"
@@ -29,19 +30,19 @@ func TestStartVaultContainer(t *testing.T) {
 	err := startVaultContainer(dk, "")
 	assert.Contains(t, err.Error(), "failed to read Vault CA")
 
-	err = util.WriteFile(tlsIO.CACertPath(tlsIO.MinionTLSDir), []byte(caCert), 0644)
+	err = util.WriteFile(tlsIO.CACertPath(cliPath.MinionTLSDir), []byte(caCert), 0644)
 	assert.NoError(t, err)
 	err = startVaultContainer(dk, "")
 	assert.Contains(t, err.Error(), "failed to read Vault server certificate")
 
-	err = util.WriteFile(tlsIO.SignedCertPath(tlsIO.MinionTLSDir),
+	err = util.WriteFile(tlsIO.SignedCertPath(cliPath.MinionTLSDir),
 		[]byte(serverCert), 0644)
 	assert.NoError(t, err)
 	err = startVaultContainer(dk, "")
 	assert.Contains(t, err.Error(), "failed to read Vault server key")
 
 	// Write the final credential file. We should now boot the Vault container.
-	err = util.WriteFile(tlsIO.SignedKeyPath(tlsIO.MinionTLSDir),
+	err = util.WriteFile(tlsIO.SignedKeyPath(cliPath.MinionTLSDir),
 		[]byte(serverKey), 0644)
 	assert.NoError(t, err)
 	err = startVaultContainer(dk, "")

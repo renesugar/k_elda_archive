@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	tlsIO "github.com/kelda/kelda/connection/tls/io"
+	cliPath "github.com/kelda/kelda/cli/path"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/version"
 
@@ -39,7 +39,7 @@ func Ubuntu(m db.Machine, inboundPublic string) string {
 		SSHKeys:    strings.Join(m.SSHKeys, "\n"),
 		LogLevel:   log.GetLevel().String(),
 		MinionOpts: minionOptions(m.Role, inboundPublic),
-		TLSDir:     tlsIO.MinionTLSDir,
+		TLSDir:     cliPath.MinionTLSDir,
 	})
 	if err != nil {
 		panic(err)

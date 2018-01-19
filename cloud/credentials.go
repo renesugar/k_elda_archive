@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/afero/sftpfs"
 	"golang.org/x/crypto/ssh"
 
+	cliPath "github.com/kelda/kelda/cli/path"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/connection/tls/rsa"
 	"github.com/kelda/kelda/counter"
@@ -78,7 +79,7 @@ func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
 	}
 	defer fs.Close()
 
-	certPath := tlsIO.SignedCertPath(tlsIO.MinionTLSDir)
+	certPath := tlsIO.SignedCertPath(cliPath.MinionTLSDir)
 	if _, err := fs.Stat(certPath); err == nil {
 		existingCert, err := afero.Afero{Fs: fs}.ReadFile(certPath)
 		if err != nil {
@@ -101,13 +102,13 @@ func generateAndInstallCerts(machine db.Machine, sshKey ssh.Signer,
 	// Create the directory in which the credentials will be installed. This is
 	// usually a no-op because the cloud config (cloud/cfg/template.go) creates
 	// the directory at boot to prevent a race condition with Docker.
-	if err := fs.MkdirAll(tlsIO.MinionTLSDir, 0755); err != nil {
+	if err := fs.MkdirAll(cliPath.MinionTLSDir, 0755); err != nil {
 		log.WithError(err).WithField("host", machine.PublicIP).Error(
 			"Failed to create TLS directory. Retrying.")
 		return "", false
 	}
 
-	for _, f := range tlsIO.MinionFiles(tlsIO.MinionTLSDir, ca, signed) {
+	for _, f := range tlsIO.MinionFiles(cliPath.MinionTLSDir, ca, signed) {
 		if err := write(fs, f.Path, f.Content, f.Mode); err != nil {
 			log.WithFields(log.Fields{
 				"error": err,

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ssh"
 
+	cliPath "github.com/kelda/kelda/cli/path"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/connection/tls/rsa"
 	"github.com/kelda/kelda/db"
@@ -46,15 +47,15 @@ func TestSyncCredentials(t *testing.T) {
 	syncCredentialsOnce(conn, expSigner, ca)
 
 	aferoFs := afero.Afero{Fs: mockFs}
-	certBytes, err := aferoFs.ReadFile(tlsIO.SignedCertPath(tlsIO.MinionTLSDir))
+	certBytes, err := aferoFs.ReadFile(tlsIO.SignedCertPath(cliPath.MinionTLSDir))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
 
-	keyBytes, err := aferoFs.ReadFile(tlsIO.SignedKeyPath(tlsIO.MinionTLSDir))
+	keyBytes, err := aferoFs.ReadFile(tlsIO.SignedKeyPath(cliPath.MinionTLSDir))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, keyBytes)
 
-	caBytes, err := aferoFs.ReadFile(tlsIO.CACertPath(tlsIO.MinionTLSDir))
+	caBytes, err := aferoFs.ReadFile(tlsIO.CACertPath(cliPath.MinionTLSDir))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, caBytes)
 
@@ -73,7 +74,7 @@ func TestExistingCredentialsDontGetOverwritten(t *testing.T) {
 
 	existingCert := "existingCert"
 	err := aferoFs.WriteFile(
-		tlsIO.SignedCertPath(tlsIO.MinionTLSDir),
+		tlsIO.SignedCertPath(cliPath.MinionTLSDir),
 		[]byte(existingCert),
 		0644)
 	assert.NoError(t, err)
@@ -96,7 +97,7 @@ func TestExistingCredentialsDontGetOverwritten(t *testing.T) {
 
 	// Ensure that the existing public key was not overwritten.
 	certOnMachine, err := aferoFs.ReadFile(
-		tlsIO.SignedCertPath(tlsIO.MinionTLSDir))
+		tlsIO.SignedCertPath(cliPath.MinionTLSDir))
 	assert.NoError(t, err)
 	assert.Equal(t, existingCert, string(certOnMachine))
 }

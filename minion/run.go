@@ -8,6 +8,7 @@ import (
 
 	"github.com/kelda/kelda/api"
 	apiServer "github.com/kelda/kelda/api/server"
+	cliPath "github.com/kelda/kelda/cli/path"
 	"github.com/kelda/kelda/connection"
 	tlsIO "github.com/kelda/kelda/connection/tls/io"
 	"github.com/kelda/kelda/counter"
@@ -71,7 +72,7 @@ func Run(role db.Role, inboundPubIntf, outboundPubIntf string) {
 	var creds connection.Credentials
 	err := util.BackoffWaitFor(func() bool {
 		var err error
-		creds, err = tlsIO.ReadCredentials(tlsIO.MinionTLSDir)
+		creds, err = tlsIO.ReadCredentials(cliPath.MinionTLSDir)
 		if err != nil {
 			log.WithError(err).Debug("TLS keys not ready yet")
 			return false
