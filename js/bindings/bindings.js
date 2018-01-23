@@ -27,7 +27,7 @@ const objectHasKey = Object.prototype.hasOwnProperty;
 // this.
 let _keldaInfrastructure;
 
-let publicInternet;
+let _connections = [];
 
 class Infrastructure {
   /**
@@ -59,7 +59,6 @@ class Infrastructure {
     this.machines = [];
     this.containers = new Set();
     this.loadBalancers = [];
-    this.connections = [];
 
     const boxedMasters = boxObjects(masters, Machine);
     const boxedWorkers = boxObjects(workers, Machine);
@@ -90,52 +89,6 @@ class Infrastructure {
   }
 
   /**
-   * Allows traffic from a Connectable or set of Connectables to another
-   * Connectable or set of Connectables. A LoadBalancer cannot make outbound connections,
-   * so it may not be included in `src`. Connectables have a default-deny firewall,
-   * meaning that unless traffic is explicitly allowed to or from a Connectable (by
-   * calling this function) they will not be allowed.
-   *
-   * @param {Connectable|Connectable[]} src - the Connectables that can send outgoing
-   *  traffic to those listed in `dst`. LoadBalancers cannot make outgoing
-   *  connections, so they may not be included in `src`.
-   * @param {Connectable|Connectable[]} dst - the Connectables that can accept inbound
-   *  traffic from those listed in `src`.
-   * @param {int|Port|PortRange} portRange - The ports on which Connectables can
-   *   send traffic.
-   * @returns {void}
-   */
-  allowTraffic(src, dst, portRange) {
-    if (portRange === undefined || portRange === null) {
-      throw new Error('a port or port range is required');
-    }
-
-    const srcArr = boxConnectable(src);
-    const dstArr = boxConnectable(dst);
-    const ports = boxRange(portRange);
-
-    for (let i = 0; i < srcArr.length; i += 1) {
-      if (srcArr[i] instanceof LoadBalancer) {
-        throw new Error('LoadBalancers can not make outgoing connections; item ' +
-          `at index ${i} is not valid`);
-      }
-    }
-
-    if ((srcArr.includes(publicInternet) || dstArr.includes(publicInternet)) &&
-      (ports.min !== ports.max)) {
-      throw new Error('public internet can only connect to single ports ' +
-        'and not to port ranges');
-    }
-
-    this.connections.push({
-      from: srcArr.map(c => c.getConnectableName()),
-      to: dstArr.map(c => c.getConnectableName()),
-      minPort: ports.min,
-      maxPort: ports.max,
-    });
-  }
-
-  /**
    * Converts the infrastructure to the JSON format expected by the Kelda go
    * code.
    * @private
@@ -146,13 +99,11 @@ class Infrastructure {
     setKeldaIDs(this.containers);
 
     const loadBalancers = [];
-    let connections = this.connections.slice();
     let placements = [];
     const containers = [];
 
     // Convert the load balancers.
     this.loadBalancers.forEach((lb) => {
-      connections = connections.concat(lb.getKeldaConnections());
       loadBalancers.push({
         name: lb.name,
         hostnames: lb.containers.map(c => c.hostname),
@@ -160,7 +111,6 @@ class Infrastructure {
     });
 
     this.containers.forEach((c) => {
-      connections = connections.concat(c.getKeldaConnections());
       placements = placements.concat(c.placements);
       containers.push(c.toKeldaRepresentation());
     });
@@ -171,7 +121,7 @@ class Infrastructure {
       machines,
       loadBalancers,
       containers,
-      connections,
+      connections: _connections,
       placements,
 
       namespace: this.namespace,
@@ -386,8 +336,6 @@ class LoadBalancer {
     }
     this.name = uniqueHostname(name);
     this.containers = boxObjects(containers, Container);
-
-    this.allowedInboundConnections = [];
   }
 
   /**
@@ -413,27 +361,14 @@ class LoadBalancer {
    * allow direct connections to the containers behind the load balancer.
    * @deprecated
    *
-   * @param {Container|Container[]} srcArg - The containers that can open
+   * @param {Container|Container[]} src - The containers that can open
    *   connections to this load balancer.
    * @param {int|Port|PortRange} portRange - The ports on which containers can
    *   open connections.
    * @returns {void}
    */
-  allowFrom(srcArg, portRange) {
-    let src;
-    if (portRange === undefined || portRange === null) {
-      throw new Error('a port or port range is required');
-    }
-    try {
-      src = boxObjects(srcArg, Container);
-    } catch (err) {
-      throw new Error('Load Balancers can only allow traffic from containers. ' +
-            'Check that you\'re allowing connections from a Container ' +
-            'or list of containers and not from a Load Balancer or other object.');
-    }
-
-    this.allowedInboundConnections.push(
-      new Connection(src, boxRange(portRange)));
+  allowFrom(src, portRange) {
+    allowTraffic(src, this, portRange);
   }
 
   /**
@@ -442,29 +377,15 @@ class LoadBalancer {
   getConnectableName() {
     return this.name;
   }
-
-  /**
-   * @private
-   * @returns {Object} - A list of maps describing the inbound connections to the load balancer, in
-   *   a format that can be converted to JSON and sent to the Kelda Go code.
-   */
-  getKeldaConnections() {
-    return this.allowedInboundConnections.map(conn => ({
-      from: conn.from.map(f => f.hostname),
-      to: [this.name],
-      minPort: conn.minPort,
-      maxPort: conn.maxPort,
-    }));
-  }
 }
 
 // publicInternet is an object that looks like another container that can
 // allow inbound connections. However, it is actually just syntactic sugar
-// to hide the allowOutboundPublic and allowFromPublic functions.
+// for use with the allowTraffic method.
 /**
  * @implements {Connectable}
  */
-publicInternet = {
+const publicInternet = {
   /**
    * @deprecated
    *
@@ -475,23 +396,7 @@ publicInternet = {
    * @returns {void}
    */
   allowFrom(srcArg, portRange) {
-    let src;
-
-    if (portRange === undefined || portRange === null) {
-      throw new Error('a port or port range is required');
-    }
-
-    try {
-      src = boxObjects(srcArg, Container);
-    } catch (err) {
-      throw new Error('Only containers can connect to public. ' +
-                'Check that you\'re allowing connections from a Container or ' +
-                'list of containers and not from a Load Balancer or other object.');
-    }
-
-    src.forEach((c) => {
-      c.allowOutboundPublic(portRange);
-    });
+    allowTraffic(srcArg, publicInternet, portRange);
   },
 
   /**
@@ -1145,9 +1050,6 @@ class Container {
     checkExtraKeys(opts, this);
 
     this.placements = [];
-    this.allowedInboundConnections = [];
-    this.outgoingPublic = [];
-    this.incomingPublic = [];
   }
 
   /**
@@ -1237,68 +1139,14 @@ class Container {
    * function) they will not be allowed.
    * @deprecated
    *
-   * @param {Container|Container[]|publicInternet} srcArg - An entity that should
+   * @param {Container|Container[]|publicInternet} src - An entity that should
    *   be allowed to connect to this Container.
    * @param {number|Range|PortRange} portRange - A port or range of ports that the
    *  given Container(s) are allowed to connect to this Container on.
    * @returns {void}
    */
-  allowFrom(srcArg, portRange) {
-    if (portRange === undefined || portRange === null) {
-      throw new Error('a port or port range is required');
-    }
-    if (srcArg === publicInternet) {
-      this.allowFromPublic(portRange);
-      return;
-    }
-
-    let src;
-    try {
-      src = boxObjects(srcArg, Container);
-    } catch (err) {
-      throw new Error('Containers can only connect to other containers. ' +
-              'Check that you\'re allowing connections from a container or ' +
-              'list of containers, and not from a LoadBalancer or other object.');
-    }
-
-    this.allowedInboundConnections.push(
-      new Connection(src, boxRange(portRange)));
-  }
-
-  /**
-   * Allows outbound connections from this Container to the public internet.
-   * Users should access this functionality by calling publicInternet.allowFrom(this, r).
-   * @private
-   *
-   * @param {number|Range} r - A port or port range that this Container should be allowed
-   *   to initiate outbound connections to the public internet on.
-   * @returns {void}
-   */
-  allowOutboundPublic(r) {
-    const range = boxRange(r);
-    if (range.min !== range.max) {
-      throw new Error('public internet can only connect to single ports ' +
-              'and not to port ranges');
-    }
-    this.outgoingPublic.push(range);
-  }
-
-  /**
-   * Allows inbound connections to this Container from the public internet.
-   * Users should access this functionality by calling this.allowFrom(publicInternet, r).
-   * @private
-   *
-   * @param {number|Range} r - A port or port range that this Container should accept
-   *   inbound connetions from the public internet on.
-   * @returns {void}
-   */
-  allowFromPublic(r) {
-    const range = boxRange(r);
-    if (range.min !== range.max) {
-      throw new Error('public internet can only connect to single ports ' +
-              'and not to port ranges');
-    }
-    this.incomingPublic.push(range);
+  allowFrom(src, portRange) {
+    allowTraffic(src, this, portRange);
   }
 
   /**
@@ -1509,19 +1357,50 @@ function allow(src, dst, port) {
   });
 }
 
-class Connection {
-  /**
-   * Creates a Connection.
-   * @constructor
-   *
-   * @param {string[]} from - A list of hosts that allow connections.
-   * @param {PortRange} ports - The port numbers which are allowed.
-   */
-  constructor(from, ports) {
-    this.minPort = ports.min;
-    this.maxPort = ports.max;
-    this.from = from;
+/**
+ * Allows traffic from a Connectable or set of Connectables to another
+ * Connectable or set of Connectables. A LoadBalancer cannot make outbound connections,
+ * so it may not be included in `src`. Connectables have a default-deny firewall,
+ * meaning that unless traffic is explicitly allowed to or from a Connectable (by
+ * calling this function) they will not be allowed.
+ *
+ * @param {Connectable|Connectable[]} src - the Connectables that can send outgoing
+ *  traffic to those listed in `dst`. LoadBalancers cannot make outgoing
+ *  connections, so they may not be included in `src`.
+ * @param {Connectable|Connectable[]} dst - the Connectables that can accept inbound
+ *  traffic from those listed in `src`.
+ * @param {int|Port|PortRange} portRange - The ports on which Connectables can
+ *   send traffic.
+ * @returns {void}
+ */
+function allowTraffic(src, dst, portRange) {
+  if (portRange === undefined || portRange === null) {
+    throw new Error('a port or port range is required');
   }
+
+  const srcArr = boxConnectable(src);
+  const dstArr = boxConnectable(dst);
+  const ports = boxRange(portRange);
+
+  for (let i = 0; i < srcArr.length; i += 1) {
+    if (srcArr[i] instanceof LoadBalancer) {
+      throw new Error('LoadBalancers can not make outgoing connections; item ' +
+        `at index ${i} is not valid`);
+    }
+  }
+
+  if ((srcArr.includes(publicInternet) || dstArr.includes(publicInternet)) &&
+    (ports.min !== ports.max)) {
+    throw new Error('public internet can only connect to single ports ' +
+      'and not to port ranges');
+  }
+
+  _connections.push({
+    from: srcArr.map(c => c.getConnectableName()),
+    to: dstArr.map(c => c.getConnectableName()),
+    minPort: ports.min,
+    maxPort: ports.max,
+  });
 }
 
 class Range {
@@ -1600,6 +1479,7 @@ function resetGlobals() {
   uniqueIDCounter = 0;
   hostnameCount = {};
   _keldaInfrastructure = undefined;
+  _connections = [];
 }
 
 module.exports = {
@@ -1613,6 +1493,7 @@ module.exports = {
   Secret,
   LoadBalancer,
   allow,
+  allowTraffic,
   getInfrastructure,
   githubKeys,
   hostIP,
