@@ -11,5 +11,5 @@ for (let i = 0; i < infrastructure.nWorker + 1; i += 1) {
     command: ['-s'],
   }));
 }
-kelda.allow(iperfs, iperfs, 5201);
+kelda.allowTraffic(iperfs, iperfs, 5201);
 iperfs.forEach(container => container.deploy(infra));

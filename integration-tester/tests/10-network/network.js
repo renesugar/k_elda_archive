@@ -24,10 +24,10 @@ for (let i = 0; i < infrastructure.nWorker; i += 1) {
   yellowContainers.push(new kelda.Container('yellow', image, { command }));
 }
 
-kelda.allow(redContainers, blueContainers, 80);
-kelda.allow(blueContainers, redContainers, 80);
-kelda.allow(redContainers, yellowContainers, 80);
-kelda.allow(blueContainers, yellowContainers, 80);
+kelda.allowTraffic(redContainers, blueContainers, 80);
+kelda.allowTraffic(blueContainers, redContainers, 80);
+kelda.allowTraffic(redContainers, yellowContainers, 80);
+kelda.allowTraffic(blueContainers, yellowContainers, 80);
 
 redContainers.forEach(container => container.deploy(infra));
 yellowContainers.forEach(container => container.deploy(infra));

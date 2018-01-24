@@ -18,5 +18,5 @@ for (let i = 0; i < infrastructure.nWorker; i += 1) {
 const fetcherContainer = new kelda.Container('fetcher', 'alpine', {
   command: ['tail', '-f', '/dev/null'],
 });
-kelda.allow(fetcherContainer, webContainers, 80);
+kelda.allowTraffic(fetcherContainer, webContainers, 80);
 fetcherContainer.deploy(infra);

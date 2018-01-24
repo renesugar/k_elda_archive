@@ -167,7 +167,7 @@ container.  With Kelda, by default, all network connections are blocked.  To all
 lobsters to talk to mysql, we need to explicitly open the mysql port (3306):
 
 ```javascript
-sql.allowFrom(lobsters, 3306);
+allowTraffic(lobsters, sql, 3306);
 ```
     
 Because lobsters is a web application, the relevant port should also be open to
@@ -175,7 +175,7 @@ the public internet on the lobsters container.  Kelda has a `publicInternet`
 variable that can be used to connect containers to any IP address:
 
 ```javascript
-lobsters.allowFrom(publicInternet, 3000);
+allowTraffic(publicInternet, lobsters, 3000);
 ```
 
 If you're having trouble determining which ports your application needs, take

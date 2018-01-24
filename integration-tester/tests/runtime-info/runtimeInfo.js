@@ -19,5 +19,5 @@ const webContainer = new kelda.Container('web', 'nginx', {
   },
 });
 
-webContainer.allowFrom(kelda.publicInternet, 80);
+kelda.allowTraffic(kelda.publicInternet, webContainer, 80);
 webContainer.deploy(infra);

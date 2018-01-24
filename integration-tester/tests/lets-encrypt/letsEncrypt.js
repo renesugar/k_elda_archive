@@ -48,8 +48,8 @@ domainToContainers[domainB] = serviceB;
 
 const proxy = hap.create(domainToContainers, email, { testing_cert: true });
 
-proxy.allowFrom(kelda.publicInternet, hap.exposedHttpPort);
-proxy.allowFrom(kelda.publicInternet, hap.exposedHttpsPort);
+kelda.allowTraffic(kelda.publicInternet, proxy, hap.exposedHttpPort);
+kelda.allowTraffic(kelda.publicInternet, proxy, hap.exposedHttpsPort);
 
 serviceA.forEach(container => container.deploy(infra));
 serviceB.forEach(container => container.deploy(infra));

@@ -141,7 +141,7 @@ const loadBalancer = haproxy.simpleLoadBalancer(appContainers);
 default `exposedPort`).
 
 ```javascript
-loadBalancer.allowFrom(publicInternet, haproxy.exposedPort);
+allowTraffic(publicInternet, loadBalancer, haproxy.exposedPort);
 ```
 
 **Deploy** the application containers and load balancer to your infrastructure:
@@ -317,7 +317,7 @@ that the container can download the `lsof` tool, by adding the following code to
 the blueprint:
 
 ```js
-kelda.publicInternet.allowFrom(buggyContainer, 80);
+kelda.allowTraffic(buggyContainer, kelda.publicInternet, 80);
 ```
 
 Re-run the blueprint so that Kelda will update the container's network access:
@@ -354,7 +354,7 @@ fix the problem is to enable the container to access the public internet at
 port 443 by adding the following line to the blueprint:
 
 ```js
-kelda.publicInternet.allowFrom(buggyContainer, 443);
+kelda.allowTraffic(buggyContainer, kelda.publicInternet, 443);
 ```
 
 After re-running the blueprint, the container will be able to access port
@@ -374,7 +374,7 @@ port 3000, and the container will need to enable public access on port
 3000 in order for users to access the application:
 
 ```js
-buggyContainer.allowFrom(kelda.publicInternet, 3000);
+kelda.allowTraffic(kelda.publicInternet, buggyContainer, 3000);
 ```
 
 `lsof` may also show that internal containers are trying to communicate:
@@ -404,7 +404,7 @@ runs a postgres database (postgres runs on port 5432 by default), which can be
 fixed by enabling access between those two containers:
 
 ```js
-postgresContainer.allowFrom(buggyContainer, 5432);
+allowTraffic(buggyContainer, postgresContainer, 5432);
 ```
 
 If you're curious, `lsof` lists all open files, which includes network

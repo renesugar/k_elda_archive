@@ -11,7 +11,7 @@ const numMongo = Math.min(7, Math.floor(infrastructure.nWorker / 2));
 const mongo = new Mongo(numMongo);
 const django = new Django(Math.floor(infrastructure.nWorker / 2), 'keldaio/django-polls', mongo);
 const proxy = haproxy.simpleLoadBalancer(django.containers);
-proxy.allowFrom(kelda.publicInternet, 80);
+kelda.allowTraffic(kelda.publicInternet, proxy, 80);
 
 django.deploy(infra);
 mongo.deploy(infra);

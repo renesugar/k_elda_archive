@@ -17,7 +17,7 @@ const fetcher = new kelda.Container('fetcher', 'alpine', {
   command: ['tail', '-f', '/dev/null'],
 });
 const loadBalanced = new kelda.LoadBalancer('loadBalanced', containers);
-loadBalanced.allowFrom(fetcher, 80);
+kelda.allowTraffic(fetcher, loadBalanced, 80);
 
 fetcher.deploy(infra);
 loadBalanced.deploy(infra);

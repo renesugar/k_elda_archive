@@ -21,7 +21,7 @@ const app = new Node({
 const proxy = haproxy.simpleLoadBalancer(app.containers);
 
 mongo.allowTrafficFrom(app.containers, mongo.port);
-proxy.allowFrom(kelda.publicInternet, haproxy.exposedPort);
+kelda.allowTraffic(kelda.publicInternet, proxy, haproxy.exposedPort);
 
 app.deploy(infra);
 mongo.deploy(infra);

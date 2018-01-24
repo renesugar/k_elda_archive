@@ -15,7 +15,7 @@ There are a few possible reasons:
   and thus that the application should be accessible from your (or any) browser.
   If there is no port number, and you are using an imported blueprint, check if
   the blueprint exports a function that will expose the application. If so, call
-  this function in your blueprint. If there is no such function, use `allowFrom`
+  this function in your blueprint. If there is no such function, use `allowTraffic`
   and `publicInternet` in your blueprint to expose the desired port.
 3. When exposing a different port than `80`, make sure to paste both the
   IP address _and_ the port number into the browser as `<IP>:<PORT>`.

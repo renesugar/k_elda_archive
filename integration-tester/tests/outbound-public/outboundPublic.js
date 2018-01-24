@@ -10,7 +10,7 @@ for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
   }));
 }
 
-kelda.publicInternet.allowFrom(connected, 80);
+kelda.allowTraffic(connected, kelda.publicInternet, 80);
 
 const notConnected = [];
 for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {

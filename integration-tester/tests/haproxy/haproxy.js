@@ -33,7 +33,7 @@ const proxy = hap.withURLrouting({
   'serviceA.com': serviceA,
 });
 
-proxy.allowFrom(kelda.publicInternet, 80);
+kelda.allowTraffic(kelda.publicInternet, proxy, 80);
 
 const inf = infrastructure.createTestInfrastructure();
 serviceA.forEach(container => container.deploy(inf));
