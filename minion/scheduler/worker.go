@@ -196,7 +196,6 @@ func dockerRun(dk docker.Client, iface interface{}) {
 		IP:          dbc.IP,
 		NetworkMode: plugin.NetworkName,
 		DNS:         []string{ipdef.GatewayIP.String()},
-		DNSSearch:   []string{"q"},
 	})
 	if err != nil {
 		log.WithFields(log.Fields{

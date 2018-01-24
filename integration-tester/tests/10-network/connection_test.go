@@ -91,7 +91,7 @@ func testHPing(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 			for _, to := range conn.To {
 				for port := conn.MinPort; port <= conn.MaxPort; port++ {
 					wg.Add(1)
-					go test(container, to, port, true)
+					go test(container, to+".q", port, true)
 				}
 			}
 		}
@@ -103,7 +103,7 @@ func testHPing(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 			// covered in a connection.  Could do something more
 			// sophisticated to find an unused port later.
 			wg.Add(1)
-			go test(container, hostname, 50000, false)
+			go test(container, hostname+".q", 50000, false)
 		}
 	}
 
