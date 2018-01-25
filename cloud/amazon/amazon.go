@@ -36,10 +36,6 @@ type awsMachine struct {
 }
 
 const (
-	// DefaultRegion is the preferred location for machines that don't have a
-	// user specified region preference.
-	DefaultRegion = "us-west-1"
-
 	spotPrice = "0.5"
 )
 

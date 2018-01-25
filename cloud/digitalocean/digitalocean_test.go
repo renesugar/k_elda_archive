@@ -24,6 +24,7 @@ import (
 )
 
 const testNamespace = "namespace"
+const testRegion = "region"
 const errMsg = "error"
 
 var errMock = errors.New(errMsg)
@@ -45,8 +46,8 @@ var network = &godo.Networks{
 	},
 }
 
-var sfo = &godo.Region{
-	Slug: DefaultRegion,
+var godoRegion = &godo.Region{
+	Slug: testRegion,
 }
 
 func init() {
@@ -64,7 +65,7 @@ func TestList(t *testing.T) {
 			Networks:  network,
 			SizeSlug:  "size",
 			VolumeIDs: []string{"foo"},
-			Region:    sfo}}
+			Region:    godoRegion}}
 
 	dropLast := []godo.Droplet{
 		{
@@ -72,7 +73,7 @@ func TestList(t *testing.T) {
 			Networks:  network,
 			SizeSlug:  "size",
 			VolumeIDs: []string{"foo"},
-			Region:    sfo}}
+			Region:    godoRegion}}
 
 	respFirst := &godo.Response{
 		Links: &godo.Links{
@@ -87,14 +88,14 @@ func TestList(t *testing.T) {
 	}
 
 	reqFirst := &godo.ListOptions{Page: 1, PerPage: 200}
-	mc.On("ListDroplets", reqFirst, "namespace-sfo1").Return(
+	mc.On("ListDroplets", reqFirst, "namespace-region").Return(
 		dropFirst, respFirst, nil).Once()
 
 	reqLast := &godo.ListOptions{
 		Page:    reqFirst.Page + 1,
 		PerPage: 200,
 	}
-	mc.On("ListDroplets", reqLast, "namespace-sfo1").Return(
+	mc.On("ListDroplets", reqLast, "namespace-region").Return(
 		dropLast, respLast, nil).Once()
 
 	floatingIPsFirst := []godo.FloatingIP{
@@ -114,7 +115,7 @@ func TestList(t *testing.T) {
 		}, nil, nil,
 	).Twice()
 
-	doPrvdr, err := newDigitalOcean(testNamespace, DefaultRegion)
+	doPrvdr, err := newDigitalOcean(testNamespace, testRegion)
 	assert.Nil(t, err)
 	doPrvdr.Client = mc
 
@@ -123,7 +124,7 @@ func TestList(t *testing.T) {
 	assert.Equal(t, []db.Machine{
 		{
 			Provider:    "DigitalOcean",
-			Region:      "sfo1",
+			Region:      testRegion,
 			CloudID:     "123",
 			PublicIP:    "publicIP",
 			PrivateIP:   "privateIP",
@@ -132,7 +133,7 @@ func TestList(t *testing.T) {
 		},
 		{
 			Provider:    "DigitalOcean",
-			Region:      "sfo1",
+			Region:      testRegion,
 			CloudID:     "125",
 			PublicIP:    "publicIP",
 			PrivateIP:   "privateIP",
@@ -162,7 +163,7 @@ func TestList(t *testing.T) {
 			Networks:  nil,
 			SizeSlug:  "size",
 			VolumeIDs: []string{"foo"},
-			Region:    sfo,
+			Region:    godoRegion,
 		},
 	}
 	mc.On("ListDroplets", mock.Anything, mock.Anything).Return(
@@ -175,7 +176,7 @@ func TestList(t *testing.T) {
 
 func TestBoot(t *testing.T) {
 	mc := new(mocks.Client)
-	doPrvdr, err := newDigitalOcean(testNamespace, DefaultRegion)
+	doPrvdr, err := newDigitalOcean(testNamespace, testRegion)
 	assert.Nil(t, err)
 	doPrvdr.Client = mc
 
@@ -195,7 +196,7 @@ func TestBoot(t *testing.T) {
 	mc.On("CreateDroplets", &godo.DropletMultiCreateRequest{
 		Names: []string{"Kelda", "Kelda", "Kelda", "Kelda", "Kelda",
 			"Kelda", "Kelda", "Kelda", "Kelda", "Kelda"},
-		Region:            DefaultRegion,
+		Region:            testRegion,
 		Size:              "size1",
 		Image:             godo.DropletCreateImage{ID: imageID},
 		PrivateNetworking: true,
@@ -206,7 +207,7 @@ func TestBoot(t *testing.T) {
 
 	mc.On("CreateDroplets", &godo.DropletMultiCreateRequest{
 		Names:             []string{"Kelda"},
-		Region:            DefaultRegion,
+		Region:            testRegion,
 		Size:              "size1",
 		Image:             godo.DropletCreateImage{ID: imageID},
 		PrivateNetworking: true,
@@ -216,7 +217,7 @@ func TestBoot(t *testing.T) {
 
 	mc.On("CreateDroplets", &godo.DropletMultiCreateRequest{
 		Names:             []string{"Kelda", "Kelda"},
-		Region:            DefaultRegion,
+		Region:            testRegion,
 		Size:              "size2",
 		Image:             godo.DropletCreateImage{ID: imageID},
 		PrivateNetworking: true,
@@ -247,7 +248,7 @@ func TestBootPreemptible(t *testing.T) {
 
 func TestStop(t *testing.T) {
 	mc := new(mocks.Client)
-	doPrvdr, err := newDigitalOcean(testNamespace, DefaultRegion)
+	doPrvdr, err := newDigitalOcean(testNamespace, testRegion)
 	assert.Nil(t, err)
 	doPrvdr.Client = mc
 
@@ -304,11 +305,11 @@ func TestStop(t *testing.T) {
 
 func TestSetACLs(t *testing.T) {
 	mc := new(mocks.Client)
-	doPrvdr, err := newDigitalOcean(testNamespace, DefaultRegion)
+	doPrvdr, err := newDigitalOcean(testNamespace, testRegion)
 	assert.Nil(t, err)
 	doPrvdr.Client = mc
 
-	tagName := testNamespace + "-" + DefaultRegion
+	tagName := testNamespace + "-" + testRegion
 	acls := []acl.ACL{
 		{
 			CidrIP:  "10.0.0.0/24",
@@ -621,13 +622,13 @@ func TestNew(t *testing.T) {
 	}
 
 	// Log a bad namespace.
-	newDigitalOcean("___ILLEGAL---", DefaultRegion)
+	newDigitalOcean("___ILLEGAL---", testRegion)
 
 	// newDigitalOcean throws an error.
 	newDigitalOcean = func(namespace, region string) (*Provider, error) {
 		return nil, errMock
 	}
-	outClient, err := New(testNamespace, DefaultRegion)
+	outClient, err := New(testNamespace, testRegion)
 	assert.Nil(t, outClient)
 	assert.EqualError(t, err, "error")
 
@@ -636,13 +637,13 @@ func TestNew(t *testing.T) {
 		return client, nil
 	}
 	mc.On("ListDroplets", mock.Anything, mock.Anything).Return(nil, nil, nil).Once()
-	outClient, err = New(testNamespace, DefaultRegion)
+	outClient, err = New(testNamespace, testRegion)
 	assert.Nil(t, err)
 	assert.Equal(t, client, outClient)
 
 	// ListDroplets throws an error.
 	mc.On("ListDroplets", mock.Anything, mock.Anything).Return(nil, nil, errMock)
-	outClient, err = New(testNamespace, DefaultRegion)
+	outClient, err = New(testNamespace, testRegion)
 	assert.Equal(t, client, outClient)
 	assert.EqualError(t, err, errMsg)
 }

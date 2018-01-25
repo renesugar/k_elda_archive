@@ -18,6 +18,7 @@ import (
 )
 
 const testNamespace = "namespace"
+const testRegion = "region"
 
 func TestList(t *testing.T) {
 	t.Parallel()
@@ -108,7 +109,7 @@ func TestList(t *testing.T) {
 		InstanceId: aws.String("inst3"),
 		PublicIp:   aws.String("8.8.8.8")}}, nil)
 
-	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider := newAmazon(testNamespace, testRegion)
 	amazonProvider.Client = mc
 
 	machines, err := amazonProvider.List()
@@ -117,7 +118,7 @@ func TestList(t *testing.T) {
 	assert.Equal(t, []db.Machine{
 		{
 			Provider:    "Amazon",
-			Region:      "us-west-1",
+			Region:      testRegion,
 			CloudID:     "inst3",
 			Size:        "size2",
 			DiskSize:    32,
@@ -126,7 +127,7 @@ func TestList(t *testing.T) {
 		},
 		{
 			Provider:    "Amazon",
-			Region:      "us-west-1",
+			Region:      testRegion,
 			CloudID:     "spot1",
 			PublicIP:    "publicIP",
 			PrivateIP:   "privateIP",
@@ -135,7 +136,7 @@ func TestList(t *testing.T) {
 		},
 		{
 			Provider:    "Amazon",
-			Region:      "us-west-1",
+			Region:      testRegion,
 			CloudID:     "spot2",
 			Size:        "size2",
 			FloatingIP:  "xx.xxx.xxx.xxx",
@@ -143,7 +144,7 @@ func TestList(t *testing.T) {
 		},
 		{
 			Provider:    "Amazon",
-			Region:      "us-west-1",
+			Region:      testRegion,
 			CloudID:     "spot3",
 			Size:        "size3",
 			Preemptible: true,
@@ -193,7 +194,7 @@ func TestNewACLs(t *testing.T) {
 		&ec2.DescribeInstancesOutput{}, nil,
 	)
 
-	cluster := newAmazon(testNamespace, DefaultRegion)
+	cluster := newAmazon(testNamespace, testRegion)
 	cluster.Client = mc
 
 	err := cluster.SetACLs([]acl.ACL{
@@ -310,7 +311,7 @@ func TestBoot(t *testing.T) {
 		}, nil,
 	)
 
-	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider := newAmazon(testNamespace, testRegion)
 	amazonProvider.Client = mc
 
 	ids, err := amazonProvider.Boot([]db.Machine{
@@ -348,7 +349,7 @@ func TestBoot(t *testing.T) {
 	cfg := cfg.Ubuntu(db.Machine{Role: db.Master}, "")
 	mc.AssertCalled(t, "RequestSpotInstances", spotPrice, int64(2),
 		&ec2.RequestSpotLaunchSpecification{
-			ImageId:      aws.String(amis[DefaultRegion]),
+			ImageId:      aws.String(amis[testRegion]),
 			InstanceType: aws.String("m4.large"),
 			UserData: aws.String(base64.StdEncoding.EncodeToString(
 				[]byte(cfg))),
@@ -356,7 +357,7 @@ func TestBoot(t *testing.T) {
 			BlockDeviceMappings: []*ec2.BlockDeviceMapping{
 				blockDevice(32)}})
 	mc.AssertCalled(t, "RunInstances", &ec2.RunInstancesInput{
-		ImageId:      aws.String(amis[DefaultRegion]),
+		ImageId:      aws.String(amis[testRegion]),
 		InstanceType: aws.String("m4.large"),
 		UserData: aws.String(base64.StdEncoding.EncodeToString(
 			[]byte(cfg))),
@@ -398,7 +399,7 @@ func TestStop(t *testing.T) {
 	mc.On("DescribeAddresses").Return(nil, nil)
 	mc.On("DescribeVolumes").Return(nil, nil)
 
-	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider := newAmazon(testNamespace, testRegion)
 	amazonProvider.Client = mc
 
 	err := amazonProvider.Stop([]db.Machine{
@@ -428,7 +429,7 @@ func TestUpdateFloatingIPs(t *testing.T) {
 	t.Parallel()
 
 	mockClient := new(mocks.Client)
-	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider := newAmazon(testNamespace, testRegion)
 	amazonProvider.Client = mockClient
 
 	mockMachines := []db.Machine{
@@ -552,7 +553,7 @@ func TestCleanup(t *testing.T) {
 	t.Parallel()
 
 	mc := new(mocks.Client)
-	amazonProvider := newAmazon(testNamespace, DefaultRegion)
+	amazonProvider := newAmazon(testNamespace, testRegion)
 	amazonProvider.Client = mc
 
 	mc.On("DescribeSecurityGroup", testNamespace).Return(nil, assert.AnError).Once()

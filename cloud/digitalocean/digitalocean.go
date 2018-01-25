@@ -22,9 +22,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// DefaultRegion is assigned to Machines without a specified region
-const DefaultRegion string = "sfo1"
-
 // Regions supported by the Digital Ocean API
 var Regions = []string{"nyc1", "nyc2", "lon1", "sfo1", "sfo2"}
 
