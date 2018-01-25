@@ -290,7 +290,7 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(machine, machine);
       checkMachines([{
         provider: 'DigitalOcean',
-        region: 'sfo1',
+        region: 'sfo2',
       }]);
     });
     it('uses empty string as region for Vagrant', () => {
@@ -1084,7 +1084,7 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(amazonMachine, doMachine);
       expect(deploy).to.throw('All machines must have the same provider and region. '
         + 'Found providers \'Amazon\' in region \'us-west-1\' and \'DigitalOcean\' in '
-        + 'region \'sfo1\'.');
+        + 'region \'sfo2\'.');
     });
   });
   describe('Infrastructure', () => {

@@ -16,7 +16,7 @@ const digitalOceanDescriptions = require('./digitalOceanDescriptions');
 const providerDefaultRegions = {
   Amazon: 'us-west-1',
   Google: 'us-east1-b',
-  DigitalOcean: 'sfo1',
+  DigitalOcean: 'sfo2',
   Vagrant: '',
 };
 
