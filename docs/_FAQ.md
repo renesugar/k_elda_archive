@@ -53,3 +53,13 @@ container on a Kelda worker:
 
 You can check (and fix) your VPC settings in the
 [VPC section of the online AWS console](http://console.aws.amazon.com/vpc).
+
+### My DigitalOcean machines are failing to boot with the error "422 Region is not available"
+DigitalOcean sometimes temporarily disables Droplet creations. Trying a
+different region will most likely resolve this problem.
+
+To confirm that the error is because Droplet creations are disabled for your
+region, go the [Droplet creation
+page](https://cloud.digitalocean.com/droplets/new) on the DigitalOcean UI.
+Under "Choose a datacenter region", you can see if any of the regions are
+unavailable.
