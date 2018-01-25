@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "MIT",
   "dependencies": {
-    "@kelda/django": "kelda/django#7fc1b59",
+    "@kelda/django": "kelda/django",
     "@kelda/elasticsearch": "kelda/elasticsearch",
     "@kelda/etcd": "kelda/etcd",
     "@kelda/hadoop": "kelda/hadoop",
