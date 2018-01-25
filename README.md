@@ -75,7 +75,7 @@ Set up a secure network.
 [//]: # (b1)
 ```javascript
 allow(publicInternet, webContainers, 80); // Open the webservers' port 80 to the public internet.
-redis.allowFrom(webContainers); // Let the web app communicate with Redis.
+redis.allowTrafficFrom(webContainers); // Let the web app communicate with Redis.
 ```
 
 Deploy VMs on any [supported cloud provider](#deploy-quickly-on).
