@@ -35,19 +35,25 @@ const (
 	RegistryName = "registry"
 )
 
-const ovsImage = "keldaio/ovs"
+// The names of the images to be run. These are identifier that could be used
+// with `docker run`.
+const (
+	ovsImage      = "keldaio/ovs"
+	etcdImage     = "quay.io/coreos/etcd:v3.3"
+	registryImage = "registry:2.6.2"
+)
 
 // The tunneling protocol to use between machines.
 // "stt" and "geneve" are supported.
 const tunnelingProtocol = "stt"
 
 var imageMap = map[string]string{
-	EtcdName:          "quay.io/coreos/etcd:v3.3",
+	EtcdName:          etcdImage,
 	OvncontrollerName: ovsImage,
 	OvnnorthdName:     ovsImage,
 	OvsdbName:         ovsImage,
 	OvsvswitchdName:   ovsImage,
-	RegistryName:      "registry:2.6.2",
+	RegistryName:      registryImage,
 }
 
 const etcdHeartbeatInterval = "500"
@@ -65,12 +71,12 @@ func Run(_conn db.Conn, _dk docker.Client, role db.Role) {
 	conn = _conn
 	dk = _dk
 
-	imageSet := map[string]struct{}{}
-	for _, image := range imageMap {
-		imageSet[image] = struct{}{}
+	images := []string{ovsImage, etcdImage}
+	if role == db.Master {
+		images = append(images, registryImage)
 	}
 
-	for image := range imageSet {
+	for _, image := range images {
 		go dk.Pull(image)
 	}
 
