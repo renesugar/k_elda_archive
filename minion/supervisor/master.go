@@ -4,14 +4,13 @@ import (
 	"fmt"
 
 	"github.com/kelda/kelda/db"
-	"github.com/kelda/kelda/minion/supervisor/images"
 	"github.com/kelda/kelda/util"
 	"github.com/kelda/kelda/util/str"
 )
 
 func runMaster() {
-	run(images.Ovsdb, "ovsdb-server")
-	run(images.Registry)
+	run(OvsdbName, "ovsdb-server")
+	run(RegistryName)
 	go runMasterSystem()
 }
 
@@ -38,7 +37,7 @@ func runMasterOnce() {
 
 	if oldIP != IP || !str.SliceEq(oldEtcdIPs, etcdIPs) {
 		c.Inc("Reset Etcd")
-		Remove(images.Etcd)
+		Remove(EtcdName)
 	}
 
 	oldEtcdIPs = etcdIPs
@@ -48,7 +47,7 @@ func runMasterOnce() {
 		return
 	}
 
-	run(images.Etcd, "etcd", fmt.Sprintf("--name=master-%s", IP),
+	run(EtcdName, "etcd", fmt.Sprintf("--name=master-%s", IP),
 		fmt.Sprintf("--initial-cluster=%s", initialClusterString(etcdIPs)),
 		fmt.Sprintf("--advertise-client-urls=http://%s:2379", IP),
 		fmt.Sprintf("--listen-peer-urls=http://%s:2380", IP),
@@ -58,15 +57,15 @@ func runMasterOnce() {
 		"--initial-cluster-state=new",
 		"--election-timeout="+etcdElectionTimeout)
 
-	run(images.Ovsdb, "ovsdb-server")
-	run(images.Registry)
+	run(OvsdbName, "ovsdb-server")
+	run(RegistryName)
 
 	if leader {
 		/* XXX: If we fail to boot ovn-northd, we should give up
 		* our leadership somehow.  This ties into the general
 		* problem of monitoring health. */
-		run(images.Ovnnorthd, "ovn-northd")
+		run(OvnnorthdName, "ovn-northd")
 	} else {
-		Remove(images.Ovnnorthd)
+		Remove(OvnnorthdName)
 	}
 }

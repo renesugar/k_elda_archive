@@ -16,7 +16,7 @@ import (
 
 	"github.com/kelda/kelda/cli/ssh"
 	"github.com/kelda/kelda/db"
-	"github.com/kelda/kelda/minion/supervisor/images"
+	"github.com/kelda/kelda/minion/supervisor"
 	"github.com/kelda/kelda/util"
 )
 
@@ -70,8 +70,8 @@ var (
 		{"cloud-init", "sudo cat /var/log/cloud-init-output.log"},
 		{"docker-ps", "docker ps -a"},
 		{"minion", "docker logs minion"},
-		{images.Etcd, "docker logs " + images.Etcd},
-		{images.Ovsdb, "docker logs " + images.Ovsdb},
+		{supervisor.EtcdName, "docker logs " + supervisor.EtcdName},
+		{supervisor.OvsdbName, "docker logs " + supervisor.OvsdbName},
 		{"syslog", "sudo cat /var/log/syslog"},
 		{"journalctl", "sudo journalctl -xe"},
 		{"uname", "uname -a"},
@@ -80,16 +80,12 @@ var (
 	}
 
 	// A list of commands to output machine logs specific to Master machines.
-	masterMachineCmds = []logCmd{
-		{images.Ovnnorthd, "docker logs " + images.Ovnnorthd},
-		{images.Registry, "docker logs " + images.Registry},
-	}
+	masterMachineCmds = logsForContainers(supervisor.OvnnorthdName,
+		supervisor.RegistryName)
 
 	// A list of commands to output machine logs specific to Worker machines.
-	workerMachineCmds = []logCmd{
-		{images.Ovncontroller, "docker logs " + images.Ovncontroller},
-		{images.Ovsvswitchd, "docker logs " + images.Ovsvswitchd},
-	}
+	workerMachineCmds = logsForContainers(supervisor.OvncontrollerName,
+		supervisor.OvsvswitchdName)
 
 	// A list of commands to output various container logs. Container commands
 	// need to be formatted with the DockerID.
@@ -419,4 +415,11 @@ func tarball(root string) int {
 	}
 
 	return 0
+}
+
+func logsForContainers(containerNames ...string) (cmds []logCmd) {
+	for _, name := range containerNames {
+		cmds = append(cmds, logCmd{name, "docker logs " + name})
+	}
+	return cmds
 }

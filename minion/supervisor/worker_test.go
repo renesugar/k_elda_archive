@@ -10,7 +10,6 @@ import (
 	"github.com/kelda/kelda/minion/ipdef"
 	"github.com/kelda/kelda/minion/nl"
 	"github.com/kelda/kelda/minion/nl/nlmock"
-	"github.com/kelda/kelda/minion/supervisor/images"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/vishvananda/netlink"
@@ -33,9 +32,9 @@ func TestWorker(t *testing.T) {
 	runWorkerOnce()
 
 	exp := map[string][]string{
-		images.Etcd:        etcdArgsWorker(etcdIPs),
-		images.Ovsdb:       {"ovsdb-server"},
-		images.Ovsvswitchd: {"ovs-vswitchd"},
+		EtcdName:        etcdArgsWorker(etcdIPs),
+		OvsdbName:       {"ovsdb-server"},
+		OvsvswitchdName: {"ovs-vswitchd"},
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 	assert.Empty(t, ctx.execs)
@@ -55,10 +54,10 @@ func TestWorker(t *testing.T) {
 	runWorkerOnce()
 
 	exp = map[string][]string{
-		images.Etcd:          etcdArgsWorker(etcdIPs),
-		images.Ovsdb:         {"ovsdb-server"},
-		images.Ovncontroller: {"ovn-controller"},
-		images.Ovsvswitchd:   {"ovs-vswitchd"},
+		EtcdName:          etcdArgsWorker(etcdIPs),
+		OvsdbName:         {"ovsdb-server"},
+		OvncontrollerName: {"ovn-controller"},
+		OvsvswitchdName:   {"ovs-vswitchd"},
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 
@@ -72,8 +71,8 @@ func TestSetupWorker(t *testing.T) {
 	setupWorker()
 
 	exp := map[string][]string{
-		images.Ovsdb:       {"ovsdb-server"},
-		images.Ovsvswitchd: {"ovs-vswitchd"},
+		OvsdbName:       {"ovsdb-server"},
+		OvsvswitchdName: {"ovs-vswitchd"},
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 	assert.Equal(t, setupArgs(), ctx.execs)

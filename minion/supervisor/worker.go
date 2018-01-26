@@ -8,7 +8,6 @@ import (
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/minion/ipdef"
 	"github.com/kelda/kelda/minion/nl"
-	"github.com/kelda/kelda/minion/supervisor/images"
 	"github.com/kelda/kelda/util"
 	"github.com/kelda/kelda/util/str"
 
@@ -21,15 +20,15 @@ func runWorker() {
 }
 
 func setupWorker() {
-	run(images.Ovsdb, "ovsdb-server")
-	run(images.Ovsvswitchd, "ovs-vswitchd")
+	run(OvsdbName, "ovsdb-server")
+	run(OvsvswitchdName, "ovs-vswitchd")
 
 	for {
 		err := setupBridge()
 		if err == nil {
 			break
 		}
-		log.WithError(err).Warnf("Failed to exec in %s.", images.Ovsvswitchd)
+		log.WithError(err).Warnf("Failed to exec in %s.", OvsvswitchdName)
 		time.Sleep(5 * time.Second)
 	}
 
@@ -67,19 +66,19 @@ func runWorkerOnce() {
 
 	if !str.SliceEq(oldEtcdIPs, etcdIPs) {
 		c.Inc("Reset Etcd")
-		Remove(images.Etcd)
+		Remove(EtcdName)
 	}
 
 	oldEtcdIPs = etcdIPs
 
-	run(images.Etcd, "etcd",
+	run(EtcdName, "etcd",
 		fmt.Sprintf("--initial-cluster=%s", initialClusterString(etcdIPs)),
 		"--heartbeat-interval="+etcdHeartbeatInterval,
 		"--election-timeout="+etcdElectionTimeout,
 		"--proxy=on")
 
-	run(images.Ovsdb, "ovsdb-server")
-	run(images.Ovsvswitchd, "ovs-vswitchd")
+	run(OvsdbName, "ovsdb-server")
+	run(OvsvswitchdName, "ovs-vswitchd")
 
 	if leaderIP == "" || IP == "" {
 		return
@@ -93,11 +92,11 @@ func runWorkerOnce() {
 		fmt.Sprintf("external_ids:api_server=\"http://%s:9000\"", leaderIP),
 		fmt.Sprintf("external_ids:system-id=\"%s\"", IP))
 	if err != nil {
-		log.WithError(err).Warnf("Failed to exec in %s.", images.Ovsvswitchd)
+		log.WithError(err).Warnf("Failed to exec in %s.", OvsvswitchdName)
 		return
 	}
 
-	run(images.Ovncontroller, "ovn-controller")
+	run(OvncontrollerName, "ovn-controller")
 }
 
 func setupBridge() error {

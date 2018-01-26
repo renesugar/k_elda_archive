@@ -14,7 +14,7 @@ import (
 
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/integration-tester/util"
-	"github.com/kelda/kelda/minion/supervisor/images"
+	"github.com/kelda/kelda/minion/supervisor"
 	"github.com/kelda/kelda/minion/vault"
 
 	"github.com/coreos/go-semver/semver"
@@ -33,8 +33,8 @@ const disableTestMessage = "Version tests are temporarily disabled until we " +
 // The names of the containers for which the version should be checked.
 var systemContainerNames = []string{
 	vault.ContainerName,
-	images.Etcd,
-	images.Registry,
+	supervisor.EtcdName,
+	supervisor.RegistryName,
 }
 
 func TestSystemContainerVersions(t *testing.T) {
@@ -162,8 +162,8 @@ func TestOVSVersion(t *testing.T) {
 		regexp.MustCompile(`openvswitch-(\d+\.\d+\.\d+).tar.gz`))
 	assert.NoError(t, err)
 
-	stdout, err := exec.Command("kelda", "ssh", aMaster.CloudID,
-		"docker", "exec", images.Ovnnorthd, "ovn-northd", "--version").Output()
+	stdout, err := exec.Command("kelda", "ssh", aMaster.CloudID, "docker",
+		"exec", supervisor.OvnnorthdName, "ovn-northd", "--version").Output()
 	assert.NoError(t, err)
 
 	// The output is in the form "ovn-northd (Open vSwitch) 2.8.1".

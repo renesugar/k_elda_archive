@@ -8,10 +8,31 @@ import (
 	"github.com/kelda/kelda/counter"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/minion/docker"
-	"github.com/kelda/kelda/minion/supervisor/images"
 
 	dkc "github.com/fsouza/go-dockerclient"
 	log "github.com/sirupsen/logrus"
+)
+
+// Friendly names for containers. These are identifiers that could be used with
+// `docker logs`.
+const (
+	// EtcdName is the name etcd cluster store container.
+	EtcdName = "etcd"
+
+	// OvncontrollerName is the name of the OVN controller container.
+	OvncontrollerName = "ovn-controller"
+
+	// OvnnorthdName is the name of the OVN northd container.
+	OvnnorthdName = "ovn-northd"
+
+	// OvsdbName is the name of the OVSDB container.
+	OvsdbName = "ovsdb-server"
+
+	// OvsvswitchdName is the name of the ovs-vswitchd container.
+	OvsvswitchdName = "ovs-vswitchd"
+
+	// RegistryName is the name of the registry container.
+	RegistryName = "registry"
 )
 
 const ovsImage = "keldaio/ovs"
@@ -21,12 +42,12 @@ const ovsImage = "keldaio/ovs"
 const tunnelingProtocol = "stt"
 
 var imageMap = map[string]string{
-	images.Etcd:          "quay.io/coreos/etcd:v3.3",
-	images.Ovncontroller: ovsImage,
-	images.Ovnnorthd:     ovsImage,
-	images.Ovsdb:         ovsImage,
-	images.Ovsvswitchd:   ovsImage,
-	images.Registry:      "registry:2.6.2",
+	EtcdName:          "quay.io/coreos/etcd:v3.3",
+	OvncontrollerName: ovsImage,
+	OvnnorthdName:     ovsImage,
+	OvsdbName:         ovsImage,
+	OvsvswitchdName:   ovsImage,
+	RegistryName:      "registry:2.6.2",
 }
 
 const etcdHeartbeatInterval = "500"
@@ -82,14 +103,14 @@ func run(name string, args ...string) {
 		Env:         map[string]string{},
 	}
 
-	if name == images.Ovsvswitchd {
+	if name == OvsvswitchdName {
 		ro.Privileged = true
 	}
 
 	// Run etcd with a data directory that's mounted on the host disk.
 	// This way, if the container restarts, its previous state will still be
 	// available.
-	if name == images.Etcd {
+	if name == EtcdName {
 		etcdDataDir := "/etcd-data"
 		ro.Mounts = []dkc.HostMount{
 			{

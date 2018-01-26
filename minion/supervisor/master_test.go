@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/kelda/kelda/db"
-	"github.com/kelda/kelda/minion/supervisor/images"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -27,9 +26,9 @@ func TestMaster(t *testing.T) {
 	runMasterOnce()
 
 	exp := map[string][]string{
-		images.Etcd:     etcdArgsMaster(ip, etcdIPs),
-		images.Ovsdb:    {"ovsdb-server"},
-		images.Registry: nil,
+		EtcdName:     etcdArgsMaster(ip, etcdIPs),
+		OvsdbName:    {"ovsdb-server"},
+		RegistryName: nil,
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 	assert.Empty(t, ctx.execs)
@@ -51,10 +50,10 @@ func TestMaster(t *testing.T) {
 	runMasterOnce()
 
 	exp = map[string][]string{
-		images.Etcd:      etcdArgsMaster(ip, etcdIPs),
-		images.Ovsdb:     {"ovsdb-server"},
-		images.Ovnnorthd: {"ovn-northd"},
-		images.Registry:  nil,
+		EtcdName:      etcdArgsMaster(ip, etcdIPs),
+		OvsdbName:     {"ovsdb-server"},
+		OvnnorthdName: {"ovn-northd"},
+		RegistryName:  nil,
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 	assert.Empty(t, ctx.execs)
@@ -69,9 +68,9 @@ func TestMaster(t *testing.T) {
 	runMasterOnce()
 
 	exp = map[string][]string{
-		images.Etcd:     etcdArgsMaster(ip, etcdIPs),
-		images.Ovsdb:    {"ovsdb-server"},
-		images.Registry: nil,
+		EtcdName:     etcdArgsMaster(ip, etcdIPs),
+		OvsdbName:    {"ovsdb-server"},
+		RegistryName: nil,
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 	assert.Empty(t, ctx.execs)
@@ -94,9 +93,9 @@ func TestEtcdAdd(t *testing.T) {
 	runMasterOnce()
 
 	exp := map[string][]string{
-		images.Etcd:     etcdArgsMaster(ip, etcdIPs),
-		images.Ovsdb:    {"ovsdb-server"},
-		images.Registry: nil,
+		EtcdName:     etcdArgsMaster(ip, etcdIPs),
+		OvsdbName:    {"ovsdb-server"},
+		RegistryName: nil,
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 
@@ -114,9 +113,9 @@ func TestEtcdAdd(t *testing.T) {
 	runMasterOnce()
 
 	exp = map[string][]string{
-		images.Etcd:     etcdArgsMaster(ip, etcdIPs),
-		images.Ovsdb:    {"ovsdb-server"},
-		images.Registry: nil,
+		EtcdName:     etcdArgsMaster(ip, etcdIPs),
+		OvsdbName:    {"ovsdb-server"},
+		RegistryName: nil,
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 }
@@ -138,9 +137,9 @@ func TestEtcdRemove(t *testing.T) {
 	runMasterOnce()
 
 	exp := map[string][]string{
-		images.Etcd:     etcdArgsMaster(ip, etcdIPs),
-		images.Ovsdb:    {"ovsdb-server"},
-		images.Registry: nil,
+		EtcdName:     etcdArgsMaster(ip, etcdIPs),
+		OvsdbName:    {"ovsdb-server"},
+		RegistryName: nil,
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 
@@ -158,9 +157,9 @@ func TestEtcdRemove(t *testing.T) {
 	runMasterOnce()
 
 	exp = map[string][]string{
-		images.Etcd:     etcdArgsMaster(ip, etcdIPs),
-		images.Ovsdb:    {"ovsdb-server"},
-		images.Registry: nil,
+		EtcdName:     etcdArgsMaster(ip, etcdIPs),
+		OvsdbName:    {"ovsdb-server"},
+		RegistryName: nil,
 	}
 	assert.Equal(t, exp, ctx.fd.running())
 }
