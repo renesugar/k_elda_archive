@@ -196,6 +196,16 @@ func (dk MockClient) PushImage(opts dkc.PushImageOptions, _ dkc.AuthConfiguratio
 		return errors.New("push error")
 	}
 
+	imgWithTag := opts.Name
+	if opts.Tag != "" {
+		imgWithTag += ":" + opts.Tag
+	}
+
+	_, ok := dk.Images[imgWithTag]
+	if !ok {
+		return errors.New("image does not exist")
+	}
+
 	dk.Pushed[opts] = struct{}{}
 	return nil
 }

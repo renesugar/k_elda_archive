@@ -349,7 +349,10 @@ func TestPush(t *testing.T) {
 	t.Parallel()
 	md, dk := NewMock()
 
-	err := dk.Push("foo", "bar:baz")
+	_, err := dk.Build("bar:baz", "dockerfile", false)
+	assert.NoError(t, err)
+
+	err = dk.Push("foo", "bar:baz")
 	assert.NoError(t, err)
 	assert.Equal(t, map[dkc.PushImageOptions]struct{}{
 		{
