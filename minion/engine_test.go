@@ -378,24 +378,21 @@ func TestPlacementTxn(t *testing.T) {
 	fooHostname := "foo"
 	barHostname := "bar"
 	bazHostname := "baz"
-	fooID := "fooID"
-	barID := "barID"
-	bazID := "bazID"
 	bp := blueprint.Blueprint{
 		Containers: []blueprint.Container{
 			{
 				Hostname: fooHostname,
-				ID:       fooID,
+				ID:       "fooID",
 				Image:    blueprint.Image{Name: "foo"},
 			},
 			{
 				Hostname: barHostname,
-				ID:       barID,
+				ID:       "barID",
 				Image:    blueprint.Image{Name: "bar"},
 			},
 			{
 				Hostname: bazHostname,
-				ID:       bazID,
+				ID:       "bazID",
 				Image:    blueprint.Image{Name: "baz"},
 			},
 		},
@@ -435,13 +432,13 @@ func TestPlacementTxn(t *testing.T) {
 	}
 	checkPlacement(bp,
 		db.Placement{
-			TargetContainer: fooID,
-			OtherContainer:  barID,
+			TargetContainer: fooHostname,
+			OtherContainer:  barHostname,
 			Exclusive:       true,
 		},
 		db.Placement{
-			TargetContainer: barID,
-			OtherContainer:  bazID,
+			TargetContainer: barHostname,
+			OtherContainer:  bazHostname,
 			Exclusive:       true,
 		},
 	)

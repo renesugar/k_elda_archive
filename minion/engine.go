@@ -47,36 +47,17 @@ func updatePolicy(view db.Database, bp string) {
 
 // `portPlacements` creates exclusive placement rules such that no two containers
 // listening on the same public port get placed on the same machine.
-func portPlacements(connections []db.Connection, containers []db.Container) (
-	placements []db.Placement) {
-
-	hostnameToContainer := map[string]db.Container{}
-	for _, c := range containers {
-		hostnameToContainer[c.Hostname] = c
-	}
-
+func portPlacements(connections []db.Connection) (placements []db.Placement) {
 	ports := make(map[int][]string)
 	for _, conn := range connections {
 		if !str.SliceContains(conn.From, blueprint.PublicInternetLabel) {
 			continue
 		}
 
-		connTo := str.SliceFilterOut(conn.To, blueprint.PublicInternetLabel)
-		for _, to := range connTo {
-			toContainer, ok := hostnameToContainer[to]
-			if !ok {
-				log.WithField("connection", conn).
-					WithField("hostname", to).
-					Warn("Public connection in terms of unknown " +
-						"hostname. Ignoring.")
-				continue
-			}
-
-			// XXX: Public connections do not currently support ranges, so we
-			// can safely consider just the MinPort.
-			ports[conn.MinPort] = append(ports[conn.MinPort],
-				toContainer.BlueprintID)
-		}
+		// XXX: Public connections do not currently support ranges, so we
+		// can safely consider just the MinPort.
+		ports[conn.MinPort] = append(ports[conn.MinPort],
+			str.SliceFilterOut(conn.To, blueprint.PublicInternetLabel)...)
 	}
 
 	// Create placement rules for all combinations of containers that listen on
@@ -106,8 +87,7 @@ func portPlacements(connections []db.Connection, containers []db.Container) (
 
 func updatePlacements(view db.Database, bp blueprint.Blueprint) {
 	connections := view.SelectFromConnection(nil)
-	containers := view.SelectFromContainer(nil)
-	placements := db.PlacementSlice(portPlacements(connections, containers))
+	placements := db.PlacementSlice(portPlacements(connections))
 	for _, sp := range bp.Placements {
 		placements = append(placements, db.Placement{
 			TargetContainer: sp.TargetContainer,
