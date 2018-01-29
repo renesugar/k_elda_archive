@@ -3,9 +3,12 @@ const infrastructure = require('../../config/infrastructure.js');
 
 const infra = infrastructure.createTestInfrastructure();
 
-const numContainers = Math.round(infrastructure.nWorker / 2);
+const numContainers = Math.round(infrastructure.nWorker);
 for (let i = 0; i < numContainers; i += 1) {
-  (new kelda.Container('test-container', 'alpine', {
-    command: ['tail', '-f', '/dev/null'],
-  })).deploy(infra);
+  const c = new kelda.Container('test-container', 'nginx', {
+    command: ['sh', '-c',
+      'date > /usr/share/nginx/html/index.html && nginx -g "daemon off;"'],
+  });
+  kelda.allowTraffic(kelda.publicInternet, c, 80);
+  c.deploy(infra);
 }

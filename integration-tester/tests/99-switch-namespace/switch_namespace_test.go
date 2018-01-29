@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,6 +29,18 @@ func TestSwitchNamespace(t *testing.T) {
 	initialContainers, err := clnt.QueryContainers()
 	assert.NoError(t, err)
 
+	machines, err := clnt.QueryMachines()
+	assert.NoError(t, err)
+
+	privToPubIP := map[string]string{}
+	for _, dbm := range machines {
+		privToPubIP[dbm.PrivateIP] = dbm.PublicIP
+	}
+
+	initialContainerStartTimes, err := getContainerStartTimes(
+		privToPubIP, initialContainers)
+	assert.NoError(t, err)
+
 	fmt.Println("Simulating switching namespaces by running `kelda stop`")
 	cmd := exec.Command("kelda", "stop", "-f", "random-namespace")
 	cmd.Stdout = os.Stdout
@@ -45,11 +60,15 @@ func TestSwitchNamespace(t *testing.T) {
 	err = util.BackoffWaitFor(switchedNamespace, 30*time.Second, 3*time.Minute)
 	assert.NoError(t, err)
 
+	// Sleep an additional 30 seconds in case the daemon does something odd in
+	// the new namespace.
+	time.Sleep(30 * time.Second)
+
 	fmt.Println("Switching back to the original blueprint")
 	assert.NoError(t, clnt.Deploy(initialBlueprint.String()))
 
 	// Wait until the daemon has redeployed the initial blueprint (i.e. wait
-	// until the specified containers are running).
+	// until the specified containers are tracked by the cluster).
 	containersUp := func() bool {
 		containers, err := clnt.QueryContainers()
 		if err != nil {
@@ -57,35 +76,58 @@ func TestSwitchNamespace(t *testing.T) {
 			return false
 		}
 
-		// If the DockerID isn't set, either the container has not been started
-		// yet, or the query response did not contact the Worker. Either way,
-		// the container response is incomplete, so we should wait until the
-		// container is booted, or the daemon connects to the worker.
-		for _, c := range containers {
-			if c.DockerID == "" {
-				return false
-			}
-		}
 		return len(containers) == len(initialBlueprint.Containers)
 	}
 	err = util.BackoffWaitFor(containersUp, 30*time.Second, 3*time.Minute)
 	assert.NoError(t, err)
+
+	// Sleep an additional minute to give the cluster time to evaluate the
+	// blueprint and possibly make any changes.
+	time.Sleep(1 * time.Minute)
 
 	// Ensure that the running containers are exactly the same as before we
 	// switched namespaces.
 	currentContainers, err := clnt.QueryContainers()
 	assert.NoError(t, err)
 
-	fmt.Printf("Initial containers: %+v\n", initialContainers)
-	fmt.Printf("Current containers: %+v\n", currentContainers)
-	assert.Len(t, currentContainers, len(initialContainers))
-	assert.Subset(t, scrubIDs(currentContainers), scrubIDs(initialContainers))
+	currentContainerStartTimes, err := getContainerStartTimes(
+		privToPubIP, currentContainers)
+	assert.NoError(t, err)
+
+	fmt.Printf("Initial containers: %+v\n", initialContainerStartTimes)
+	fmt.Printf("Current containers: %+v\n", currentContainerStartTimes)
+	assert.Equal(t, initialContainerStartTimes, currentContainerStartTimes)
 }
 
-func scrubIDs(dbcs []db.Container) (scrubbed []db.Container) {
-	for _, c := range dbcs {
-		c.ID = 0
-		scrubbed = append(scrubbed, c)
+func getContainerStartTimes(privToPubIP map[string]string, dbcs []db.Container) (
+	map[string]time.Time, error) {
+
+	hostnameToStartTime := map[string]time.Time{}
+	for _, dbc := range dbcs {
+		pubIP, ok := privToPubIP[dbc.Minion]
+		if !ok {
+			return nil, fmt.Errorf("no public IP for %s", dbc.Minion)
+		}
+
+		addr := "http://" + pubIP
+		resp, err := http.Get(addr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to GET address %s: %s", addr, err)
+		}
+
+		respBodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read GET response from %s: %s",
+				addr, err)
+		}
+		respBody := strings.TrimRight(string(respBodyBytes), "\n")
+
+		startTime, err := time.Parse(time.UnixDate, respBody)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse time %s: %s",
+				respBody, err)
+		}
+		hostnameToStartTime[dbc.Hostname] = startTime
 	}
-	return scrubbed
+	return hostnameToStartTime, nil
 }
