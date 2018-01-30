@@ -14,6 +14,9 @@ checkip.amazon.com, or pass containers a floating IP (or DNS name backed by a
 floating IP) and use placement rules to ensure the container is scheduled at
 that floating IP.
 
+Javascript API changes:
+- Remove deprecated methods `allowFrom` and `allow`.
+
 Release 0.8.0
 -------------
 

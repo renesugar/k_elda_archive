@@ -46,7 +46,7 @@ For a great example of how Kelda simplifies running complex applications, see
 Run any container.
 
 [//]: # (b1)
-<!-- const {Container, LoadBalancer, Machine, allow, publicInternet} = require('kelda'); -->
+<!-- const {Container, LoadBalancer, Machine, allowTraffic, publicInternet} = require('kelda'); -->
 ```javascript
 let web = new Container('web', 'someNodejsImage');
 ```
@@ -74,7 +74,7 @@ Set up a secure network.
 
 [//]: # (b1)
 ```javascript
-allow(publicInternet, webContainers, 80); // Open the webservers' port 80 to the public internet.
+allowTraffic(publicInternet, webContainers, 80); // Open the webservers' port 80 to the public internet.
 redis.allowTrafficFrom(webContainers); // Let the web app communicate with Redis.
 ```
 

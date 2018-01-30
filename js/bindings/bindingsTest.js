@@ -733,103 +733,6 @@ describe('Bindings', () => {
       expect(foo.hostname()).to.equal('foo.q');
     });
   });
-  describe('AllowFrom', () => {
-    let foo;
-    let bar;
-    let fooLoadBalancer;
-    beforeEach(() => {
-      createBasicInfra();
-      foo = new b.Container('foo', 'image');
-      foo.deploy(infra);
-      fooLoadBalancer = new b.LoadBalancer('foo-load-balancer', [foo]);
-      bar = new b.Container('bar', 'image');
-      bar.deploy(infra);
-      fooLoadBalancer.deploy(infra);
-    });
-    it('autobox port ranges', () => {
-      bar.allowFrom(foo, 80);
-      checkConnections([{
-        from: ['foo'],
-        to: ['bar'],
-        minPort: 80,
-        maxPort: 80,
-      }]);
-    });
-    it('port', () => {
-      bar.allowFrom(foo, new b.Port(80));
-      checkConnections([{
-        from: ['foo'],
-        to: ['bar'],
-        minPort: 80,
-        maxPort: 80,
-      }]);
-    });
-    it('port range', () => {
-      bar.allowFrom(foo, new b.PortRange(80, 85));
-      checkConnections([{
-        from: ['foo'],
-        to: ['bar'],
-        minPort: 80,
-        maxPort: 85,
-      }]);
-    });
-    it('connect to undefined port range', () => {
-      expect(() => foo.allowFrom(bar)).to
-        .throw('a port or port range is required');
-    });
-    it('allow connections to undefined port range on publicInternet', () => {
-      expect(() =>
-        b.publicInternet.allowFrom(foo)).to
-        .throw('a port or port range is required');
-    });
-    it('connect to invalid port range', () => {
-      expect(() => foo.allowFrom(bar, true)).to
-        .throw('Input argument must be a number or a Range');
-    });
-    it('allow connections to publicInternet', () => {
-      b.publicInternet.allowFrom(foo, 80);
-      checkConnections([{
-        from: ['foo'],
-        to: ['public'],
-        minPort: 80,
-        maxPort: 80,
-      }]);
-    });
-    it('allow connections from publicInternet', () => {
-      foo.allowFrom(b.publicInternet, 80);
-      checkConnections([{
-        from: ['public'],
-        to: ['foo'],
-        minPort: 80,
-        maxPort: 80,
-      }]);
-    });
-    it('connect to LoadBalancer', () => {
-      fooLoadBalancer.allowFrom(bar, 80);
-      checkConnections([{
-        from: ['bar'],
-        to: ['foo-load-balancer'],
-        minPort: 80,
-        maxPort: 80,
-      }]);
-    });
-    it('connect to publicInternet port range', () => {
-      expect(() =>
-        b.publicInternet.allowFrom(foo, new b.PortRange(80, 81))).to
-        .throw('public internet can only connect to single ports ' +
-                        'and not to port ranges');
-    });
-    it('connect from publicInternet port range', () => {
-      expect(() =>
-        foo.allowFrom(b.publicInternet, new b.PortRange(80, 81))).to
-        .throw('public internet can only connect to single ports ' +
-                        'and not to port ranges');
-    });
-    it('allowFrom non-container', () => {
-      expect(() => foo.allowFrom(10, 10)).to
-        .throw('not an array of connectable objects (was 10)');
-    });
-  });
   describe('allowTraffic', () => {
     let foo;
     let bar;
@@ -952,78 +855,6 @@ describe('Bindings', () => {
       ]);
     });
   });
-  describe('allow', () => {
-    let foo;
-    let bar;
-    let qux;
-    let quuz;
-    let fooBarGroup;
-    let quxQuuzGroup;
-    let lb;
-    beforeEach(() => {
-      createBasicInfra();
-
-      foo = new b.Container('foo', 'image');
-      bar = new b.Container('bar', 'image');
-      qux = new b.Container('qux', 'image');
-      quuz = new b.Container('quuz', 'image');
-
-      fooBarGroup = [foo, bar];
-      quxQuuzGroup = [qux, quuz];
-      lb = new b.LoadBalancer('serv', [foo, bar, qux, quuz]);
-
-      foo.deploy(infra);
-      bar.deploy(infra);
-      qux.deploy(infra);
-      quuz.deploy(infra);
-      lb.deploy(infra);
-    });
-
-    it('both src and dst are lists', () => {
-      b.allow(quxQuuzGroup, fooBarGroup, 80);
-      checkConnections([
-        { from: ['qux', 'quuz'], to: ['foo'], minPort: 80, maxPort: 80 },
-        { from: ['qux', 'quuz'], to: ['bar'], minPort: 80, maxPort: 80 },
-      ]);
-    });
-
-    it('dst is a list', () => {
-      b.allow(qux, fooBarGroup, 80);
-      checkConnections([
-        { from: ['qux'], to: ['foo'], minPort: 80, maxPort: 80 },
-        { from: ['qux'], to: ['bar'], minPort: 80, maxPort: 80 },
-      ]);
-    });
-
-    it('src is a list', () => {
-      b.allow(fooBarGroup, qux, 80);
-      checkConnections([
-        { from: ['foo', 'bar'], to: ['qux'], minPort: 80, maxPort: 80 },
-      ]);
-    });
-
-    it('src is public', () => {
-      b.allow(b.publicInternet, fooBarGroup, 80);
-      checkConnections([
-        { from: ['public'], to: ['foo'], minPort: 80, maxPort: 80 },
-        { from: ['public'], to: ['bar'], minPort: 80, maxPort: 80 },
-      ]);
-    });
-
-    it('dst is public', () => {
-      b.allow(fooBarGroup, b.publicInternet, 80);
-      checkConnections([
-        { from: ['foo', 'bar'], to: ['public'], minPort: 80, maxPort: 80 },
-      ]);
-    });
-
-    it('dst is a LoadBalancer', () => {
-      b.allow(fooBarGroup, lb, 80);
-      checkConnections([
-        { from: ['foo', 'bar'], to: ['serv'], minPort: 80, maxPort: 80 },
-      ]);
-    });
-  });
   describe('Vet', () => {
     const deploy = () => infra.toKeldaRepresentation();
     it('should error when given namespace contains upper case letters', () => {
@@ -1038,7 +869,7 @@ describe('Bindings', () => {
       const foo = new b.LoadBalancer('foo', []);
       foo.deploy(infra);
 
-      foo.allowFrom(new b.Container('baz', 'image'), 80);
+      b.allowTraffic(new b.Container('baz', 'image'), foo, 80);
       expect(deploy).to.throw(
         'connection {"from":["baz"],"maxPort":80,"minPort":80,' +
                 '"to":["foo"]} references an undefined hostname: baz');

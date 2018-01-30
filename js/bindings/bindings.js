@@ -358,21 +358,6 @@ class LoadBalancer {
   }
 
   /**
-   * Allows inbound connections to the load balancer. Note that this does not
-   * allow direct connections to the containers behind the load balancer.
-   * @deprecated
-   *
-   * @param {Container|Container[]} src - The containers that can open
-   *   connections to this load balancer.
-   * @param {int|Port|PortRange} portRange - The ports on which containers can
-   *   open connections.
-   * @returns {void}
-   */
-  allowFrom(src, portRange) {
-    allowTraffic(src, this, portRange);
-  }
-
-  /**
    * @returns {string} the name of this LoadBalancer for use in connections
    */
   getConnectableName() {
@@ -387,19 +372,6 @@ class LoadBalancer {
  * @implements {Connectable}
  */
 const publicInternet = {
-  /**
-   * @deprecated
-   *
-   * @param {Container|Container[]} srcArg - A Container or list of Containers
-   *   that should be allowed to connect to the public internet.
-   * @param {number|Range|PortRange} portRange - A port or range of ports that the
-   *   given container(s) are allowed to connect to the public internet on.
-   * @returns {void}
-   */
-  allowFrom(srcArg, portRange) {
-    allowTraffic(srcArg, publicInternet, portRange);
-  },
-
   /**
    * @returns {string} A name representing the public internet for connection purposes.
    */
@@ -1127,23 +1099,6 @@ class Container {
   }
 
   /**
-   * Allows connections to this Container from the given Container(s) on the given
-   * port or port range.  Containers have a default-deny firewall, meaning that
-   * unless connections are explicitly allowed to a container (by calling this
-   * function) they will not be allowed.
-   * @deprecated
-   *
-   * @param {Container|Container[]|publicInternet} src - An entity that should
-   *   be allowed to connect to this Container.
-   * @param {number|Range|PortRange} portRange - A port or range of ports that the
-   *  given Container(s) are allowed to connect to this Container on.
-   * @returns {void}
-   */
-  allowFrom(src, portRange) {
-    allowTraffic(src, this, portRange);
-  }
-
-  /**
    * @returns {string} the name of this Container for use in connections
    */
   getConnectableName() {
@@ -1158,44 +1113,6 @@ class Container {
    */
   deploy(infrastructure) {
     infrastructure.containers.add(this);
-  }
-
-  /**
-   * @private
-   * @returns {Object} - A list of maps describing the inbound connections to the Container, in
-   *   a format that can be converted to JSON and sent to the Kelda Go code.
-   */
-  getKeldaConnections() {
-    const connections = [];
-
-    this.allowedInboundConnections.forEach((conn) => {
-      connections.push({
-        from: conn.from.map(f => f.hostname),
-        to: [this.hostname],
-        minPort: conn.minPort,
-        maxPort: conn.maxPort,
-      });
-    });
-
-    this.outgoingPublic.forEach((rng) => {
-      connections.push({
-        from: [this.hostname],
-        to: [publicInternetLabel],
-        minPort: rng.min,
-        maxPort: rng.max,
-      });
-    });
-
-    this.incomingPublic.forEach((rng) => {
-      connections.push({
-        from: [publicInternetLabel],
-        to: [this.hostname],
-        minPort: rng.min,
-        maxPort: rng.max,
-      });
-    });
-
-    return connections;
   }
 
   /**
@@ -1275,18 +1192,6 @@ function boxConnectable(objects) {
 // eslint-disable-next-line no-unused-vars
 class Connectable {
   /**
-   * Allows traffic from src on port
-   * @deprecated
-   *
-   * @param {Container} src - The container that can initiate connections.
-   * @param {int|Port|PortRange} port - The ports to allow traffic on.
-   * @returns {void}
-   */
-  allowFrom(src, port) { // eslint-disable-line
-    throw new Error('not implemented');
-  }
-
-  /**
    * @returns {string} a string representation for use in connections
    */
   getConnectableName() { // eslint-disable-line class-methods-use-this
@@ -1303,25 +1208,6 @@ class Connectable {
  */
 function isConnectable(x) {
   return typeof (x.getConnectableName) === 'function';
-}
-
-/**
- * allow is a utility function to allow calling `allowFrom` on groups of
- * containers.
- * @deprecated
- *
- * @param {Container|publicInternet} src - The containers that can
- *   initiate a connection.
- * @param {Connectable[]} dst - The objects that traffic can be sent to.
- *   Examples of connectable objects are Containers, LoadBalancers, publicInternet,
- *   and user-defined objects that implement allowFrom.
- * @param {int|Port|PortRange} port - The ports that traffic is allowed on.
- * @returns {void}
- */
-function allow(src, dst, port) {
-  boxConnectable(dst).forEach((c) => {
-    c.allowFrom(src, port);
-  });
 }
 
 /**
@@ -1476,7 +1362,6 @@ module.exports = {
   Range,
   Secret,
   LoadBalancer,
-  allow,
   allowTraffic,
   getInfrastructure,
   githubKeys,
