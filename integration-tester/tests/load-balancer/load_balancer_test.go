@@ -13,7 +13,7 @@ import (
 
 const (
 	fetcherImage      = "alpine"
-	loadBalancedLabel = "loadBalanced"
+	loadBalancedLabel = "load-balanced"
 )
 
 func TestLoadBalancer(t *testing.T) {

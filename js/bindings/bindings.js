@@ -336,6 +336,7 @@ class LoadBalancer {
     }
     this.name = uniqueHostname(name);
     this.containers = boxObjects(containers, Container);
+    validateHostname(this.name);
   }
 
   /**
@@ -976,18 +977,18 @@ class Container {
    * @constructor
    * @implements {Connectable}
    *
-   * @example <caption>Create a Container with hostname myApp that uses the nginx
+   * @example <caption>Create a Container with hostname my-app that uses the nginx
    * image on Docker Hub, and that includes a file located at /etc/myconf with
    * contents foo.</caption>
    * const container = new Container(
-   *   'myApp', 'nginx', {filepathToContent: {'/etc/myconf': 'foo'}});
+   *   'my-app', 'nginx', {filepathToContent: {'/etc/myconf': 'foo'}});
    *
    * @example <caption>Create a Container that has one regular, and one secret
    * environment variable value. The value of `mySecret` must be defined by
    * running `kelda secret mySecret SECRET_VALUE`. If the blueprint with the
    * container is launched before `mySecret` has been added, Kelda will wait to
    * launch the container until the secret's value has been defined.</caption>
-   * const container = new Container('myApp', 'nginx', {
+   * const container = new Container('my-app', 'nginx', {
    *   env: {
    *     'key1': 'a plaintext value',
    *     'key2': new Secret('mySecret'),
@@ -1036,6 +1037,8 @@ class Container {
 
     this.hostnamePrefix = getString('hostnamePrefix', hostnamePrefix);
     this.hostname = uniqueHostname(this.hostnamePrefix);
+    validateHostname(this.hostname);
+
     this.command = getStringArray('command', opts.command);
     this.env = getSecretOrStringMap('env', opts.env);
     this.filepathToContent = getSecretOrStringMap('filepathToContent',
@@ -1458,6 +1461,23 @@ function Port(p) {
  */
 function getInfrastructure() {
   return _keldaInfrastructure;
+}
+
+/**
+ * validateHostname checks whether the given hostname is a valid hostname.
+ * If the hostname is invalid, it throws an error.
+ *
+ * @param {string} hostname - The hostname to validate.
+ * @returns {void}
+ */
+function validateHostname(hostname) {
+  const regexp = new RegExp('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$');
+  if (!regexp.test(hostname) || hostname.length > 253) {
+    throw new Error(`"${hostname}" is not a valid hostname. Hostnames must only ` +
+    'contain lowercase characters, numbers and hyphens, and cannot start or ' +
+    'end with a hyphen. For example, "my-hostname2", is a valid hostname, ' +
+    'but "-my-hostname", "my_hostname" and "MyHostname" are not.');
+  }
 }
 
 /**

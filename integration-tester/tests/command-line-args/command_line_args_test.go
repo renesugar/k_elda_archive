@@ -40,7 +40,7 @@ func TestCmdLineArgs(t *testing.T) {
 	blueprintPath := filepath.Join(testDir, "dep", "withArgs.js")
 
 	expCount := 5
-	expHostname := "taylorSwift"
+	expHostname := "taylor-swift"
 
 	cmd := exec.Command("kelda", "run", "-f", blueprintPath,
 		strconv.Itoa(expCount), expHostname)

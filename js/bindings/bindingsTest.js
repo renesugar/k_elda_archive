@@ -686,21 +686,21 @@ describe('Bindings', () => {
   describe('LoadBalancer', () => {
     beforeEach(createBasicInfra);
     it('basic', () => {
-      const lb = new b.LoadBalancer('web_tier', [new b.Container('host', 'nginx')]);
+      const lb = new b.LoadBalancer('web-tier', [new b.Container('host', 'nginx')]);
       lb.deploy(infra);
       checkLoadBalancers([{
-        name: 'web_tier',
+        name: 'web-tier',
         hostnames: ['host'],
       }]);
     });
     it('multiple containers', () => {
-      const lb = new b.LoadBalancer('web_tier', [
+      const lb = new b.LoadBalancer('web-tier', [
         new b.Container('host', 'nginx'),
         new b.Container('host', 'nginx'),
       ]);
       lb.deploy(infra);
       checkLoadBalancers([{
-        name: 'web_tier',
+        name: 'web-tier',
         hostnames: [
           'host',
           'host2',
@@ -745,7 +745,7 @@ describe('Bindings', () => {
       createBasicInfra();
       foo = new b.Container('foo', 'image');
       foo.deploy(infra);
-      fooLoadBalancer = new b.LoadBalancer('fooLoadBalancer', [foo]);
+      fooLoadBalancer = new b.LoadBalancer('foo-load-balancer', [foo]);
       bar = new b.Container('bar', 'image');
       bar.deploy(infra);
       fooLoadBalancer.deploy(infra);
@@ -812,7 +812,7 @@ describe('Bindings', () => {
       fooLoadBalancer.allowFrom(bar, 80);
       checkConnections([{
         from: ['bar'],
-        to: ['fooLoadBalancer'],
+        to: ['foo-load-balancer'],
         minPort: 80,
         maxPort: 80,
       }]);
@@ -842,7 +842,7 @@ describe('Bindings', () => {
       createBasicInfra();
       foo = new b.Container('foo', 'image');
       foo.deploy(infra);
-      fooLoadBalancer = new b.LoadBalancer('fooLB', [foo]);
+      fooLoadBalancer = new b.LoadBalancer('foo-lb', [foo]);
       bar = new b.Container('bar', 'image');
       bar.deploy(infra);
       fooLoadBalancer.deploy(infra);
@@ -904,7 +904,7 @@ describe('Bindings', () => {
       b.allowTraffic(bar, fooLoadBalancer, 80);
       checkConnections([{
         from: ['bar'],
-        to: ['fooLB'],
+        to: ['foo-lb'],
         minPort: 80,
         maxPort: 80,
       }]);
@@ -940,7 +940,7 @@ describe('Bindings', () => {
     it('both src and dst are lists', () => {
       b.allowTraffic([foo, bar], [fooLoadBalancer, b.publicInternet], 80);
       checkConnections([
-        { from: ['foo', 'bar'], to: ['fooLB', 'public'], minPort: 80, maxPort: 80 },
+        { from: ['foo', 'bar'], to: ['foo-lb', 'public'], minPort: 80, maxPort: 80 },
       ]);
     });
     it('src is a list', () => {
@@ -1087,6 +1087,40 @@ describe('Bindings', () => {
         + 'region \'sfo2\'.');
     });
   });
+
+  describe('Hostname validation', () => {
+    const createContainerWithName = hostname => () => {
+      new b.Container(hostname, 'image'); // eslint-disable-line no-new
+    };
+    const createLoadBalancerWithName = hostname => () => {
+      new b.LoadBalancer(hostname, []); // eslint-disable-line no-new
+    };
+
+    it('should not error for a valid hostname', () => {
+      const validHostnames = ['hostname', 'hostname2', 'my-hostname'];
+      validHostnames.forEach((hostname) => {
+        expect(createContainerWithName(hostname)).to.not.throw();
+        expect(createLoadBalancerWithName(hostname)).to.not.throw();
+      });
+    });
+
+    it('should error when using a hostname with underscores', () => {
+      expect(createContainerWithName('my_hostname')).to.throw();
+      expect(createLoadBalancerWithName('my_hostname')).to.throw();
+    });
+
+    it('should error when using a hostname with capital letters', () => {
+      expect(createContainerWithName('myHostname')).to.throw();
+      expect(createLoadBalancerWithName('myHostname')).to.throw();
+    });
+
+    it('should error when using a hostname longer than 253 characters', () => {
+      const hostname = 'a'.repeat(254);
+      expect(createContainerWithName(hostname)).to.throw();
+      expect(createLoadBalancerWithName(hostname)).to.throw();
+    });
+  });
+
   describe('Infrastructure', () => {
     it('using Infrastructure constructor overwrites the default Infrastructure', () => {
       const namespace = 'testing-namespace';
