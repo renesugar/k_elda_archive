@@ -61,8 +61,8 @@ var (
 	}
 )
 
-// 16.04.1 x64 created at 2017-02-03.
-var imageID = 22601368
+// 16.04.1 x64 created at 2016-12-21.
+var imageID = 21669205
 
 // The Provider object represents a connection to DigitalOcean.
 type Provider struct {
