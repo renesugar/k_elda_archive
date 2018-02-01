@@ -6,7 +6,7 @@ const nWorker = getNumberWorkers();
 const providerToFloatingIp = {
   Amazon: '13.57.99.49', // us-west-1
   Google: '104.196.11.66', // us-east1-b
-  DigitalOcean: '138.68.203.188', // sfo1
+  DigitalOcean: '165.227.242.236', // sfo2
 };
 
 /**
