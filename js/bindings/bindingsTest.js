@@ -507,7 +507,7 @@ describe('Bindings', () => {
     it('hostname', () => {
       const c = new b.Container('host', new b.Image('image'));
       c.deploy(infra);
-      expect(c.getHostname()).to.equal('host.q');
+      expect(c.getHostname()).to.equal('host');
       checkContainers([{
         id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
         image: new b.Image('image'),
@@ -541,8 +541,8 @@ describe('Bindings', () => {
     it('Container.hostname and LoadBalancer.hostname don\'t conflict', () => {
       const container = new b.Container('foo', 'image');
       const serv = new b.LoadBalancer('foo', []);
-      expect(container.getHostname()).to.equal('foo.q');
-      expect(serv.hostname()).to.equal('foo2.q');
+      expect(container.getHostname()).to.equal('foo');
+      expect(serv.hostname()).to.equal('foo2');
     });
     it('hostnames returned by uniqueHostname cannot be reused', () => {
       const containerA = new b.Container('host', 'ignoreme');
@@ -557,9 +557,9 @@ describe('Bindings', () => {
       const containerA = new b.Container('host', 'ignoreme');
       const containerB = containerA.clone();
       const containerC = containerB.clone();
-      expect(containerA.getHostname()).to.equal('host.q');
-      expect(containerB.getHostname()).to.equal('host2.q');
-      expect(containerC.getHostname()).to.equal('host3.q');
+      expect(containerA.getHostname()).to.equal('host');
+      expect(containerB.getHostname()).to.equal('host2');
+      expect(containerC.getHostname()).to.equal('host3');
     });
     it('duplicate hostname causes error', () => {
       const x = new b.Container('host', 'image');
@@ -730,7 +730,7 @@ describe('Bindings', () => {
     });
     it('get LoadBalancer hostname', () => {
       const foo = new b.LoadBalancer('foo', []);
-      expect(foo.hostname()).to.equal('foo.q');
+      expect(foo.hostname()).to.equal('foo');
     });
   });
   describe('allowTraffic', () => {

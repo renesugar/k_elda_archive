@@ -274,7 +274,7 @@ func TestSyncJoinScore(t *testing.T) {
 		resolvedFilepathToContent: map[string]string{"c": "d"},
 	}
 	dkc := docker.Container{
-		Hostname: "hostname.q",
+		Hostname: "hostname",
 		IP:       "1.2.3.4",
 		Image:    dbc.Image,
 		Args:     dbc.Command,

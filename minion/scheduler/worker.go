@@ -184,7 +184,7 @@ func dockerRun(dk docker.Client, iface interface{}) {
 	log.WithField("container", dbc).Info("Start container")
 
 	_, err := dk.Run(docker.RunOptions{
-		Hostname:          dbc.Hostname + ".q",
+		Hostname:          dbc.Hostname,
 		Image:             dbc.Image,
 		Args:              dbc.Command,
 		Env:               dbc.resolvedEnv,
@@ -221,7 +221,7 @@ func syncJoinScore(left, right interface{}) int {
 	dkc := right.(docker.Container)
 
 	expFilesHash := filesHash(dbc.resolvedFilepathToContent)
-	if dbc.Hostname+".q" != dkc.Hostname || dbc.IP != dkc.IP ||
+	if dbc.Hostname != dkc.Hostname || dbc.IP != dkc.IP ||
 		expFilesHash != dkc.Labels[filesKey] {
 		return -1
 	}

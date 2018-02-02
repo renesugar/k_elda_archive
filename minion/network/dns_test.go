@@ -22,12 +22,12 @@ func TestUpdateTable(t *testing.T) {
 
 	table := updateTable(nil, []db.Hostname{{Hostname: "foo", IP: "1.2.3.4"}})
 	assert.NotNil(t, table)
-	assert.Equal(t, map[string]net.IP{"foo.q.": net.IPv4(1, 2, 3, 4)}, table.records)
+	assert.Equal(t, map[string]net.IP{"foo": net.IPv4(1, 2, 3, 4)}, table.records)
 
 	newTable := updateTable(table, []db.Hostname{{Hostname: "foo", IP: "5.6.7.8"}})
 	assert.NotNil(t, newTable)
 	assert.True(t, table == newTable) // Pointer Equality.
-	assert.Equal(t, map[string]net.IP{"foo.q.": net.IPv4(5, 6, 7, 8)},
+	assert.Equal(t, map[string]net.IP{"foo": net.IPv4(5, 6, 7, 8)},
 		newTable.records)
 }
 
@@ -35,7 +35,7 @@ func TestGenResponse(t *testing.T) {
 	t.Parallel()
 
 	table := makeTable(map[string]net.IP{
-		"a.q.": net.IPv4(1, 2, 3, 4),
+		"a": net.IPv4(1, 2, 3, 4),
 	})
 
 	req := &dns.Msg{}
@@ -56,18 +56,18 @@ func TestGenResponse(t *testing.T) {
 	assert.Equal(t, req.Id, resp.Id)
 	assert.Equal(t, dns.RcodeNotImplemented, resp.Rcode)
 
-	req.SetQuestion("bad.q.", dns.TypeA)
+	req.SetQuestion("bad", dns.TypeA)
 	resp = table.genResponse(req)
 	assert.Nil(t, resp)
 
-	req.SetQuestion("a.q.", dns.TypeA)
+	req.SetQuestion("a", dns.TypeA)
 	resp = table.genResponse(req)
 	exp := *req
 	exp.Response = true
 	exp.Rcode = dns.RcodeSuccess
 	exp.Answer = []dns.RR{&dns.A{
 		Hdr: dns.RR_Header{
-			Name:   "a.q.",
+			Name:   "a",
 			Rrtype: dns.TypeA,
 			Class:  dns.ClassINET,
 			Ttl:    dnsTTL,
@@ -82,12 +82,12 @@ func TestLookupA(t *testing.T) {
 	t.Parallel()
 
 	table := makeTable(map[string]net.IP{
-		"a.q.": net.IPv4(1, 2, 3, 4),
+		"a": net.IPv4(1, 2, 3, 4),
 	})
 
-	assert.Empty(t, table.lookupA("bad.q."))
-	assert.Equal(t, []net.IP{net.IPv4(1, 2, 3, 4)}, table.lookupA("a.q."))
-	assert.Equal(t, []net.IP{net.IPv4(1, 2, 3, 4)}, table.lookupA("A.Q."))
+	assert.Empty(t, table.lookupA("bad"))
+	assert.Equal(t, []net.IP{net.IPv4(1, 2, 3, 4)}, table.lookupA("a"))
+	assert.Equal(t, []net.IP{net.IPv4(1, 2, 3, 4)}, table.lookupA("A"))
 
 	lookupHost = func(string) ([]string, error) { return nil, assert.AnError }
 	assert.Empty(t, table.lookupA("kelda.io."))
@@ -133,8 +133,8 @@ func TestHostnamesToDNS(t *testing.T) {
 		IP:       "5.6.7.8",
 	}})
 	exp := map[string]net.IP{
-		"h3.q.": net.IPv4(1, 2, 3, 4),
-		"h4.q.": net.IPv4(5, 6, 7, 8),
+		"h3": net.IPv4(1, 2, 3, 4),
+		"h4": net.IPv4(5, 6, 7, 8),
 	}
 	assert.Equal(t, exp, res)
 }

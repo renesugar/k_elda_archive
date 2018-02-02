@@ -174,13 +174,13 @@ func (table *dnsTable) genResponse(req *dns.Msg) *dns.Msg {
 
 	ips := table.lookupA(q.Name)
 	if len(ips) == 0 {
-		// Even though the client asked for a hostname within `.q` that we know
+		// Even though the client asked for a Kelda hostname that we know
 		// nothing about, it's possible we'll learn about it in the future.  For
 		// now, we'll just not respond, the client will time out, and try again
 		// later.  Hopefully by then we have a response for them -- or if not,
 		// eventually they'll give up.
 		//
-		// XXX: The above logic is correct for things in the .q domain name, but
+		// XXX: The above logic is correct for Kelda hostname, but
 		// we're also doing the same thing for failures to resolve external
 		// hosts.  This isn't entirely correct, it would be much better to return
 		// whatever upstream gave us in case of a failure.
@@ -203,8 +203,9 @@ func (table *dnsTable) genResponse(req *dns.Msg) *dns.Msg {
 }
 
 func (table *dnsTable) lookupA(name string) []net.IP {
-	name = strings.ToLower(name)
-	if strings.HasSuffix(name, ".q.") {
+	name = strings.TrimRight(strings.ToLower(name), ".")
+	isInternalHostname := strings.Count(name, ".") == 0
+	if isInternalHostname {
 		dnsC.Inc("Lookup Internal")
 		table.recordLock.Lock()
 		ip := table.records[name]
@@ -216,7 +217,7 @@ func (table *dnsTable) lookupA(name string) []net.IP {
 	}
 
 	dnsC.Inc("Lookup External")
-	ipStrs, err := lookupHost(strings.TrimRight(name, "."))
+	ipStrs, err := lookupHost(name)
 	if err != nil {
 		log.WithError(err).Debug("Failed to lookup external record: ", name)
 		return nil
@@ -248,7 +249,7 @@ func hostnamesToDNS(hostnames []db.Hostname) map[string]net.IP {
 	for _, hn := range hostnames {
 		if ip := net.ParseIP(hn.IP); ip != nil {
 			hn.Hostname = strings.ToLower(hn.Hostname)
-			records[hn.Hostname+".q."] = ip
+			records[hn.Hostname] = ip
 		}
 	}
 	return records

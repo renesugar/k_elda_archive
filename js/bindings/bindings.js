@@ -343,7 +343,7 @@ class LoadBalancer {
    * @returns {string} The Kelda hostname that represents the entire load balancer.
    */
   hostname() {
-    return `${this.name}.q`;
+    return this.name;
   }
 
   /**
@@ -1056,7 +1056,7 @@ class Container {
    * @returns {string} The container's hostname.
    */
   getHostname() {
-    return `${this.hostname}.q`;
+    return this.hostname;
   }
 
   /**

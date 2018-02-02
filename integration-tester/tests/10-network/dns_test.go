@@ -26,12 +26,12 @@ func testDNS(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 	}
 
 	for _, lb := range loadBalancers {
-		hostnameIPMap[lb.Name+".q"] = lb.IP
+		hostnameIPMap[lb.Name] = lb.IP
 	}
 
 	for _, c := range containers {
 		if c.Hostname != "" {
-			hostnameIPMap[c.Hostname+".q"] = c.IP
+			hostnameIPMap[c.Hostname] = c.IP
 		}
 	}
 

@@ -71,7 +71,7 @@ func TestLoadBalancer(t *testing.T) {
 			defer wg.Done()
 
 			output, err := sshUtil.SSH(*fetcher, "wget", "-q", "-O", "-",
-				loadBalancedLabel+".q")
+				loadBalancedLabel)
 			if err != nil {
 				t.Errorf("Unable to GET: %s", err)
 				log.WithError(err).WithField("output", output).

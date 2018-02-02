@@ -15,10 +15,10 @@ func testPing(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 
 	var allHostnames []string
 	for _, lb := range loadBalancers {
-		allHostnames = append(allHostnames, lb.Name+".q")
+		allHostnames = append(allHostnames, lb.Name)
 	}
 	for _, c := range containers {
-		allHostnames = append(allHostnames, c.Hostname+".q")
+		allHostnames = append(allHostnames, c.Hostname)
 	}
 
 	connectionMap := make(map[string][]string)
@@ -31,9 +31,9 @@ func testPing(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 	var wg sync.WaitGroup
 	for _, container := range containers {
 		// We should be able to ping ourselves.
-		expReachable := map[string]struct{}{container.Hostname + ".q": {}}
+		expReachable := map[string]struct{}{container.Hostname: {}}
 		for _, dst := range connectionMap[container.Hostname] {
-			expReachable[dst+".q"] = struct{}{}
+			expReachable[dst] = struct{}{}
 		}
 
 		for _, hostname := range allHostnames {
@@ -91,7 +91,7 @@ func testHPing(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 			for _, to := range conn.To {
 				for port := conn.MinPort; port <= conn.MaxPort; port++ {
 					wg.Add(1)
-					go test(container, to+".q", port, true)
+					go test(container, to, port, true)
 				}
 			}
 		}
@@ -103,7 +103,7 @@ func testHPing(t *testing.T, sshUtil util.SSHUtil, containers []db.Container,
 			// covered in a connection.  Could do something more
 			// sophisticated to find an unused port later.
 			wg.Add(1)
-			go test(container, hostname+".q", 50000, false)
+			go test(container, hostname, 50000, false)
 		}
 	}
 
