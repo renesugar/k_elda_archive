@@ -8,6 +8,7 @@
     "@kelda/etcd": "kelda/etcd",
     "@kelda/hadoop": "kelda/hadoop",
     "@kelda/haproxy": "kelda/haproxy",
+    "@kelda/kibana": "kelda/kibana",
     "@kelda/lobsters": "kelda/lobsters",
     "@kelda/mongo": "kelda/mongo",
     "@kelda/nginx": "kelda/nginx",
