@@ -131,18 +131,10 @@ func TestHostnamesToDNS(t *testing.T) {
 	}, {
 		Hostname: "h4",
 		IP:       "5.6.7.8",
-	}, {
-		Hostname: "1.h4",
-		IP:       "1.1.1.1",
-	}, {
-		Hostname: "2.h4",
-		IP:       "2.2.2.2",
 	}})
 	exp := map[string]net.IP{
-		"h3.q.":   net.IPv4(1, 2, 3, 4),
-		"h4.q.":   net.IPv4(5, 6, 7, 8),
-		"1.h4.q.": net.IPv4(1, 1, 1, 1),
-		"2.h4.q.": net.IPv4(2, 2, 2, 2),
+		"h3.q.": net.IPv4(1, 2, 3, 4),
+		"h4.q.": net.IPv4(5, 6, 7, 8),
 	}
 	assert.Equal(t, exp, res)
 }
