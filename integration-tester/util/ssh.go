@@ -76,7 +76,7 @@ func (sshUtil SSHUtil) SSH(dbc db.Container, cmd ...string) (string, error) {
 	ssh := <-sshChan
 	defer func() { sshChan <- ssh }()
 
-	fmt.Println(dbc.BlueprintID, strings.Join(cmd, " "))
+	fmt.Println(dbc.Hostname, strings.Join(cmd, " "))
 	ret, err := ssh.CombinedOutput(fmt.Sprintf("docker exec %s %s", dbc.DockerID,
 		strings.Join(cmd, " ")))
 	return string(ret), err
