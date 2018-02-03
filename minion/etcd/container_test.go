@@ -41,9 +41,8 @@ func TestRunContainerOnce(t *testing.T) {
 		dbc.Image = "ubuntu"
 		dbc.Command = []string{"1", "2", "3"}
 		dbc.Env = map[string]blueprint.ContainerValue{
-			"red":   blueprint.NewSecret("pill"),
-			"blue":  blueprint.NewString("pill"),
-			"green": blueprint.NewRuntimeValue(blueprint.ContainerPubIPKey),
+			"red":  blueprint.NewSecret("pill"),
+			"blue": blueprint.NewString("pill"),
 		}
 		dbc.FilepathToContent = map[string]blueprint.ContainerValue{
 			"foo": blueprint.NewString("bar"),
@@ -71,9 +70,6 @@ func TestRunContainerOnce(t *testing.T) {
         ],
         "Env": {
             "blue": "pill",
-            "green": {
-                "ResourceKey": "host.ip"
-            },
             "red": {
                 "NameOfSecret": "pill"
             }
@@ -100,9 +96,8 @@ func TestRunContainerOnce(t *testing.T) {
 
 		dbc := view.SelectFromContainer(nil)[0]
 		dbc.Env = map[string]blueprint.ContainerValue{
-			"red":   blueprint.NewSecret("fish"),
-			"blue":  blueprint.NewString("fish"),
-			"green": blueprint.NewRuntimeValue("fish"),
+			"red":  blueprint.NewSecret("fish"),
+			"blue": blueprint.NewString("fish"),
 		}
 		dbc.FilepathToContent = map[string]blueprint.ContainerValue{
 			"bar": blueprint.NewString("baz"),
@@ -122,9 +117,8 @@ func TestRunContainerOnce(t *testing.T) {
 		Image:       "ubuntu",
 		Command:     []string{"1", "2", "3"},
 		Env: map[string]blueprint.ContainerValue{
-			"red":   blueprint.NewSecret("pill"),
-			"blue":  blueprint.NewString("pill"),
-			"green": blueprint.NewRuntimeValue(blueprint.ContainerPubIPKey),
+			"red":  blueprint.NewSecret("pill"),
+			"blue": blueprint.NewString("pill"),
 		},
 		FilepathToContent: map[string]blueprint.ContainerValue{
 			"foo": blueprint.NewString("bar"),

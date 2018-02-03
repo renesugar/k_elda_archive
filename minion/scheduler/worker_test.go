@@ -45,21 +45,21 @@ func TestRunWorker(t *testing.T) {
 	})
 
 	// Wrong Minion IP, should do nothing.
-	runWorker(conn, dk, "1.2.3.5", "pubip")
+	runWorker(conn, dk, "1.2.3.5")
 	dkcs, err := dk.List(nil)
 	assert.NoError(t, err)
 	assert.Len(t, dkcs, 0)
 
 	// Run with a list error, should do nothing.
 	md.ListError = true
-	runWorker(conn, dk, "1.2.3.4", "pubip")
+	runWorker(conn, dk, "1.2.3.4")
 	md.ListError = false
 	dkcs, err = dk.List(nil)
 	assert.NoError(t, err)
 	assert.Len(t, dkcs, 0)
 
 	// Success case. We should boot the container.
-	runWorker(conn, dk, "1.2.3.4", "pubip")
+	runWorker(conn, dk, "1.2.3.4")
 	dkcs, err = dk.List(nil)
 	assert.NoError(t, err)
 	assert.Len(t, dkcs, 1)
@@ -87,7 +87,7 @@ func TestRunWorker(t *testing.T) {
 		return nil
 	})
 	mockVault.On("Read", secretName).Return("", vault.ErrSecretDoesNotExist).Twice()
-	runWorker(conn, dk, "1.2.3.4", "pubip")
+	runWorker(conn, dk, "1.2.3.4")
 
 	// The container's status should show that it's waiting for the secret to
 	// be placed in Vault.
@@ -103,7 +103,7 @@ func TestRunWorker(t *testing.T) {
 	// Simulate placing the secret into Vault. Even though runWorker joins twice,
 	// only one call is made to Vault because the first read was cached.
 	mockVault.On("Read", secretName).Return(secretVal, nil).Once()
-	runWorker(conn, dk, "1.2.3.4", "pubip")
+	runWorker(conn, dk, "1.2.3.4")
 
 	// The container's status should be updated.
 	dbc = conn.SelectFromContainer(nil)[0]
@@ -367,8 +367,6 @@ func TestEvaluateContainerValues(t *testing.T) {
 
 	rawStringKey := "regular"
 	rawStringVal := "string"
-	pubIPKey := "pubIPKey"
-	pubIP := "pubIP"
 	secretKey := "secretKey"
 
 	secretName := "secretName"
@@ -381,22 +379,12 @@ func TestEvaluateContainerValues(t *testing.T) {
 	input := map[string]blueprint.ContainerValue{
 		rawStringKey: blueprint.NewString(rawStringVal),
 		secretKey:    blueprint.NewSecret(secretName),
-		pubIPKey:     blueprint.NewRuntimeValue(blueprint.ContainerPubIPKey),
 	}
-	resMap, resMissing := evaluateContainerValues(input, secretMap, pubIP)
+	resMap, resMissing := evaluateContainerValues(input, secretMap)
 	exp := map[string]string{
 		rawStringKey: rawStringVal,
 		secretKey:    secretVal,
-		pubIPKey:     pubIP,
 	}
-	assert.Equal(t, exp, resMap)
-	assert.Empty(t, resMissing)
-
-	// Test when there is an undefined resource key. The undefined key should
-	// be ignored, but the other values should be defined.
-	input[pubIPKey] = blueprint.NewRuntimeValue("undefined")
-	resMap, resMissing = evaluateContainerValues(input, secretMap, pubIP)
-	delete(exp, pubIPKey)
 	assert.Equal(t, exp, resMap)
 	assert.Empty(t, resMissing)
 
@@ -405,6 +393,6 @@ func TestEvaluateContainerValues(t *testing.T) {
 	undefinedSecretName := "undefined"
 	_, resMissing = evaluateContainerValues(map[string]blueprint.ContainerValue{
 		secretKey: blueprint.NewSecret(undefinedSecretName),
-	}, secretMap, pubIP)
+	}, secretMap)
 	assert.Equal(t, []string{undefinedSecretName}, resMissing)
 }

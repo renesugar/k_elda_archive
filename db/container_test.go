@@ -72,11 +72,9 @@ func TestGetReferencedSecrets(t *testing.T) {
 			"key1": blueprint.NewString("ignoreme"),
 			"key2": blueprint.NewSecret(secret1),
 			"key3": blueprint.NewSecret(secret2),
-			"key4": blueprint.NewRuntimeValue("ignoreme"),
 		},
 		FilepathToContent: map[string]blueprint.ContainerValue{
 			"key1": blueprint.NewString("ignoreme"),
-			"key2": blueprint.NewRuntimeValue("ignoreme"),
 			"key3": blueprint.NewSecret(secret3),
 			"key4": blueprint.NewSecret(secret4),
 		},

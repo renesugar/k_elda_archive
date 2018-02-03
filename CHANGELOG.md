@@ -7,6 +7,12 @@ Up Next
 - Container and Load Balancer hostnames must now comply with the Kubernetes
 DNS_LABEL spec. Specifically, hostnames must contain only lower case
 characters, numbers, or hyphens.
+- `kelda.hostIP` has been removed. It is no longer possible to insert a
+container's public IP into its environment variables. Containers that need
+this feature should query their public IP at runtime using a service such as
+checkip.amazon.com, or pass containers a floating IP (or DNS name backed by a
+floating IP) and use placement rules to ensure the container is scheduled at
+that floating IP.
 
 Release 0.8.0
 -------------

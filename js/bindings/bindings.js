@@ -564,11 +564,11 @@ function getString(argName, arg) {
 /**
  * @private
  * @param {string} argName - The name of `arg` (for logging).
- * @param {Object.<string, string|Secret|RuntimeValue>} arg - The map of
- *   strings to Secret, RuntimeValue, or Strings.
- * @returns {Object.<string, string|Secret|RuntimeValue>} An empty object
+ * @param {Object.<string, string|Secret>} arg - The map of
+ *   strings to Secrets or Strings.
+ * @returns {Object.<string, string|Secret>} An empty object
  *   if `arg` is not defined, and otherwise ensures that `arg` is an object with
- *   string keys and string, RuntimeValue, or Secret values and then returns it.
+ *   string keys and string or Secret values and then returns it.
  */
 function getSecretOrStringMap(argName, arg) {
   if (arg === undefined) {
@@ -584,11 +584,10 @@ function getSecretOrStringMap(argName, arg) {
                 `${stringify(k)} is not a string)`);
     }
     const val = arg[k];
-    if (typeof val !== 'string' && !(val instanceof Secret) &&
-      !(val instanceof RuntimeValue)) {
-      throw new Error(`${argName} must be a map with string, RuntimeValue, ` +
-        `or Secret values (value ${stringify(arg[k])} associated ` +
-        `with ${k} is not a string, RuntimeValue or Secret)`);
+    if (typeof val !== 'string' && !(val instanceof Secret)) {
+      throw new Error(`${argName} must be a map with string or Secret ` +
+        `values (value ${stringify(arg[k])} associated ` +
+        `with ${k} is not a string or Secret)`);
     }
   });
   return arg;
@@ -994,14 +993,6 @@ class Container {
    *     'key2': new Secret('mySecret'),
    *   },
    *
-   * @example <caption>Create a Container that has its public IP in the
-   * SPARK_PUBLIC_DNS environment variable. If the container's public IP changes
-   * (e.g. if a floating IP is assigned), the container will be restarted with
-   * the new value.</caption>
-   * const container = new Container('spark', 'keldaio/spark', {
-   *   env: { SPARK_PUBLIC_DNS: hostIP },
-   * });
-   *
    * @param {string} hostnamePrefix - The network hostname of the container.
    * @param {Image|string} image - An {@link Image} that the container should
    *   boot, or a string with the name of a Docker image (that exists in
@@ -1009,10 +1000,10 @@ class Container {
    * @param {Object} [opts] - Additional, named, optional arguments.
    * @param {string[]} [opts.command] - The command to use when starting
    *   the container.
-   * @param {Object.<string, string|Secret|RuntimeValue>} [opts.env] -
+   * @param {Object.<string, string|Secret>} [opts.env] -
    *   Environment variables to set in the booted container. The key is the name
    *   of the environment variable.
-   * @param {Object.<string, string|Secret|RuntimeValue>} [opts.filepathToContent] -
+   * @param {Object.<string, string|Secret>} [opts.filepathToContent] -
    *   Text files to be installed on the container before it starts.  The key is
    *   the path on the container where the text file should be installed, and
    *   the value is the contents of the text file. If the file content specified
@@ -1243,33 +1234,6 @@ class Secret {
     this.nameOfSecret = name;
   }
 }
-
-class RuntimeValue {
-  /**
-   * RuntimeValue represents metadata about a container that is only known when
-   * the container is about to be booted, such as the container's public IP.
-   *
-   * @param {string} resourceKey - An identifier for what runtime information
-   * should be used. The key must match the key defined in the deployment
-   * engine.
-   */
-  constructor(resourceKey) {
-    this.resourceKey = resourceKey;
-  }
-}
-
-/**
- * hostIP is the {@link RuntimeValue} for the public IP of the machine the container is
- * running on.
- *
- * @example <caption>Set the environment variable HOST_IP of myContainer1 and myContainer2
- * to be the public IP of the machine that each container is running on. If myContainer1
- * and myContainer2 are launched on different machines, they will be assigned different
- * HOST_IP values accordingly.</caption>
- * myContainer1.setEnv('HOST_IP', hostIP);
- * myContainer2.setEnv('HOST_IP', hostIP);
- */
-const hostIP = new RuntimeValue('host.ip');
 
 /**
  * Attempts to convert `objects` into an array of objects that
@@ -1516,7 +1480,6 @@ module.exports = {
   allowTraffic,
   getInfrastructure,
   githubKeys,
-  hostIP,
   publicInternet,
   resetGlobals,
   baseInfraLocation,

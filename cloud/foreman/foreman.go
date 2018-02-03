@@ -222,7 +222,6 @@ func makeConfig(machines []db.Machine, minionMachine db.Machine,
 	return pb.MinionConfig{
 		FloatingIP:          minionMachine.FloatingIP,
 		PrivateIP:           minionMachine.PrivateIP,
-		PublicIP:            minionMachine.PublicIP,
 		Blueprint:           blueprint,
 		Provider:            string(minionMachine.Provider),
 		Size:                minionMachine.Size,

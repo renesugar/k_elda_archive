@@ -51,8 +51,8 @@ func isWorkerReady(conn db.Conn) bool {
 	return false
 }
 
-func runWorker(conn db.Conn, dk docker.Client, myPrivIP, myPubIP string) {
-	if myPrivIP == "" || myPubIP == "" {
+func runWorker(conn db.Conn, dk docker.Client, myPrivIP string) {
+	if myPrivIP == "" {
 		return
 	}
 	myContainers := func(dbc db.Container) bool {
@@ -97,9 +97,9 @@ func runWorker(conn db.Conn, dk docker.Client, myPrivIP, myPubIP string) {
 			var readyToRun []evaluatedContainer
 			for _, dbc := range view.SelectFromContainer(myContainers) {
 				resolvedEnv, missingEnv := evaluateContainerValues(
-					dbc.Env, secretMap, myPubIP)
+					dbc.Env, secretMap)
 				resolvedFiles, missingFiles := evaluateContainerValues(
-					dbc.FilepathToContent, secretMap, myPubIP)
+					dbc.FilepathToContent, secretMap)
 
 				missingSecrets := uniqueStrings(
 					append(missingEnv, missingFiles...))

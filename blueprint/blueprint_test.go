@@ -25,7 +25,6 @@ func TestContainerValueString(t *testing.T) {
 	}{
 		{Secret{"foo"}, "Secret: foo"},
 		{"bar", "bar"},
-		{RuntimeValue{"baz"}, "RuntimeValue: baz"},
 	}
 
 	for _, test := range tests {
@@ -63,27 +62,6 @@ func TestStringJSON(t *testing.T) {
 	unmarshalledStr, ok := unmarshalled.Value.(string)
 	assert.True(t, ok)
 	assert.Equal(t, str, unmarshalledStr)
-	checkMarshalAndUnmarshal(t, unmarshalled)
-}
-
-// TestRuntimeValueJSON tests marshalling and unmarshalling RuntimeValues.
-func TestRuntimeValueJSON(t *testing.T) {
-	t.Parallel()
-
-	// Test unmarshalling an invalid resource key.
-	var unmarshalled ContainerValue
-	err := json.Unmarshal([]byte(`{"resourceKey": "undefined"}`), &unmarshalled)
-	assert.Contains(t, err.Error(), "undefined resource key: undefined")
-
-	// Test the success case.
-	resourceKey := ContainerPubIPKey
-	resourceKeyJSON := fmt.Sprintf(`{"resourceKey": "%s"}`, resourceKey)
-
-	assert.NoError(t, json.Unmarshal([]byte(resourceKeyJSON), &unmarshalled))
-
-	runtimeValue, ok := unmarshalled.Value.(RuntimeValue)
-	assert.True(t, ok)
-	assert.Equal(t, resourceKey, runtimeValue.ResourceKey)
 	checkMarshalAndUnmarshal(t, unmarshalled)
 }
 

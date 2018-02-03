@@ -57,7 +57,7 @@ type Container struct {
 
 // ContainerValue is a wrapper for the possible values that can be used in
 // the container Env and FilepathToContent maps. The only permissible types
-// are Secret, RuntimeValue, and string.
+// are Secret and string.
 type ContainerValue struct {
 	Value interface{}
 }
@@ -66,18 +66,6 @@ type ContainerValue struct {
 // caller is expected to query Vault to resolve the secret value.
 type Secret struct {
 	NameOfSecret string
-}
-
-// ContainerPubIPKey is the RuntimeValue resource key for the public IP of the
-// machine running the container. In other words, it's the IP at which the
-// container can be reached from the public internet.
-const ContainerPubIPKey = "host.ip"
-
-// RuntimeValue represents metadata about a container that is only known when
-// the container is about to be booted. Currently, the only valid resource key
-// is defined by the ContainerPubIPKey constant.
-type RuntimeValue struct {
-	ResourceKey string
 }
 
 // A LoadBalancer represents a load balanced group of containers.
@@ -193,11 +181,6 @@ func NewSecret(name string) ContainerValue {
 	return ContainerValue{Secret{name}}
 }
 
-// NewRuntimeValue returns a ContainerValue representing a RuntimeValue.
-func NewRuntimeValue(key string) ContainerValue {
-	return ContainerValue{RuntimeValue{key}}
-}
-
 // NewString returns a ContainerValue representing a string.
 func NewString(str string) ContainerValue {
 	return ContainerValue{str}
@@ -211,8 +194,6 @@ func (cv ContainerValue) String() string {
 		return v
 	case Secret:
 		return "Secret: " + v.NameOfSecret
-	case RuntimeValue:
-		return "RuntimeValue: " + v.ResourceKey
 	default:
 		return fmt.Sprintf("%+v", v)
 	}
@@ -236,14 +217,7 @@ func (cv *ContainerValue) UnmarshalJSON(jsonBytes []byte) error {
 		return nil
 	}
 
-	tryRuntimeValue, runtimeValueErr := unmarshalAsRuntimeValue(jsonBytes)
-	if runtimeValueErr == nil {
-		cv.Value = tryRuntimeValue
-		return nil
-	}
-
-	return fmt.Errorf("not a Secret (%s), string (%s), or RuntimeValue (%s)",
-		secretErr, stringErr, runtimeValueErr)
+	return fmt.Errorf("not a Secret (%s) or string (%s)", secretErr, stringErr)
 }
 
 func unmarshalAsSecret(jsonBytes []byte) (Secret, error) {
@@ -256,23 +230,6 @@ func unmarshalAsSecret(jsonBytes []byte) (Secret, error) {
 		return secret, errors.New("missing required field: NameOfSecret")
 	}
 	return secret, nil
-}
-
-func unmarshalAsRuntimeValue(jsonBytes []byte) (RuntimeValue, error) {
-	runtimeValue := RuntimeValue{}
-	if err := json.Unmarshal(jsonBytes, &runtimeValue); err != nil {
-		return runtimeValue, err
-	}
-
-	if runtimeValue.ResourceKey == "" {
-		return runtimeValue, errors.New("missing required field: ResourceKey")
-	}
-
-	if runtimeValue.ResourceKey != ContainerPubIPKey {
-		return runtimeValue, fmt.Errorf("undefined resource key: %s",
-			runtimeValue.ResourceKey)
-	}
-	return runtimeValue, nil
 }
 
 // MarshalJSON implements the Go interface for automatically serializing
