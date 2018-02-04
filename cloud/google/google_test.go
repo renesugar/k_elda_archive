@@ -50,9 +50,6 @@ func TestList(t *testing.T) {
 						NetworkIP: "y.y.y.y",
 					},
 				},
-				Scheduling: &compute.Scheduling{
-					Preemptible: false,
-				},
 			},
 		},
 	}, nil)
@@ -61,13 +58,12 @@ func TestList(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, machines, 1)
 	assert.Equal(t, machines[0], db.Machine{
-		Provider:    "Google",
-		Region:      "zone-1",
-		CloudID:     "name-1",
-		PublicIP:    "x.x.x.x",
-		PrivateIP:   "y.y.y.y",
-		Size:        "type-1",
-		Preemptible: false,
+		Provider:  "Google",
+		Region:    "zone-1",
+		CloudID:   "name-1",
+		PublicIP:  "x.x.x.x",
+		PrivateIP: "y.y.y.y",
+		Size:      "type-1",
 	})
 }
 
@@ -82,9 +78,6 @@ func TestListBadNetworkInterface(t *testing.T) {
 				MachineType:       "machine/split/type-1",
 				Name:              "name-1",
 				NetworkInterfaces: []*compute.NetworkInterface{},
-				Scheduling: &compute.Scheduling{
-					Preemptible: false,
-				},
 			},
 		},
 	}, nil)
@@ -330,6 +323,9 @@ func TestBoot(t *testing.T) {
 		Items: []*compute.Network{{Name: gce.network}},
 	}, nil)
 
+	_, err = gce.Boot([]db.Machine{{Preemptible: true}})
+	assert.EqualError(t, err, "preemptible vms are not implemented")
+
 	mc.On("InsertInstance", "zone-1", mock.Anything).Return(
 		nil, errors.New("err")).Once()
 
@@ -342,12 +338,12 @@ func TestBoot(t *testing.T) {
 		return fmt.Sprintf("%d", name)
 	}
 
-	machines := []db.Machine{{Size: "size1", Preemptible: true}, {Size: "size2"}}
+	machines := []db.Machine{{Size: "size1"}, {Size: "size2"}}
 
-	cfg1 := gce.instanceConfig("1", "size1", cfg.Ubuntu(machines[0], ""), true)
+	cfg1 := gce.instanceConfig("1", "size1", cfg.Ubuntu(machines[0], ""))
 	mc.On("InsertInstance", "zone-1", cfg1).Return(nil, nil)
 
-	cfg2 := gce.instanceConfig("2", "size2", cfg.Ubuntu(machines[1], ""), false)
+	cfg2 := gce.instanceConfig("2", "size2", cfg.Ubuntu(machines[1], ""))
 	mc.On("InsertInstance", "zone-1", cfg2).Return(nil, nil)
 
 	ids, err := gce.Boot(machines)
@@ -374,7 +370,7 @@ func TestStop(t *testing.T) {
 func TestInstanceConfig(t *testing.T) {
 	_, gce := getProvider()
 	cloudConfig := "cloudConfig"
-	res := gce.instanceConfig("name", "size", cloudConfig, true)
+	res := gce.instanceConfig("name", "size", cloudConfig)
 	exp := &compute.Instance{
 		Name:        "name",
 		Description: gce.network,
@@ -393,9 +389,6 @@ func TestInstanceConfig(t *testing.T) {
 			}},
 			Network: gce.networkURL(),
 		}},
-		Scheduling: &compute.Scheduling{
-			Preemptible: true,
-		},
 		Metadata: &compute.Metadata{
 			Items: []*compute.MetadataItems{{
 				Key:   "startup-script",
