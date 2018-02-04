@@ -44,9 +44,8 @@ function createTestInfrastructure() {
   const workers = [];
   for (let i = 0; i < nWorker; i += 1) {
     const worker = baseMachine.clone();
-    // Preemptible instances are currently only implemented on
-    // Amazon and Google.
-    if (baseMachine.provider === 'Amazon' || baseMachine.provider === 'Google') {
+    // Preemptible instances are currently only implemented on Amazon.
+    if (baseMachine.provider === 'Amazon') {
       worker.preemptible = true;
     }
     workers.push(worker);
