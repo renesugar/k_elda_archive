@@ -108,9 +108,11 @@ func TestDebugFlags(t *testing.T) {
 }
 
 type debugTest struct {
-	cmd        Debug
-	machines   []db.Machine
-	containers []db.Container
+	cmd           Debug
+	machines      []db.Machine
+	machinesErr   error
+	containers    []db.Container
+	containersErr error
 
 	expSSH    bool
 	expReturn int
@@ -427,6 +429,24 @@ func TestDebug(t *testing.T) {
 				containerFiles("tmp_folder", "3"),
 				daemonFiles("tmp_folder")),
 		},
+		// Check that machine and daemon logs are still fetched even if the
+		// containers can't be queried.
+		{
+			cmd: Debug{all: true},
+			machines: []db.Machine{
+				{
+					CloudID:   "1",
+					PublicIP:  "1.2.3.4",
+					PrivateIP: "4.3.2.1",
+					Role:      db.Worker,
+				},
+			},
+			containersErr: assert.AnError,
+			expSSH:        true,
+			expReturn:     1,
+			expFiles: flatten(workerMachineFiles(debugFolder, "1"),
+				daemonFiles(debugFolder)),
+		},
 	}
 
 	for _, test := range tests {
@@ -446,8 +466,10 @@ func TestDebug(t *testing.T) {
 		}
 
 		mockLocalClient := new(mocks.Client)
-		mockLocalClient.On("QueryMachines").Return(test.machines, nil)
-		mockLocalClient.On("QueryContainers").Return(test.containers, nil)
+		mockLocalClient.On("QueryMachines").Return(
+			test.machines, test.machinesErr)
+		mockLocalClient.On("QueryContainers").Return(
+			test.containers, test.containersErr)
 		mockLocalClient.On("Close").Return(nil)
 		testCmd.connectionHelper = connectionHelper{
 			client: mockLocalClient,

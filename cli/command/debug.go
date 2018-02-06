@@ -164,21 +164,29 @@ func (dCmd Debug) Run() int {
 		return 1
 	}
 
+	// If we're unable to query the current machines or containers, still try
+	// to fetch as many logs as possible. If we didn't do this then we might
+	// miss logs that would be useful for debugging the system:  for example,
+	// we might be unable to query the current containers because the master
+	// minion crashed, in which case the machine logs would be very useful.
+	var numQueryErrors int
 	machines, err := dCmd.client.QueryMachines()
 	if err != nil {
+		machines = nil
+		numQueryErrors++
 		log.Error(err)
-		return 1
+	}
+
+	containers, err := dCmd.client.QueryContainers()
+	if err != nil {
+		containers = nil
+		numQueryErrors++
+		log.Error(err)
 	}
 
 	ipMap := map[string]string{}
 	for _, m := range machines {
 		ipMap[m.PrivateIP] = m.PublicIP
-	}
-
-	containers, err := dCmd.client.QueryContainers()
-	if err != nil {
-		log.Error(err)
-		return 1
 	}
 
 	dCmd.machines = dCmd.machines || dCmd.all
@@ -202,7 +210,7 @@ func (dCmd Debug) Run() int {
 		targets = append(targets, cTargets...)
 	}
 
-	return dCmd.downloadLogs(targets)
+	return numQueryErrors + dCmd.downloadLogs(targets)
 }
 
 func (dCmd Debug) downloadLogs(targets []logTarget) int {
