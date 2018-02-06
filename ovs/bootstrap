@@ -8,7 +8,7 @@ build_deps="build-essential libssl-dev python python-six curl"
 function setup_build() {
     apt-get update && apt-get install -y ${build_deps}
     mkdir ${build_dir}
-    curl http://openvswitch.org/releases/openvswitch-${ovs_ver}.tar.gz | tar xz -C ${build_dir}
+    curl -L http://openvswitch.org/releases/openvswitch-${ovs_ver}.tar.gz | tar xz -C ${build_dir}
     cd ${build_dir}/openvswitch-${ovs_ver}
 }
 
