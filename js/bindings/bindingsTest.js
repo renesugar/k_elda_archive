@@ -321,7 +321,7 @@ describe('Bindings', () => {
         .throw('Unrecognized keys passed to Machine constructor: badArg');
       expect(() => new b.Machine({
         badArg: 'foo', provider: 'Amazon', alsoBad: 'bar' }))
-        .to.throw('Unrecognized keys passed to Machine constructor: ');
+        .to.throw('Unrecognized keys passed to Machine constructor: badArg,alsoBad');
     });
     it('cpu and ram are set based on specified size', () => {
       const machine = new b.Machine({
@@ -453,15 +453,57 @@ describe('Bindings', () => {
         filepathToContent: {},
       }]);
     });
+    it('basic - object', () => {
+      const container = new b.Container({ name: 'host', image: 'image' });
+      container.deploy(infra);
+      checkContainers([{
+        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        image: new b.Image('image'),
+        hostname: 'host',
+        command: [],
+        env: {},
+        filepathToContent: {},
+      }]);
+    });
     it('errors when passed invalid optional arguments', () => {
       expect(() => new b.Container('host', 'image', { badArg: 'foo' })).to
         .throw('Unrecognized keys passed to Container constructor: badArg');
       expect(() => new b.Container('host', 'image',
         { badArg: 'foo', command: [], alsoBad: 'bar' }))
-        .to.throw('Unrecognized keys passed to Container constructor: ');
+        .to.throw('Unrecognized keys passed to Container constructor: badArg,alsoBad');
+    });
+    it('errors when passed invalid optional arguments - object', () => {
+      expect(() => new b.Container({ name: 'host', image: 'image', badArg: 'foo' })).to
+        .throw('Unrecognized keys passed to Container constructor: badArg');
+      expect(() => new b.Container({
+        name: 'host',
+        image: 'image',
+        badArg: 'foo',
+        command: [],
+        alsoBad: 'bar' }))
+        .to.throw('Unrecognized keys passed to Container constructor: badArg,alsoBad');
+    });
+    it('should error when required arguments are missing - object', () => {
+      expect(() => new b.Container({ name: 'name' })).to
+        .throw("missing required attribute: Container requires 'image'");
+      expect(() => new b.Container({ image: 'image' })).to
+        .throw("missing required attribute: Container requires 'name'");
     });
     it('containers are not duplicated', () => {
       const container = new b.Container('host', 'image');
+      container.deploy(infra);
+      container.deploy(infra);
+      checkContainers([{
+        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        image: new b.Image('image'),
+        hostname: 'host',
+        command: [],
+        env: {},
+        filepathToContent: {},
+      }]);
+    });
+    it('containers are not duplicated - object', () => {
+      const container = new b.Container({ name: 'host', image: 'image' });
       container.deploy(infra);
       container.deploy(infra);
       checkContainers([{
@@ -477,6 +519,21 @@ describe('Bindings', () => {
       const container = new b.Container('host', 'image', {
         command: ['arg1', 'arg2'],
       });
+      container.deploy(infra);
+      checkContainers([{
+        id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
+        image: new b.Image('image'),
+        command: ['arg1', 'arg2'],
+        hostname: 'host',
+        env: {},
+        filepathToContent: {},
+      }]);
+    });
+    it('command - object', () => {
+      const container = new b.Container({
+        name: 'host',
+        image: 'image',
+        command: ['arg1', 'arg2'] });
       container.deploy(infra);
       checkContainers([{
         id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
@@ -504,8 +561,38 @@ describe('Bindings', () => {
         filepathToContent: {},
       }]);
     });
+    it('env - object', () => {
+      const c = new b.Container({ name: 'host', image: 'image' });
+      c.env.foo = 'bar';
+      c.env.secretEnv = new b.Secret('secret');
+      c.deploy(infra);
+      checkContainers([{
+        id: '4e73e3aa5e1d1d083061ff9ab7b21bbce429f410',
+        image: new b.Image('image'),
+        command: [],
+        env: {
+          foo: 'bar',
+          secretEnv: { nameOfSecret: 'secret' },
+        },
+        hostname: 'host',
+        filepathToContent: {},
+      }]);
+    });
     it('hostname', () => {
       const c = new b.Container('host', new b.Image('image'));
+      c.deploy(infra);
+      expect(c.getHostname()).to.equal('host');
+      checkContainers([{
+        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        image: new b.Image('image'),
+        command: [],
+        env: {},
+        filepathToContent: {},
+        hostname: 'host',
+      }]);
+    });
+    it('hostname - object', () => {
+      const c = new b.Container({ name: 'host', image: new b.Image('image') });
       c.deploy(infra);
       expect(c.getHostname()).to.equal('host');
       checkContainers([{
@@ -538,8 +625,35 @@ describe('Bindings', () => {
         hostname: 'host2',
       }]);
     });
+    it('repeated hostnames don\'t conflict - object', () => {
+      const x = new b.Container({ name: 'host', image: 'image' });
+      const y = new b.Container({ name: 'host', image: 'image' });
+      x.deploy(infra);
+      y.deploy(infra);
+      checkContainers([{
+        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        image: new b.Image('image'),
+        command: [],
+        env: {},
+        filepathToContent: {},
+        hostname: 'host',
+      }, {
+        id: '968bcf8c6d235afbc88aec8e1bdddc506714a0b8',
+        image: new b.Image('image'),
+        command: [],
+        env: {},
+        filepathToContent: {},
+        hostname: 'host2',
+      }]);
+    });
     it('Container.hostname and LoadBalancer.hostname don\'t conflict', () => {
       const container = new b.Container('foo', 'image');
+      const serv = new b.LoadBalancer('foo', []);
+      expect(container.getHostname()).to.equal('foo');
+      expect(serv.hostname()).to.equal('foo2');
+    });
+    it('Container.hostname and LoadBalancer.hostname don\'t conflict - object', () => {
+      const container = new b.Container({ name: 'foo', image: 'image' });
       const serv = new b.LoadBalancer('foo', []);
       expect(container.getHostname()).to.equal('foo');
       expect(serv.hostname()).to.equal('foo2');
@@ -553,8 +667,25 @@ describe('Bindings', () => {
       const hostnameSet = new Set(hostnames);
       expect(hostnames.length).to.equal(hostnameSet.size);
     });
+    it('hostnames returned by uniqueHostname cannot be reused - object', () => {
+      const containerA = new b.Container({ name: 'host', image: 'ignoreme' });
+      const containerB = new b.Container({ name: 'host', image: 'ignoreme' });
+      const containerC = new b.Container({ name: 'host2', image: 'ignoreme' });
+      const hostnames = [containerA, containerB, containerC]
+        .map(c => c.getHostname());
+      const hostnameSet = new Set(hostnames);
+      expect(hostnames.length).to.equal(hostnameSet.size);
+    });
     it('clone increments existing index if one exists', () => {
       const containerA = new b.Container('host', 'ignoreme');
+      const containerB = containerA.clone();
+      const containerC = containerB.clone();
+      expect(containerA.getHostname()).to.equal('host');
+      expect(containerB.getHostname()).to.equal('host2');
+      expect(containerC.getHostname()).to.equal('host3');
+    });
+    it('clone increments existing index if one exists - object', () => {
+      const containerA = new b.Container({ name: 'host', image: 'ignoreme' });
       const containerB = containerA.clone();
       const containerC = containerB.clone();
       expect(containerA.getHostname()).to.equal('host');
@@ -571,8 +702,30 @@ describe('Bindings', () => {
       expect(() => infra.toKeldaRepresentation()).to
         .throw('hostname "host" used multiple times');
     });
+    it('duplicate hostname causes error - object', () => {
+      const x = new b.Container({ name: 'host', image: 'image' });
+      x.hostname = 'host';
+      x.deploy(infra);
+      const y = new b.Container({ name: 'host', image: 'image' });
+      y.hostname = 'host';
+      y.deploy(infra);
+      expect(() => infra.toKeldaRepresentation()).to
+        .throw('hostname "host" used multiple times');
+    });
     it('image dockerfile', () => {
       const z = new b.Container('host', new b.Image('name', 'dockerfile'));
+      z.deploy(infra);
+      checkContainers([{
+        id: 'fbc9aedb5af0039b8cf09bca2ef5771467b44085',
+        image: new b.Image('name', 'dockerfile'),
+        hostname: 'host',
+        command: [],
+        env: {},
+        filepathToContent: {},
+      }]);
+    });
+    it('image dockerfile - object', () => {
+      const z = new b.Container({ name: 'host', image: new b.Image('name', 'dockerfile') });
       z.deploy(infra);
       checkContainers([{
         id: 'fbc9aedb5af0039b8cf09bca2ef5771467b44085',
@@ -633,13 +786,32 @@ describe('Bindings', () => {
         filepathToContent: jsonFilepathToContent,
       }]);
     });
+    it('constructor - object', () => {
+      const id = 'bcdf48e8ad8247fb0fb2bb4024c184811a7d844e';
+      const container = new b.Container({
+        name: hostname,
+        image,
+        command,
+        env,
+        filepathToContent,
+      });
+      container.deploy(infra);
+      checkContainers([{
+        id,
+        hostname,
+        image,
+        command,
+        env,
+        filepathToContent: jsonFilepathToContent,
+      }]);
+    });
   });
 
   describe('Placement', () => {
     let target;
     beforeEach(() => {
       createBasicInfra();
-      target = new b.Container('host', 'image');
+      target = new b.Container({ name: 'host', image: 'image' });
       target.deploy(infra);
     });
     it('MachineRule size, region, provider', () => {
@@ -682,7 +854,8 @@ describe('Bindings', () => {
   describe('LoadBalancer', () => {
     beforeEach(createBasicInfra);
     it('basic', () => {
-      const lb = new b.LoadBalancer('web-tier', [new b.Container('host', 'nginx')]);
+      const lb = new b.LoadBalancer('web-tier', [new b.Container({
+        name: 'host', image: 'nginx' })]);
       lb.deploy(infra);
       checkLoadBalancers([{
         name: 'web-tier',
@@ -693,6 +866,20 @@ describe('Bindings', () => {
       const lb = new b.LoadBalancer('web-tier', [
         new b.Container('host', 'nginx'),
         new b.Container('host', 'nginx'),
+      ]);
+      lb.deploy(infra);
+      checkLoadBalancers([{
+        name: 'web-tier',
+        hostnames: [
+          'host',
+          'host2',
+        ],
+      }]);
+    });
+    it('multiple containers - object', () => {
+      const lb = new b.LoadBalancer('web-tier', [
+        new b.Container({ name: 'host', image: 'nginx' }),
+        new b.Container({ name: 'host', image: 'nginx' }),
       ]);
       lb.deploy(infra);
       checkLoadBalancers([{
@@ -728,6 +915,31 @@ describe('Bindings', () => {
         },
       ]);
     });
+    it('duplicate load balancers - object', () => {
+      /* Conflicting load balancer names.  We need to generate a couple of dummy
+               containers so that the two deployed containers have _refID's
+               that are sorted differently lexicographically and numerically. */
+      for (let i = 0; i < 2; i += 1) {
+        new b.Container({ name: 'host', image: 'image' }); // eslint-disable-line no-new
+      }
+      const lb = new b.LoadBalancer('foo', [new b.Container({ name: 'host', image: 'image' })]);
+      lb.deploy(infra);
+      for (let i = 0; i < 7; i += 1) {
+        new b.Container({ name: 'host', image: 'image' }); // eslint-disable-line no-new
+      }
+      const lb2 = new b.LoadBalancer('foo', [new b.Container({ name: 'host', image: 'image' })]);
+      lb2.deploy(infra);
+      checkLoadBalancers([
+        {
+          name: 'foo',
+          hostnames: ['host3'],
+        },
+        {
+          name: 'foo2',
+          hostnames: ['host11'],
+        },
+      ]);
+    });
     it('get LoadBalancer hostname', () => {
       const foo = new b.LoadBalancer('foo', []);
       expect(foo.hostname()).to.equal('foo');
@@ -739,10 +951,10 @@ describe('Bindings', () => {
     let fooLoadBalancer;
     beforeEach(() => {
       createBasicInfra();
-      foo = new b.Container('foo', 'image');
+      foo = new b.Container({ name: 'foo', image: 'image' });
       foo.deploy(infra);
       fooLoadBalancer = new b.LoadBalancer('foo-lb', [foo]);
-      bar = new b.Container('bar', 'image');
+      bar = new b.Container({ name: 'bar', image: 'image' });
       bar.deploy(infra);
       fooLoadBalancer.deploy(infra);
     });
@@ -874,16 +1086,38 @@ describe('Bindings', () => {
         'connection {"from":["baz"],"maxPort":80,"minPort":80,' +
                 '"to":["foo"]} references an undefined hostname: baz');
     });
+    it('connect from undeployed container - object', () => {
+      createBasicInfra();
+      const foo = new b.LoadBalancer('foo', []);
+      foo.deploy(infra);
+
+      b.allowTraffic(new b.Container({ name: 'baz', image: 'image' }), foo, 80);
+      expect(deploy).to.throw(
+        'connection {"from":["baz"],"maxPort":80,"minPort":80,' +
+                '"to":["foo"]} references an undefined hostname: baz');
+    });
     it('duplicate image', () => {
       createBasicInfra();
       (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
       (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
       expect(deploy).to.not.throw();
     });
+    it('duplicate image - object', () => {
+      createBasicInfra();
+      (new b.Container({ name: 'host', image: new b.Image('img', 'dk') })).deploy(infra);
+      (new b.Container({ name: 'host', image: new b.Image('img', 'dk') })).deploy(infra);
+      expect(deploy).to.not.throw();
+    });
     it('duplicate image with different Dockerfiles', () => {
       createBasicInfra();
       (new b.Container('host', new b.Image('img', 'dk'))).deploy(infra);
       (new b.Container('host', new b.Image('img', 'dk2'))).deploy(infra);
+      expect(deploy).to.throw('img has differing Dockerfiles');
+    });
+    it('duplicate image with different Dockerfiles - object', () => {
+      createBasicInfra();
+      (new b.Container({ name: 'host', image: new b.Image('img', 'dk') })).deploy(infra);
+      (new b.Container({ name: 'host', image: new b.Image('img', 'dk2') })).deploy(infra);
       expect(deploy).to.throw('img has differing Dockerfiles');
     });
     it('machines with same regions/providers', () => {
@@ -919,6 +1153,9 @@ describe('Bindings', () => {
     const createContainerWithName = hostname => () => {
       new b.Container(hostname, 'image'); // eslint-disable-line no-new
     };
+    const createContainerWithNameObj = hostname => () => {
+      new b.Container({ name: hostname, image: 'image' }); // eslint-disable-line no-new
+    };
     const createLoadBalancerWithName = hostname => () => {
       new b.LoadBalancer(hostname, []); // eslint-disable-line no-new
     };
@@ -927,23 +1164,27 @@ describe('Bindings', () => {
       const validHostnames = ['hostname', 'hostname2', 'my-hostname'];
       validHostnames.forEach((hostname) => {
         expect(createContainerWithName(hostname)).to.not.throw();
+        expect(createContainerWithNameObj(hostname)).to.not.throw();
         expect(createLoadBalancerWithName(hostname)).to.not.throw();
       });
     });
 
     it('should error when using a hostname with underscores', () => {
       expect(createContainerWithName('my_hostname')).to.throw();
+      expect(createContainerWithNameObj('my_hostname')).to.throw();
       expect(createLoadBalancerWithName('my_hostname')).to.throw();
     });
 
     it('should error when using a hostname with capital letters', () => {
       expect(createContainerWithName('myHostname')).to.throw();
+      expect(createContainerWithNameObj('myHostname')).to.throw();
       expect(createLoadBalancerWithName('myHostname')).to.throw();
     });
 
     it('should error when using a hostname longer than 253 characters', () => {
       const hostname = 'a'.repeat(254);
       expect(createContainerWithName(hostname)).to.throw();
+      expect(createContainerWithNameObj(hostname)).to.throw();
       expect(createLoadBalancerWithName(hostname)).to.throw();
     });
   });

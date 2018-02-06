@@ -424,6 +424,26 @@ function assertArrayOfType(array, type) {
   }
 }
 
+/**
+ * Checks that the object contains all the given keys. This is useful for checking
+ * that the user passed all required keys to a given construtor.
+ * @private
+ *
+ * @param {string} name - The name of the calling constructor. This will be used in the
+ *   error message.
+ * @param {Object.<string, *>} object - The object whose keys should be checked.
+ * @param {string[]} keys - A list of the keys that should be in object.
+ * @throws Throws an error if any of the given keys is not in the object.
+ * @returns {void}
+ */
+function checkRequiredArguments(name, object, keys) {
+  keys.forEach((key) => {
+    if (!(key in object)) {
+      throw new Error(`missing required attribute: ${name} requires '${key}'`);
+    }
+  });
+}
+
 let hostnameCount = {};
 
 /**
@@ -948,24 +968,32 @@ class Container {
    * @constructor
    * @implements {Connectable}
    *
-   * @example <caption>Create a Container with hostname my-app that uses the nginx
+   * @example <caption>Create a Container named `my-app` that uses the nginx
    * image on Docker Hub, and that includes a file located at /etc/myconf with
    * contents foo.</caption>
-   * const container = new Container(
-   *   'my-app', 'nginx', {filepathToContent: {'/etc/myconf': 'foo'}});
+   * const container = new Container({
+   *   name: 'my-app',
+   *   image: 'nginx',
+   *   filepathToContent: { '/etc/myconf': 'foo' },
+   * });
    *
    * @example <caption>Create a Container that has one regular, and one secret
    * environment variable value. The value of `mySecret` must be defined by
    * running `kelda secret mySecret SECRET_VALUE`. If the blueprint with the
    * container is launched before `mySecret` has been added, Kelda will wait to
    * launch the container until the secret's value has been defined.</caption>
-   * const container = new Container('my-app', 'nginx', {
+   * const container = new Container({
+   *   name: 'my-app',
+   *   image: 'nginx',
    *   env: {
-   *     'key1': 'a plaintext value',
-   *     'key2': new Secret('mySecret'),
+   *     key1: 'a plaintext value',
+   *     key2: new Secret('mySecret'),
    *   },
+   * });
    *
-   * @param {string} hostnamePrefix - The network hostname of the container.
+   * @param {string} name - The prefix of the container's network hostname.
+   *   If multiple containers use the same name within the same deployment,
+   *   their hostnames will become name, name2, name3, etc.
    * @param {Image|string} image - An {@link Image} that the container should
    *   boot, or a string with the name of a Docker image (that exists in
    *   Docker Hub) that the container should boot.
@@ -983,29 +1011,38 @@ class Container {
    *   the container using the new files.  Files are installed with permissions
    *   0644 and parent directories are automatically created.
    */
-  constructor(hostnamePrefix, image, opts = {}) {
+  constructor(name, image, opts = {}) {
     // refID is used to distinguish infrastructures with multiple references to the
     // same container, and infrastructures with multiple containers with the exact
     // same attributes.
     this._refID = uniqueID();
 
-    this.image = image;
-    if (typeof image === 'string') {
-      this.image = new Image(image);
+    // If name is an object, we assume the user passed all arguments
+    // within this object.
+    let args = name;
+    if (typeof name !== 'object') {
+      args = Object.assign(opts, { name, image });
+    }
+
+    checkRequiredArguments('Container', args, ['name', 'image']);
+
+    this.image = args.image;
+    if (typeof args.image === 'string') {
+      this.image = new Image(args.image);
     }
     if (!(this.image instanceof Image)) {
       throw new Error('image must be an Image or string (was ' +
               `${stringify(image)})`);
     }
 
-    this.hostnamePrefix = getString('hostnamePrefix', hostnamePrefix);
-    this.hostname = uniqueHostname(this.hostnamePrefix);
+    this.name = getString('name', args.name);
+    this.hostname = uniqueHostname(this.name);
     validateHostname(this.hostname);
 
-    this.command = getStringArray('command', opts.command);
-    this.env = getSecretOrStringMap('env', opts.env);
+    this.command = getStringArray('command', args.command);
+    this.env = getSecretOrStringMap('env', args.env);
     this.filepathToContent = getSecretOrStringMap('filepathToContent',
-      opts.filepathToContent);
+      args.filepathToContent);
 
     // Don't allow callers to modify the arguments by reference.
     this.command = _.clone(this.command);
@@ -1013,7 +1050,7 @@ class Container {
     this.filepathToContent = _.clone(this.filepathToContent);
     this.image = this.image.clone();
 
-    checkExtraKeys(opts, this);
+    checkExtraKeys(args, this);
 
     this.placements = [];
   }
@@ -1022,7 +1059,7 @@ class Container {
    * @returns {Container} A new Container with the same attributes.
    */
   clone() {
-    return new Container(this.hostnamePrefix, this.image, this);
+    return new Container(this.name, this.image, this);
   }
 
   /**
