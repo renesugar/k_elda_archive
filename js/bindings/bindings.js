@@ -377,11 +377,19 @@ class LoadBalancer {
    * @param {Container[]} containers - The containers behind the load balancer.
    */
   constructor(name, containers) {
-    if (typeof name !== 'string') {
-      throw new Error(`name must be a string; was ${stringify(name)}`);
+    // If name is an object, we assume the user passed all arguments
+    // within this object.
+    let args = name;
+    if (typeof name !== 'object') {
+      args = { name, containers };
     }
-    this.name = uniqueHostname(name);
-    this.containers = boxObjects(containers, Container);
+
+    checkRequiredArguments('LoadBalancer', args, ['name', 'containers']);
+
+    this.name = uniqueHostname(getString('LoadBalancer name', args.name));
+    this.containers = boxObjects(args.containers, Container);
+
+    checkExtraKeys(args, this);
     validateHostname(this.name);
   }
 

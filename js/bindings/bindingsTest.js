@@ -688,7 +688,7 @@ describe('Bindings', () => {
     });
     it('Container.hostname and LoadBalancer.hostname don\'t conflict - object', () => {
       const container = new b.Container({ name: 'foo', image: 'image' });
-      const serv = new b.LoadBalancer('foo', []);
+      const serv = new b.LoadBalancer({ name: 'foo', containers: [] });
       expect(container.getHostname()).to.equal('foo');
       expect(serv.hostname()).to.equal('foo2');
     });
@@ -899,6 +899,30 @@ describe('Bindings', () => {
         hostnames: ['host'],
       }]);
     });
+    it('basic - object', () => {
+      const lb = new b.LoadBalancer({
+        name: 'web-tier',
+        containers: [new b.Container({ name: 'host', image: 'nginx' })],
+      });
+      lb.deploy(infra);
+      checkLoadBalancers([{
+        name: 'web-tier',
+        hostnames: ['host'],
+      }]);
+    });
+    it('should error when passed an invalid name - object', () => {
+      expect(() => new b.LoadBalancer({
+        name: 3,
+        containers: [new b.Container({ name: 'host', image: 'nginx' })] }))
+        .to.throw('LoadBalancer name must be a string (was: 3)');
+    });
+    it('should error when required arguments are missing - object', () => {
+      expect(() => new b.LoadBalancer({ name: 'name' })).to
+        .throw("missing required attribute: LoadBalancer requires 'containers'");
+      expect(() => new b.LoadBalancer({
+        containers: [new b.Container({ name: 'host', image: 'nginx' })] })).to
+        .throw("missing required attribute: LoadBalancer requires 'name'");
+    });
     it('multiple containers', () => {
       const lb = new b.LoadBalancer('web-tier', [
         new b.Container('host', 'nginx'),
@@ -918,6 +942,23 @@ describe('Bindings', () => {
         new b.Container({ name: 'host', image: 'nginx' }),
         new b.Container({ name: 'host', image: 'nginx' }),
       ]);
+      lb.deploy(infra);
+      checkLoadBalancers([{
+        name: 'web-tier',
+        hostnames: [
+          'host',
+          'host2',
+        ],
+      }]);
+    });
+    it('multiple containers - object', () => {
+      const lb = new b.LoadBalancer({
+        name: 'web-tier',
+        containers: [
+          new b.Container({ name: 'host', image: 'nginx' }),
+          new b.Container({ name: 'host', image: 'nginx' }),
+        ],
+      });
       lb.deploy(infra);
       checkLoadBalancers([{
         name: 'web-tier',
@@ -959,12 +1000,18 @@ describe('Bindings', () => {
       for (let i = 0; i < 2; i += 1) {
         new b.Container({ name: 'host', image: 'image' }); // eslint-disable-line no-new
       }
-      const lb = new b.LoadBalancer('foo', [new b.Container({ name: 'host', image: 'image' })]);
+      const lb = new b.LoadBalancer({
+        name: 'foo',
+        containers: [new b.Container({ name: 'host', image: 'image' })],
+      });
       lb.deploy(infra);
       for (let i = 0; i < 7; i += 1) {
         new b.Container({ name: 'host', image: 'image' }); // eslint-disable-line no-new
       }
-      const lb2 = new b.LoadBalancer('foo', [new b.Container({ name: 'host', image: 'image' })]);
+      const lb2 = new b.LoadBalancer({
+        name: 'foo',
+        containers: [new b.Container({ name: 'host', image: 'image' })],
+      });
       lb2.deploy(infra);
       checkLoadBalancers([
         {
@@ -981,6 +1028,10 @@ describe('Bindings', () => {
       const foo = new b.LoadBalancer('foo', []);
       expect(foo.hostname()).to.equal('foo');
     });
+    it('get LoadBalancer hostname - object', () => {
+      const foo = new b.LoadBalancer({ name: 'foo', containers: [] });
+      expect(foo.hostname()).to.equal('foo');
+    });
   });
   describe('allowTraffic', () => {
     let foo;
@@ -990,7 +1041,7 @@ describe('Bindings', () => {
       createBasicInfra();
       foo = new b.Container({ name: 'foo', image: 'image' });
       foo.deploy(infra);
-      fooLoadBalancer = new b.LoadBalancer('foo-lb', [foo]);
+      fooLoadBalancer = new b.LoadBalancer({ name: 'foo-lb', containers: [foo] });
       bar = new b.Container({ name: 'bar', image: 'image' });
       bar.deploy(infra);
       fooLoadBalancer.deploy(infra);
@@ -1132,7 +1183,7 @@ describe('Bindings', () => {
     });
     it('connect from undeployed container - object', () => {
       createBasicInfra();
-      const foo = new b.LoadBalancer('foo', []);
+      const foo = new b.LoadBalancer({ name: 'foo', containers: [] });
       foo.deploy(infra);
 
       b.allowTraffic(new b.Container({ name: 'baz', image: 'image' }), foo, 80);
@@ -1242,6 +1293,9 @@ describe('Bindings', () => {
     const createLoadBalancerWithName = hostname => () => {
       new b.LoadBalancer(hostname, []); // eslint-disable-line no-new
     };
+    const createLoadBalancerWithNameObj = hostname => () => {
+      new b.LoadBalancer({ name: hostname, containers: [] }); // eslint-disable-line no-new
+    };
 
     it('should not error for a valid hostname', () => {
       const validHostnames = ['hostname', 'hostname2', 'my-hostname'];
@@ -1249,6 +1303,7 @@ describe('Bindings', () => {
         expect(createContainerWithName(hostname)).to.not.throw();
         expect(createContainerWithNameObj(hostname)).to.not.throw();
         expect(createLoadBalancerWithName(hostname)).to.not.throw();
+        expect(createLoadBalancerWithNameObj(hostname)).to.not.throw();
       });
     });
 
@@ -1256,12 +1311,14 @@ describe('Bindings', () => {
       expect(createContainerWithName('my_hostname')).to.throw();
       expect(createContainerWithNameObj('my_hostname')).to.throw();
       expect(createLoadBalancerWithName('my_hostname')).to.throw();
+      expect(createLoadBalancerWithNameObj('my_hostname')).to.throw();
     });
 
     it('should error when using a hostname with capital letters', () => {
       expect(createContainerWithName('myHostname')).to.throw();
       expect(createContainerWithNameObj('myHostname')).to.throw();
       expect(createLoadBalancerWithName('myHostname')).to.throw();
+      expect(createLoadBalancerWithNameObj('myHostname')).to.throw();
     });
 
     it('should error when using a hostname longer than 253 characters', () => {
@@ -1269,6 +1326,7 @@ describe('Bindings', () => {
       expect(createContainerWithName(hostname)).to.throw();
       expect(createContainerWithNameObj(hostname)).to.throw();
       expect(createLoadBalancerWithName(hostname)).to.throw();
+      expect(createLoadBalancerWithNameObj(hostname)).to.throw();
     });
   });
 
