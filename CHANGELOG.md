@@ -4,6 +4,9 @@ Kelda Change Log
 Up Next
 -------------
 
+Release 0.9.0
+-------------
+
 - Container and Load Balancer hostnames must now comply with the Kubernetes
 DNS_LABEL spec. Specifically, hostnames must contain only lower case
 characters, numbers, or hyphens.
