@@ -34,6 +34,25 @@ class Infrastructure {
    * Creates a new Infrastructure with the given options.
    * @constructor
    *
+   * @example <caption>Create an infrastructure with one master and two workers
+   * - all in Amazon EC2.</caption>
+   * const machine = new Machine({ provider: 'Amazon' });
+   * const infrastructure = new Infrastructure({
+   *   masters: machine,
+   *   workers: machine.replicate(2),
+   * });
+   *
+   * @example <caption>Create an infrastructure with a master and a worker in Google,
+   * the custom namespace 'prod' and an adminACL that will allow the machine with
+   * IP address 1.2.3.4 to access the machines in this infrastructure.</caption>
+   * const machine = new Machine({ provider: 'Google' });
+   * const infrastructure = new Infrastructure({
+   *   masters: machine,
+   *   workers: machine,
+   *   namespace: 'prod',
+   *   adminACL: ['1.2.3.4/32'],
+   * });
+   *
    * @param {Machine|Machine[]} masters - One or more machines that should be launched to
    *   use as the masters.
    * @param {Machine|Machine[]} workers - One or more machines that should be launched to
@@ -51,17 +70,26 @@ class Infrastructure {
    *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
    */
   constructor(masters, workers, opts = {}) {
-    this.namespace = opts.namespace || 'kelda';
-    this.adminACL = getStringArray('adminACL', opts.adminACL);
+    const args = { namespace: 'kelda' };
+    // If the masters is an object (but neither a Machine nor an array of Machines),
+    // we assume this object contains all the user's arguments.
+    if ((typeof masters === 'object') && !(masters instanceof Machine) && !(Array.isArray(masters))) {
+      Object.assign(args, masters);
+    } else {
+      Object.assign(args, opts, { masters, workers });
+    }
 
-    checkExtraKeys(opts, this);
-
-    this.machines = [];
+    this.adminACL = getStringArray('adminACL', args.adminACL);
+    this.namespace = getString('namespace', args.namespace);
+    this.masters = [];
+    this.workers = [];
     this.containers = new Set();
     this.loadBalancers = [];
 
-    const boxedMasters = boxObjects(masters, Machine);
-    const boxedWorkers = boxObjects(workers, Machine);
+    checkExtraKeys(args, this);
+
+    const boxedMasters = boxObjects(args.masters, Machine);
+    const boxedWorkers = boxObjects(args.workers, Machine);
     if (boxedMasters.length < 1) {
       throw new Error('masters must include 1 or more Machines to use as ' +
         'Kelda masters.');
@@ -70,16 +98,14 @@ class Infrastructure {
         'Kelda workers.');
     }
 
-    const machineWithRole = (machine, role) => {
-      const copy = machine.clone();
-      copy.role = role;
-      return copy;
-    };
-
+    // It is now redundant to set the roles and to concatenate the lists here
+    // since we do that in `toKeldaRepresentation`. However, for backwards
+    // compatibility, we keep this functionality until the next release.
     boxedMasters.forEach(master =>
-      this.machines.push(machineWithRole(master, 'Master')));
+      this.masters.push(machineWithRole(master, 'Master')));
     boxedWorkers.forEach(worker =>
-      this.machines.push(machineWithRole(worker, 'Worker')));
+      this.workers.push(machineWithRole(worker, 'Worker')));
+    this.machines = this.masters.concat(this.workers);
 
     if (_keldaInfrastructure !== undefined) {
       throw new Error('the Infrastructure constructor has already been called once ' +
@@ -115,7 +141,16 @@ class Infrastructure {
       containers.push(c.toKeldaRepresentation());
     });
 
-    const machines = this.machines.map(m => m.toKeldaRepresentation());
+    // Masters and workers are set as separate properties of the Infrastructure
+    // to satisfy `checkExtraKeys`. It has the additional benefit that the user
+    // can easily access the worker machines in their blueprint, which is often
+    // done to determine how many workers are available.
+    // The masters and workers aren't concatenated until now in order to let users
+    // modify their machines through the .workers and .masters properties in the blueprint.
+    const mastersWithRole = this.masters.map(master => machineWithRole(master, 'Master'));
+    const workersWithRole = this.workers.map(worker => machineWithRole(worker, 'Worker'));
+    const machinesWithRole = mastersWithRole.concat(workersWithRole);
+    const machines = machinesWithRole.map(m => m.toKeldaRepresentation());
 
     const keldaInfrastructure = {
       machines,
@@ -130,6 +165,17 @@ class Infrastructure {
     vet(keldaInfrastructure);
     return keldaInfrastructure;
   }
+}
+
+/**
+ * @param {Machine} machine - The machine whose role should change.
+ * @param {string} role - The desired role. Should be Worker or Master.
+ * @returns {Machine} A clone of the given machine, with the desired role.
+ */
+function machineWithRole(machine, role) {
+  const copy = machine.clone();
+  copy.role = role;
+  return copy;
 }
 
 /**

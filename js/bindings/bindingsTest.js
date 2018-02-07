@@ -16,7 +16,7 @@ describe('Bindings', () => {
 
   const createBasicInfra = function createBasicInfra() {
     const machine = new b.Machine({ provider: 'Amazon' });
-    infra = new b.Infrastructure(machine, machine);
+    infra = new b.Infrastructure({ masters: machine, workers: machine });
   };
 
   beforeEach(b.resetGlobals);
@@ -1069,10 +1069,17 @@ describe('Bindings', () => {
   });
   describe('Vet', () => {
     const deploy = () => infra.toKeldaRepresentation();
-    it('should error when given namespace contains upper case letters', () => {
+    it('should error when given a namespace containing upper case letters', () => {
       const machine = new b.Machine({ provider: 'Amazon' });
       infra = new b.Infrastructure(
         machine, machine, { namespace: 'BadNamespace' });
+      expect(deploy).to.throw('namespace "BadNamespace" contains ' +
+                  'uppercase letters. Namespaces must be lowercase.');
+    });
+    it('should error when given a namespace containing upper case letters - object', () => {
+      const machine = new b.Machine({ provider: 'Amazon' });
+      infra = new b.Infrastructure({
+        masters: machine, workers: machine, namespace: 'BadNamespace' });
       expect(deploy).to.throw('namespace "BadNamespace" contains ' +
                   'uppercase letters. Namespaces must be lowercase.');
     });
@@ -1128,6 +1135,14 @@ describe('Bindings', () => {
       infra = new b.Infrastructure(machine, machine);
       expect(deploy).to.not.throw();
     });
+    it('machines with same regions/providers - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+      infra = new b.Infrastructure({ masters: machine, workers: machine });
+      expect(deploy).to.not.throw();
+    });
     it('machines with different regions', () => {
       const westMachine = new b.Machine({
         provider: 'Amazon', region: 'us-west-2' });
@@ -1139,10 +1154,29 @@ describe('Bindings', () => {
         + 'Found providers \'Amazon\' in region \'us-west-2\' and \'Amazon\' in '
         + 'region \'us-east-2\'.');
     });
+    it('machines with different regions - object', () => {
+      const westMachine = new b.Machine({
+        provider: 'Amazon', region: 'us-west-2' });
+      const eastMachine = new b.Machine({
+        provider: 'Amazon', region: 'us-east-2' });
+
+      infra = new b.Infrastructure({ masters: westMachine, workers: eastMachine });
+      expect(deploy).to.throw('All machines must have the same provider and region. '
+        + 'Found providers \'Amazon\' in region \'us-west-2\' and \'Amazon\' in '
+        + 'region \'us-east-2\'.');
+    });
     it('machines with different providers', () => {
       const amazonMachine = new b.Machine({ provider: 'Amazon', region: '' });
       const doMachine = new b.Machine({ provider: 'DigitalOcean', region: '' });
       infra = new b.Infrastructure(amazonMachine, doMachine);
+      expect(deploy).to.throw('All machines must have the same provider and region. '
+        + 'Found providers \'Amazon\' in region \'us-west-1\' and \'DigitalOcean\' in '
+        + 'region \'sfo2\'.');
+    });
+    it('machines with different providers - object', () => {
+      const amazonMachine = new b.Machine({ provider: 'Amazon', region: '' });
+      const doMachine = new b.Machine({ provider: 'DigitalOcean', region: '' });
+      infra = new b.Infrastructure({ masters: amazonMachine, workers: doMachine });
       expect(deploy).to.throw('All machines must have the same provider and region. '
         + 'Found providers \'Amazon\' in region \'us-west-1\' and \'DigitalOcean\' in '
         + 'region \'sfo2\'.');
@@ -1199,6 +1233,16 @@ describe('Bindings', () => {
       infra = new b.Infrastructure([machine], [machine], { namespace });
       expect(infra.toKeldaRepresentation().namespace).to.equal(namespace);
     });
+    it('using Infrastructure constructor overwrites the default Infrastructure - object', () => {
+      const namespace = 'testing-namespace';
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+      infra = new b.Infrastructure({
+        masters: [machine], workers: [machine], namespace });
+      expect(infra.toKeldaRepresentation().namespace).to.equal(namespace);
+    });
     it('constructor errors when it would overwrite an existing Infrastructure', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
@@ -1207,6 +1251,19 @@ describe('Bindings', () => {
 
       infra = new b.Infrastructure([machine], [machine], { namespace: 'n1' });
       expect(() => new b.Infrastructure([machine], [machine], { namespace: 'n2' }))
+        .to.throw('the Infrastructure constructor has already been called once ' +
+          '(each Kelda blueprint can only define one Infrastructure)');
+    });
+    it('constructor errors when it would overwrite an existing Infrastructure - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+
+      infra = new b.Infrastructure({
+        masters: [machine], workers: [machine], namespace: 'n1' });
+      expect(() => new b.Infrastructure({
+        masters: [machine], workers: [machine], namespace: 'n2' }))
         .to.throw('the Infrastructure constructor has already been called once ' +
           '(each Kelda blueprint can only define one Infrastructure)');
     });
@@ -1233,12 +1290,87 @@ describe('Bindings', () => {
         region: 'us-west-2',
       }]);
     });
+    it('master and worker machines added correctly - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+      infra = new b.Infrastructure({ masters: [machine], workers: [machine, machine] });
+      checkMachines([{
+        role: 'Master',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }, {
+        // The ID is included here because otherwise the containSubset function
+        // used in checkMachines will return true, even if there is only one
+        // worker and two masters in the actual output.
+        role: 'Worker',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }, {
+        role: 'Worker',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }]);
+    });
+    it('allows users to modify machines by modifying properties', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        size: 'm4.large',
+      });
+      const extraWorker = new b.Machine({
+        provider: 'Amazon',
+        size: 't2.small',
+      });
+      const extraMaster = new b.Machine({
+        provider: 'Amazon',
+        size: 'c3.large',
+      });
+
+      infra = new b.Infrastructure(machine, machine);
+      infra.workers.push(extraWorker);
+      infra.masters.push(extraMaster);
+
+      checkMachines([{
+        role: 'Master',
+        provider: 'Amazon',
+        size: 'm4.large',
+      }, {
+        role: 'Master',
+        provider: 'Amazon',
+        size: 'c3.large',
+      }, {
+        role: 'Worker',
+        provider: 'Amazon',
+        size: 'm4.large',
+      }, {
+        role: 'Worker',
+        provider: 'Amazon',
+        size: 't2.small',
+      }]);
+    });
     it('accepts non-array master and worker as arguments', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
         region: 'us-west-2',
       });
       infra = new b.Infrastructure(machine, machine);
+      checkMachines([{
+        role: 'Master',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }, {
+        role: 'Worker',
+        provider: 'Amazon',
+        region: 'us-west-2',
+      }]);
+    });
+    it('accepts non-array master and worker as arguments - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+        region: 'us-west-2',
+      });
+      infra = new b.Infrastructure({ masters: machine, workers: machine });
       checkMachines([{
         role: 'Master',
         provider: 'Amazon',
@@ -1256,12 +1388,40 @@ describe('Bindings', () => {
       expect(() => new b.Infrastructure([], [machine]))
         .to.throw('masters must include 1 or more');
     });
+    it('errors when no masters are given - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+      });
+      expect(() => new b.Infrastructure({ masters: [], workers: [machine] }))
+        .to.throw('masters must include 1 or more');
+    });
+    it('errors when no masters key is given - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+      });
+      expect(() => new b.Infrastructure({ workers: [machine] }))
+        .to.throw('not an array of Machines (was undefined)');
+    });
     it('errors when no workers are given', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
       });
       expect(() => new b.Infrastructure([machine], []))
         .to.throw('workers must include 1 or more');
+    });
+    it('errors when no workers are given - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+      });
+      expect(() => new b.Infrastructure({ masters: [machine], workers: [] }))
+        .to.throw('workers must include 1 or more');
+    });
+    it('errors when no workers key is given - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+      });
+      expect(() => new b.Infrastructure({ masters: [machine] }))
+        .to.throw('not an array of Machines (was undefined)');
     });
     it('errors when a non-Machine is given as the master', () => {
       const machine = new b.Machine({
@@ -1272,9 +1432,23 @@ describe('Bindings', () => {
       expect(() => new b.Infrastructure(3, [machine]))
         .to.throw('not an array of Machines (was 3)');
     });
+    it('errors when a non-Machine is given as the master - object', () => {
+      const machine = new b.Machine({
+        provider: 'Amazon',
+      });
+      expect(() => new b.Infrastructure({ masters: ['not a Machine'], workers: [machine] }))
+        .to.throw('not an array of Machines; item at index 0 ("not a Machine") is not a Machine');
+      expect(() => new b.Infrastructure({ masters: 3, workers: [machine] }))
+        .to.throw('not an array of Machines (was 3)');
+    });
     it('should error when given invalid arguments', () => {
       const machine = new b.Machine({ provider: 'Amazon' });
       expect(() => new b.Infrastructure(machine, machine, { badArg: 'foo' }))
+        .to.throw('Unrecognized keys passed to Infrastructure constructor: badArg');
+    });
+    it('should error when given invalid arguments - object', () => {
+      const machine = new b.Machine({ provider: 'Amazon' });
+      expect(() => new b.Infrastructure({ masters: machine, workers: machine, badArg: 'foo' }))
         .to.throw('Unrecognized keys passed to Infrastructure constructor: badArg');
     });
     it('should not throw when passed a empty optional argument', () => {
@@ -1290,6 +1464,12 @@ describe('Bindings', () => {
       expect(infra.toKeldaRepresentation().namespace).to.equal(
         'mynamespace');
     });
+    it('namespace - object', () => {
+      infra = new b.Infrastructure(
+        { masters: machine, workers: machine, namespace: 'mynamespace' });
+      expect(infra.toKeldaRepresentation().namespace).to.equal(
+        'mynamespace');
+    });
     it('default namespace', () => {
       createBasicInfra();
       expect(infra.toKeldaRepresentation().namespace).to.equal(
@@ -1298,6 +1478,12 @@ describe('Bindings', () => {
     it('admin ACL', () => {
       infra = new b.Infrastructure(
         machine, machine, { adminACL: ['local'] });
+      expect(infra.toKeldaRepresentation().adminACL).to.eql(
+        ['local']);
+    });
+    it('admin ACL - object', () => {
+      infra = new b.Infrastructure(
+        { masters: machine, workers: machine, adminACL: ['local'] });
       expect(infra.toKeldaRepresentation().adminACL).to.eql(
         ['local']);
     });
@@ -1358,6 +1544,37 @@ describe('Bindings', () => {
     it('should return the correct infra object when an Infrastructure exists', () => {
       const machine = new b.Machine({ provider: 'Amazon', size: 'm3.medium' });
       infra = new b.Infrastructure(machine, machine);
+      const expected = {
+        adminACL: [],
+        connections: [],
+        containers: [],
+        loadBalancers: [],
+        machines: [
+          {
+            preemptible: false,
+            provider: 'Amazon',
+            region: 'us-west-1',
+            role: 'Master',
+            size: 'm3.medium',
+            sshKeys: [],
+          },
+          {
+            preemptible: false,
+            provider: 'Amazon',
+            region: 'us-west-1',
+            role: 'Worker',
+            size: 'm3.medium',
+            sshKeys: [],
+          },
+        ],
+        namespace: 'kelda',
+        placements: [],
+      };
+      expect(global.getInfrastructureKeldaRepr()).to.containSubset(expected);
+    });
+    it('should return the correct infra object when an Infrastructure exists - object', () => {
+      const machine = new b.Machine({ provider: 'Amazon', size: 'm3.medium' });
+      infra = new b.Infrastructure({ masters: machine, workers: machine });
       const expected = {
         adminACL: [],
         connections: [],
