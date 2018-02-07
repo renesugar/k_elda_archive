@@ -449,6 +449,25 @@ describe('Bindings', () => {
     it('errors when passed an invalid dockerfile', () => {
       expect(() => new b.Image('image', 1)).to.throw();
     });
+    it('errors when passed an invalid image name - object', () => {
+      expect(() => new b.Image({ name: 3 })).to.throw();
+    });
+    it('errors when passed an invalid image name and valid dockerfile - object', () => {
+      expect(() => new b.Image({ name: 3, dockerfile: 'dockerfile' })).to.throw();
+    });
+    it('errors when passed an invalid dockerfile - object', () => {
+      expect(() => new b.Image({ name: 'image', dockerfile: 1 })).to.throw();
+    });
+    it('errors when passed invalid arguments - object', () => {
+      expect(() => new b.Image({ name: 'image', dockerfile: 1, badArg: 'bad' })).to.throw();
+    });
+    it('does not error when passed valid arguments - object', () => {
+      expect(() => new b.Image({ name: 'image', dockerfile: 'dockerfile' })).to.not.throw();
+    });
+    it('should error when required arguments are missing - object', () => {
+      expect(() => new b.Image({ dockerfile: 'dockerfile' })).to
+        .throw("missing required attribute: Image requires 'name'");
+    });
   });
 
   describe('Container', () => {
@@ -458,7 +477,7 @@ describe('Bindings', () => {
       container.deploy(infra);
       checkContainers([{
         id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         hostname: 'host',
         command: [],
         env: {},
@@ -470,7 +489,7 @@ describe('Bindings', () => {
       container.deploy(infra);
       checkContainers([{
         id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         hostname: 'host',
         command: [],
         env: {},
@@ -507,7 +526,7 @@ describe('Bindings', () => {
       container.deploy(infra);
       checkContainers([{
         id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         hostname: 'host',
         command: [],
         env: {},
@@ -520,7 +539,7 @@ describe('Bindings', () => {
       container.deploy(infra);
       checkContainers([{
         id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         hostname: 'host',
         command: [],
         env: {},
@@ -534,7 +553,7 @@ describe('Bindings', () => {
       container.deploy(infra);
       checkContainers([{
         id: '1921c3cc1a0593be23dab8a49f45e6eb24cc3c75',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: ['arg1', 'arg2'],
         hostname: 'host',
         env: {},
@@ -549,7 +568,7 @@ describe('Bindings', () => {
       container.deploy(infra);
       checkContainers([{
         id: '1921c3cc1a0593be23dab8a49f45e6eb24cc3c75',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: ['arg1', 'arg2'],
         hostname: 'host',
         env: {},
@@ -563,7 +582,7 @@ describe('Bindings', () => {
       c.deploy(infra);
       checkContainers([{
         id: 'ef345b85810e8b29107d17060872d286969dbf0b',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: [],
         env: {
           foo: 'bar',
@@ -580,7 +599,7 @@ describe('Bindings', () => {
       c.deploy(infra);
       checkContainers([{
         id: 'ef345b85810e8b29107d17060872d286969dbf0b',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: [],
         env: {
           foo: 'bar',
@@ -591,12 +610,12 @@ describe('Bindings', () => {
       }]);
     });
     it('hostname', () => {
-      const c = new b.Container('host', new b.Image('image'));
+      const c = new b.Container('host', new b.Image({ name: 'image' }));
       c.deploy(infra);
       expect(c.getHostname()).to.equal('host');
       checkContainers([{
         id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: [],
         env: {},
         filepathToContent: {},
@@ -604,12 +623,15 @@ describe('Bindings', () => {
       }]);
     });
     it('hostname - object', () => {
-      const c = new b.Container({ name: 'host', image: new b.Image('image') });
+      const c = new b.Container({
+        name: 'host',
+        image: new b.Image({ name: 'image' }),
+      });
       c.deploy(infra);
       expect(c.getHostname()).to.equal('host');
       checkContainers([{
         id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: [],
         env: {},
         filepathToContent: {},
@@ -623,14 +645,14 @@ describe('Bindings', () => {
       y.deploy(infra);
       checkContainers([{
         id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: [],
         env: {},
         filepathToContent: {},
         hostname: 'host',
       }, {
         id: 'c63e6edc15526348fff7265ae2358a3a8ef2709f',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: [],
         env: {},
         filepathToContent: {},
@@ -644,14 +666,14 @@ describe('Bindings', () => {
       y.deploy(infra);
       checkContainers([{
         id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: [],
         env: {},
         filepathToContent: {},
         hostname: 'host',
       }, {
         id: 'c63e6edc15526348fff7265ae2358a3a8ef2709f',
-        image: new b.Image('image'),
+        image: new b.Image({ name: 'image' }),
         command: [],
         env: {},
         filepathToContent: {},
@@ -737,11 +759,14 @@ describe('Bindings', () => {
       }]);
     });
     it('image dockerfile - object', () => {
-      const z = new b.Container({ name: 'host', image: new b.Image('name', 'dockerfile') });
+      const z = new b.Container({
+        name: 'host',
+        image: new b.Image({ name: 'name', dockerfile: 'dockerfile' }),
+      });
       z.deploy(infra);
       checkContainers([{
         id: 'fbc9aedb5af0039b8cf09bca2ef5771467b44085',
-        image: new b.Image('name', 'dockerfile'),
+        image: new b.Image({ name: 'name', dockerfile: 'dockerfile' }),
         hostname: 'host',
         command: [],
         env: {},
@@ -752,7 +777,7 @@ describe('Bindings', () => {
 
   describe('Container attributes', () => {
     const hostname = 'host';
-    const image = new b.Image('image');
+    const image = new b.Image({ name: 'image' });
     const command = ['arg1', 'arg2'];
 
     const env = { foo: 'bar' };
@@ -1123,8 +1148,14 @@ describe('Bindings', () => {
     });
     it('duplicate image - object', () => {
       createBasicInfra();
-      (new b.Container({ name: 'host', image: new b.Image('img', 'dk') })).deploy(infra);
-      (new b.Container({ name: 'host', image: new b.Image('img', 'dk') })).deploy(infra);
+      (new b.Container({
+        name: 'host',
+        image: new b.Image({ name: 'img', dockerfile: 'dk' }),
+      })).deploy(infra);
+      (new b.Container({
+        name: 'host',
+        image: new b.Image({ name: 'img', dockerfile: 'dk' }),
+      })).deploy(infra);
       expect(deploy).to.not.throw();
     });
     it('duplicate image with different Dockerfiles', () => {
@@ -1135,8 +1166,14 @@ describe('Bindings', () => {
     });
     it('duplicate image with different Dockerfiles - object', () => {
       createBasicInfra();
-      (new b.Container({ name: 'host', image: new b.Image('img', 'dk') })).deploy(infra);
-      (new b.Container({ name: 'host', image: new b.Image('img', 'dk2') })).deploy(infra);
+      (new b.Container({
+        name: 'host',
+        image: new b.Image({ name: 'img', dockerfile: 'dk' }),
+      })).deploy(infra);
+      (new b.Container({
+        name: 'host',
+        image: new b.Image({ name: 'img', dockerfile: 'dk2' }),
+      })).deploy(infra);
       expect(deploy).to.throw('img has differing Dockerfiles');
     });
     it('machines with same regions/providers', () => {

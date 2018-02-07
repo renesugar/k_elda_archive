@@ -962,24 +962,34 @@ class Image {
    *
    * @example <caption>Create an image that uses the nginx image stored on
    * Docker Hub.</caption>
-   * const image = new Image('nginx');
+   * const image = new Image({
+   *   name : 'nginx',
+   * });
    *
    * @example <caption>Create an image that uses the etcd image stored at
    * quay.io.</caption>
-   * const image = new Image('quay.io/coreos/etcd');
+   * const image = new Image({
+   *   name: 'quay.io/coreos/etcd ',
+   * });
    *
    * @example <caption>Create an Image named my-image-name that's built on top of
    * the nginx image, and additionally includes the Git repository at
    * github.com/my/web/repo cloned into /web_root.</caption>
-   * const image = new Image('my-image-name',
-   *   'FROM nginx\n' +
-   *   'RUN cd /web_root && git clone github.com/my/web_repo');
+   * const dockerfileContent = `FROM nginx
+   * RUN cd /web_root && git clone github.com/my/web_repo`;
+   *
+   * const image = new Image({
+   *   name: 'my-image-name',
+   *   dockerfile: dockerfileContent,
+   * });
    *
    * @example <caption>Create an image named my-image-name that's built using a
    * Dockerfile saved locally at 'Dockerfile'.</caption>
    * const fs = require('fs');
-   * const container = new Image('my-image-name',
-   *   fs.readFileSync('./Dockerfile', { encoding: 'utf8' }));
+   * const container = new Image({
+   *   name: 'my-image-name',
+   *   dockerfile: fs.readFileSync('./Dockerfile', { encoding: 'utf8' }),
+   * });
    *
    * @param {string} name - The name to use for the Docker image, or if no
    *   Dockerfile is specified, the repository to get the image from. The repository
@@ -989,8 +999,19 @@ class Image {
    *   constructs the Image.
    */
   constructor(name, dockerfile) {
-    this.name = getString('Image name', name);
-    this.dockerfile = getString('dockerfile', dockerfile);
+    // If name is an object, we assume the user passed all arguments
+    // within this object.
+    let args = name;
+    if (typeof name !== 'object') {
+      args = { name, dockerfile };
+    }
+
+    checkRequiredArguments('Image', args, ['name']);
+
+    this.name = getString('Image name', args.name);
+    this.dockerfile = getString('dockerfile', args.dockerfile);
+
+    checkExtraKeys(args, this);
   }
 
   /**
