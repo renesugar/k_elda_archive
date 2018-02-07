@@ -989,8 +989,8 @@ class Image {
    *   constructs the Image.
    */
   constructor(name, dockerfile) {
-    this.name = name;
-    this.dockerfile = dockerfile;
+    this.name = getString('Image name', name);
+    this.dockerfile = getString('dockerfile', dockerfile);
   }
 
   /**

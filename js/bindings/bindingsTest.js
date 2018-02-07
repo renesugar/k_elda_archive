@@ -439,13 +439,25 @@ describe('Bindings', () => {
     });
   });
 
+  describe('Image', () => {
+    it('errors when passed an invalid image name', () => {
+      expect(() => new b.Image(3)).to.throw();
+    });
+    it('errors when passed an invalid image name and valid dockerfile', () => {
+      expect(() => new b.Image(3, 'dockerfile')).to.throw();
+    });
+    it('errors when passed an invalid dockerfile', () => {
+      expect(() => new b.Image('image', 1)).to.throw();
+    });
+  });
+
   describe('Container', () => {
     beforeEach(createBasicInfra);
     it('basic', () => {
       const container = new b.Container('host', 'image');
       container.deploy(infra);
       checkContainers([{
-        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
         image: new b.Image('image'),
         hostname: 'host',
         command: [],
@@ -457,7 +469,7 @@ describe('Bindings', () => {
       const container = new b.Container({ name: 'host', image: 'image' });
       container.deploy(infra);
       checkContainers([{
-        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
         image: new b.Image('image'),
         hostname: 'host',
         command: [],
@@ -494,7 +506,7 @@ describe('Bindings', () => {
       container.deploy(infra);
       container.deploy(infra);
       checkContainers([{
-        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
         image: new b.Image('image'),
         hostname: 'host',
         command: [],
@@ -507,7 +519,7 @@ describe('Bindings', () => {
       container.deploy(infra);
       container.deploy(infra);
       checkContainers([{
-        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
         image: new b.Image('image'),
         hostname: 'host',
         command: [],
@@ -521,7 +533,7 @@ describe('Bindings', () => {
       });
       container.deploy(infra);
       checkContainers([{
-        id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
+        id: '1921c3cc1a0593be23dab8a49f45e6eb24cc3c75',
         image: new b.Image('image'),
         command: ['arg1', 'arg2'],
         hostname: 'host',
@@ -536,7 +548,7 @@ describe('Bindings', () => {
         command: ['arg1', 'arg2'] });
       container.deploy(infra);
       checkContainers([{
-        id: '9d0d496d49bed06e7c76c2b536d7520ccc1717f2',
+        id: '1921c3cc1a0593be23dab8a49f45e6eb24cc3c75',
         image: new b.Image('image'),
         command: ['arg1', 'arg2'],
         hostname: 'host',
@@ -550,7 +562,7 @@ describe('Bindings', () => {
       c.env.secretEnv = new b.Secret('secret');
       c.deploy(infra);
       checkContainers([{
-        id: '4e73e3aa5e1d1d083061ff9ab7b21bbce429f410',
+        id: 'ef345b85810e8b29107d17060872d286969dbf0b',
         image: new b.Image('image'),
         command: [],
         env: {
@@ -567,7 +579,7 @@ describe('Bindings', () => {
       c.env.secretEnv = new b.Secret('secret');
       c.deploy(infra);
       checkContainers([{
-        id: '4e73e3aa5e1d1d083061ff9ab7b21bbce429f410',
+        id: 'ef345b85810e8b29107d17060872d286969dbf0b',
         image: new b.Image('image'),
         command: [],
         env: {
@@ -583,7 +595,7 @@ describe('Bindings', () => {
       c.deploy(infra);
       expect(c.getHostname()).to.equal('host');
       checkContainers([{
-        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
         image: new b.Image('image'),
         command: [],
         env: {},
@@ -596,7 +608,7 @@ describe('Bindings', () => {
       c.deploy(infra);
       expect(c.getHostname()).to.equal('host');
       checkContainers([{
-        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
         image: new b.Image('image'),
         command: [],
         env: {},
@@ -610,14 +622,14 @@ describe('Bindings', () => {
       x.deploy(infra);
       y.deploy(infra);
       checkContainers([{
-        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
         image: new b.Image('image'),
         command: [],
         env: {},
         filepathToContent: {},
         hostname: 'host',
       }, {
-        id: '968bcf8c6d235afbc88aec8e1bdddc506714a0b8',
+        id: 'c63e6edc15526348fff7265ae2358a3a8ef2709f',
         image: new b.Image('image'),
         command: [],
         env: {},
@@ -631,14 +643,14 @@ describe('Bindings', () => {
       x.deploy(infra);
       y.deploy(infra);
       checkContainers([{
-        id: '293fc7ad8a799d3cf2619a3db7124b0459f395cb',
+        id: '50f00167f3d03df3bc3e0874e80a8a98073c1bbf',
         image: new b.Image('image'),
         command: [],
         env: {},
         filepathToContent: {},
         hostname: 'host',
       }, {
-        id: '968bcf8c6d235afbc88aec8e1bdddc506714a0b8',
+        id: 'c63e6edc15526348fff7265ae2358a3a8ef2709f',
         image: new b.Image('image'),
         command: [],
         env: {},
@@ -756,7 +768,7 @@ describe('Bindings', () => {
       // The blueprint ID is different than the Container created with the
       // constructor because the hostname ID increases with each withEnv
       // call.
-      const id = 'd6b685d85b5426f8bf2083cb8394466099aba0e4';
+      const id = '0fe2889cc4d925e9d6e0b52bccc2d2d0fbbbcf99';
       const container = new b.Container(hostname, image, {
         command,
         filepathToContent,
@@ -772,7 +784,7 @@ describe('Bindings', () => {
       }]);
     });
     it('constructor', () => {
-      const id = 'bcdf48e8ad8247fb0fb2bb4024c184811a7d844e';
+      const id = 'f88bea6ff85ebc6abf7c61a4a35e7685f1d6c0f1';
       const container = new b.Container(hostname, image, {
         command, env, filepathToContent,
       });
@@ -787,7 +799,7 @@ describe('Bindings', () => {
       }]);
     });
     it('constructor - object', () => {
-      const id = 'bcdf48e8ad8247fb0fb2bb4024c184811a7d844e';
+      const id = 'f88bea6ff85ebc6abf7c61a4a35e7685f1d6c0f1';
       const container = new b.Container({
         name: hostname,
         image,
