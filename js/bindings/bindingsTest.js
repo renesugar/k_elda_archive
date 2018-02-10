@@ -1507,7 +1507,7 @@ describe('Bindings', () => {
         provider: 'Amazon',
       });
       expect(() => new b.Infrastructure({ workers: [machine] }))
-        .to.throw('not an array of Machines (was undefined)');
+        .to.throw('Infrastructure.masters is not an array of Machines (was undefined)');
     });
     it('errors when no workers are given', () => {
       const machine = new b.Machine({
@@ -1528,25 +1528,25 @@ describe('Bindings', () => {
         provider: 'Amazon',
       });
       expect(() => new b.Infrastructure({ masters: [machine] }))
-        .to.throw('not an array of Machines (was undefined)');
+        .to.throw('Infrastructure.workers is not an array of Machines (was undefined)');
     });
     it('errors when a non-Machine is given as the master', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
       });
       expect(() => new b.Infrastructure(['not a Machine'], [machine]))
-        .to.throw('not an array of Machines; item at index 0 ("not a Machine") is not a Machine');
+        .to.throw('Infrastructure.masters is not an array of Machines; item at index 0 ("not a Machine") is not a Machine');
       expect(() => new b.Infrastructure(3, [machine]))
-        .to.throw('not an array of Machines (was 3)');
+        .to.throw('Infrastructure.masters is not an array of Machines (was 3)');
     });
     it('errors when a non-Machine is given as the master - object', () => {
       const machine = new b.Machine({
         provider: 'Amazon',
       });
       expect(() => new b.Infrastructure({ masters: ['not a Machine'], workers: [machine] }))
-        .to.throw('not an array of Machines; item at index 0 ("not a Machine") is not a Machine');
+        .to.throw('Infrastructure.masters is not an array of Machines; item at index 0 ("not a Machine") is not a Machine');
       expect(() => new b.Infrastructure({ masters: 3, workers: [machine] }))
-        .to.throw('not an array of Machines (was 3)');
+        .to.throw('Infrastructure.masters is not an array of Machines (was 3)');
     });
     it('should error when given invalid arguments', () => {
       const machine = new b.Machine({ provider: 'Amazon' });

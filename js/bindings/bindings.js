@@ -88,8 +88,8 @@ class Infrastructure {
 
     checkExtraKeys(args, this);
 
-    const boxedMasters = boxObjects(args.masters, Machine);
-    const boxedWorkers = boxObjects(args.workers, Machine);
+    const boxedMasters = boxObjects('Infrastructure.masters', args.masters, Machine);
+    const boxedWorkers = boxObjects('Infrastructure.workers', args.workers, Machine);
     if (boxedMasters.length < 1) {
       throw new Error('masters must include 1 or more Machines to use as ' +
         'Kelda masters.');
@@ -387,7 +387,7 @@ class LoadBalancer {
     checkRequiredArguments('LoadBalancer', args, ['name', 'containers']);
 
     this.name = uniqueHostname(getString('LoadBalancer name', args.name));
-    this.containers = boxObjects(args.containers, Container);
+    this.containers = boxObjects('LoadBalancer.containers', args.containers, Container);
 
     checkExtraKeys(args, this);
     validateHostname(this.name);
@@ -440,17 +440,19 @@ const publicInternet = {
  * of `type`. This method is useful for validating arguments to functions.
  * @private
  *
+ * @param {string} name - The name of the object that's being checked. This is
+ *   used for logging.
  * @param {Object|Object[]} x - An object or list of objects.
  * @param {Object} type - A constructor (used to check whether `x` was constructed
  *   using this constructor).
  * @returns {Object[]} The resulting list of objects.
  */
-function boxObjects(x, type) {
+function boxObjects(name, x, type) {
   if (x instanceof type) {
     return [x];
   }
 
-  assertArrayOfType(x, type);
+  assertArrayOfType(name, x, type);
   return x;
 }
 
@@ -459,19 +461,21 @@ function boxObjects(x, type) {
  * error if it is not.
  * @private
  *
+ * @param {string} name - The name of the object that's being checked. This is
+ *   used for logging.
  * @param {Object[]} array - An array of objects to check the type of.
  * @param {Object} type - The constructor to check that all items in `array`
  *   are types of.
  * @returns {void}
  */
-function assertArrayOfType(array, type) {
+function assertArrayOfType(name, array, type) {
   if (!Array.isArray(array)) {
-    throw new Error(`not an array of ${type.name}s (was ` +
+    throw new Error(`${name} is not an array of ${type.name}s (was ` +
             `${stringify(array)})`);
   }
   for (let i = 0; i < array.length; i += 1) {
     if (!(array[i] instanceof type)) {
-      throw new Error(`not an array of ${type.name}s; item ` +
+      throw new Error(`${name} is not an array of ${type.name}s; item ` +
                 `at index ${i} (${stringify(array[i])}) is not a ` +
                 `${type.name}`);
     }
