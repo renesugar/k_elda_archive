@@ -80,7 +80,7 @@ with the Dockerfile (don't forget the period at the end!):
 ```console
 $ docker build -t kayousterhout/lobsters .
 ```
-    
+
 In this case, we called the resulting image `kayousterhout/lobsters`, because
 we'll push it to the Dockerhub for kayousterhout; you'll want to use your own
 Dockerhub id to name your images.
@@ -92,14 +92,14 @@ you can use Docker to launch it locally:
 ```console
 $ docker run -n lobsters-test kayousterhout/lobsters
 ```
-    
+
 To use a shell on your new container to poke around (while the `rails server` is
 running), use:
 
 ```console
 $ docker exec -it lobsters-test /bin/bash
 ```
-    
+
 This can be helpful for making sure everything was installed and is running as
 expected (although in this case, lobste.rs won't work when you start it with
 Docker, because it's not yet connected to a mysql container).
@@ -130,9 +130,12 @@ First, let's write the Kelda blueprint to get the MySQL container up and running
 need to create a container based on the mysql image:
 
 ```javascript
-let sql = new Container('sql', 'mysql:5.6.32');
+let sql = new Container({
+  name: 'sql',
+  image: 'mysql:5.6.32',
+});
 ```
-    
+
 Here, the argument to `Container` is the hostname for the container, and the
 name of an image.  You can also pass in a Dockerfile to use to create a new
 image, as described in the [Javascript API
@@ -143,7 +146,7 @@ particular, we need to specify a root password for SQL.  We can set the root
 password to `foo` with the `setEnv` function:
 
 ```javascript
-sql.setEnv('MYSQL_ROOT_PASSWORD', 'foo');
+sql.env.MYSQL_ROOT_PASSWORD = 'foo';
 ```
 
 ### Writing the Kelda blueprint for lobste.rs
@@ -155,13 +158,16 @@ are each assigned unique hostnames when they're initialized, so we can create
 the lobsters container and initialize the URL as follows:
 
 ```javascript
-let lobsters = new Container('kayousterhout/lobsters');
+let lobsters = new Container({
+  name: 'lobsters',
+  image: 'kayousterhout/lobsters',
+});
 const sqlDatabaseUrl = 'mysql2://root:' + mysqlOpts.rootPassword + '@' + sqlContainer.getHostname() + ':3306/lobsters';
-lobsters.setEnv('DATABASE_URL', sqlDatabaseUrl);
+lobsters.env.DATABASE_URL = sqlDatabaseUrl;
 ```
 
 ### Allowing network connections
-    
+
 At this point, we've written code to create a mysql container and a lobsters
 container.  With Kelda, by default, all network connections are blocked.  To allow
 lobsters to talk to mysql, we need to explicitly open the mysql port (3306):
@@ -169,7 +175,7 @@ lobsters to talk to mysql, we need to explicitly open the mysql port (3306):
 ```javascript
 allowTraffic(lobsters, sql, 3306);
 ```
-    
+
 Because lobsters is a web application, the relevant port should also be open to
 the public internet on the lobsters container.  Kelda has a `publicInternet`
 variable that can be used to connect containers to any IP address:
@@ -180,7 +186,7 @@ allowTraffic(publicInternet, lobsters, 3000);
 
 If you're having trouble determining which ports your application needs, take
 a look at [How to Debug Network Connectivity Problems](#how-to-debug-network-connectivity-problems).
-    
+
 ### Deploying the application on infrastructure
 
 Finally, we'll use Kelda to launch some machines, and then start our containers on
@@ -193,7 +199,7 @@ public key "bar":
 ```javascript
 let baseMachine = new Machine({provider: 'Amazon', sshKeys: ['ssh-rsa bar']});
 ```
-    
+
 Now, using that base machine, we can deploy a master and a worker machine using
 Kelda's `Infrastructure` constructor.  All infrastructures must have at least
 one master, which keeps track of state for all of the machines in the cluster,
@@ -201,7 +207,10 @@ and at least one worker. The `Infrastructure` constructor accepts the master(s)
 and worker(s) as parameters:
 
 ```javascript
-const infra = new Infrastructure(baseMachine, baseMachine);
+const infra = new Infrastructure({
+  masters: baseMachine,
+  workers: baseMachine,
+});
 ```
 
 We've now defined a infrastructure with a master and worker machine.  Let's
@@ -211,14 +220,14 @@ finally deploy the two containers on that infrastructure:
 sql.deploy(infra);
 lobsters.deploy(infra);
 ```
-    
+
 We're done!  Running the blueprint is now trivial.  With a kelda daemon running, run
 your new blueprint (which, in this case, is called lobsters.js):
 
 ```console
 $ kelda run ./lobsters.js
 ```
-    
+
 Now users of lobsters, for example, can deploy it without needing to worry about
 the details of how different containers are connected with each other.  All they
 need to do is to `kelda run` the existing blueprint.

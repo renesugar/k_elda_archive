@@ -14,8 +14,8 @@ import (
 
 /*
 The registry submodule builds custom Dockerfiles. When a custom Dockerfile is
-deployed in a blueprint (e.g.`new Container(new Image("name", "dk"))`), a couple
-things happen:
+deployed in a blueprint (e.g.`new Container({ name: 'name', image:
+new Image({ name: 'name', dockerfile: 'dk' }) })`), a couple things happen:
 1) On the leader, the engine reads the custom images from the Containers in the
 blueprint, and writes them to the Image table.
 2) The registry submodule builds the images in the Image table, and updates

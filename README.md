@@ -48,7 +48,10 @@ Run any container.
 [//]: # (b1)
 <!-- const {Container, LoadBalancer, Machine, allowTraffic, publicInternet} = require('kelda'); -->
 ```javascript
-let web = new Container('web', 'someNodejsImage');
+let web = new Container({
+  name: 'web',
+  image: 'someNodejsImage',
+});
 ```
 
 Load balance traffic.
@@ -57,9 +60,16 @@ Load balance traffic.
 ```javascript
 let webContainers = [];
 for (i = 0; i < 3; i += 1) {
-  webContainers.push(new Container('web', 'someNodejsImage'));
+  webContainers.push(new Container({
+    name: 'web',
+    image: 'someNodejsImage',
+  }));
 }
-let webLoadBalancer = new LoadBalancer('web-lb', webContainers); // A load balancer over 3 containers.
+// A load balancer over 3 containers.
+let webLoadBalancer = new LoadBalancer({
+  name: 'web-lb',
+  containers: webContainers,
+});
 ```
 
 Share and import blueprints via npm.

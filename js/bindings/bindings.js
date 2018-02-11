@@ -233,7 +233,8 @@ function getBaseInfrastructure() {
  * @example <caption>Retrieve the base infrastructure, and deploy
  * an nginx container on it.</caption>
  * const inf = baseInfrastructure();
- * (new Container('web', 'nginx')).deploy(inf);
+ * const nginx = new Container({ name: 'web', image: 'nginx' });
+ * nginx.deploy(inf);
  *
  * @returns {Infrastructure} The infrastructure object.
  */
@@ -705,7 +706,7 @@ class Machine {
    *
    * @example <caption>Create a Machine on Amazon. This will use the
    * default size and region for Amazon.</caption>
-   * const baseMachine = new Machine({provider: 'Amazon'});
+   * const baseMachine = new Machine({ provider: 'Amazon' });
    *
    * @example <caption>Create a machine with the 'n1-standard-1' size in
    * GCE's 'us-east1-b' region.</caption>

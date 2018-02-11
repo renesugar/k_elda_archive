@@ -25,16 +25,19 @@ Assigning a floating IP address to an application just involves two steps:
     const baseMachine = new Machine({ provider: 'Amazon' });
 
     // Set the IP on the worker machine.
-    const worker = baseMachine.asWorker();
+    const worker = baseMachine.clone();
     worker.floatingIp = floatingIp;
 
     // Create the infrastructure.
-    const inf = new Infrastructure(baseMachine.asMaster(), worker);
+    const inf = new Infrastructure({
+      masters: baseMachine,
+      workers: worker,
+    });
     ```
 2. Tell Kelda to place the application on the machine with your floating IP:
 
     ```javascript
-    const app = new Container('myApp', 'myImage');
+    const app = new Container({ name: 'myApp', image: 'myImage' });
     app.placeOn({ floatingIP });
 
     // Deploy the application.
@@ -127,7 +130,7 @@ const haproxy = require('@kelda/haproxy');
 ```javascript
 const appContainers = [];
 for (let i = 0; i < 3; i += 1) {
-  appContainers.push(new Container('web', 'myWebsite'));
+  appContainers.push(new Container({ name: 'web', image: 'myWebsite' }));
 }
 ```
 
@@ -247,49 +250,49 @@ onto the filesystem.
 1. Create the Container in the blueprint. Note the secret name "githubToken".
     The name is arbitrary, but will be used in the next steps to interact with
     the secret.
-    
+
     ```javascript
-    const container = new kelda.Container('bot', 'keldaio/bot', {
-      env: {
-        GITHUB_OAUTH_TOKEN: new kelda.Secret('githubToken'),
-      },
+    const container = new kelda.Container({
+      name: 'bot',
+      image: 'keldaio/bot',
+      env: { GITHUB_OAUTH_TOKEN: new kelda.Secret('githubToken') },
     });
     ```
-    
+
 2. Deploy the blueprint.
-    
+
     ```console
     $ kelda run <blueprintName.js>
     ```
-    
+
 3. Kelda will not launch a container until all secrets needed by the container
     have been added to Kelda. Running `kelda show` after deploying the
     blueprint should result in the following:
-    
+
     ```console
     CONTAINER       MACHINE         COMMAND           HOSTNAME   STATUS                                CREATED    PUBLIC IP
     d044f3880fdc    sir-m5erezkj    keldaio/bot       bot        Waiting for secrets: [githubToken]
     ```
-    
+
     This means that Kelda is waiting to launch the container until the secret
     called `githubToken` is set. To set the secret value, use `kelda secret`:
-    
+
     ```console
     $ kelda secret githubToken <tokenValue>
     ```
 
     If the command succeeds, there will be no output, and the exit code will be
     zero.
-    
+
     Note that Kelda does not handle the lifecycle of the secret before `kelda
     secret` is run. For the GitHub token example, the GitHub token can be
     copied directly from the GitHub web UI to the `kelda secret` command.
     Another approach could be to store the token in a password manager, and
     paste it into `kelda secret` when needed.
-    
+
 4. `kelda show` should show that the bot container has started. It may take up to
     a minute for the container to start.
-    
+
 5. To change the secret value, run `kelda secret githubToken <newValue>`
    again, and the container will restart with the new value within a minute.
 
@@ -309,7 +312,7 @@ Suppose a blueprint includes a container called `buggyContainer` that is not
 running properly because the network is not correctly setup:
 
 ```js
-const buggyContainer = new kelda.Container('buggyContainer', ...);
+const buggyContainer = new kelda.Container({ name: 'buggyContainer', ... });
 ```
 
 Start by enabling that container to access port 80 on the public internet, so

@@ -14,7 +14,7 @@ const baseMachine = new Machine({
 const workerMachine = baseMachine.clone();
 workerMachine.floatingIp = floatingIp;
 
-const infra = new Infrastructure(baseMachine, workerMachine);
+const infra = new Infrastructure({ masters: baseMachine, workers: workerMachine });
 
 const app = nginx.createContainer(80);
 
