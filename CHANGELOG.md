@@ -3,6 +3,9 @@ Kelda Change Log
 
 Up Next
 -------------
+
+- Remove the `.q` TLD for Kelda hostnames. Kubernetes doesn't support hostnames
+with TLDs.
 - The Container, Infrastructure, LoadBalancer, and Image constructors can now
 receive arguments as a single object -- e.g. `new Container({ name: 'name:, image:
 'image' })`. The old way of passing arguments is deprecated.
@@ -20,8 +23,6 @@ this feature should query their public IP at runtime using a service such as
 checkip.amazon.com, or pass containers a floating IP (or DNS name backed by a
 floating IP) and use placement rules to ensure the container is scheduled at
 that floating IP.
-- Remove the `.q` TLD for Kelda hostnames. Kubernetes doesn't support hostnames
-with TLDs.
 
 Javascript API changes:
 - Remove deprecated methods `allowFrom` and `allow`.
