@@ -3,7 +3,7 @@ Kelda Change Log
 
 Up Next
 -------------
-- Only allow object literal arguments to the Container and Infrastructure
+- Only allow object literal arguments to the Container, Image, and Infrastructure
 constructors.
 
 Release 0.10.0

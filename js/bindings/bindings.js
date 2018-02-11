@@ -1011,21 +1011,15 @@ class Image {
    *   dockerfile: fs.readFileSync('./Dockerfile', { encoding: 'utf8' }),
    * });
    *
-   * @param {string} name - The name to use for the Docker image, or if no
+   * @param {Object} args - All required and optional arguments.
+   * @param {string} args.name - The name to use for the Docker image, or if no
    *   Dockerfile is specified, the repository to get the image from. The repository
    *   can be a full URL (e.g., quay.io/coreos/etcd) or the name of an image in
    *   Docker Hub (e.g., nginx or nginx:1.13.3).
-   * @param {string} [dockerfile] - The string contents of the Dockerfile that
+   * @param {string} [args.dockerfile] - The string contents of the Dockerfile that
    *   constructs the Image.
    */
-  constructor(name, dockerfile) {
-    // If name is an object, we assume the user passed all arguments
-    // within this object.
-    let args = name;
-    if (typeof name !== 'object') {
-      args = { name, dockerfile };
-    }
-
+  constructor(args) {
     checkRequiredArguments('Image', args, ['name']);
 
     this.name = getString('Image name', args.name);

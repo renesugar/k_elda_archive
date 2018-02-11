@@ -441,31 +441,28 @@ describe('Bindings', () => {
   });
 
   describe('Image', () => {
+    it('errors when passed an invalid argument', () => {
+      expect(() => new b.Image(3)).to.throw(
+        'the Image constructor must be given a valid object (was: 3)');
+      expect(() => new b.Image('image', 1)).to.throw(
+        'the Image constructor must be given a valid object (was: "image")');
+    });
     it('errors when passed an invalid image name', () => {
-      expect(() => new b.Image(3)).to.throw();
-    });
-    it('errors when passed an invalid image name and valid dockerfile', () => {
-      expect(() => new b.Image(3, 'dockerfile')).to.throw();
-    });
-    it('errors when passed an invalid dockerfile', () => {
-      expect(() => new b.Image('image', 1)).to.throw();
-    });
-    it('errors when passed an invalid image name - object', () => {
       expect(() => new b.Image({ name: 3 })).to.throw();
     });
-    it('errors when passed an invalid image name and valid dockerfile - object', () => {
+    it('errors when passed an invalid image name and valid dockerfile', () => {
       expect(() => new b.Image({ name: 3, dockerfile: 'dockerfile' })).to.throw();
     });
-    it('errors when passed an invalid dockerfile - object', () => {
+    it('errors when passed an invalid dockerfile', () => {
       expect(() => new b.Image({ name: 'image', dockerfile: 1 })).to.throw();
     });
-    it('errors when passed invalid arguments - object', () => {
+    it('errors when passed invalid arguments', () => {
       expect(() => new b.Image({ name: 'image', dockerfile: 1, badArg: 'bad' })).to.throw();
     });
-    it('does not error when passed valid arguments - object', () => {
+    it('does not error when passed valid arguments', () => {
       expect(() => new b.Image({ name: 'image', dockerfile: 'dockerfile' })).to.not.throw();
     });
-    it('should error when required arguments are missing - object', () => {
+    it('should error when required arguments are missing', () => {
       expect(() => new b.Image({ dockerfile: 'dockerfile' })).to
         .throw("missing required attribute: Image requires 'name'");
     });
