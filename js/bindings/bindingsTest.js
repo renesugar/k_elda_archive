@@ -685,12 +685,14 @@ describe('Bindings', () => {
       const serv = new b.LoadBalancer('foo', []);
       expect(container.getHostname()).to.equal('foo');
       expect(serv.hostname()).to.equal('foo2');
+      expect(serv.getHostname()).to.equal('foo2');
     });
     it('Container.hostname and LoadBalancer.hostname don\'t conflict - object', () => {
       const container = new b.Container({ name: 'foo', image: 'image' });
       const serv = new b.LoadBalancer({ name: 'foo', containers: [] });
       expect(container.getHostname()).to.equal('foo');
       expect(serv.hostname()).to.equal('foo2');
+      expect(serv.getHostname()).to.equal('foo2');
     });
     it('hostnames returned by uniqueHostname cannot be reused', () => {
       const containerA = new b.Container('host', 'ignoreme');
@@ -1027,10 +1029,12 @@ describe('Bindings', () => {
     it('get LoadBalancer hostname', () => {
       const foo = new b.LoadBalancer('foo', []);
       expect(foo.hostname()).to.equal('foo');
+      expect(foo.getHostname()).to.equal('foo');
     });
     it('get LoadBalancer hostname - object', () => {
       const foo = new b.LoadBalancer({ name: 'foo', containers: [] });
       expect(foo.hostname()).to.equal('foo');
+      expect(foo.getHostname()).to.equal('foo');
     });
   });
   describe('allowTraffic', () => {
