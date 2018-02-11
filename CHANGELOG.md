@@ -4,6 +4,9 @@ Kelda Change Log
 Up Next
 -------------
 
+Release 0.10.0
+-------------
+
 - Remove the `.q` TLD for Kelda hostnames. Kubernetes doesn't support hostnames
 with TLDs.
 - The Container, Infrastructure, LoadBalancer, and Image constructors can now
