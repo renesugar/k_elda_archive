@@ -26,7 +26,12 @@ func TestEtcd(t *testing.T) {
 		t.Fatalf("couldn't query machines: %s", err)
 	}
 
-	test(t, util.NewSSHUtil(machines), containers)
+	sshUtil, err := util.NewSSHUtil(machines)
+	if err != nil {
+		t.Fatalf("failed to create SSH util client: %s", err)
+	}
+
+	test(t, sshUtil, containers)
 }
 
 func test(t *testing.T, sshUtil util.SSHUtil, containers []db.Container) {

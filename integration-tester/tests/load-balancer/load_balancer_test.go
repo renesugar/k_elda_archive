@@ -38,6 +38,11 @@ func TestLoadBalancer(t *testing.T) {
 		t.Fatalf("couldn't get machines: %s", err)
 	}
 
+	sshUtil, err := util.NewSSHUtil(machines)
+	if err != nil {
+		t.Fatalf("failed to create SSH util client: %s", err)
+	}
+
 	var fetcher *db.Container
 	for _, c := range containers {
 		if c.Image == fetcherImage {
@@ -61,7 +66,6 @@ func TestLoadBalancer(t *testing.T) {
 	log.WithField("expected unique responses", len(loadBalancedContainers)).
 		Info("Starting fetching..")
 
-	sshUtil := util.NewSSHUtil(machines)
 	loadBalancedCounts := map[string]int{}
 	var loadBalancedCountsLock sync.Mutex
 	var wg sync.WaitGroup

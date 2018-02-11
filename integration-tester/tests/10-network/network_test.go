@@ -33,7 +33,11 @@ func TestNetwork(t *testing.T) {
 		t.Fatalf("Failed to query connections: %s", err)
 	}
 
-	sshUtil := util.NewSSHUtil(machines)
+	sshUtil, err := util.NewSSHUtil(machines)
+	if err != nil {
+		t.Fatalf("failed to create SSH util client: %s", err)
+	}
+
 	t.Run("DNS", func(t *testing.T) {
 		t.Parallel()
 		testDNS(t, sshUtil, containers, loadBalancers)

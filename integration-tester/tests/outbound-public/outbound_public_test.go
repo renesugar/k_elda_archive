@@ -33,7 +33,12 @@ func TestOutboundPublic(t *testing.T) {
 		t.Fatalf("couldn't query machines: %s", err)
 	}
 
-	test(t, util.NewSSHUtil(machines), containers, connections)
+	sshUtil, err := util.NewSSHUtil(machines)
+	if err != nil {
+		t.Fatalf("failed to create SSH util client: %s", err)
+	}
+
+	test(t, sshUtil, containers, connections)
 }
 
 var testPort = 80

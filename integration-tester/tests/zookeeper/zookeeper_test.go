@@ -29,6 +29,11 @@ func TestZookeeper(t *testing.T) {
 		t.Fatalf("couldn't query machines: %s", err)
 	}
 
+	sshUtil, err := util.NewSSHUtil(machines)
+	if err != nil {
+		t.Fatalf("failed to create SSH util client: %s", err)
+	}
+
 	var zkContainers []db.Container
 	for _, c := range containers {
 		if strings.Contains(c.Image, "zookeeper") {
@@ -36,7 +41,7 @@ func TestZookeeper(t *testing.T) {
 		}
 	}
 
-	test(t, util.NewSSHUtil(machines), zkContainers)
+	test(t, sshUtil, zkContainers)
 }
 
 // Write a random key value pair to each zookeeper node, and then ensure that
