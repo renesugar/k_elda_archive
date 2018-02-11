@@ -53,15 +53,14 @@ class Infrastructure {
    *   adminACL: ['1.2.3.4/32'],
    * });
    *
-   * @param {Machine|Machine[]} masters - One or more machines that should be launched to
+   * @param {Object} args - All required and optional arguments.
+   * @param {Machine|Machine[]} args.masters - One or more machines that should be launched to
    *   use as the masters.
-   * @param {Machine|Machine[]} workers - One or more machines that should be launched to
+   * @param {Machine|Machine[]} args.workers - One or more machines that should be launched to
    *   use as the workers.  Worker machines are responsible for running application containers.
-   * @param {Object} [opts] - Optional arguments to tweak the behavior
-   *   of the namespace.
-   * @param {string} [opts.namespace=kelda] - The name of the
+   * @param {string} [args.namespace=kelda] - The name of the
    *   namespace that the blueprint should operate in.
-   * @param {string[]} [opts.adminACL] - A list of IP addresses that are
+   * @param {string[]} [args.adminACL] - A list of IP addresses that are
    *   allowed to access the deployed machines.  The IP of the machine where the
    *   daemon is running is always allowed to access the machines. If you would like to allow
    *   another machine to access the deployed machines (e.g., to SSH into a machine),
@@ -69,27 +68,23 @@ class Infrastructure {
    *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
    *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
    */
-  constructor(masters, workers, opts = {}) {
-    const args = { namespace: 'kelda' };
-    // If the masters is an object (but neither a Machine nor an array of Machines),
-    // we assume this object contains all the user's arguments.
-    if ((typeof masters === 'object') && !(masters instanceof Machine) && !(Array.isArray(masters))) {
-      Object.assign(args, masters);
-    } else {
-      Object.assign(args, opts, { masters, workers });
-    }
+  constructor(args) {
+    const defaults = { namespace: 'kelda' };
+    const allArgs = Object.assign(defaults, args);
 
-    this.adminACL = getStringArray('adminACL', args.adminACL);
-    this.namespace = getString('namespace', args.namespace);
+    checkRequiredArguments('Infrastructure', args, ['masters', 'workers']);
+
+    this.adminACL = getStringArray('adminACL', allArgs.adminACL);
+    this.namespace = getString('namespace', allArgs.namespace);
     this.masters = [];
     this.workers = [];
     this.containers = new Set();
     this.loadBalancers = [];
 
-    checkExtraKeys(args, this);
+    checkExtraKeys(allArgs, this);
 
-    const boxedMasters = boxObjects('Infrastructure.masters', args.masters, Machine);
-    const boxedWorkers = boxObjects('Infrastructure.workers', args.workers, Machine);
+    const boxedMasters = boxObjects('Infrastructure.masters', allArgs.masters, Machine);
+    const boxedWorkers = boxObjects('Infrastructure.workers', allArgs.workers, Machine);
     if (boxedMasters.length < 1) {
       throw new Error('masters must include 1 or more Machines to use as ' +
         'Kelda masters.');
