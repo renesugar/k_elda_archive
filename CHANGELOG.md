@@ -3,6 +3,10 @@ Kelda Change Log
 
 Up Next
 -------------
+- The Container, Infrastructure, LoadBalancer, and Image constructors can now
+receive arguments as a single object -- e.g. `new Container({ name: 'name:, image:
+'image' })`. The old way of passing arguments is deprecated.
+- LoadBalancer.hostname() has been deprecated in favor of LoadBalancer.getHostname().
 
 Release 0.9.0
 -------------
