@@ -3,6 +3,7 @@ Kelda Change Log
 
 Up Next
 -------------
+- Only allow object literal arguments to the Container constructor.
 
 Release 0.10.0
 -------------

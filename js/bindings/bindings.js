@@ -504,6 +504,10 @@ function assertArrayOfType(name, array, type) {
  * @returns {void}
  */
 function checkRequiredArguments(name, object, keys) {
+  if ((typeof object !== 'object') || Array.isArray(object) || (object === null)) {
+    throw new Error(
+      `the ${name} constructor must be given a valid object (was: ${stringify(object)})`);
+  }
   keys.forEach((key) => {
     if (!(key in object)) {
       throw new Error(`missing required attribute: ${name} requires '${key}'`);
@@ -1079,19 +1083,19 @@ class Container {
    *   },
    * });
    *
-   * @param {string} name - The prefix of the container's network hostname.
+   * @param {Object} args - Required and optional arguments.
+   * @param {string} args.name - The prefix of the container's network hostname.
    *   If multiple containers use the same name within the same deployment,
    *   their hostnames will become name, name2, name3, etc.
-   * @param {Image|string} image - An {@link Image} that the container should
+   * @param {Image|string} args.image - An {@link Image} that the container should
    *   boot, or a string with the name of a Docker image (that exists in
    *   Docker Hub) that the container should boot.
-   * @param {Object} [opts] - Additional, named, optional arguments.
-   * @param {string[]} [opts.command] - The command to use when starting
+   * @param {string[]} [args.command] - The command to use when starting
    *   the container.
-   * @param {Object.<string, string|Secret>} [opts.env] -
+   * @param {Object.<string, string|Secret>} [args.env] -
    *   Environment variables to set in the booted container. The key is the name
    *   of the environment variable.
-   * @param {Object.<string, string|Secret>} [opts.filepathToContent] -
+   * @param {Object.<string, string|Secret>} [args.filepathToContent] -
    *   Text files to be installed on the container before it starts.  The key is
    *   the path on the container where the text file should be installed, and
    *   the value is the contents of the text file. If the file content specified
@@ -1099,18 +1103,11 @@ class Container {
    *   the container using the new files.  Files are installed with permissions
    *   0644 and parent directories are automatically created.
    */
-  constructor(name, image, opts = {}) {
+  constructor(args) {
     // refID is used to distinguish infrastructures with multiple references to the
     // same container, and infrastructures with multiple containers with the exact
     // same attributes.
     this._refID = uniqueID();
-
-    // If name is an object, we assume the user passed all arguments
-    // within this object.
-    let args = name;
-    if (typeof name !== 'object') {
-      args = Object.assign(opts, { name, image });
-    }
 
     checkRequiredArguments('Container', args, ['name', 'image']);
 
@@ -1120,7 +1117,7 @@ class Container {
     }
     if (!(this.image instanceof Image)) {
       throw new Error('image must be an Image or string (was ' +
-              `${stringify(image)})`);
+              `${stringify(this.image)})`);
     }
 
     this.name = getString('name', args.name);
