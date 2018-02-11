@@ -369,17 +369,11 @@ class LoadBalancer {
    * @implements {Connectable}
    * @constructor
    *
-   * @param {string} name - The name of the load balancer.
-   * @param {Container[]} containers - The containers behind the load balancer.
+   * @param {Object} args - All required arguments.
+   * @param {string} args.name - The name of the load balancer.
+   * @param {Container[]} args.containers - The containers behind the load balancer.
    */
-  constructor(name, containers) {
-    // If name is an object, we assume the user passed all arguments
-    // within this object.
-    let args = name;
-    if (typeof name !== 'object') {
-      args = { name, containers };
-    }
-
+  constructor(args) {
     checkRequiredArguments('LoadBalancer', args, ['name', 'containers']);
 
     this.name = uniqueHostname(getString('LoadBalancer name', args.name));

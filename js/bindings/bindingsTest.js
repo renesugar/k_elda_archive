@@ -741,15 +741,6 @@ describe('Bindings', () => {
   describe('LoadBalancer', () => {
     beforeEach(createBasicInfra);
     it('basic', () => {
-      const lb = new b.LoadBalancer('web-tier', [new b.Container({
-        name: 'host', image: 'nginx' })]);
-      lb.deploy(infra);
-      checkLoadBalancers([{
-        name: 'web-tier',
-        hostnames: ['host'],
-      }]);
-    });
-    it('basic - object', () => {
       const lb = new b.LoadBalancer({
         name: 'web-tier',
         containers: [new b.Container({ name: 'host', image: 'nginx' })],
@@ -760,34 +751,26 @@ describe('Bindings', () => {
         hostnames: ['host'],
       }]);
     });
-    it('should error when passed an invalid name - object', () => {
+    it('should error when given an invalid argument', () => {
+      expect(() => new b.LoadBalancer([])).to
+        .throw('the LoadBalancer constructor must be given a valid object (was: [])');
+      expect(() => new b.LoadBalancer('name')).to
+        .throw('the LoadBalancer constructor must be given a valid object (was: "name")');
+    });
+    it('should error when passed an invalid name ', () => {
       expect(() => new b.LoadBalancer({
         name: 3,
         containers: [new b.Container({ name: 'host', image: 'nginx' })] }))
         .to.throw('LoadBalancer name must be a string (was: 3)');
     });
-    it('should error when required arguments are missing - object', () => {
+    it('should error when required arguments are missing', () => {
       expect(() => new b.LoadBalancer({ name: 'name' })).to
         .throw("missing required attribute: LoadBalancer requires 'containers'");
       expect(() => new b.LoadBalancer({
         containers: [new b.Container({ name: 'host', image: 'nginx' })] })).to
         .throw("missing required attribute: LoadBalancer requires 'name'");
     });
-    it('multiple containers - object', () => {
-      const lb = new b.LoadBalancer('web-tier', [
-        new b.Container({ name: 'host', image: 'nginx' }),
-        new b.Container({ name: 'host', image: 'nginx' }),
-      ]);
-      lb.deploy(infra);
-      checkLoadBalancers([{
-        name: 'web-tier',
-        hostnames: [
-          'host',
-          'host2',
-        ],
-      }]);
-    });
-    it('multiple containers - object', () => {
+    it('multiple containers', () => {
       const lb = new b.LoadBalancer({
         name: 'web-tier',
         containers: [
@@ -804,7 +787,7 @@ describe('Bindings', () => {
         ],
       }]);
     });
-    it('duplicate load balancers - object', () => {
+    it('duplicate load balancers', () => {
       /* Conflicting load balancer names.  We need to generate a couple of dummy
                containers so that the two deployed containers have _refID's
                that are sorted differently lexicographically and numerically. */
@@ -836,11 +819,6 @@ describe('Bindings', () => {
       ]);
     });
     it('get LoadBalancer hostname', () => {
-      const foo = new b.LoadBalancer('foo', []);
-      expect(foo.hostname()).to.equal('foo');
-      expect(foo.getHostname()).to.equal('foo');
-    });
-    it('get LoadBalancer hostname - object', () => {
       const foo = new b.LoadBalancer({ name: 'foo', containers: [] });
       expect(foo.hostname()).to.equal('foo');
       expect(foo.getHostname()).to.equal('foo');
@@ -977,7 +955,7 @@ describe('Bindings', () => {
       expect(deploy).to.throw('namespace "BadNamespace" contains ' +
                   'uppercase letters. Namespaces must be lowercase.');
     });
-    it('connect from undeployed container - object', () => {
+    it('connect from undeployed container', () => {
       createBasicInfra();
       const foo = new b.LoadBalancer({ name: 'foo', containers: [] });
       foo.deploy(infra);
@@ -1045,9 +1023,6 @@ describe('Bindings', () => {
       new b.Container({ name: hostname, image: 'image' }); // eslint-disable-line no-new
     };
     const createLoadBalancerWithName = hostname => () => {
-      new b.LoadBalancer(hostname, []); // eslint-disable-line no-new
-    };
-    const createLoadBalancerWithNameObj = hostname => () => {
       new b.LoadBalancer({ name: hostname, containers: [] }); // eslint-disable-line no-new
     };
 
@@ -1056,27 +1031,23 @@ describe('Bindings', () => {
       validHostnames.forEach((hostname) => {
         expect(createContainerWithName(hostname)).to.not.throw();
         expect(createLoadBalancerWithName(hostname)).to.not.throw();
-        expect(createLoadBalancerWithNameObj(hostname)).to.not.throw();
       });
     });
 
     it('should error when using a hostname with underscores', () => {
       expect(createContainerWithName('my_hostname')).to.throw();
       expect(createLoadBalancerWithName('my_hostname')).to.throw();
-      expect(createLoadBalancerWithNameObj('my_hostname')).to.throw();
     });
 
     it('should error when using a hostname with capital letters', () => {
       expect(createContainerWithName('myHostname')).to.throw();
       expect(createLoadBalancerWithName('myHostname')).to.throw();
-      expect(createLoadBalancerWithNameObj('myHostname')).to.throw();
     });
 
     it('should error when using a hostname longer than 253 characters', () => {
       const hostname = 'a'.repeat(254);
       expect(createContainerWithName(hostname)).to.throw();
       expect(createLoadBalancerWithName(hostname)).to.throw();
-      expect(createLoadBalancerWithNameObj(hostname)).to.throw();
     });
   });
 
