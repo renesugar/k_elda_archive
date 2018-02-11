@@ -189,9 +189,10 @@ function infraGetter(kelda) {
     preemptible: true,
   });
 
-  return new kelda.Infrastructure(
-    vmTemplate.replicate(1),
-    vmTemplate.replicate(2));
+  return new kelda.Infrastructure({
+    masters: vmTemplate.replicate(1),
+    workers: vmTemplate.replicate(2),
+  });
 }
 
 module.exports = infraGetter;
@@ -223,9 +224,10 @@ function infraGetter(kelda) {
     preemptible: true,
   });
 
-  return new kelda.Infrastructure(
-    vmTemplate.replicate(1),
-    vmTemplate.replicate(2));
+  return new kelda.Infrastructure({
+    masters: vmTemplate.replicate(1),
+    workers: vmTemplate.replicate(2),
+  });
 }
 
 module.exports = infraGetter;

@@ -17,9 +17,10 @@ function infraGetter(kelda) {
     preemptible: {{preemptible}},
   });
 
-  return new kelda.Infrastructure(
-    vmTemplate.replicate({{masterCount}}),
-    vmTemplate.replicate({{workerCount}}));
+  return new kelda.Infrastructure({
+    masters: vmTemplate.replicate({{masterCount}}),
+    workers: vmTemplate.replicate({{workerCount}}),
+  });
 }
 
 module.exports = infraGetter;

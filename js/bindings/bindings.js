@@ -1039,7 +1039,7 @@ class Image {
    * @returns {Image} A new Image with all of the same attributes as this Image.
    */
   clone() {
-    return new Image(this.name, this.dockerfile);
+    return new Image(this);
   }
 }
 
@@ -1116,7 +1116,7 @@ class Container {
 
     this.image = args.image;
     if (typeof args.image === 'string') {
-      this.image = new Image(args.image);
+      this.image = new Image({ name: args.image });
     }
     if (!(this.image instanceof Image)) {
       throw new Error('image must be an Image or string (was ' +
@@ -1147,7 +1147,7 @@ class Container {
    * @returns {Container} A new Container with the same attributes.
    */
   clone() {
-    return new Container(this.name, this.image, this);
+    return new Container(this);
   }
 
   /**
