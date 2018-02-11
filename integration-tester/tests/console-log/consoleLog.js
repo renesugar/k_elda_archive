@@ -6,7 +6,7 @@ const infra = infrastructure.createTestInfrastructure();
 console.log('This should show up in the terminal.');
 console.warn('This too.');
 
-const redContainer = new kelda.Container('red', 'google/pause');
+const redContainer = new kelda.Container({ name: 'red', image: 'google/pause' });
 redContainer.deploy(infra);
-const blueContainer = new kelda.Container('blue', 'google/pause');
+const blueContainer = new kelda.Container({ name: 'blue', image: 'google/pause' });
 blueContainer.deploy(infra);

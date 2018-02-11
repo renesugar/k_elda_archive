@@ -12,10 +12,10 @@ const indexPath = '/usr/share/nginx/html/index.html';
  * @returns {Container} - A container with given content in its index file.
  */
 function containerWithContent(content) {
-  return new kelda.Container('web', 'nginx', {
-    filepathToContent: {
-      [indexPath]: content,
-    },
+  return new kelda.Container({
+    name: 'web',
+    image: 'nginx',
+    filepathToContent: { [indexPath]: content },
   });
 }
 
@@ -30,8 +30,7 @@ const serviceB = [
   containerWithContent('b3'),
 ];
 
-const workersWithFloatingIps = infra.machines.filter(
-  m => m.role === 'Worker' && m.floatingIp !== '');
+const workersWithFloatingIps = infra.workers.filter(m => m.floatingIp !== '');
 if (workersWithFloatingIps.length !== 1) {
   throw new Error('There should be exactly one floating IP assigned to a Worker');
 }

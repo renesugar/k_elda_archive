@@ -52,8 +52,11 @@ function createTestInfrastructure() {
   }
   workers[0].floatingIp = providerToFloatingIp[baseMachine.provider];
 
-  return new Infrastructure(baseMachine, workers,
-    { namespace: process.env.TESTING_NAMESPACE });
+  return new Infrastructure({
+    masters: baseMachine,
+    workers,
+    namespace: process.env.TESTING_NAMESPACE,
+  });
 }
 
 module.exports = { createTestInfrastructure, nWorker };

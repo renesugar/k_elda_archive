@@ -5,7 +5,9 @@ const infra = infrastructure.createTestInfrastructure();
 
 const connected = [];
 for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
-  connected.push(new kelda.Container('outbound', 'appropriate/curl', {
+  connected.push(new kelda.Container({
+    name: 'outbound',
+    image: 'appropriate/curl',
     command: ['tail', '-f', '/dev/null'],
   }));
 }
@@ -14,7 +16,9 @@ kelda.allowTraffic(connected, kelda.publicInternet, 80);
 
 const notConnected = [];
 for (let i = 0; i < infrastructure.nWorker * 2; i += 1) {
-  notConnected.push(new kelda.Container('ignoreme', 'appropriate/curl', {
+  notConnected.push(new kelda.Container({
+    name: 'ignoreme',
+    image: 'appropriate/curl',
     command: ['tail', '-f', '/dev/null'],
   }));
 }

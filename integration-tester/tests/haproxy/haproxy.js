@@ -10,10 +10,10 @@ const indexPath = '/usr/share/nginx/html/index.html';
  * @returns {Container} - A container with given content in its index file.
  */
 function containerWithContent(content) {
-  return new kelda.Container('web', 'nginx', {
-    filepathToContent: {
-      [indexPath]: content,
-    },
+  return new kelda.Container({
+    name: 'web',
+    image: 'nginx',
+    filepathToContent: { [indexPath]: content },
   });
 }
 

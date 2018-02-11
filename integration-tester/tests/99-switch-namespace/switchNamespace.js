@@ -5,7 +5,9 @@ const infra = infrastructure.createTestInfrastructure();
 
 const numContainers = Math.round(infrastructure.nWorker);
 for (let i = 0; i < numContainers; i += 1) {
-  const c = new kelda.Container('test-container', 'nginx', {
+  const c = new kelda.Container({
+    name: 'test-container',
+    image: 'nginx',
     command: ['sh', '-c',
       'date > /usr/share/nginx/html/index.html && nginx -g "daemon off;"'],
   });
