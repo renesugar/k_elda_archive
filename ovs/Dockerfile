@@ -4,7 +4,7 @@ COPY run /bin/run
 COPY bootstrap /bin/bootstrap
 
 RUN /bin/bootstrap binaries
-RUN /bin/bootstrap kernel_modules 4.4.0-62-generic
+RUN /bin/bootstrap kernel_modules 4.4.0-62-generic 4.4.0-57-generic
 
 RUN apt-get update \
 && apt-get install -y --no-install-recommends openssl ca-certificates kmod \
