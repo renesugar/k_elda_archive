@@ -135,7 +135,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Increase the maximum number of concurrent sessions per SSH connection so that
 # the integration tests can take advantage of connection multiplexing.
-echo 'MaxSessions 512' >> /etc/ssh/sshd_config
+printf '\nMaxSessions 512\n' >> /etc/ssh/sshd_config
 systemctl restart ssh
 
 ssh_keys="{{.SSHKeys}}"
