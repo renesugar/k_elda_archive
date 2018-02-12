@@ -76,31 +76,20 @@ class Infrastructure {
 
     this.adminACL = getStringArray('adminACL', allArgs.adminACL);
     this.namespace = getString('namespace', allArgs.namespace);
-    this.masters = [];
-    this.workers = [];
     this.containers = new Set();
     this.loadBalancers = [];
 
-    checkExtraKeys(allArgs, this);
-
-    const boxedMasters = boxObjects('Infrastructure.masters', allArgs.masters, Machine);
-    const boxedWorkers = boxObjects('Infrastructure.workers', allArgs.workers, Machine);
-    if (boxedMasters.length < 1) {
+    this.masters = boxObjects('Infrastructure.masters', allArgs.masters, Machine);
+    this.workers = boxObjects('Infrastructure.workers', allArgs.workers, Machine);
+    if (this.masters.length < 1) {
       throw new Error('masters must include 1 or more Machines to use as ' +
         'Kelda masters.');
-    } else if (boxedWorkers.length < 1) {
+    } else if (this.workers.length < 1) {
       throw new Error('workers must include 1 or more Machines to use as ' +
         'Kelda workers.');
     }
 
-    // It is now redundant to set the roles and to concatenate the lists here
-    // since we do that in `toKeldaRepresentation`. However, for backwards
-    // compatibility, we keep this functionality until the next release.
-    boxedMasters.forEach(master =>
-      this.masters.push(machineWithRole(master, 'Master')));
-    boxedWorkers.forEach(worker =>
-      this.workers.push(machineWithRole(worker, 'Worker')));
-    this.machines = this.masters.concat(this.workers);
+    checkExtraKeys(allArgs, this);
 
     if (_keldaInfrastructure !== undefined) {
       throw new Error('the Infrastructure constructor has already been called once ' +
@@ -136,10 +125,12 @@ class Infrastructure {
       containers.push(c.toKeldaRepresentation());
     });
 
-    // Masters and workers are set as separate properties of the Infrastructure
-    // to satisfy `checkExtraKeys`. It has the additional benefit that the user
-    // can easily access the worker machines in their blueprint, which is often
-    // done to determine how many workers are available.
+    const machineWithRole = (machine, role) => {
+      const copy = machine.clone();
+      copy.role = role;
+      return copy;
+    };
+
     // The masters and workers aren't concatenated until now in order to let users
     // modify their machines through the .workers and .masters properties in the blueprint.
     const mastersWithRole = this.masters.map(master => machineWithRole(master, 'Master'));
@@ -160,17 +151,6 @@ class Infrastructure {
     vet(keldaInfrastructure);
     return keldaInfrastructure;
   }
-}
-
-/**
- * @param {Machine} machine - The machine whose role should change.
- * @param {string} role - The desired role. Should be Worker or Master.
- * @returns {Machine} A clone of the given machine, with the desired role.
- */
-function machineWithRole(machine, role) {
-  const copy = machine.clone();
-  copy.role = role;
-  return copy;
 }
 
 /**
