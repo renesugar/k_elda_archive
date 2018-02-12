@@ -5,6 +5,9 @@ Up Next
 -------------
 - Only allow object literal arguments to the Container, Image, LoadBalancer,
 and Infrastructure constructors.
+- Remove the setEnv() and withEnv() Container methods. Users should instead set
+environment variables through the constructor call or by directly accessing the
+.env attribute of the Container instance.
 
 Release 0.10.0
 -------------

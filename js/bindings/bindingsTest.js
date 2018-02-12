@@ -652,27 +652,6 @@ describe('Bindings', () => {
       qux: { nameOfSecret: 'quuz' },
     };
     beforeEach(createBasicInfra);
-    it('withEnv', () => {
-      // The blueprint ID is different than the Container created with the
-      // constructor because the hostname ID increases with each withEnv
-      // call.
-      const id = '0fe2889cc4d925e9d6e0b52bccc2d2d0fbbbcf99';
-      const container = new b.Container({
-        name: hostname,
-        image,
-        command,
-        filepathToContent,
-      }).withEnv(env);
-      container.deploy(infra);
-      checkContainers([{
-        id,
-        image,
-        command,
-        env,
-        filepathToContent: jsonFilepathToContent,
-        hostname: 'host2',
-      }]);
-    });
     it('constructor', () => {
       const id = 'f88bea6ff85ebc6abf7c61a4a35e7685f1d6c0f1';
       const container = new b.Container({

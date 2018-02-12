@@ -1111,33 +1111,6 @@ class Container {
   }
 
   /**
-   * Sets the given environment variable to the given value.
-   *
-   * @param {string} key - The name of the environment variable to set.
-   * @param {string} val - The value that the given environment variable
-   *   should be given.
-   * @returns {void}
-   */
-  setEnv(key, val) {
-    this.env[key] = val;
-  }
-
-  /**
-   * Creates a new container with the same attributes as this container,
-   * except that the environment is set to the given environment.
-   *
-   * @param {Object.<string, string>} env - A mapping of environment variables
-   *   to values for the container.
-   * @returns {Container} A new container with the same attributes as this one
-   *   except that the environment is set to env.
-   */
-  withEnv(env) {
-    const cloned = this.clone();
-    cloned.env = env;
-    return cloned;
-  }
-
-  /**
    * @returns {string} The container's hostname.
    */
   getHostname() {
