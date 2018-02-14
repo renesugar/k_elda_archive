@@ -212,13 +212,17 @@ func (t *tester) setup() error {
 }
 
 func (t tester) runTestSuites() error {
-	var err error
+	var errStrs []string
 	for _, suite := range t.testSuites {
-		if e := suite.run(); e != nil && err == nil {
-			err = e
+		if err := suite.run(); err != nil {
+			errStrs = append(errStrs, suite.name+" - "+err.Error())
 		}
 	}
-	return err
+
+	if len(errStrs) != 0 {
+		return fmt.Errorf("test suites errored: %v", errStrs)
+	}
+	return nil
 }
 
 type testSuite struct {
