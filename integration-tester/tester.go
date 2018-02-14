@@ -51,8 +51,9 @@ func main() {
 }
 
 type tester struct {
-	preserveFailed bool
-	junitOutDir    string
+	exitOnFirstFailure bool
+	preserveFailed     bool
+	junitOutDir        string
 
 	testSuites  []*testSuite
 	initialized bool
@@ -68,6 +69,8 @@ func newTester(namespace string) (tester, error) {
 		"the root directory containing the integration tests")
 	flag.BoolVar(&t.preserveFailed, "preserve-failed", false,
 		"don't destroy machines on failed tests")
+	flag.BoolVar(&t.exitOnFirstFailure, "exit-on-first-failure", false,
+		"immediately exit if a test suite fails")
 	flag.StringVar(&t.junitOutDir, "junitOut", "",
 		"directory to write junit reports")
 	flag.Parse()
@@ -215,6 +218,9 @@ func (t tester) runTestSuites() error {
 	var errStrs []string
 	for _, suite := range t.testSuites {
 		if err := suite.run(); err != nil {
+			if t.exitOnFirstFailure {
+				return err
+			}
 			errStrs = append(errStrs, suite.name+" - "+err.Error())
 		}
 	}
