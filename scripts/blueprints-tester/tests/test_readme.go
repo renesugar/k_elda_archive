@@ -7,15 +7,16 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/util"
 )
 
 const (
-	blockStart = "```javascript\n"
-	bashStart  = "```bash\n"
-	blockEnd   = "```\n"
+	blockStart   = "```javascript\n"
+	consoleStart = "```console\n"
+	blockEnd     = "```\n"
 	// Matches lines like `[//]: # (b1)`.
 	blockIDPattern = "^\\[//\\]: # \\((b\\d+)\\)\\W*$"
 	// Matches lines like `<!-- (<code>) -->`
@@ -36,9 +37,11 @@ type readmeParser struct {
 }
 
 func (parser *readmeParser) parse(line string) error {
+	// Trim left to make sure that indented code blocks also get detected.
+	line = strings.TrimLeft(line, " \t")
 	isStart := line == blockStart
 	isEnd := line == blockEnd
-	isBash := line == bashStart
+	isConsole := line == consoleStart
 
 	hiddenCodeMatch, isHidden := getMatch(hiddenCodePattern, line)
 	blockIDMatch, isBlockID := getMatch(blockIDPattern, line)
@@ -64,7 +67,7 @@ func (parser *readmeParser) parse(line string) error {
 		if _, ok := parser.codeBlocks[parser.currentBlock]; !ok {
 			parser.codeBlocks[parser.currentBlock] = ""
 		}
-	case isBash:
+	case isConsole:
 		parser.ignoring = true
 	case isEnd:
 		parser.recording = false
