@@ -365,14 +365,6 @@ class LoadBalancer {
 
   /**
    * @returns {string} The Kelda hostname that represents the entire load balancer.
-   * @deprecated
-   */
-  hostname() {
-    return this.name;
-  }
-
-  /**
-   * @returns {string} The Kelda hostname that represents the entire load balancer.
    */
   getHostname() {
     return this.name;

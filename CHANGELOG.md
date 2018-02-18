@@ -8,6 +8,8 @@ and Infrastructure constructors.
 - Remove the setEnv() and withEnv() Container methods. Users should instead set
 environment variables through the constructor call or by directly accessing the
 .env attribute of the Container instance.
+- Remove the deprecated LoadBalancer.hostname() method in favor of
+LoadBalancer.getHostname().
 
 Release 0.10.0
 -------------
