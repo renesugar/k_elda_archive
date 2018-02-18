@@ -29,7 +29,7 @@ Assigning a floating IP address to an application just involves two steps:
     worker.floatingIp = floatingIp;
 
     // Create the infrastructure.
-    const inf = new Infrastructure({
+    const infrastructure = new Infrastructure({
       masters: baseMachine,
       workers: worker,
     });
@@ -41,7 +41,7 @@ Assigning a floating IP address to an application just involves two steps:
     app.placeOn({ floatingIP });
 
     // Deploy the application.
-    app.deploy(inf);
+    app.deploy(infrastructure);
     ```
 If your website is hosted on multiple servers, follow the guide for running a
 [replicated, load balanced application](#how-to-run-a-replicated-load-balanced-application-behind-a-single-ip-address),
@@ -150,9 +150,9 @@ allowTraffic(publicInternet, loadBalancer, haproxy.exposedPort);
 **Deploy** the application containers and load balancer to your infrastructure:
 
 ```javascript
-const inf = baseInfrastructure();
-appContainers.forEach(container => container.deploy(inf));
-loadBalancer.deploy(inf);
+const infrastructure = baseInfrastructure();
+appContainers.forEach(container => container.deploy(infrastructure));
+loadBalancer.deploy(infrastructure);
 ```
 
 *You can find a full example blueprint [here](https://github.com/kelda/haproxy/blob/master/examples/haproxyExampleSingleApp.js).*
@@ -262,7 +262,7 @@ onto the filesystem.
 2. Deploy the blueprint.
 
     ```console
-    $ kelda run <blueprintName.js>
+    $ kelda run ./<blueprintName.js>
     ```
 
 3. Kelda will not launch a container until all secrets needed by the container

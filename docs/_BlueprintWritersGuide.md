@@ -130,7 +130,7 @@ First, let's write the Kelda blueprint to get the MySQL container up and running
 need to create a container based on the mysql image:
 
 ```javascript
-let sql = new Container({
+const sql = new Container({
   name: 'sql',
   image: 'mysql:5.6.32',
 });
@@ -158,7 +158,7 @@ are each assigned unique hostnames when they're initialized, so we can create
 the lobsters container and initialize the URL as follows:
 
 ```javascript
-let lobsters = new Container({
+const lobsters = new Container({
   name: 'lobsters',
   image: 'kayousterhout/lobsters',
 });
@@ -193,11 +193,10 @@ Finally, we'll use Kelda to launch some machines, and then start our containers 
 those machines.  First, we'll define a "base machine."  We'll deploy a few
 machines, and creating the base machine is a useful way to create one machine
 that all of the machines in our deployment will be based off of.  In this case,
-the base machine will be an Amazon instance that allows ssh access from the
-public key "bar":
+the base machine will be an Amazon instance:
 
 ```javascript
-let baseMachine = new Machine({provider: 'Amazon', sshKeys: ['ssh-rsa bar']});
+const baseMachine = new Machine({ provider: 'Amazon' });
 ```
 
 Now, using that base machine, we can deploy a master and a worker machine using
@@ -207,7 +206,7 @@ and at least one worker. The `Infrastructure` constructor accepts the master(s)
 and worker(s) as parameters:
 
 ```javascript
-const infra = new Infrastructure({
+const infrastructure = new Infrastructure({
   masters: baseMachine,
   workers: baseMachine,
 });
@@ -217,8 +216,8 @@ We've now defined a infrastructure with a master and worker machine.  Let's
 finally deploy the two containers on that infrastructure:
 
 ```javascript
-sql.deploy(infra);
-lobsters.deploy(infra);
+sql.deploy(infrastructure);
+lobsters.deploy(infrastructure);
 ```
 
 We're done!  Running the blueprint is now trivial.  With a kelda daemon running, run
