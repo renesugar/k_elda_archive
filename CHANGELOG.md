@@ -3,6 +3,10 @@ Kelda Change Log
 
 Up Next
 -------------
+
+Release 0.11.0
+-------------
+
 - Only allow object literal arguments to the Container, Image, LoadBalancer,
 and Infrastructure constructors.
 - Remove the setEnv() and withEnv() Container methods. Users should instead set
