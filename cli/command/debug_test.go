@@ -302,7 +302,8 @@ func TestDebug(t *testing.T) {
 				containerFiles(debugFolder, "2"),
 				daemonFiles(debugFolder)),
 		},
-		// Check that we error on arbitrary blueprint IDs.
+		// Check that we error on ambiguous IDs. The prefix "4" matches both
+		// machine "409", and container "41".
 		{
 			cmd: Debug{
 				tar: false,
