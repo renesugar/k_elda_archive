@@ -133,6 +133,17 @@ func TestMachineString(t *testing.T) {
 	}
 }
 
+func TestConnectionStatus(t *testing.T) {
+	assert.Equal(t, Connected, ConnectionStatus(
+		Machine{PublicIP: "1.2.3.4", Connected: true}))
+	assert.Equal(t, Reconnecting,
+		ConnectionStatus(Machine{Status: Connected}))
+
+	assert.Equal(t, Connecting, ConnectionStatus(
+		Machine{PublicIP: "1.2.3.4", Connected: false}))
+	assert.Equal(t, "", ConnectionStatus(Machine{}))
+}
+
 func SelectMachineCheck(db Database, do func(Machine) bool, expected []Machine) error {
 	query := db.SelectFromMachine(do)
 	expected = SortMachines(expected)

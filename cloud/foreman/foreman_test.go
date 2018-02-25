@@ -161,9 +161,9 @@ func TestForemanRunOnce(t *testing.T) {
 		"1.1.1.1": pb.MinionConfig_WORKER,
 	})
 
-	config, connected := runOnce(time.Time{}, conn, "ID1")
+	role, connected := runOnce(time.Time{}, conn, "ID1")
 	assert.False(t, connected)
-	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
+	assert.Equal(t, db.Role(db.None), db.PBToRole(role))
 
 	conn.Txn(db.MachineTable, db.BlueprintTable).Run(func(view db.Database) error {
 		m := view.InsertMachine()
@@ -177,40 +177,66 @@ func TestForemanRunOnce(t *testing.T) {
 	})
 
 	clients.newClientError = true
-	config, connected = runOnce(time.Time{}, conn, "ID1")
+	role, connected = runOnce(time.Time{}, conn, "ID1")
 	assert.False(t, connected)
-	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
+	assert.Equal(t, db.Role(db.None), db.PBToRole(role))
 
 	clients.newClientError = false
-	config, connected = runOnce(time.Time{}, conn, "ID1")
+	role, connected = runOnce(time.Time{}, conn, "ID1")
 	assert.True(t, connected)
-	assert.Equal(t, db.Role(db.Worker), db.PBToRole(config.Role))
+	assert.Equal(t, db.Role(db.Worker), db.PBToRole(role))
 
 	minionConf := clients.clients["1.1.1.1"].mc
 	assert.Equal(t, "10.10.10.10", minionConf.PrivateIP)
 	assert.Equal(t, "size1", minionConf.Size)
 
 	clients.getMinionError = true
-	config, connected = runOnce(time.Time{}, conn, "ID1")
+	role, connected = runOnce(time.Time{}, conn, "ID1")
 	assert.False(t, connected)
-	assert.Equal(t, db.Role(db.None), db.PBToRole(config.Role))
+	assert.Equal(t, db.Role(db.None), db.PBToRole(role))
 }
 
-func TestGetMachineRole(t *testing.T) {
-	setMinionStatus("ID1", pb.MinionConfig{Role: pb.MinionConfig_WORKER}, false)
+func TestSetMinionStatus(t *testing.T) {
+	t.Parallel()
 
-	assert.Equal(t, db.Role(db.Worker), GetMachineRole("ID1"))
-	assert.Equal(t, db.Role(db.None), GetMachineRole("none"))
-}
+	conn := db.New()
+	cloudID := "cloudID"
+	role := pb.MinionConfig_MASTER
+	connected := true
 
-func TestIsConnected(t *testing.T) {
-	assert.False(t, IsConnected("host"))
+	trigger := conn.Trigger(db.MachineTable).C
+	// Drain the initialization trigger.
+	<-trigger
 
-	setMinionStatus("host", pb.MinionConfig{Role: pb.MinionConfig_WORKER}, false)
-	assert.False(t, IsConnected("host"))
+	// Test that if there's no matching machine, we don't modify the database.
+	setMinionStatus(conn, cloudID, role, connected)
+	time.Sleep(500 * time.Millisecond)
+	select {
+	case <-trigger:
+		t.Error(t, "unexpected database modification")
+	default:
+	}
 
-	setMinionStatus("host", pb.MinionConfig{Role: pb.MinionConfig_WORKER}, true)
-	assert.True(t, IsConnected("host"))
+	// Test that if there's a matching machine, we properly modify it.
+	var machineID int
+	conn.Txn(db.MachineTable).Run(func(view db.Database) error {
+		dbm := view.InsertMachine()
+		dbm.CloudID = cloudID
+		dbm.Role = db.None
+		dbm.PublicIP = "ip"
+		dbm.Connected = false
+		view.Commit(dbm)
+		machineID = dbm.ID
+		return nil
+	})
+
+	setMinionStatus(conn, cloudID, role, connected)
+	dbm := conn.SelectFromMachine(func(dbm db.Machine) bool {
+		return dbm.ID == machineID
+	})[0]
+	assert.Equal(t, db.PBToRole(role), dbm.Role)
+	assert.Equal(t, connected, dbm.Connected)
+	assert.Equal(t, db.Connected, dbm.Status)
 }
 
 func mock(t *testing.T, roles map[string]pb.MinionConfig_Role) *clients {

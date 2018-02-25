@@ -95,8 +95,6 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 	cld := newTestCloud(FakeAmazon, testRegion, "ns")
 	adminKey = ""
 
-	isConnected = func(s string) bool { return true }
-
 	cld.conn.Txn(db.BlueprintTable,
 		db.MachineTable).Run(func(view db.Database) error {
 
@@ -118,6 +116,7 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 		m.Provider = FakeAmazon
 		m.Region = testRegion
 		m.Size = "2"
+		m.Connected = true
 		view.Commit(m)
 
 		m = view.InsertMachine()
@@ -126,6 +125,7 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 		m.Size = "3"
 		m.PublicIP = "1.2.3.4"
 		m.Role = db.Worker
+		m.Connected = true
 		view.Commit(m)
 
 		res := cld.syncDBWithBlueprint(view)
@@ -136,10 +136,11 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 			Size:     "1",
 			Status:   db.Booting}}, scrubID(res.boot))
 		assert.Equal(t, []db.Machine{{
-			Provider: FakeAmazon,
-			Region:   testRegion,
-			Size:     "2",
-			Status:   db.Stopping}}, scrubID(res.terminate))
+			Provider:  FakeAmazon,
+			Region:    testRegion,
+			Size:      "2",
+			Connected: true,
+			Status:    db.Stopping}}, scrubID(res.terminate))
 		assert.Equal(t, []db.Machine{{
 			Provider:   FakeAmazon,
 			Region:     testRegion,
@@ -147,6 +148,7 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 			Size:       "3",
 			PublicIP:   "1.2.3.4",
 			FloatingIP: "5.6.7.8",
+			Connected:  true,
 			Status:     db.Connected}}, scrubID(res.updateIPs))
 
 		return nil
@@ -155,8 +157,6 @@ func TestSyncDBWithBlueprint(t *testing.T) {
 
 func TestSyncDBWithBlueprintFloatingIP(t *testing.T) {
 	cld := newTestCloud(FakeAmazon, testRegion, "ns")
-
-	isConnected = func(s string) bool { return false }
 
 	desiredFloatingIP := "floatingIP"
 	cld.conn.Txn(db.BlueprintTable,
@@ -289,18 +289,6 @@ func TestMachineScore(t *testing.T) {
 
 	assert.True(t, machineScore(desired, workerWithBadIP) >
 		machineScore(desired, masterToBeWithCorrectIP))
-}
-
-func TestConnectionStatus(t *testing.T) {
-	isConnected = func(s string) bool { return true }
-
-	assert.Equal(t, db.Connected, connectionStatus(db.Machine{PublicIP: "1.2.3.4"}))
-	assert.Equal(t, db.Reconnecting,
-		connectionStatus(db.Machine{Status: db.Connected}))
-
-	isConnected = func(s string) bool { return false }
-	assert.Equal(t, db.Connecting, connectionStatus(db.Machine{PublicIP: "1.2.3.4"}))
-	assert.Equal(t, "", connectionStatus(db.Machine{}))
 }
 
 func TestDesiredACLs(t *testing.T) {

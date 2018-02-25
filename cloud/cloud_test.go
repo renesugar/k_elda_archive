@@ -28,7 +28,6 @@ type fakeProvider struct {
 	region       string
 	namespace    string
 	machines     map[string]db.Machine
-	roles        map[string]db.Role
 	idCounter    int
 	cloudConfig  string
 
@@ -75,15 +74,6 @@ func (p *fakeProvider) Boot(bootSet []db.Machine) ([]string, error) {
 		toBoot.CloudID = idStr
 		toBoot.PublicIP = idStr
 		ids = append(ids, idStr)
-
-		// A machine's role is `None` until the minion boots, at which
-		// `getMachineRoles` will populate this field with the correct role.
-		// We simulate this by setting the role of the machine returned by
-		// `List()` to be None, and only return the correct role in
-		// `getMachineRole`.
-		p.roles[toBoot.CloudID] = toBoot.Role
-		toBoot.Role = db.None
-
 		p.machines[idStr] = toBoot
 	}
 
@@ -399,7 +389,6 @@ func mock() {
 			region:       region,
 			namespace:    namespace,
 			machines:     make(map[string]db.Machine),
-			roles:        make(map[string]db.Role),
 		}
 		ret.clearLogs()
 
@@ -409,12 +398,4 @@ func mock() {
 
 	ValidRegions = fakeValidRegions
 	db.AllProviders = []db.ProviderName{FakeAmazon, FakeVagrant}
-	getMachineRole = func(cloudID string) db.Role {
-		for _, prvdr := range instantiatedProviders {
-			if role, ok := prvdr.roles[cloudID]; ok {
-				return role
-			}
-		}
-		return db.None
-	}
 }

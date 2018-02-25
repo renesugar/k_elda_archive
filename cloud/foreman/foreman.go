@@ -2,7 +2,6 @@ package foreman
 
 import (
 	"reflect"
-	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -30,17 +29,6 @@ type clientImpl struct {
 	pb.MinionClient
 	cc *grpc.ClientConn
 }
-
-// The minion information that is shared between threads.
-type minionStatus struct {
-	connected bool
-	role      db.Role
-}
-
-// A map from cloud ID to the corresponding `minionStatus`. This map is shared
-// across threads, so all accesses should be locked with the `statusLock`.
-var minionStatuses = map[string]minionStatus{}
-var statusLock = &sync.Mutex{}
 
 var c = counter.New("Foreman")
 
@@ -119,16 +107,18 @@ func newMinionImpl(conn db.Conn, cloudID string, stop chan struct{}) {
 		default:
 		}
 
-		var currConfig pb.MinionConfig
-		currConfig, connected = runOnce(waitForMachinesCutoff, conn, cloudID)
-		setMinionStatus(cloudID, currConfig, connected)
+		var role pb.MinionConfig_Role
+		role, connected = runOnce(waitForMachinesCutoff, conn, cloudID)
+		setMinionStatus(conn, cloudID, role, connected)
 	}
 }
 
+// runOnce attempts to connect to the minion at the machine defined by
+// `cloudID`, and update its configuration. It returns the minion's role, and
+// connection status. The caller is expected to update the database with this
+// information so that the cloud package can reference it.
 func runOnce(waitForMachinesCutoff time.Time, conn db.Conn, cloudID string) (
-	currConfig pb.MinionConfig, connected bool) {
-	currConfig = pb.MinionConfig{}
-	connected = false
+	pb.MinionConfig_Role, bool) {
 
 	var blueprint string
 	var machines []db.Machine
@@ -153,24 +143,20 @@ func runOnce(waitForMachinesCutoff time.Time, conn db.Conn, cloudID string) (
 	}
 	if !found {
 		log.Debugf("Failed to get machine with ID %s", cloudID)
-		return
+		return pb.MinionConfig_NONE, false
 	}
 
 	cli, err := newClient(minionMachine.PublicIP)
 	if err != nil {
 		log.WithError(err).Debugf("Failed to connect to minion %s", cloudID)
-		return
+		return pb.MinionConfig_NONE, false
 	}
 	defer cli.Close()
 
-	currConfig, err = cli.getMinion()
+	currConfig, err := cli.getMinion()
 	if err != nil {
 		log.WithError(err).Debug("Failed to get minion config")
-	}
-
-	connected = err == nil
-	if !connected {
-		return
+		return pb.MinionConfig_NONE, false
 	}
 
 	// If there isn't enough information to generate a complete minion config
@@ -179,7 +165,7 @@ func runOnce(waitForMachinesCutoff time.Time, conn db.Conn, cloudID string) (
 	// way, if machines fail and never connect, the rest of the cluster can
 	// still operate.
 	if !clusterReady(machines) && time.Now().Before(waitForMachinesCutoff) {
-		return
+		return currConfig.Role, true
 	}
 
 	newConfig := makeConfig(machines, minionMachine, blueprint)
@@ -189,7 +175,7 @@ func runOnce(waitForMachinesCutoff time.Time, conn db.Conn, cloudID string) (
 			log.WithError(err).Debug("Failed to set minion config.")
 		}
 	}
-	return
+	return currConfig.Role, true
 }
 
 // clusterReady returns whether we have enough information to generate a minion
@@ -226,33 +212,29 @@ func makeConfig(machines []db.Machine, minionMachine db.Machine,
 	}
 }
 
-func setMinionStatus(cloudID string, config pb.MinionConfig, isConnected bool) {
-	statusLock.Lock()
-	defer statusLock.Unlock()
-	minionStatuses[cloudID] = minionStatus{
-		connected: isConnected,
-		role:      db.PBToRole(config.Role),
-	}
-}
+func setMinionStatus(conn db.Conn, cloudID string, role pb.MinionConfig_Role,
+	isConnected bool) {
+	conn.Txn(db.MachineTable).Run(func(view db.Database) error {
+		rows := view.SelectFromMachine(func(dbm db.Machine) bool {
+			return dbm.CloudID == cloudID
+		})
+		if len(rows) != 1 {
+			log.WithField("machine", cloudID).Debug(
+				"Failed to find machine in database to update status. " +
+					"It was most likely stopped while we were " +
+					"querying the machine's status.")
+			return nil
+		}
 
-// GetMachineRole uses the minionStatuses map to find the minion associated with
-// the given cloud ID, according to the minion thread's last update cycle.
-func GetMachineRole(cloudID string) db.Role {
-	statusLock.Lock()
-	defer statusLock.Unlock()
-	if min, ok := minionStatuses[cloudID]; ok {
-		return min.role
-	}
-	return db.None
-}
-
-// IsConnected returns whether the foreman is connected to the minion running
-// on the machine with the given cloud ID.
-func IsConnected(cloudID string) bool {
-	statusLock.Lock()
-	defer statusLock.Unlock()
-	minion, ok := minionStatuses[cloudID]
-	return ok && minion.connected
+		dbm := rows[0]
+		dbm.Role = db.PBToRole(role)
+		dbm.Connected = isConnected
+		if status := db.ConnectionStatus(dbm); status != "" {
+			dbm.Status = status
+		}
+		view.Commit(dbm)
+		return nil
+	})
 }
 
 func newClientImpl(ip string) (client, error) {

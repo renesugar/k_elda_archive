@@ -8,7 +8,6 @@ import (
 	"github.com/kelda/kelda/cloud/acl"
 	"github.com/kelda/kelda/cloud/amazon"
 	"github.com/kelda/kelda/cloud/digitalocean"
-	"github.com/kelda/kelda/cloud/foreman"
 	"github.com/kelda/kelda/cloud/google"
 	"github.com/kelda/kelda/cloud/vagrant"
 	"github.com/kelda/kelda/counter"
@@ -424,7 +423,6 @@ func (cld *cloud) String() string {
 
 // Stored in variables so they may be mocked out
 var newProvider = newProviderImpl
-var getMachineRole = foreman.GetMachineRole
 
 // ValidRegions returns a list of supported regions for a given cloud provider
 var ValidRegions = validRegionsImpl

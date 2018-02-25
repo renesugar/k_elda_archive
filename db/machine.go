@@ -11,7 +11,6 @@ import (
 type Machine struct {
 	ID int //Database ID
 
-	Role        Role
 	Provider    ProviderName
 	Region      string
 	Size        string
@@ -27,6 +26,10 @@ type Machine struct {
 
 	/* Populated by the cluster. */
 	Status string
+
+	/* Populated by the foreman. */
+	Role      Role
+	Connected bool
 }
 
 const (
@@ -48,6 +51,30 @@ const (
 	// minion.
 	Connected = "connected"
 )
+
+// ConnectionStatus returns a human-readable string representing the
+// machine's status.
+func ConnectionStatus(m Machine) string {
+	// "Connected" takes priority over other statuses.
+	connected := m.PublicIP != "" && m.Connected
+	if connected {
+		return Connected
+	}
+
+	// If we had previously connected, and we are not currently connected, show
+	// that we are attempting to reconnect.
+	if m.Status == Connected || m.Status == Reconnecting {
+		return Reconnecting
+	}
+
+	// If we've never successfully connected, but have booted enough to have a
+	// public IP, show that we are attempting to connect.
+	if m.PublicIP != "" {
+		return Connecting
+	}
+
+	return ""
+}
 
 // InsertMachine creates a new Machine and inserts it into 'db'.
 func (db Database) InsertMachine() Machine {

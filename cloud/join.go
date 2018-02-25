@@ -6,15 +6,12 @@ import (
 
 	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/cloud/acl"
-	"github.com/kelda/kelda/cloud/foreman"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/join"
 	"github.com/kelda/kelda/util/str"
 
 	log "github.com/sirupsen/logrus"
 )
-
-var isConnected = foreman.IsConnected
 
 type joinResult struct {
 	acls []acl.ACL
@@ -35,7 +32,6 @@ func joinImpl(cld *cloud) (joinResult, error) {
 		log.WithError(err).Error("Failed to list machines")
 		return joinResult{}, err
 	}
-	machines = getMachineRoles(machines)
 
 	var res joinResult
 	err = cld.conn.Txn(db.BlueprintTable,
@@ -90,6 +86,8 @@ func (cld *cloud) syncDBWithCloud(view db.Database, cloudMachines []db.Machine) 
 		cm.ID = dbm.ID
 		cm.Status = dbm.Status
 		cm.SSHKeys = dbm.SSHKeys
+		cm.Role = dbm.Role
+		cm.Connected = dbm.Connected
 		view.Commit(cm)
 	}
 }
@@ -122,7 +120,7 @@ func (cld *cloud) syncDBWithBlueprint(view db.Database) joinResult {
 		// Similarly, the SSH keys would not be properly synced if the daemon
 		// restarted when machines were already running in the cloud.
 		dbm.SSHKeys = bpm.SSHKeys
-		status := connectionStatus(dbm)
+		status := db.ConnectionStatus(dbm)
 		if status != "" {
 			dbm.Status = status
 		}
@@ -210,28 +208,6 @@ func machineScore(left, right interface{}) int {
 	return score
 }
 
-func connectionStatus(m db.Machine) string {
-	// "Connected" takes priority over other statuses.
-	connected := m.PublicIP != "" && isConnected(m.CloudID)
-	if connected {
-		return db.Connected
-	}
-
-	// If we had previously connected, and we are not currently connected, show
-	// that we are attempting to reconnect.
-	if m.Status == db.Connected || m.Status == db.Reconnecting {
-		return db.Reconnecting
-	}
-
-	// If we've never successfully connected, but have booted enough to have a
-	// public IP, show that we are attempting to connect.
-	if m.PublicIP != "" {
-		return db.Connecting
-	}
-
-	return ""
-}
-
 func (cld *cloud) desiredACLs(bp db.Blueprint) map[acl.ACL]struct{} {
 	aclSet := map[acl.ACL]struct{}{}
 
@@ -263,12 +239,4 @@ func (cld *cloud) selectMachines(view db.Database) []db.Machine {
 	return view.SelectFromMachine(func(dbm db.Machine) bool {
 		return dbm.Provider == cld.providerName && dbm.Region == cld.region
 	})
-}
-
-func getMachineRoles(machines []db.Machine) (withRoles []db.Machine) {
-	for _, m := range machines {
-		m.Role = getMachineRole(m.CloudID)
-		withRoles = append(withRoles, m)
-	}
-	return withRoles
 }
