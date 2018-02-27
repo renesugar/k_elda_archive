@@ -45,8 +45,12 @@ func updatePolicy(view db.Database, bp string) {
 	updatePlacements(view, compiled)
 }
 
-// `portPlacements` creates exclusive placement rules such that no two containers
-// listening on the same public port get placed on the same machine.
+// `portPlacements` creates exclusive placement rules such that no two
+// containers listening on the same public port get placed on the same machine.
+// It produces the same placement rules regardless of the order of connections
+// by creating rules for both containers affected by the placement.
+// This way, if `portPlacements` is called multiple times for the same
+// blueprint, the placement rules will not change unnecessarily.
 func portPlacements(connections []db.Connection) (placements []db.Placement) {
 	ports := make(map[int][]string)
 	for _, conn := range connections {
@@ -61,16 +65,14 @@ func portPlacements(connections []db.Connection) (placements []db.Placement) {
 	}
 
 	// Create placement rules for all combinations of containers that listen on
-	// the same port. We do not need to create a rule for every permutation
-	// because order does not matter for the `TargetContainer` and
-	// `OtherContainer` fields -- the placement is equivalent if the two fields
-	// are swapped.  We do so by creating a placement rule between each
-	// container, and the containers after it. There is no need to create rules
-	// for the preceding containers because the previous rules will have
-	// covered it.
+	// the same port.
 	for _, cids := range ports {
 		for i, tgt := range cids {
-			for _, other := range cids[i+1:] {
+			for j, other := range cids {
+				if i == j {
+					continue
+				}
+
 				placements = append(placements,
 					db.Placement{
 						Exclusive:       true,

@@ -2,7 +2,6 @@ package minion
 
 import (
 	"fmt"
-	"sort"
 	"testing"
 	"time"
 
@@ -363,16 +362,6 @@ func TestPlacementTxn(t *testing.T) {
 		key := func(plcmIntf interface{}) interface{} {
 			plcm := plcmIntf.(db.Placement)
 			plcm.ID = 0 // Ignore the Database ID.
-
-			// If it's a container constraint, the order of TargetContainer
-			// and OtherContainer doesn't matter. Therefore, we sort the
-			// containers IDs so that the assignment is consistent.
-			if plcm.OtherContainer != "" {
-				ids := []string{plcm.TargetContainer, plcm.OtherContainer}
-				sort.Strings(ids)
-				plcm.TargetContainer = ids[0]
-				plcm.OtherContainer = ids[1]
-			}
 			return plcm
 		}
 		_, missing, extra := join.HashJoin(db.PlacementSlice(exp), actual,
@@ -444,7 +433,17 @@ func TestPlacementTxn(t *testing.T) {
 		},
 		db.Placement{
 			TargetContainer: barHostname,
+			OtherContainer:  fooHostname,
+			Exclusive:       true,
+		},
+		db.Placement{
+			TargetContainer: barHostname,
 			OtherContainer:  bazHostname,
+			Exclusive:       true,
+		},
+		db.Placement{
+			TargetContainer: bazHostname,
+			OtherContainer:  barHostname,
 			Exclusive:       true,
 		},
 	)
@@ -630,4 +629,22 @@ func TestLoadBalancerTxn(t *testing.T) {
 		Name:      loadBalancerB,
 		Hostnames: hostnamesB,
 	})
+}
+
+func TestPortPlacementsIgnoresConnectionOrder(t *testing.T) {
+	t.Parallel()
+
+	newInboundConn := func(dst string, port int) db.Connection {
+		return db.Connection{From: []string{blueprint.PublicInternetLabel},
+			To: []string{dst}, MinPort: port, MaxPort: port}
+	}
+	connectionFoo := newInboundConn("foo", 80)
+	connectionBar := newInboundConn("bar", 80)
+
+	resA := portPlacements([]db.Connection{connectionFoo, connectionBar})
+	resB := portPlacements([]db.Connection{connectionBar, connectionFoo})
+	assert.Equal(t, len(resA), len(resB))
+	assert.Subset(t, resA, resB,
+		"even if the connections are passed in different orders, the "+
+			"resulting placement rules should be the same")
 }
