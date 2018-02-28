@@ -233,6 +233,12 @@ func TestContainerTxn(t *testing.T) {
 
 	testContainerTxn(t, conn, bp)
 	assert.False(t, fired(trigg))
+
+	// Test that if a container becomes privileged, the engine recognizes that
+	// it's a change.
+	bp.Containers[0].Privileged = true
+	testContainerTxn(t, conn, bp)
+	assert.True(t, fired(trigg))
 }
 
 func testContainerTxn(t *testing.T, conn db.Conn, bp blueprint.Blueprint) {

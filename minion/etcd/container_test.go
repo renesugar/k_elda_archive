@@ -47,6 +47,7 @@ func TestRunContainerOnce(t *testing.T) {
 		dbc.FilepathToContent = map[string]blueprint.ContainerValue{
 			"foo": blueprint.NewString("bar"),
 		}
+		dbc.Privileged = true
 		view.Commit(dbc)
 		return nil
 	})
@@ -79,6 +80,7 @@ func TestRunContainerOnce(t *testing.T) {
         },
         "Hostname": "host",
         "Created": "0001-01-01T00:00:00Z",
+        "Privileged": true,
         "Image": "ubuntu"
     }
 ]`
@@ -123,7 +125,8 @@ func TestRunContainerOnce(t *testing.T) {
 		FilepathToContent: map[string]blueprint.ContainerValue{
 			"foo": blueprint.NewString("bar"),
 		},
-		Hostname: "host",
+		Hostname:   "host",
+		Privileged: true,
 	}
 	dbcs := conn.SelectFromContainer(nil)
 	assert.Len(t, dbcs, 1)

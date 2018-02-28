@@ -189,6 +189,7 @@ func dockerRun(dk docker.Client, iface interface{}) {
 		Args:              dbc.Command,
 		Env:               dbc.resolvedEnv,
 		FilepathToContent: dbc.resolvedFilepathToContent,
+		Privileged:        dbc.Privileged,
 		Labels: map[string]string{
 			labelKey: labelValue,
 			filesKey: filesHash(dbc.resolvedFilepathToContent),
@@ -222,7 +223,8 @@ func syncJoinScore(left, right interface{}) int {
 
 	expFilesHash := filesHash(dbc.resolvedFilepathToContent)
 	if dbc.Hostname != dkc.Hostname || dbc.IP != dkc.IP ||
-		expFilesHash != dkc.Labels[filesKey] {
+		expFilesHash != dkc.Labels[filesKey] ||
+		dbc.Privileged != dkc.Privileged {
 		return -1
 	}
 

@@ -4,6 +4,10 @@ Kelda Change Log
 Up Next
 -------------
 
+- Allow containers to run in `privileged` mode by setting the `privileged` flag
+in the Container object. This is necessary for containers to access devices on
+the host machine, such as `/dev/fuse`.
+
 Release 0.11.0
 -------------
 

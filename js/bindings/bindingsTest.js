@@ -641,6 +641,7 @@ describe('Bindings', () => {
     const hostname = 'host';
     const image = new b.Image({ name: 'image' });
     const command = ['arg1', 'arg2'];
+    const privileged = true;
 
     const env = { foo: 'bar' };
 
@@ -659,6 +660,7 @@ describe('Bindings', () => {
         command,
         env,
         filepathToContent,
+        privileged,
       });
       container.deploy(infra);
       checkContainers([{
@@ -666,8 +668,22 @@ describe('Bindings', () => {
         hostname,
         image,
         command,
+        privileged,
         env,
         filepathToContent: jsonFilepathToContent,
+      }]);
+    });
+
+    it('privileged should be false by default', () => {
+      const container = new b.Container({
+        name: hostname,
+        image,
+      });
+      container.deploy(infra);
+      checkContainers([{
+        hostname,
+        image,
+        privileged: false,
       }]);
     });
   });

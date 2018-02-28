@@ -26,6 +26,7 @@ type Container struct {
 	FilepathToContent map[string]blueprint.ContainerValue `json:",omitempty"`
 	Hostname          string                              `json:",omitempty"`
 	Created           time.Time                           `json:","`
+	Privileged        bool                                `json:",omitempty"`
 
 	Image      string `json:",omitempty"`
 	ImageID    string `json:",omitempty"`
@@ -116,6 +117,10 @@ func (c Container) String() string {
 
 	if len(c.Env) > 0 {
 		tags = append(tags, fmt.Sprintf("Env: %s", c.Env))
+	}
+
+	if c.Privileged {
+		tags = append(tags, "Privileged")
 	}
 
 	if len(c.Status) > 0 {

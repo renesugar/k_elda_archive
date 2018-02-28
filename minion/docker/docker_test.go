@@ -125,20 +125,21 @@ func TestCreateGet(t *testing.T) {
 	env := []string{"envA=B"}
 	labels := map[string]string{"label": "foo"}
 	id, err := dk.create("name", "image", "hostname", args, labels, env, nil,
-		nil, nil)
+		&dkc.HostConfig{Privileged: true}, nil)
 	assert.Nil(t, err)
 
 	container, err := dk.Get(id)
 	assert.Nil(t, err)
 
 	expContainer := Container{
-		Name:     "name",
-		ID:       id,
-		Image:    "image",
-		Args:     args,
-		Env:      map[string]string{"envA": "B"},
-		Labels:   labels,
-		Hostname: "hostname",
+		Name:       "name",
+		ID:         id,
+		Image:      "image",
+		Args:       args,
+		Env:        map[string]string{"envA": "B"},
+		Labels:     labels,
+		Hostname:   "hostname",
+		Privileged: true,
 	}
 	assert.Equal(t, expContainer, container)
 }

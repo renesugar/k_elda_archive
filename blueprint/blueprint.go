@@ -53,6 +53,7 @@ type Container struct {
 	Env               map[string]ContainerValue `json:",omitempty"`
 	FilepathToContent map[string]ContainerValue `json:",omitempty"`
 	Hostname          string                    `json:",omitempty"`
+	Privileged        bool                      `json:",omitempty"`
 }
 
 // ContainerValue is a wrapper for the possible values that can be used in

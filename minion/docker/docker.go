@@ -27,21 +27,22 @@ var ErrNoSuchContainer = errors.New("container does not exist")
 
 // A Container as returned by the docker client API.
 type Container struct {
-	ID       string
-	EID      string
-	Name     string
-	Image    string
-	ImageID  string
-	IP       string
-	Hostname string
-	Mac      string
-	Path     string
-	Status   string
-	Args     []string
-	Pid      int
-	Env      map[string]string
-	Labels   map[string]string
-	Created  time.Time
+	ID         string
+	EID        string
+	Name       string
+	Image      string
+	ImageID    string
+	IP         string
+	Hostname   string
+	Mac        string
+	Path       string
+	Status     string
+	Args       []string
+	Pid        int
+	Env        map[string]string
+	Labels     map[string]string
+	Created    time.Time
+	Privileged bool
 }
 
 // ContainerSlice is an alias for []Container to allow for joins
@@ -341,21 +342,22 @@ func (dk Client) Get(id string) (Container, error) {
 	}
 
 	c := Container{
-		Name:     dkc.Name,
-		ID:       dkc.ID,
-		Hostname: dkc.Config.Hostname,
-		IP:       dkc.NetworkSettings.IPAddress,
-		Mac:      dkc.NetworkSettings.MacAddress,
-		EID:      dkc.NetworkSettings.EndpointID,
-		Image:    dkc.Config.Image,
-		ImageID:  dkc.Image,
-		Path:     dkc.Path,
-		Args:     dkc.Args,
-		Pid:      dkc.State.Pid,
-		Env:      env,
-		Labels:   dkc.Config.Labels,
-		Status:   dkc.State.Status,
-		Created:  dkc.Created,
+		Name:       dkc.Name,
+		ID:         dkc.ID,
+		Hostname:   dkc.Config.Hostname,
+		IP:         dkc.NetworkSettings.IPAddress,
+		Mac:        dkc.NetworkSettings.MacAddress,
+		EID:        dkc.NetworkSettings.EndpointID,
+		Image:      dkc.Config.Image,
+		ImageID:    dkc.Image,
+		Path:       dkc.Path,
+		Args:       dkc.Args,
+		Pid:        dkc.State.Pid,
+		Env:        env,
+		Labels:     dkc.Config.Labels,
+		Status:     dkc.State.Status,
+		Created:    dkc.Created,
+		Privileged: dkc.HostConfig.Privileged,
 	}
 
 	networks := keys(dkc.NetworkSettings.Networks)

@@ -336,6 +336,13 @@ func TestSyncJoinScore(t *testing.T) {
 	dbc.ImageID = "wrong"
 	score = syncJoinScore(dbc, dkc)
 	assert.Equal(t, -1, score)
+
+	// Check that if the privileged flag is different, the containers don't
+	// match.
+	dbc.ImageID = dkc.ImageID
+	dkc.Privileged = true
+	score = syncJoinScore(dbc, dkc)
+	assert.Equal(t, -1, score)
 }
 
 func TestOpenFlowContainers(t *testing.T) {

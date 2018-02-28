@@ -1047,6 +1047,12 @@ class Container {
    *   Docker Hub) that the container should boot.
    * @param {string[]} [args.command] - The command to use when starting
    *   the container.
+   * @param {bool} [args.privileged] - Whether the container should be run in
+   *   privileged mode. Privileged mode grants the container extended privileges,
+   *   such as accessing devices on the host machine. It can be thought of as
+   *   the equivalent of granting root access to a user. The majority of
+   *   containers do not require this flag, so make sure it is necessary before
+   *   enabling it.
    * @param {Object.<string, string|Secret>} [args.env] -
    *   Environment variables to set in the booted container. The key is the name
    *   of the environment variable.
@@ -1083,6 +1089,7 @@ class Container {
     this.env = getSecretOrStringMap('env', args.env);
     this.filepathToContent = getSecretOrStringMap('filepathToContent',
       args.filepathToContent);
+    this.privileged = getBoolean('privileged', args.privileged);
 
     // Don't allow callers to modify the arguments by reference.
     this.command = _.clone(this.command);
@@ -1179,6 +1186,7 @@ class Container {
       env: this.env,
       filepathToContent: this.filepathToContent,
       hostname: this.hostname,
+      privileged: this.privileged,
     };
   }
 }
