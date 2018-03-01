@@ -29,6 +29,37 @@ let _keldaInfrastructure;
 
 let _connections = [];
 
+class UniqueNameGenerator {
+  /**
+   * Creates a new UniqueNameGenerator.
+   * @constructor
+   * @private
+   */
+  constructor() {
+    this.nameCount = {};
+  }
+
+  /**
+   * getName returns a unique name. If the desired prefix is available, it
+   * returns the prefix unchanged. If there is already a name for the desired
+   * prefix, it returns the prefix with an ID appended.
+   *
+   * @param {string} prefix - The prefix from which the unique name should be
+   *   generated.
+   * @returns {string} The unique name.
+   */
+  getName(prefix) {
+    if (!(prefix in this.nameCount)) {
+      this.nameCount[prefix] = 1;
+      return prefix;
+    }
+    this.nameCount[prefix] += 1;
+    return this.getName(prefix + this.nameCount[prefix]);
+  }
+}
+
+let hostnameGenerator = new UniqueNameGenerator();
+
 class Infrastructure {
   /**
    * Creates a new Infrastructure with the given options.
@@ -356,7 +387,7 @@ class LoadBalancer {
   constructor(args) {
     checkRequiredArguments('LoadBalancer', args, ['name', 'containers']);
 
-    this.name = uniqueHostname(getString('LoadBalancer name', args.name));
+    this.name = hostnameGenerator.getName(getString('LoadBalancer name', args.name));
     this.containers = boxObjects('LoadBalancer.containers', args.containers, Container);
 
     checkExtraKeys(args, this);
@@ -474,23 +505,6 @@ function checkRequiredArguments(name, object, keys) {
       throw new Error(`missing required attribute: ${name} requires '${key}'`);
     }
   });
-}
-
-let hostnameCount = {};
-
-/**
- * @private
- * @param {string} name - The name that the generated hostname should be based
- *   on.
- * @returns {string} The unique hostname.
- */
-function uniqueHostname(name) {
-  if (!(name in hostnameCount)) {
-    hostnameCount[name] = 1;
-    return name;
-  }
-  hostnameCount[name] += 1;
-  return uniqueHostname(name + hostnameCount[name]);
 }
 
 /**
@@ -1082,7 +1096,7 @@ class Container {
     }
 
     this.name = getString('name', args.name);
-    this.hostname = uniqueHostname(this.name);
+    this.hostname = hostnameGenerator.getName(this.name);
     validateHostname(this.hostname);
 
     this.command = getStringArray('command', args.command);
@@ -1405,7 +1419,7 @@ global.getInfrastructureKeldaRepr = function getInfrastructureKeldaRepr() {
  */
 function resetGlobals() {
   uniqueIDCounter = 0;
-  hostnameCount = {};
+  hostnameGenerator = new UniqueNameGenerator();
   _keldaInfrastructure = undefined;
   _connections = [];
 }
