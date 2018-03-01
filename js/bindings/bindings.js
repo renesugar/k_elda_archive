@@ -59,6 +59,7 @@ class UniqueNameGenerator {
 }
 
 let hostnameGenerator = new UniqueNameGenerator();
+let volumeNameGenerator = new UniqueNameGenerator();
 
 class Infrastructure {
   /**
@@ -109,6 +110,7 @@ class Infrastructure {
     this.namespace = getString('namespace', allArgs.namespace);
     this.containers = new Set();
     this.loadBalancers = [];
+    this.volumes = new Set();
 
     this.masters = boxObjects('Infrastructure.masters', allArgs.masters, Machine);
     this.workers = boxObjects('Infrastructure.workers', allArgs.workers, Machine);
@@ -175,6 +177,7 @@ class Infrastructure {
       containers,
       connections: _connections,
       placements,
+      volumes: Array.from(this.volumes).map(volume => volume.toKeldaRepresentation()),
 
       namespace: this.namespace,
       adminACL: this.adminACL,
@@ -1052,6 +1055,25 @@ class Container {
    *   },
    * });
    *
+   * @example <caption>Create a Container that mounts the Docker run socket
+   * from the host.</caption>
+   *
+   * const volume = new Volume({
+   *   name: 'docker',
+   *   type: 'hostPath',
+   *   path: '/var/run/docker.sock',
+   * });
+   * const container = new Container({
+   *   name: 'my-app',
+   *   image: 'ubuntu',
+   *   volumeMounts: [
+   *     new VolumeMount({
+   *       volume,
+   *       mountPath: volume.path,
+   *     });
+   *   ],
+   * });
+   *
    * @param {Object} args - Required and optional arguments.
    * @param {string} args.name - The prefix of the container's network hostname.
    *   If multiple containers use the same name within the same deployment,
@@ -1077,6 +1099,9 @@ class Container {
    *   by this argument changes and the blueprint is re-run, Kelda will re-start
    *   the container using the new files.  Files are installed with permissions
    *   0644 and parent directories are automatically created.
+   * @param {VolumeMount} [args.volumeMounts] - A list of volumes to mount
+   *   within the container. Referenced volumes are automatically created by
+   *   Kelda.
    */
   constructor(args) {
     // refID is used to distinguish infrastructures with multiple references to the
@@ -1104,6 +1129,9 @@ class Container {
     this.filepathToContent = getSecretOrStringMap('filepathToContent',
       args.filepathToContent);
     this.privileged = getBoolean('privileged', args.privileged);
+
+    this.volumeMounts = args.volumeMounts || [];
+    assertArrayOfType('VolumeMount', this.volumeMounts, VolumeMount);
 
     // Don't allow callers to modify the arguments by reference.
     this.command = _.clone(this.command);
@@ -1184,6 +1212,9 @@ class Container {
    */
   deploy(infrastructure) {
     infrastructure.containers.add(this);
+    this.volumeMounts.forEach((mount) => {
+      infrastructure.volumes.add(mount.volume);
+    });
   }
 
   /**
@@ -1201,6 +1232,7 @@ class Container {
       filepathToContent: this.filepathToContent,
       hostname: this.hostname,
       privileged: this.privileged,
+      volumeMounts: this.volumeMounts.map(mount => mount.toKeldaRepresentation()),
     };
   }
 }
@@ -1328,6 +1360,102 @@ function allowTraffic(src, dst, portRange) {
   });
 }
 
+class Volume {
+  /**
+   * Creates a new Volume.
+   * Volumes allow users to define storage for containers. They are useful both
+   * for persisting storage outside the lifecycle of a container, and for
+   * sharing files between multiple containers.
+   * @constructor
+   *
+   * @param {Object} args - All required and optional arguments.
+   * @param {string} args.name - A human-friendly name for the Volume. The
+   *   identifier must be unique among all declared volumes.
+   * @param {string} args.type - The type of volume. Right now, only "hostPath"
+   *   is supported.
+   * @param {string} [args.path] - Required only if the volume type is
+   *   "hostPath". The path on the host that should be made available to the
+   *   mounting container.
+   */
+  constructor(args) {
+    checkRequiredArguments('Volume', args, ['name', 'type']);
+    switch (args.type) {
+      case 'hostPath':
+        checkRequiredArguments('Volume', args, ['path']);
+        break;
+      default:
+        throw new Error(`invalid volume type "${args.type}". Only hostPath is supported`);
+    }
+
+    Object.assign(this, args);
+    this.name = volumeNameGenerator.getName(args.name);
+  }
+
+  /**
+   * Converts the infrastructure to the JSON format expected by the Kelda go
+   * code. The Javascript API flattens the type-specific keys so that users
+   * won't have to remember the additional "conf" field, but the Go struct
+   * requires a named field for the type-specific settings.
+   * @private
+   * @returns {Object} A map that can be converted to JSON and interpreted by the Kelda
+   *   Go code.
+   */
+  toKeldaRepresentation() {
+    const conf = {};
+    Object.getOwnPropertyNames(this).forEach((key) => {
+      if (key === 'name' || key === 'type') {
+        return;
+      }
+      conf[key] = this[key];
+    });
+    return {
+      name: this.name,
+      type: this.type,
+      conf,
+    };
+  }
+}
+
+class VolumeMount {
+  /**
+   * VolumeMount defines how a {@link Volume} should be mounted into a container.
+   * VolumeMounts allow multiple containers to share the same Volume.
+   * Furthermore, the volume could be mounted in slightly different ways, such
+   * as at different paths within the container.
+   * @constructor
+   *
+   * @param {Object} args - All required and optional arguments.
+   * @param {string} args.volume - A reference to the volume to be mounted.
+   * @param {string} args.mountPath - The path within the container to mount
+   *   the volume.
+   */
+  constructor(args) {
+    checkRequiredArguments('VolumeMount', args, ['volume', 'mountPath']);
+    this.mountPath = getString('mountPath', args.mountPath);
+
+    if (!(args.volume instanceof Volume)) {
+      throw new Error('volume field must be of type Volume');
+    }
+    this.volume = args.volume;
+
+    checkExtraKeys(args, this);
+  }
+
+  /**
+   * Converts the infrastructure to the JSON format expected by the Kelda go
+   * code.
+   * @private
+   * @returns {Object} A map that can be converted to JSON and interpreted by the Kelda
+   *   Go code.
+   */
+  toKeldaRepresentation() {
+    return {
+      volumeName: this.volume.name,
+      mountPath: this.mountPath,
+    };
+  }
+}
+
 class Range {
   /**
    * Creates a Range object.
@@ -1420,6 +1548,7 @@ global.getInfrastructureKeldaRepr = function getInfrastructureKeldaRepr() {
 function resetGlobals() {
   uniqueIDCounter = 0;
   hostnameGenerator = new UniqueNameGenerator();
+  volumeNameGenerator = new UniqueNameGenerator();
   _keldaInfrastructure = undefined;
   _connections = [];
 }
@@ -1434,6 +1563,8 @@ module.exports = {
   Range,
   Secret,
   LoadBalancer,
+  Volume,
+  VolumeMount,
   allowTraffic,
   getInfrastructure,
   githubKeys,

@@ -225,6 +225,7 @@ func queryContainers(bp blueprint.Blueprint) []db.Container {
 			Dockerfile:        c.Image.Dockerfile,
 			Hostname:          c.Hostname,
 			Privileged:        c.Privileged,
+			VolumeMounts:      c.VolumeMounts,
 		}
 	}
 
@@ -264,6 +265,7 @@ func updateContainers(view db.Database, bp blueprint.Blueprint) {
 		dbc.BlueprintID = newc.BlueprintID
 		dbc.Hostname = newc.Hostname
 		dbc.Privileged = newc.Privileged
+		dbc.VolumeMounts = newc.VolumeMounts
 		view.Commit(dbc)
 	}
 }

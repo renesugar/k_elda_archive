@@ -19,6 +19,7 @@ type Blueprint struct {
 	Connections   []Connection   `json:",omitempty"`
 	Placements    []Placement    `json:",omitempty"`
 	Machines      []Machine      `json:",omitempty"`
+	Volumes       []Volume       `json:",omitempty"`
 
 	AdminACL  []string `json:",omitempty"`
 	Namespace string   `json:",omitempty"`
@@ -54,6 +55,22 @@ type Container struct {
 	FilepathToContent map[string]ContainerValue `json:",omitempty"`
 	Hostname          string                    `json:",omitempty"`
 	Privileged        bool                      `json:",omitempty"`
+	VolumeMounts      []VolumeMount             `json:",omitempty"`
+}
+
+// VolumeMount defines how a volume should be mounted into a container.
+type VolumeMount struct {
+	VolumeName string `json:",omitempty"`
+	MountPath  string `json:",omitempty"`
+}
+
+// A Volume allows users to defined storage for containers. Volumes are useful
+// both for persisting storage outside the lifecycle of a container, and for
+// sharing files between multiple containers.
+type Volume struct {
+	Name string            `json:",omitempty"`
+	Type string            `json:",omitempty"`
+	Conf map[string]string `json:",omitempty"`
 }
 
 // ContainerValue is a wrapper for the possible values that can be used in

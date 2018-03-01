@@ -27,6 +27,7 @@ type Container struct {
 	Hostname          string                              `json:",omitempty"`
 	Created           time.Time                           `json:","`
 	Privileged        bool                                `json:",omitempty"`
+	VolumeMounts      []blueprint.VolumeMount             `json:",omitempty"`
 
 	Image      string `json:",omitempty"`
 	ImageID    string `json:",omitempty"`

@@ -36,6 +36,7 @@ func TestRunWorker(t *testing.T) {
 		m := view.InsertMinion()
 		m.Self = true
 		m.PrivateIP = "1.2.3.4"
+		m.Blueprint = blueprint.Blueprint{}.String()
 		view.Commit(m)
 
 		etcd := view.InsertEtcd()

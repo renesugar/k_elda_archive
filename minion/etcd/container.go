@@ -96,6 +96,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 			Env               string
 			FilepathToContent string
 			Privileged        bool
+			VolumeMounts      string
 		}{
 			Hostname:          dbc.Hostname,
 			IP:                dbc.IP,
@@ -106,6 +107,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 			Env:               containerValueMapKey(dbc.Env),
 			FilepathToContent: containerValueMapKey(dbc.FilepathToContent),
 			Privileged:        dbc.Privileged,
+			VolumeMounts:      fmt.Sprintf("%v", dbc.VolumeMounts),
 		}
 	}
 
@@ -136,6 +138,7 @@ func joinContainers(view db.Database, etcdDBCs []db.Container) {
 		dbc.FilepathToContent = edbc.FilepathToContent
 		dbc.Hostname = edbc.Hostname
 		dbc.Privileged = edbc.Privileged
+		dbc.VolumeMounts = edbc.VolumeMounts
 		view.Commit(dbc)
 	}
 }

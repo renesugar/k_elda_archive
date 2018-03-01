@@ -1297,4 +1297,81 @@ describe('Bindings', () => {
       expect(global.getInfrastructureKeldaRepr()).to.containSubset(expected);
     });
   });
+
+  describe('Volumes', () => {
+    it('should be deployed through reference by a Container', () => {
+      createBasicInfra();
+      const volume = new b.Volume({
+        name: 'volume',
+        type: 'hostPath',
+        path: '/var/run/docker.sock',
+      });
+      (new b.Container({
+        name: 'name',
+        image: 'image',
+        volumeMounts: [
+          new b.VolumeMount({
+            volume,
+            mountPath: '/docker.sock',
+          }),
+        ],
+      })).deploy(infra);
+
+      const infraKelda = infra.toKeldaRepresentation();
+      expect(infraKelda.containers).to.have.lengthOf(1);
+      expect(infraKelda.containers[0]).to.containSubset({
+        volumeMounts: [
+          {
+            volumeName: 'volume',
+            mountPath: '/docker.sock',
+          },
+        ],
+      });
+      expect(infraKelda.volumes).to.have.lengthOf(1);
+      expect(infraKelda.volumes[0]).to.containSubset({
+        name: 'volume',
+        type: 'hostPath',
+        conf: {
+          path: '/var/run/docker.sock',
+        },
+      });
+    });
+
+    it('should error if a name, type, or path isn\'t supplied', () => {
+      const createVolume = args => () => new b.Volume(args);
+      expect(createVolume({})).to.throw();
+      expect(createVolume({ name: 'name' })).to.throw();
+      expect(createVolume({ type: 'type' })).to.throw();
+      expect(createVolume({ type: 'type', name: 'name' })).to.throw();
+      expect(createVolume({ name: 'name', type: 'hostPath', path: 'path' }))
+        .to.not.throw();
+    });
+
+    it('should handle multiple volumes with the same name', () => {
+      const volumeArgs = {
+        name: 'volume',
+        type: 'hostPath',
+        path: '/var/run/docker.sock',
+      };
+      const volumeA = new b.Volume(volumeArgs);
+      const volumeB = new b.Volume(volumeArgs);
+      expect(volumeA.name).to.not.equal(volumeB.name);
+    });
+  });
+
+  describe('VolumeMount', () => {
+    it('should error if a volume or mountPath isn\'t supplied', () => {
+      const createVolumeMount = args => () => new b.VolumeMount(args);
+      expect(createVolumeMount({})).to.throw();
+      expect(createVolumeMount({ mountPath: 'path' })).to.throw();
+      expect(createVolumeMount({ volume: {}, mountPath: 'path' })).to.throw();
+
+      const volume = new b.Volume({
+        name: 'volume',
+        type: 'hostPath',
+        path: '/var/run/docker.sock',
+      });
+      expect(createVolumeMount({ volume, mountPath: 'path' })).to.not.throw();
+    });
+  });
 });

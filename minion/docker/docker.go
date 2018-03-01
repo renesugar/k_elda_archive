@@ -43,6 +43,7 @@ type Container struct {
 	Labels     map[string]string
 	Created    time.Time
 	Privileged bool
+	Mounts     []dkc.HostMount
 }
 
 // ContainerSlice is an alias for []Container to allow for joins
@@ -358,6 +359,7 @@ func (dk Client) Get(id string) (Container, error) {
 		Status:     dkc.State.Status,
 		Created:    dkc.Created,
 		Privileged: dkc.HostConfig.Privileged,
+		Mounts:     dkc.HostConfig.Mounts,
 	}
 
 	networks := keys(dkc.NetworkSettings.Networks)

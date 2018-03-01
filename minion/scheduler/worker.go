@@ -18,6 +18,7 @@ import (
 	"github.com/kelda/kelda/minion/vault"
 	"github.com/kelda/kelda/util/str"
 
+	dkc "github.com/fsouza/go-dockerclient"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -34,7 +35,17 @@ var once sync.Once
 // to simple strings.
 type evaluatedContainer struct {
 	resolvedEnv, resolvedFilepathToContent map[string]string
+	hostPathMounts                         []hostPathMount
 	db.Container
+}
+
+// hostPathMount defines a mount that should be bind volume desired by a container.
+type hostPathMount struct {
+	// The source of the mount (on the host).
+	source string
+
+	// The target of the mount (within the container).
+	target string
 }
 
 // isWorkerReady waits until it can successfully connect to Vault. This way,
@@ -51,6 +62,11 @@ func isWorkerReady(conn db.Conn) bool {
 	return false
 }
 
+// XXX: The code for handling volumes isn't written as generically as it could
+// be because this entire file will be removed once the Kubernetes rewrite is
+// merged. Once we run on top of Kubernetes, the master will simply pass the
+// desired volumes and mounts to Kubernetes, and Kubernetes will deal with the
+// details of actually creating them.
 func runWorker(conn db.Conn, dk docker.Client, myPrivIP string) {
 	if myPrivIP == "" {
 		return
@@ -93,7 +109,15 @@ func runWorker(conn db.Conn, dk docker.Client, myPrivIP string) {
 
 		// Join the scheduled containers with the containers actually running
 		// to figure out what containers to boot and stop.
-		conn.Txn(db.ContainerTable).Run(func(view db.Database) error {
+		tables := []db.TableType{db.MinionTable, db.ContainerTable}
+		conn.Txn(tables...).Run(func(view db.Database) error {
+			bp, err := blueprint.FromJSON(view.MinionSelf().Blueprint)
+			if err != nil {
+				log.WithError(err).Error("Failed to get blueprint. " +
+					"Volumes cannot be created without it. Aborting.")
+				return nil
+			}
+
 			var readyToRun []evaluatedContainer
 			for _, dbc := range view.SelectFromContainer(myContainers) {
 				resolvedEnv, missingEnv := evaluateContainerValues(
@@ -111,9 +135,48 @@ func runWorker(conn db.Conn, dk docker.Client, myPrivIP string) {
 					continue
 				}
 
+				volumeByName := map[string]blueprint.Volume{}
+				for _, volume := range bp.Volumes {
+					volumeByName[volume.Name] = volume
+				}
+
+				var hostPathMounts []hostPathMount
+				for _, mount := range dbc.VolumeMounts {
+					volume, ok := volumeByName[mount.VolumeName]
+					if !ok {
+						log.Warn("Container %s references an "+
+							"undefined volume: %s. Ignoring.",
+							dbc.Hostname, mount.VolumeName)
+						continue
+					}
+
+					if volume.Type != "hostPath" {
+						msg := "Unrecognized volume type. " +
+							"Only hostPath is supported. " +
+							"Ignoring."
+						log.WithField("volumeType", volume.Type).
+							Warn(msg)
+						continue
+					}
+
+					hostPath, ok := volume.Conf["path"]
+					if !ok {
+						log.WithField("volume", volume.Name).
+							Warn("Missing path. Ignoring.")
+						continue
+					}
+
+					hostPathMounts = append(hostPathMounts,
+						hostPathMount{
+							source: hostPath,
+							target: mount.MountPath,
+						})
+				}
+
 				readyToRun = append(readyToRun, evaluatedContainer{
 					resolvedEnv:               resolvedEnv,
 					resolvedFilepathToContent: resolvedFiles,
+					hostPathMounts:            hostPathMounts,
 					Container:                 dbc,
 				})
 			}
@@ -183,6 +246,14 @@ func dockerRun(dk docker.Client, iface interface{}) {
 	dbc := iface.(evaluatedContainer)
 	log.WithField("container", dbc).Info("Start container")
 
+	var mounts []dkc.HostMount
+	for _, mount := range dbc.hostPathMounts {
+		mounts = append(mounts, dkc.HostMount{
+			Type:   "bind",
+			Source: mount.source,
+			Target: mount.target,
+		})
+	}
 	_, err := dk.Run(docker.RunOptions{
 		Hostname:          dbc.Hostname,
 		Image:             dbc.Image,
@@ -190,6 +261,7 @@ func dockerRun(dk docker.Client, iface interface{}) {
 		Env:               dbc.resolvedEnv,
 		FilepathToContent: dbc.resolvedFilepathToContent,
 		Privileged:        dbc.Privileged,
+		Mounts:            mounts,
 		Labels: map[string]string{
 			labelKey: labelValue,
 			filesKey: filesHash(dbc.resolvedFilepathToContent),
@@ -250,6 +322,24 @@ func syncJoinScore(left, right interface{}) int {
 		!str.SliceEq(dbc.Command, cmd1) &&
 		!str.SliceEq(dbc.Command, cmd2) {
 		return -1
+	}
+
+	if len(dkc.Mounts) != len(dbc.hostPathMounts) {
+		return -1
+	}
+
+	actualMounts := map[string]string{}
+	for _, mount := range dkc.Mounts {
+		if mount.Type != "bind" {
+			return -1
+		}
+		actualMounts[mount.Target] = mount.Source
+	}
+
+	for _, mount := range dbc.hostPathMounts {
+		if actualMounts[mount.target] != mount.source {
+			return -1
+		}
 	}
 
 	return 0

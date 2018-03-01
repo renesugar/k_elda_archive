@@ -7,6 +7,13 @@ Up Next
 - Allow containers to run in `privileged` mode by setting the `privileged` flag
 in the Container object. This is necessary for containers to access devices on
 the host machine, such as `/dev/fuse`.
+- Allow containers to specify `hostPath` volumes (also known as Bind volumes in
+the Docker documentation. `hostPath` is the Kubernetes equivalent.). This is
+necessary for containers to access the Docker run socket on the host. Note that
+`hostPath` volumes are specific to the host for which the container is scheduled,
+and the data in the volume will not be transferred if the container is
+rescheduled to another machine. It's therefore insufficient, and possibly
+incorrect, to use a `hostPath` volume to store hard-state, such as a database.
 
 Release 0.11.0
 -------------
