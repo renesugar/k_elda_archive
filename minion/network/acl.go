@@ -48,9 +48,11 @@ func resolveConnections(dbConns []db.Connection, hostnameToIP map[string]string)
 	// or the name of an address set that contains a list of IP addresses.
 	for _, dbConn := range dbConns {
 		from := str.SliceFilterOut(dbConn.From, blueprint.PublicInternetLabel)
+		from = uniqueStrings(from)
 		from = resolveHostnames(from, hostnameToIP)
 
 		to := str.SliceFilterOut(dbConn.To, blueprint.PublicInternetLabel)
+		to = uniqueStrings(to)
 		to = resolveHostnames(to, hostnameToIP)
 
 		if len(from) == 0 || len(to) == 0 {
@@ -268,6 +270,18 @@ func endpointName(members []string, addressSets map[string][]string) string {
 		addressSets[name] = members
 	}
 	return "$" + name
+}
+
+func uniqueStrings(strs []string) (uniqueStrs []string) {
+	strSet := map[string]struct{}{}
+	for _, str := range strs {
+		if _, ok := strSet[str]; ok {
+			continue
+		}
+		uniqueStrs = append(uniqueStrs, str)
+		strSet[str] = struct{}{}
+	}
+	return
 }
 
 // ovsdbACLSlice is a wrapper around []ovsdb.ACL to allow us to perform a join

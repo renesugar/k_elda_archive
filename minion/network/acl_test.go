@@ -95,6 +95,32 @@ func TestResolveConenctions(t *testing.T) {
 
 }
 
+func TestDuplicateAddressSet(t *testing.T) {
+	// Test that if the addresses in a connection references the same
+	// hostname multiple times, the resulting OVSDB address set only references
+	// it once. This is necessary because OVS requires that address sets be
+	// true sets (i.e. have no duplicates).
+	// This test also ensures that if there are two sets of addresses that are
+	// equivalent after duplicates removed, only one address set is created.
+	_, addressSets := resolveConnections([]db.Connection{
+		{
+			From: []string{"foo", "bar", "repeated"},
+			To:   []string{"foo", "bar", "repeated", "repeated"},
+		},
+	}, map[string]string{
+		"foo":      "foo",
+		"bar":      "bar",
+		"repeated": "repeated",
+	})
+
+	exp := ovsdb.AddressSet{
+		Name: "shaee2e80d83667e71470e791390070cb2" +
+			"e33307fa2cc18c5cab68419801d7a7d94",
+		Addresses: []string{"bar", "foo", "repeated"},
+	}
+	assert.Equal(t, []ovsdb.AddressSet{exp}, addressSets)
+}
+
 func TestSyncAddressSets(t *testing.T) {
 	t.Parallel()
 
