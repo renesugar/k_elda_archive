@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/minion/pb"
 )
@@ -23,9 +24,14 @@ func TestSetMinionConfig(t *testing.T) {
 		return nil
 	})
 
+	bp := blueprint.Blueprint{
+		Containers: []blueprint.Container{
+			{Hostname: "hostname"},
+		},
+	}
 	cfg := pb.MinionConfig{
 		PrivateIP:      "priv",
-		Blueprint:      "blueprint",
+		Blueprint:      bp.String(),
 		Provider:       "provider",
 		Size:           "size",
 		Region:         "region",
@@ -33,8 +39,8 @@ func TestSetMinionConfig(t *testing.T) {
 		AuthorizedKeys: []string{"key1", "key2"},
 	}
 	expMinion := db.Minion{
+		ID:             1,
 		Self:           true,
-		Blueprint:      "blueprint",
 		PrivateIP:      "priv",
 		Provider:       "provider",
 		Role:           db.Master,
@@ -46,70 +52,97 @@ func TestSetMinionConfig(t *testing.T) {
 	assert.NoError(t, err)
 	checkMinionEquals(t, s.Conn, expMinion)
 	checkEtcdEquals(t, s.Conn, db.Etcd{
+		ID:      3,
 		EtcdIPs: []string{"etcd1", "etcd2"},
 	})
+	checkBlueprintEquals(t, s.Conn, db.Blueprint{ID: 2, Blueprint: bp})
 
 	// Update a field.
-	cfg.Blueprint = "new"
-	expMinion.Blueprint = "new"
+	bp.Containers[0].Hostname = "changed"
+	cfg.Blueprint = bp.String()
 	cfg.EtcdMembers = []string{"etcd3"}
 	_, err = s.SetMinionConfig(nil, &cfg)
 	assert.NoError(t, err)
 	checkMinionEquals(t, s.Conn, expMinion)
 	checkEtcdEquals(t, s.Conn, db.Etcd{
+		ID:      3,
 		EtcdIPs: []string{"etcd3"},
 	})
+	checkBlueprintEquals(t, s.Conn, db.Blueprint{ID: 2, Blueprint: bp})
+}
+
+func TestSetMinionMalformedBlueprint(t *testing.T) {
+	t.Parallel()
+
+	_, err := server{}.SetMinionConfig(nil, &pb.MinionConfig{Blueprint: "malformed"})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "failed to parse blueprint")
 }
 
 func checkMinionEquals(t *testing.T, conn db.Conn, exp db.Minion) {
-	timeout := time.After(1 * time.Second)
-	var actual db.Minion
-	for {
-		actual = conn.MinionSelf()
-		actual.ID = 0
-		if reflect.DeepEqual(exp, actual) {
-			return
-		}
-		select {
-		case <-timeout:
-			t.Errorf("Expected minion to be %v, but got %v\n", exp, actual)
-			return
-		default:
-			time.Sleep(100 * time.Millisecond)
-		}
+	query := func(conn db.Conn) (interface{}, error) {
+		return conn.MinionSelf(), nil
 	}
+	retryCheckEquals(t, conn, query, exp)
 }
 
 func checkEtcdEquals(t *testing.T, conn db.Conn, exp db.Etcd) {
-	timeout := time.After(1 * time.Second)
-	var actual db.Etcd
-	for {
-		conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-			actual, _ = view.GetEtcd()
+	query := func(conn db.Conn) (row interface{}, err error) {
+		conn.Txn(db.EtcdTable).Run(func(view db.Database) error {
+			row, err = view.GetEtcd()
 			return nil
 		})
-		actual.ID = 0
-		if reflect.DeepEqual(exp, actual) {
+		return
+	}
+	retryCheckEquals(t, conn, query, exp)
+}
+
+func checkBlueprintEquals(t *testing.T, conn db.Conn, exp db.Blueprint) {
+	query := func(conn db.Conn) (row interface{}, err error) {
+		conn.Txn(db.BlueprintTable).Run(func(view db.Database) error {
+			row, err = view.GetBlueprint()
+			return nil
+		})
+		return
+	}
+	retryCheckEquals(t, conn, query, exp)
+}
+
+type dbQuery func(db.Conn) (interface{}, error)
+
+func retryCheckEquals(t *testing.T, conn db.Conn, query dbQuery, exp interface{}) {
+	timeout := time.After(1 * time.Second)
+	var actual interface{}
+	for {
+		var err error
+		actual, err = query(conn)
+		if err == nil && reflect.DeepEqual(exp, actual) {
 			return
 		}
 		select {
 		case <-timeout:
-			t.Errorf("Expected etcd row to be %v, but got %v\n", exp, actual)
+			t.Errorf("Expected database to have %v, but got %v\n",
+				exp, actual)
 			return
 		default:
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
+
 }
 
 func TestGetMinionConfig(t *testing.T) {
 	t.Parallel()
 	s := server{db.New()}
 
+	bp := blueprint.Blueprint{
+		Containers: []blueprint.Container{
+			{Hostname: "hostname"},
+		},
+	}
 	s.Conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		m := view.InsertMinion()
 		m.Self = true
-		m.Blueprint = "selfblueprint"
 		m.Role = db.Master
 		m.PrivateIP = "selfpriv"
 		m.Provider = "selfprovider"
@@ -117,6 +150,10 @@ func TestGetMinionConfig(t *testing.T) {
 		m.Region = "selfregion"
 		m.AuthorizedKeys = "key1\nkey2"
 		view.Commit(m)
+
+		bpRow := view.InsertBlueprint()
+		bpRow.Blueprint = bp
+		view.Commit(bpRow)
 		return nil
 	})
 
@@ -124,7 +161,6 @@ func TestGetMinionConfig(t *testing.T) {
 	s.Conn.Txn(db.AllTables...).Run(func(view db.Database) error {
 		m := view.InsertMinion()
 		m.Self = false
-		m.Blueprint = "blueprint"
 		m.Role = db.Master
 		m.PrivateIP = "priv"
 		m.Provider = "provider"
@@ -139,7 +175,7 @@ func TestGetMinionConfig(t *testing.T) {
 	assert.Equal(t, pb.MinionConfig{
 		Role:           pb.MinionConfig_MASTER,
 		PrivateIP:      "selfpriv",
-		Blueprint:      "selfblueprint",
+		Blueprint:      bp.String(),
 		Provider:       "selfprovider",
 		Size:           "selfsize",
 		Region:         "selfregion",
@@ -158,7 +194,7 @@ func TestGetMinionConfig(t *testing.T) {
 	assert.Equal(t, pb.MinionConfig{
 		Role:           pb.MinionConfig_MASTER,
 		PrivateIP:      "selfpriv",
-		Blueprint:      "selfblueprint",
+		Blueprint:      bp.String(),
 		Provider:       "selfprovider",
 		Size:           "selfsize",
 		Region:         "selfregion",

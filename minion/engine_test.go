@@ -241,12 +241,8 @@ func TestContainerTxn(t *testing.T) {
 }
 
 func testContainerTxn(t *testing.T, conn db.Conn, bp blueprint.Blueprint) {
-	var containers []db.Container
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		updatePolicy(view, bp.String())
-		containers = view.SelectFromContainer(nil)
-		return nil
-	})
+	testUpdatePolicy(conn, bp)
+	containers := conn.SelectFromContainer(nil)
 
 	for _, e := range queryContainers(bp) {
 		found := false
@@ -313,12 +309,8 @@ func TestConnectionTxn(t *testing.T) {
 }
 
 func testConnectionTxn(t *testing.T, conn db.Conn, bp blueprint.Blueprint) {
-	var connections []db.Connection
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		updatePolicy(view, bp.String())
-		connections = view.SelectFromConnection(nil)
-		return nil
-	})
+	testUpdatePolicy(conn, bp)
+	connections := conn.SelectFromConnection(nil)
 
 	exp := bp.Connections
 	for _, e := range exp {
@@ -352,12 +344,8 @@ func fired(c chan struct{}) bool {
 func TestPlacementTxn(t *testing.T) {
 	conn := db.New()
 	checkPlacement := func(bp blueprint.Blueprint, exp ...db.Placement) {
-		var actual db.PlacementSlice
-		conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-			updatePolicy(view, bp.String())
-			actual = db.PlacementSlice(view.SelectFromPlacement(nil))
-			return nil
-		})
+		testUpdatePolicy(conn, bp)
+		actual := db.PlacementSlice(conn.SelectFromPlacement(nil))
 
 		key := func(plcmIntf interface{}) interface{} {
 			plcm := plcmIntf.(db.Placement)
@@ -450,12 +438,8 @@ func TestPlacementTxn(t *testing.T) {
 }
 
 func checkImage(t *testing.T, conn db.Conn, bp blueprint.Blueprint, exp ...db.Image) {
-	var images []db.Image
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		updatePolicy(view, bp.String())
-		images = view.SelectFromImage(nil)
-		return nil
-	})
+	testUpdatePolicy(conn, bp)
+	images := conn.SelectFromImage(nil)
 
 	key := func(intf interface{}) interface{} {
 		im := intf.(db.Image)
@@ -547,12 +531,8 @@ func TestImageTxn(t *testing.T) {
 
 func checkLoadBalancer(t *testing.T, conn db.Conn, bp blueprint.Blueprint,
 	exp ...db.LoadBalancer) {
-	var loadBalancers []db.LoadBalancer
-	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
-		updatePolicy(view, bp.String())
-		loadBalancers = view.SelectFromLoadBalancer(nil)
-		return nil
-	})
+	testUpdatePolicy(conn, bp)
+	loadBalancers := conn.SelectFromLoadBalancer(nil)
 
 	key := func(intf interface{}) interface{} {
 		lb := intf.(db.LoadBalancer)
@@ -647,4 +627,25 @@ func TestPortPlacementsIgnoresConnectionOrder(t *testing.T) {
 	assert.Subset(t, resA, resB,
 		"even if the connections are passed in different orders, the "+
 			"resulting placement rules should be the same")
+}
+
+func testUpdatePolicy(conn db.Conn, bp blueprint.Blueprint) {
+	conn.Txn(db.AllTables...).Run(func(view db.Database) error {
+		bpRow, err := view.GetBlueprint()
+		if err != nil {
+			bpRow = view.InsertBlueprint()
+		}
+		bpRow.Blueprint = bp
+		view.Commit(bpRow)
+
+		etcdRow, err := view.GetEtcd()
+		if err != nil {
+			etcdRow = view.InsertEtcd()
+		}
+		etcdRow.Leader = true
+		view.Commit(etcdRow)
+
+		updatePolicy(view)
+		return nil
+	})
 }

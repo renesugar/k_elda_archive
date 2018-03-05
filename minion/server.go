@@ -1,9 +1,11 @@
 package minion
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
+	"github.com/kelda/kelda/blueprint"
 	"github.com/kelda/kelda/connection"
 	"github.com/kelda/kelda/db"
 	"github.com/kelda/kelda/minion/pb"
@@ -34,16 +36,18 @@ func (s server) GetMinionConfig(cts context.Context,
 	m := s.MinionSelf()
 	cfg.Role = db.RoleToPB(m.Role)
 	cfg.PrivateIP = m.PrivateIP
-	cfg.Blueprint = m.Blueprint
 	cfg.Provider = m.Provider
 	cfg.Size = m.Size
 	cfg.Region = m.Region
 	cfg.AuthorizedKeys = strings.Split(m.AuthorizedKeys, "\n")
 	cfg.MinionIPToPublicKey = m.MinionIPToPublicKey
 
-	s.Txn(db.EtcdTable).Run(func(view db.Database) error {
+	s.Txn(db.EtcdTable, db.BlueprintTable).Run(func(view db.Database) error {
 		if etcdRow, err := view.GetEtcd(); err == nil {
 			cfg.EtcdMembers = etcdRow.EtcdIPs
+		}
+		if blueprintRow, err := view.GetBlueprint(); err == nil {
+			cfg.Blueprint = blueprintRow.Blueprint.String()
 		}
 		return nil
 	})
@@ -54,11 +58,24 @@ func (s server) GetMinionConfig(cts context.Context,
 func (s server) SetMinionConfig(ctx context.Context,
 	msg *pb.MinionConfig) (*pb.Reply, error) {
 
+	bp, err := blueprint.FromJSON(msg.Blueprint)
+	if err != nil {
+		return &pb.Reply{}, fmt.Errorf("failed to parse blueprint: %s", err)
+	}
+
 	c.Inc("SetMinionConfig")
-	go s.Txn(db.EtcdTable, db.MinionTable).Run(func(view db.Database) error {
+	tables := append(updatePolicyTables, db.EtcdTable, db.MinionTable,
+		db.BlueprintTable)
+	go s.Txn(tables...).Run(func(view db.Database) error {
+		blueprintRow, err := view.GetBlueprint()
+		if err != nil {
+			blueprintRow = view.InsertBlueprint()
+		}
+		blueprintRow.Blueprint = bp
+		view.Commit(blueprintRow)
+
 		minion := view.MinionSelf()
 		minion.PrivateIP = msg.PrivateIP
-		minion.Blueprint = msg.Blueprint
 		minion.Provider = msg.Provider
 		minion.Size = msg.Size
 		minion.Region = msg.Region
@@ -78,6 +95,7 @@ func (s server) SetMinionConfig(ctx context.Context,
 		sort.Strings(etcdRow.EtcdIPs)
 		view.Commit(etcdRow)
 
+		updatePolicy(view)
 		return nil
 	})
 

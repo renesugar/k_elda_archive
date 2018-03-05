@@ -6,7 +6,6 @@ type Minion struct {
 	ID int `json:"-"`
 
 	Self                bool              `json:"-"`
-	Blueprint           string            `json:"-" rowStringer:"omit"`
 	AuthorizedKeys      string            `json:"-" rowStringer:"omit"`
 	MinionIPToPublicKey map[string]string `json:"-" rowStringer:"omit"`
 

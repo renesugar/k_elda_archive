@@ -12,37 +12,42 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// updatePolicyTables are the tables required for the `updatePolicy` function
+// to run.
+var updatePolicyTables = []db.TableType{db.BlueprintTable, db.ConnectionTable,
+	db.ContainerTable, db.EtcdTable, db.PlacementTable, db.ImageTable,
+	db.LoadBalancerTable}
+
 func syncPolicy(conn db.Conn) {
 	loopLog := util.NewEventTimer("Minion-Update")
-	for range conn.Trigger(db.MinionTable, db.EtcdTable).C {
+	for range conn.Trigger(db.EtcdTable).C {
 		loopLog.LogStart()
-		txn := conn.Txn(db.ConnectionTable, db.ContainerTable, db.MinionTable,
-			db.EtcdTable, db.PlacementTable, db.ImageTable,
-			db.LoadBalancerTable)
-		txn.Run(func(view db.Database) error {
-			minion := view.MinionSelf()
-			if view.EtcdLeader() {
-				updatePolicy(view, minion.Blueprint)
-			}
+		conn.Txn(updatePolicyTables...).Run(func(view db.Database) error {
+			updatePolicy(view)
 			return nil
 		})
 		loopLog.LogEnd()
 	}
 }
 
-func updatePolicy(view db.Database, bp string) {
-	compiled, err := blueprint.FromJSON(bp)
-	if err != nil {
-		log.WithError(err).Warn("Invalid blueprint.")
+func updatePolicy(view db.Database) {
+	if !view.EtcdLeader() {
 		return
 	}
 
+	bpRow, err := view.GetBlueprint()
+	if err != nil {
+		log.WithError(err).Error("Failed to get blueprint.")
+		return
+	}
+	bp := bpRow.Blueprint
+
 	c.Inc("Update Policy")
-	updateImages(view, compiled)
-	updateContainers(view, compiled)
-	updateLoadBalancers(view, compiled)
-	updateConnections(view, compiled)
-	updatePlacements(view, compiled)
+	updateImages(view, bp)
+	updateContainers(view, bp)
+	updateLoadBalancers(view, bp)
+	updateConnections(view, bp)
+	updatePlacements(view, bp)
 }
 
 // `portPlacements` creates exclusive placement rules such that no two

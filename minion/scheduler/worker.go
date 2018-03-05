@@ -109,9 +109,9 @@ func runWorker(conn db.Conn, dk docker.Client, myPrivIP string) {
 
 		// Join the scheduled containers with the containers actually running
 		// to figure out what containers to boot and stop.
-		tables := []db.TableType{db.MinionTable, db.ContainerTable}
+		tables := []db.TableType{db.BlueprintTable, db.ContainerTable}
 		conn.Txn(tables...).Run(func(view db.Database) error {
-			bp, err := blueprint.FromJSON(view.MinionSelf().Blueprint)
+			bp, err := view.GetBlueprint()
 			if err != nil {
 				log.WithError(err).Error("Failed to get blueprint. " +
 					"Volumes cannot be created without it. Aborting.")
