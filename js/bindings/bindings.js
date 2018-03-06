@@ -431,6 +431,7 @@ class LoadBalancer {
   }
 
   /**
+   * @private
    * @returns {string} the name of this LoadBalancer for use in connections
    */
   getConnectableName() {
@@ -446,6 +447,7 @@ class LoadBalancer {
  */
 const publicInternet = {
   /**
+   * @private
    * @returns {string} A name representing the public internet for connection purposes.
    */
   getConnectableName() {
@@ -1231,6 +1233,7 @@ class Container {
   }
 
   /**
+   * @private
    * @returns {string} the name of this Container for use in connections
    */
   getConnectableName() {
