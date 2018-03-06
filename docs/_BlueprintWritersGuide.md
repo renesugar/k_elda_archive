@@ -38,7 +38,7 @@ For the container that runs lobste.rs, we'll need to create a new image by
 writing our own Dockerfile, which describes how the Docker image should be
 created.  In this case, the Dockerfile is relatively simple:
 
-```docker
+```dockerfile
 # This container is based on the Ruby image, which means that it
 # automatically inherits the Ruby installation defined in that image.
 FROM ruby:2.3.1
