@@ -63,7 +63,8 @@ let volumeNameGenerator = new UniqueNameGenerator();
 
 class Infrastructure {
   /**
-   * Creates a new Infrastructure with the given options.
+   * Creates a new Infrastructure with the given options. An Infrastructure
+   * represents a collection of virtual machines in the cloud.
    * @constructor
    *
    * @example <caption>Create an infrastructure with one master and two workers
@@ -99,6 +100,18 @@ class Infrastructure {
    *   add its IP address here.  These IP addresses must be in CIDR notation; e.g.,
    *   to allow access from 1.2.3.4, set adminACL to ["1.2.3.4/32"]. To allow access
    *   from all IP addresses, set adminACL to ["0.0.0.0/0"].
+   *
+   * We only document properties users should care about.
+   * @property {Container[]} containers All containers that have been registered
+   *   to run on this infrastructure.
+   * @property {LoadBalancer[]} loadBalancers All load balancers that have been
+   *   registered to run on this infrastructure.
+   * @property {Machine[]} masters The master machines of this infrastructure.
+   * @property {Machine[]} workers The worker machines of this infrastructure.
+   * @property {string[]} adminACL A list of IP addresses that are allowed to
+   *   access the deployed machines. See the description of the adminACL
+   *   constructor argument for more details.
+   * @property {string} namespace The namespace the blueprint should run in.
    */
   constructor(args) {
     const defaults = { namespace: 'kelda' };
@@ -375,7 +388,6 @@ function vet(infrastructure) {
   });
 }
 
-
 class LoadBalancer {
   /**
    * Creates a new LoadBalancer object which represents a collection of
@@ -386,6 +398,9 @@ class LoadBalancer {
    * @param {Object} args - All required arguments.
    * @param {string} args.name - The name of the load balancer.
    * @param {Container[]} args.containers - The containers behind the load balancer.
+   *
+   * We only document properties users should care about.
+   * @property {Container[]} containers The containers behind the load balancer.
    */
   constructor(args) {
     checkRequiredArguments('LoadBalancer', args, ['name', 'containers']);
@@ -679,6 +694,7 @@ function getBoolean(argName, arg) {
   throw new Error(`${argName} must be a boolean (was: ${stringify(arg)})`);
 }
 
+
 class Machine {
   /**
    * Creates a new Machine object, which represents a machine to be deployed.
@@ -714,8 +730,12 @@ class Machine {
    * @param {string} [opts.region] - The region the machine will run-in
    *   (provider-specific; e.g., for Amazon, this could be 'us-west-2').
    * @param {string} [opts.size] - The instance type (provider-specific).
-   * @param {Range|int} [opts.cpu] - The desired number of CPUs.
-   * @param {Range|int} [opts.ram] - The desired amount of RAM in GiB.
+   * @param {Range|int} [opts.cpu] - The desired number of CPUs. The actual number
+   *   of CPUs on the booted machine will be stored in the `cpu` property of
+   *   this Machine instance.
+   * @param {Range|int} [opts.ram] - The desired amount of RAM in GiB. The actual
+   *   amount of RAM on the booted machine will be set in the `ram` property
+   *   of this Machine instance.
    * @param {int} [opts.diskSize] - The desired amount of disk space in GB.
    * @param {string} [opts.floatingIp] - A reserved IP to associate with
    *   the machine.
@@ -957,7 +977,6 @@ class Machine {
 class Image {
   /**
    * Creates a Docker Image.
-   *
    * If two images with the same name but different Dockerfiles are referenced, an
    * error will be thrown.
    *
@@ -1099,9 +1118,23 @@ class Container {
    *   by this argument changes and the blueprint is re-run, Kelda will re-start
    *   the container using the new files.  Files are installed with permissions
    *   0644 and parent directories are automatically created.
-   * @param {VolumeMount} [args.volumeMounts] - A list of volumes to mount
+   * @param {VolumeMount[]} [args.volumeMounts] - A list of volumes to mount
    *   within the container. Referenced volumes are automatically created by
    *   Kelda.
+   *
+   * We only document properties users should care about.
+   * @property {Image} image The image of the container.
+   * @property {string[]} command The command to run when the container starts.
+   * @property {Object.<string, string|Secret>} env An object containing the
+   *   environment variables to set in the container. The key is the name of the
+   *   variable and the value is the variable's value.
+   * @property {Object.<string, string|Secret>} filepathToContent An object
+   *   of the files that should be created in the container. The key is the
+   *   path where the file should be created and the value is the desired
+   *   content of the file. For more details, see the description of the
+   *   `filepathToContent` constructor argument.
+   * @param {VolumeMount[]} volumeMounts - A list of volumes to mount
+   *   within the container.
    */
   constructor(args) {
     // refID is used to distinguish infrastructures with multiple references to the
@@ -1239,7 +1272,7 @@ class Container {
 
 class Secret {
   /**
-   * Secret represents the name of a secret to extract from the Vault secret
+   * Secret represents a secret to extract from the Vault secret
    * store. The value is stored encrypted in a Vault instance running in the
    * cluster. Only the value is considered secret -- names should not contain
    * private information as they are expected to be saved in insecure locations
@@ -1376,6 +1409,12 @@ class Volume {
    * @param {string} [args.path] - Required only if the volume type is
    *   "hostPath". The path on the host that should be made available to the
    *   mounting container.
+   *
+   * We only list properties that the user should care about.
+   * @property {string} name - A human-friendly name for the Volume.
+   * @property {string} type - The type of volume.
+   * @property {string} [path] - Will be set only if the volume type is
+   *   "hostPath".
    */
   constructor(args) {
     checkRequiredArguments('Volume', args, ['name', 'type']);
