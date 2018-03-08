@@ -101,9 +101,14 @@ func checkImageCounts(machines []db.Machine, dockerfileCounts map[string]int) er
 }
 
 func checkBuildParallelized(machines []db.Machine, containers []db.Container) error {
+	imagesSet := map[string]struct{}{}
+	for _, c := range containers {
+		imagesSet[c.Image] = struct{}{}
+	}
+	numUniqueImages := len(imagesSet)
+
 	firstContainer := make(map[string]time.Time)
 	lastContainer := make(map[string]time.Time)
-
 	for _, c := range containers {
 		if t, ok := firstContainer[c.Minion]; !ok || c.Created.Before(t) {
 			firstContainer[c.Minion] = c.Created
@@ -113,10 +118,14 @@ func checkBuildParallelized(machines []db.Machine, containers []db.Container) er
 		}
 	}
 
+	// If the images weren't built in parallel it'd take at least
+	// build_time*num_builds seconds to build all the containers. Therefore, if
+	// the images started in less time, then they were probably built in
+	// parallel.
+	maxDuration := time.Duration(15*numUniqueImages/2) * time.Second
 	for _, m := range machines {
 		first, last := firstContainer[m.PrivateIP], lastContainer[m.PrivateIP]
 		duration := last.Sub(first)
-		maxDuration := 15 * time.Second
 		if duration > maxDuration {
 			return fmt.Errorf("machine %s has containers that started %s"+
 				" apart, expected less than %s", m.CloudID,
