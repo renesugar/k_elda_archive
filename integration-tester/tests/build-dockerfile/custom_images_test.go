@@ -118,8 +118,9 @@ func checkBuildParallelized(machines []db.Machine, containers []db.Container) er
 		duration := last.Sub(first)
 		maxDuration := 15 * time.Second
 		if duration > maxDuration {
-			return fmt.Errorf("machine %s has containers that started %d ms"+
-				" apart, expected <%d", m.CloudID, duration, maxDuration)
+			return fmt.Errorf("machine %s has containers that started %s"+
+				" apart, expected less than %s", m.CloudID,
+				duration.String(), maxDuration.String())
 		}
 	}
 
