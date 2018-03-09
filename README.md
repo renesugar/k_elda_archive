@@ -1,9 +1,10 @@
 [![Build Status](https://travis-ci.org/kelda/kelda.svg?branch=master)](https://travis-ci.org/kelda/kelda)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kelda/kelda)](https://goreportcard.com/report/github.com/kelda/kelda)
 [![Code Coverage](https://codecov.io/gh/kelda/kelda/branch/master/graph/badge.svg)](https://codecov.io/gh/kelda/kelda)
-# Kelda
 
-A straightforward way to configure containerized applications.
+![Kelda](./docs/source/images/logo-horizontal-wide.png)
+
+<p align="center">A straightforward way to configure containerized applications.</p>
 
 # What is Kelda?
 
