@@ -100,7 +100,7 @@ func WaitForContainers(bp blueprint.Blueprint) error {
 		}
 		_, unbooted, _ := join.Join(bp.Containers, curr, key)
 		return len(unbooted) == 0
-	}, 15*time.Second, 10*time.Minute)
+	}, 15*time.Second, 20*time.Minute)
 }
 
 // GetCurrentBlueprint returns the blueprint currently deployed by the daemon.
