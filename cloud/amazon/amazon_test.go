@@ -549,6 +549,37 @@ func TestUpdateFloatingIPs(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestUpdateUnknownFloatingIP(t *testing.T) {
+	t.Parallel()
+
+	mc := new(mocks.Client)
+	amazonProvider := newAmazon(testNamespace, testRegion)
+	amazonProvider.Client = mc
+
+	dbm := db.Machine{
+		CloudID:    "cloudID",
+		FloatingIP: "8.8.8.8",
+	}
+
+	// There are no reserved IPs.
+	mc.On("DescribeAddresses").Return(nil, nil).Once()
+	err := amazonProvider.UpdateFloatingIPs([]db.Machine{dbm})
+	assert.EqualError(t, err, "unknown floating IP 8.8.8.8. "+
+		"Has the IP been reserved for the region region?")
+
+	// Test that there's no error if the IP is reserved.
+	allocationID := "alloc-1"
+	mc.On("DescribeAddresses").Return([]*ec2.Address{
+		{
+			AllocationId: &allocationID,
+			PublicIp:     &dbm.FloatingIP,
+		},
+	}, nil).Once()
+	mc.On("AssociateAddress", dbm.CloudID, allocationID).Return(nil).Once()
+	err = amazonProvider.UpdateFloatingIPs([]db.Machine{dbm})
+	assert.NoError(t, err)
+}
+
 func TestCleanup(t *testing.T) {
 	t.Parallel()
 

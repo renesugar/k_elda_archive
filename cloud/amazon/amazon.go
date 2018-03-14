@@ -435,7 +435,13 @@ func (prvdr *Provider) UpdateFloatingIPs(machines []db.Machine) error {
 				return err
 			}
 		} else {
-			allocationID := addresses[machine.FloatingIP]
+			allocationID, ok := addresses[machine.FloatingIP]
+			if !ok {
+				return fmt.Errorf("unknown floating IP %s. "+
+					"Has the IP been reserved for the region %s?",
+					machine.FloatingIP, prvdr.region)
+			}
+
 			err := prvdr.AssociateAddress(id, allocationID)
 			if err != nil {
 				return err
