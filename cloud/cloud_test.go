@@ -189,8 +189,7 @@ func TestCloudRunOnceProviderInitializationFailure(t *testing.T) {
 		region:       testRegion,
 		providerName: providerName,
 	}
-	cldIsActive := cld.runOnce()
-	assert.True(t, cldIsActive)
+	pollUsedByBlueprint := cld.runOnce()
 	assert.Nil(t, cld.provider)
 
 	checkForLogMessage := func(expectedMessage string, level logrus.Level) {
@@ -223,10 +222,11 @@ func TestCloudRunOnceProviderInitializationFailure(t *testing.T) {
 		view.Commit(bp)
 		return nil
 	})
-	cldIsActive = cld.runOnce()
-	assert.False(t, cldIsActive)
+	pollNotUsedByBlueprint := cld.runOnce()
 	assert.Nil(t, cld.provider)
 	checkForLogMessage(errorMessage, logrus.DebugLevel)
+
+	assert.True(t, pollUsedByBlueprint < pollNotUsedByBlueprint)
 }
 
 func TestCloudRunOnce(t *testing.T) {
@@ -371,6 +371,26 @@ func TestDesiredMachines(t *testing.T) {
 		Role:        db.Worker,
 		DiskSize:    defaultDiskSize,
 		SSHKeys:     []string{"foo", "bar"}}}, res)
+}
+
+func TestRunOnceMaxPoll(t *testing.T) {
+	var jr joinResult
+	cloudJoin = func(cld *cloud) (joinResult, error) { return jr, nil }
+	cld := newTestCloud(FakeAmazon, testRegion, "ns")
+
+	jr.isActive = false
+	pollInactive := cld.runOnce()
+
+	jr.isActive = true
+	pollActiveNoChanges := cld.runOnce()
+
+	jr.boot = []db.Machine{{}}
+	pollActiveWithChanges := cld.runOnce()
+
+	assert.True(t, pollActiveWithChanges < pollActiveNoChanges,
+		"we should poll more often in clouds that are expected to change soon")
+	assert.True(t, pollActiveNoChanges < pollInactive,
+		"we should poll more often in clouds that have machines running")
 }
 
 var instantiatedProviders []fakeProvider

@@ -99,27 +99,29 @@ func startClouds(conn db.Conn, ns string, stop chan struct{}) {
 func (cld *cloud) run(stop <-chan struct{}) {
 	log.Debugf("Start Cloud %s", cld)
 
-	// Note that we need to be fairly conservative about running due to request
-	// limits enforced by the cloud providers.  On unused regions we run very rarely
-	// as a result.
-	fast := cld.conn.TriggerTick(5, db.BlueprintTable, db.MachineTable)
-	slow := cld.conn.TriggerTick(5*60, db.BlueprintTable)
-	defer fast.Stop()
-	defer slow.Stop()
+	dbTicker := cld.conn.Trigger(db.BlueprintTable, db.MachineTable)
+	defer dbTicker.Stop()
 
-	// This loop executes runOnce() whenever the database triggers, or a tick fires.
-	// We choose a fast tick in those regions that have machines, and a slow tick in
-	// those regions that are empty.  In the event the stop channel is closed, the
-	// function returns.
+	// This loop executes runOnce() whenever the database triggers, or the
+	// cloud's requested poll interval has passed. In the event the stop
+	// channel is closed, the function returns.
 	for {
-		tick := slow.C
-		if cld.runOnce() {
-			tick = fast.C
-		}
+		pollTicker := time.After(cld.runOnce())
 
 		select {
 		case <-stop:
-		case <-tick:
+		case <-dbTicker.C:
+		case <-pollTicker:
+		}
+
+		// Drain the dbTicker in a race between the dbTicker and pollTicker. If
+		// we didn't do this, it would be possible for the dbTicker and
+		// pollTicker to fire for the same iteration, but for us to only drain
+		// the pollTicker. Then, the dbTicker would immediately fire for the
+		// next iteration, causing an unnecessary call to runOnce.
+		select {
+		case <-dbTicker.C:
+		default:
 		}
 
 		// In a race between a closed stop and a trigger, choose stop.
@@ -146,10 +148,10 @@ func (cld *cloud) run(stop <-chan struct{}) {
  * status changes that cause a database trigger which will cause the caller to invoke
  * `runOnce()` again.
  *
- * `runOnce()` returns a hint as to whether or not this region is `active` (i.e. it has
- * machines).  Callers may want to call `runOnce()` more frequently on `active` regions
- * than they would run empty ones. */
-func (cld *cloud) runOnce() (active bool) {
+ * `runOnce()` returns a hint as to when it should be called next. This is
+ * useful for differentiating regions that are expected to change from those
+ * that aren't. */
+func (cld *cloud) runOnce() (maxPoll time.Duration) {
 	// If the provider is not initialized, try to do so. We do this here
 	// so that we keep trying when there's an error.
 	if cld.provider == nil {
@@ -163,10 +165,10 @@ func (cld *cloud) runOnce() (active bool) {
 				"retrying)"
 			if cld.usedByCurrentBlueprint() {
 				logger.Errorf(message, "used by the current blueprint ")
-				return true
+				return 30 * time.Second
 			}
 			logger.Debugf(message, "")
-			return false
+			return 1 * time.Minute
 		}
 		cld.provider = provider
 	}
@@ -175,9 +177,9 @@ func (cld *cloud) runOnce() (active bool) {
 	if err != nil {
 		// Could have failed due to a misconfiguration (bad keys, network
 		// connectivity issues, insufficient permissions, etc.). In that case
-		// there's no particular advantage to checking regularly, so we consider
-		// it inactive.
-		return false
+		// we try again in 30 seconds in case the problem recovers, but don't
+		// check so fast that we overload the cloud provider.
+		return 30 * time.Second
 	}
 
 	if !jr.isActive {
@@ -185,7 +187,11 @@ func (cld *cloud) runOnce() (active bool) {
 			log.WithError(err).WithField("region", cld.String()).Debug(
 				"Failed to clean up region")
 		}
-		return jr.isActive
+
+		// This cloud shouldn't require very many changes, but keep
+		// tabs on it in case something unexpected happens, like a machine
+		// randomly appearing.
+		return 5 * time.Minute
 	}
 
 	if len(jr.boot) == 0 &&
@@ -196,11 +202,17 @@ func (cld *cloud) runOnce() (active bool) {
 		// removed when the Kelda controller restarts, even if there are
 		// running cloud machines that still need to communicate.
 		cld.syncACLs(jr.acls)
-	} else {
-		cld.updateCloud(jr)
+
+		// We don't expect any of the currently-running machines to have
+		// state-changes, but still poll them relatively frequently so that
+		// we'll notice events like machines dying.
+		return 30 * time.Second
 	}
 
-	return jr.isActive
+	cld.updateCloud(jr)
+	// Run again immediately after the update so that the database can pick up
+	// the changes from the cloud action.
+	return 1 * time.Second
 }
 
 // usedByCurrentBlueprint returns whether this cloud provider is used by machines
