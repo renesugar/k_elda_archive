@@ -2,6 +2,7 @@ package connection
 
 import (
 	"net"
+	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -34,10 +35,27 @@ func Client(proto, addr string, opts []grpc.DialOption) (*grpc.ClientConn, error
 		grpc.WithBlock(), grpc.WithTimeout(timeout))...)
 }
 
+// This message should be formatted with the socket path before logging.
+const duplicateDaemonMsg = "The socket path already exists. Another daemon is " +
+	"probably already running, in which case it can be stopped with the command " +
+	"`kill -2 <PID_of_other_daemon>`. If no other daemon is running, try " +
+	"removing the socket manually with `rm %s`."
+
 // Server creates a socket listening on `addr` and a grpc server. If it fails
 // to open the socket, it tries again until it succeeds.
 func Server(proto, addr string, opts []grpc.ServerOption) (net.Listener, *grpc.Server) {
 	for {
+		if proto == "unix" {
+			// Check if the address already exists so that we can give a more
+			// helpful error message.
+			if _, err := os.Stat(addr); err == nil {
+				log.WithField("path", addr).Errorf(duplicateDaemonMsg,
+					addr)
+				time.Sleep(30 * time.Second)
+				continue
+			}
+		}
+
 		sock, err := net.Listen(proto, addr)
 		if err == nil {
 			return sock, grpc.NewServer(opts...)
