@@ -123,12 +123,17 @@ func tryGet(t *testing.T, ip string) {
 	for i := 0; i < 10; i++ {
 		resp, err := http.Get("http://" + ip)
 		if err != nil {
-			t.Errorf("%s - HTTP GET error: %s", ip, err)
+			msg := fmt.Sprintf("%s - HTTP GET error: %s", ip, err)
+			log.Error(msg)
+			t.Error(msg)
 			continue
 		}
 
 		if resp.StatusCode != 200 {
-			t.Errorf("%s - bad response code: %d", ip, resp.StatusCode)
+			msg := fmt.Sprintf("%s - bad response code: %d", ip,
+				resp.StatusCode)
+			log.Error(msg)
+			t.Error(msg)
 		}
 		log.Info(resp)
 	}
