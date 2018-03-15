@@ -9,7 +9,8 @@ import (
 
 // Run occasionally updates the OpenFlow tables based on the containers in the database.
 func Run(conn db.Conn) {
-	for range conn.TriggerTick(10, db.MinionTable, db.ContainerTable).C {
+	for range conn.TriggerTick(10, db.MinionTable, db.ContainerTable,
+		db.ConnectionTable).C {
 		self := conn.MinionSelf()
 		if self.PrivateIP != "" {
 			updateOpenflow(conn, self.PrivateIP)
