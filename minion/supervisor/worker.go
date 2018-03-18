@@ -51,7 +51,7 @@ func setupWorker() {
 
 func runWorkerSystem() {
 	loopLog := util.NewEventTimer("Supervisor")
-	for range conn.Trigger(db.MinionTable, db.EtcdTable).C {
+	for range conn.TriggerTick(30, db.MinionTable, db.EtcdTable).C {
 		loopLog.LogStart()
 		runWorkerOnce()
 		loopLog.LogEnd()
