@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -158,16 +159,11 @@ func TestRun(t *testing.T) {
 	md.StartError = false
 
 	md.ListError = true
-	_, err = dk.List(nil)
+	_, err = dk.List(nil, false)
 	assert.NotNil(t, err)
 	md.ListError = false
 
-	md.ListError = true
-	_, err = dk.IsRunning("foo")
-	assert.NotNil(t, err)
-	md.ListError = false
-
-	containers, err := dk.list(nil, true)
+	containers, err := dk.List(nil, true)
 	assert.Nil(t, err)
 	assert.Zero(t, len(containers))
 
@@ -179,33 +175,21 @@ func TestRun(t *testing.T) {
 
 	md.StopContainer(id2)
 
-	containers, err = dk.List(nil)
+	containers, err = dk.List(nil, false)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(containers))
 	assert.Equal(t, id1, containers[0].ID)
 
-	containers, err = dk.list(nil, true)
+	containers, err = dk.List(nil, true)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(containers))
 	assert.True(t, containers[0].ID == id2 || containers[1].ID == id2)
 
 	md.InspectContainerError = true
-	containers, err = dk.List(nil)
+	containers, err = dk.List(nil, false)
 	assert.Nil(t, err)
 	assert.Zero(t, len(containers))
 	md.InspectContainerError = false
-
-	running, err := dk.IsRunning("no")
-	assert.Nil(t, err)
-	assert.False(t, running)
-
-	running, err = dk.IsRunning("name1")
-	assert.Nil(t, err)
-	assert.True(t, running)
-
-	running, err = dk.IsRunning("name2")
-	assert.Nil(t, err)
-	assert.False(t, running)
 }
 
 func TestRunEnv(t *testing.T) {
@@ -228,9 +212,9 @@ func TestRunEnv(t *testing.T) {
 		},
 	}
 
-	for _, env := range testEnvs {
+	for i, env := range testEnvs {
 		id, err := dk.Run(RunOptions{
-			Name: "name",
+			Name: fmt.Sprintf("name%d", i),
 			Env:  env,
 		})
 		assert.NoError(t, err)
@@ -317,7 +301,7 @@ func TestRemove(t *testing.T) {
 	err = dk.RemoveID(id2)
 	assert.Nil(t, err)
 
-	containers, err := dk.list(nil, true)
+	containers, err := dk.List(nil, true)
 	assert.Nil(t, err)
 	assert.Zero(t, len(containers))
 }

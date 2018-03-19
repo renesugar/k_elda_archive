@@ -13,6 +13,7 @@ import (
 	"github.com/kelda/kelda/util/str"
 	"github.com/kelda/kelda/version"
 
+	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -103,7 +104,7 @@ func Run(_conn db.Conn, _dk docker.Client, role db.Role) {
 // containers, or containers manually created on the host, are ignored.
 func joinContainers(desiredContainers []docker.RunOptions) {
 	actual, err := dk.List(map[string][]string{
-		"label": {containerTypeKey + "=" + sysContainerVal}})
+		"label": {containerTypeKey + "=" + sysContainerVal}}, false)
 	if err != nil {
 		log.WithError(err).Error("Failed to list current containers")
 		return
@@ -134,6 +135,39 @@ func joinContainers(desiredContainers []docker.RunOptions) {
 		ro.Labels[containerTypeKey] = sysContainerVal
 		ro.Labels[filesKey] = filesHash(ro.FilepathToContent)
 		ro.NetworkMode = "host"
+
+		containersWithName, err := dk.List(map[string][]string{
+			"name": {ro.Name},
+		}, true)
+		if err != nil {
+			log.WithError(err).WithField("name", ro.Name).Error(
+				"Failed to check for containers with same name")
+			continue
+		}
+
+		for _, dkc := range containersWithName {
+			// If there's another version of the container already running,
+			// and we need to boot a new one, the join should have marked
+			// the old container to be deleted.
+			if dkc.Running {
+				log.WithField("container", ro.Name).Warn(
+					"Container is already running. This shouldn't " +
+						"normally happen, but will probably " +
+						"resolve itself the next time the " +
+						"supervisor runs.")
+				continue
+			}
+
+			// Rename the container rather than remove it so that its logs are
+			// still accessible for debugging.
+			newName := ro.Name + "_stopped_" + uuid.NewV4().String()
+			err := dk.RenameContainer(dkc.ID, newName)
+			if err != nil {
+				log.WithError(err).WithField("container", ro.Name).Error(
+					"Failed to rename stopped container")
+				continue
+			}
+		}
 
 		if _, err := dk.Run(ro); err != nil {
 			log.WithError(err).WithField("name", ro.Name).

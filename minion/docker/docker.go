@@ -41,6 +41,7 @@ type Container struct {
 	Env      map[string]string
 	Labels   map[string]string
 	Created  time.Time
+	Running  bool
 }
 
 // ContainerSlice is an alias for []Container to allow for joins
@@ -84,6 +85,7 @@ type client interface {
 	StartContainer(id string, hostConfig *dkc.HostConfig) error
 	UploadToContainer(id string, opts dkc.UploadToContainerOptions) error
 	RemoveContainer(opts dkc.RemoveContainerOptions) error
+	RenameContainer(opts dkc.RenameContainerOptions) error
 	BuildImage(opts dkc.BuildImageOptions) error
 	PullImage(opts dkc.PullImageOptions, auth dkc.AuthConfiguration) error
 	PushImage(opts dkc.PushImageOptions, auth dkc.AuthConfiguration) error
@@ -196,6 +198,14 @@ func (dk Client) RemoveID(id string) error {
 	return nil
 }
 
+// RenameContainer changes the friendly name of the container with the given ID.
+func (dk Client) RenameContainer(id string, newName string) error {
+	return dk.client.RenameContainer(dkc.RenameContainerOptions{
+		ID:   id,
+		Name: newName,
+	})
+}
+
 // Build builds an image with the given name and Dockerfile.
 func (dk Client) Build(name, dockerfile string, useCache bool) error {
 	c.Inc("Build")
@@ -286,14 +296,10 @@ func (dk Client) Push(registry, image string) (string, error) {
 	return img.RepoDigests[0], nil
 }
 
-// List returns a slice of all running containers.  The List can be be filtered with the
-// supplied `filters` map.
-func (dk Client) List(filters map[string][]string) ([]Container, error) {
-	c.Inc("List")
-	return dk.list(filters, false)
-}
-
-func (dk Client) list(filters map[string][]string, all bool) ([]Container, error) {
+// List returns a slice of all containers. The containers can be be filtered
+// with the supplied `filters` map. If `all` is false, only running containers
+// are returned.
+func (dk Client) List(filters map[string][]string, all bool) ([]Container, error) {
 	opts := dkc.ListContainersOptions{All: all, Filters: filters}
 	apics, err := dk.ListContainers(opts)
 	if err != nil {
@@ -344,6 +350,7 @@ func (dk Client) Get(id string) (Container, error) {
 		Labels:   dkc.Config.Labels,
 		Status:   dkc.State.Status,
 		Created:  dkc.Created,
+		Running:  dkc.State.Running,
 	}
 
 	return c, nil
@@ -355,18 +362,6 @@ func keys(networks map[string]dkc.ContainerNetwork) []string {
 		keySet = append(keySet, key)
 	}
 	return keySet
-}
-
-// IsRunning returns true if the container with the given `name` is running.
-func (dk Client) IsRunning(name string) (bool, error) {
-	c.Inc("Is Running?")
-	containers, err := dk.List(map[string][]string{
-		"name": {name},
-	})
-	if err != nil {
-		return false, err
-	}
-	return len(containers) != 0, nil
 }
 
 func (dk Client) create(name, image, hostname string, args []string,
@@ -419,7 +414,7 @@ func (dk Client) create(name, image, hostname string, args []string,
 }
 
 func (dk Client) getID(name string) (string, error) {
-	containers, err := dk.list(map[string][]string{"name": {name}}, true)
+	containers, err := dk.List(map[string][]string{"name": {name}}, true)
 	if err != nil {
 		return "", err
 	}

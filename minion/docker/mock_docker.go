@@ -116,6 +116,19 @@ func (dk MockClient) RemoveContainer(opts dkc.RemoveContainerOptions) error {
 	return nil
 }
 
+// RenameContainer changes the friendly name of the container with the given ID.
+func (dk MockClient) RenameContainer(opts dkc.RenameContainerOptions) error {
+	dk.Lock()
+	defer dk.Unlock()
+
+	container, ok := dk.Containers[opts.ID]
+	if !ok {
+		return fmt.Errorf("container with ID %s doesn't exist", opts.ID)
+	}
+	container.Name = opts.Name
+	return nil
+}
+
 func readDockerfile(inp io.Reader) ([]byte, error) {
 	tarball := tar.NewReader(inp)
 	for {
@@ -292,8 +305,9 @@ func (dk MockClient) InspectContainer(id string) (*dkc.Container, error) {
 	}
 
 	toReturn := container.Container
+	toReturn.State = dkc.State{Running: container.Running}
 	if container.Running {
-		toReturn.State = dkc.State{Status: "Running"}
+		toReturn.State.Status = "Running"
 	}
 
 	return toReturn, nil
@@ -316,6 +330,13 @@ func (dk *MockClient) CreateContainer(opts dkc.CreateContainerOptions) (*dkc.Con
 
 	if _, ok := dk.Pulled[image]; !ok {
 		return nil, errors.New("create a missing image")
+	}
+
+	for _, container := range dk.Containers {
+		if container.Name == opts.Name {
+			return nil, fmt.Errorf(
+				"container with name %s already exists", opts.Name)
+		}
 	}
 
 	id := uuid.NewV4().String()
