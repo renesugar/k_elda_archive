@@ -1,0 +1,48 @@
+{
+  "Amazon": {
+    "sizes": {
+      "tiny": "t2.micro",
+      "small": "m3.medium",
+      "medium": "m3.large",
+      "large": "m3.xlarge"
+    },
+    "regions": {
+      "N. Virginia": "us-east-1",
+      "Sydney": "ap-southeast-2",
+      "N. California": "us-west-1",
+      "Oregon": "us-west-2"
+    },
+    "hasPreemptible": true
+  },
+  "Google": {
+    "sizes": {
+      "small": "n1-standard-1",
+      "medium": "n1-standard-2",
+      "large": "n1-standard-4"
+    },
+    "regions": {
+      "Iowa": "us-central1-a",
+      "South Carolina": "us-east1-b",
+      "Belgium": "europe-west1-b"
+    },
+    "hasPreemptible": false
+  },
+  "DigitalOcean": {
+    "sizes": {
+      "small": "512mb",
+      "medium": "1gb",
+      "large": "2gb"
+    },
+    "regions": {
+      "New York City 1": "nyc1",
+      "New York City 2": "nyc2",
+      "London": "lon1",
+      "San Francisco 1": "sfo1",
+      "San Francisco 2": "sfo2"
+    },
+    "hasPreemptible": false
+  },
+  "Vagrant": {
+    "hasPreemptible": false
+  }
+}

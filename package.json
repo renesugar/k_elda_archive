@@ -2,6 +2,7 @@
   "devDependencies": {
     "kelda": "file:./js/bindings",
     "@kelda/initializer": "file:./js/initializer",
+    "@kelda/base-infrastructure": "file:./js/base-infrastructure",
     "chai": "^4.1.1",
     "chai-subset": "^1.5.0",
     "eslint": "^4.9.0",
@@ -15,7 +16,7 @@
     "sinon": "^2.1.0"
   },
   "scripts": {
-    "test": "mocha ./js/bindings ./js/initializer/"
+    "test": "mocha ./js/bindings ./js/initializer/ ./js/base-infrastructure/"
   },
   "nyc": {
     "exclude": "**/*Test.js"

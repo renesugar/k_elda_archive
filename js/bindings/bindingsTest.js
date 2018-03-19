@@ -1237,7 +1237,7 @@ describe('Bindings', () => {
     it('should error when the infrastructure doesn\'t exist', () => {
       fsExistsStub.withArgs(b.baseInfraLocation).returns(false);
       expect(() => b.baseInfrastructure()).to.throw(
-        'no base infrastructure. Use `kelda init` to create one.');
+        'no base infrastructure. Use `kelda base-infrastructure` to create one.');
     });
 
     it('should return the infrastructure object when the infra exists', () => {

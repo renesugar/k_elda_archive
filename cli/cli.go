@@ -20,9 +20,10 @@ var commands = map[string]command.SubCommand{
 	"ps":   command.NewShowCommand(),
 	"show": command.NewShowCommand(),
 
-	"secret":     &command.Secret{},
-	"run":        command.NewRunCommand(),
-	"init":       &command.Init{},
+	"secret":              &command.Secret{},
+	"run":                 command.NewRunCommand(),
+	"init":                &command.Init{},
+	"base-infrastructure": &command.BaseInfra{},
 	"ssh":        command.NewSSHCommand(),
 	"stop":       command.NewStopCommand(),
 	"version":    command.NewVersionCommand(),

@@ -224,9 +224,10 @@ function githubKeys(user) {
   return keys;
 }
 
-// Both infraDirectory and baseInfraLocation are also defined in initializer/constants.js.
+// Both infraDirectory and baseInfraLocation are also defined in
+// base-infrastructure/constants.js.
 // This code duplication is ugly, but it significantly simplifies packaging
-// the `kelda init` code with the "@kelda/install" module.
+// the `kelda base-infrastructure` code with the "@kelda/install" module.
 const infraDirectory = path.join(os.homedir(), '.kelda', 'infra');
 const baseInfraLocation = path.join(infraDirectory, 'default.js');
 
@@ -250,7 +251,7 @@ function getBaseInfrastructure() {
 
 /**
  * Returns a base infrastructure. The base infrastructure could be created
- * with `kelda init`.
+ * with `kelda base-infrastructure`.
  *
  * @example <caption>Retrieve the base infrastructure, and deploy
  * an nginx container on it.</caption>
@@ -262,7 +263,8 @@ function getBaseInfrastructure() {
  */
 function baseInfrastructure() {
   if (!fs.existsSync(baseInfraLocation)) {
-    throw new Error('no base infrastructure. Use `kelda init` to create one.');
+    throw new Error(
+      'no base infrastructure. Use `kelda base-infrastructure` to create one.');
   }
   return getBaseInfrastructure();
 }

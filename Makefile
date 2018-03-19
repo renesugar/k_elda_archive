@@ -174,7 +174,7 @@ include $(wildcard *.mk)
 prep-install: linux darwin js/install/package.json
 	cp kelda_linux js/install
 	cp kelda_darwin js/install
-	cp -r js/initializer js/install
+	cp -r js/base-infrastructure js/initializer js/install
 
 js/install/package.json: js/install/packageTemplate.json
 	node js/install/makePackage.js > js/install/package.json
