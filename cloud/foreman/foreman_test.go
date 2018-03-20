@@ -237,6 +237,22 @@ func TestSetMinionStatus(t *testing.T) {
 	assert.Equal(t, db.PBToRole(role), dbm.Role)
 	assert.Equal(t, connected, dbm.Connected)
 	assert.Equal(t, db.Connected, dbm.Status)
+
+	// Test that if the machine is stopping, then we don't modify its status.
+	conn.Txn(db.MachineTable).Run(func(view db.Database) error {
+		dbm := view.SelectFromMachine(func(dbm db.Machine) bool {
+			return dbm.ID == machineID
+		})[0]
+		dbm.Status = db.Stopping
+		view.Commit(dbm)
+		return nil
+	})
+
+	setMinionStatus(conn, cloudID, role, connected)
+	dbm = conn.SelectFromMachine(func(dbm db.Machine) bool {
+		return dbm.ID == machineID
+	})[0]
+	assert.Equal(t, db.Stopping, dbm.Status)
 }
 
 func mock(t *testing.T, roles map[string]pb.MinionConfig_Role) *clients {

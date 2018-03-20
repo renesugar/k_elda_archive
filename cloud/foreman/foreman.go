@@ -227,6 +227,13 @@ func setMinionStatus(conn db.Conn, cloudID string, role pb.MinionConfig_Role,
 		}
 
 		dbm := rows[0]
+		// If the machine is stopping, then don't update it. This way, we won't
+		// changes its fields (such as its status) when the user is expecting
+		// the machine to be removed soon anyways.
+		if dbm.Status == db.Stopping {
+			return nil
+		}
+
 		dbm.Role = db.PBToRole(role)
 		dbm.Connected = isConnected
 		if status := db.ConnectionStatus(dbm); status != "" {
