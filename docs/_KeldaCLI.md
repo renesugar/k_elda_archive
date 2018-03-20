@@ -22,6 +22,8 @@ $ kelda COMMAND --help
 ## Commands
 | Name         | Description                                                                                      |
 |--------------|--------------------------------------------------------------------------------------------------|
+| `base-infrastructure` | Create a new base infrastructure. The infrastructure can be used in blueprints by calling [`baseInfrastructure()`](#kelda-js-api-documentation). |
+| `configure-provider` | Set up cloud provider credentials. This command helps ensure that the file format and location are as Kelda expects. |
 | `counters`   | Display internal counters tracked for debugging purposes. Most users will not need this command. |
 | `daemon`     | Start the kelda daemon, which listens for kelda API requests.                                    |
 | `debug-logs` | Fetch logs for a set of machines or containers.                                                  |
@@ -35,29 +37,3 @@ $ kelda COMMAND --help
 | `ssh`        | SSH into or execute a command in a machine or container.                                         |
 | `stop`       | Stop a deployment.                                                                               |
 | `version`    | Show the Kelda version information.                                                              |
-
-## Init
-The `kelda init` command is a simple way to create reusable infrastructure. The
-command prompts the user for information about their desired infrastructure
-and then creates an infrastructure based on the answers.
-The infrastructure can be used in blueprints by calling
-`baseInfrastructure()`.
-
-To edit the infrastructure after creation, either rerun `kelda init`
-using the same name, or directly edit the infrastructure blueprint stored in
-`~/.kelda/infra/default.js`.
-
- **Provider Keys**: In order to launch virtual machines from your account, Kelda needs access to
-your provider credentials. The credentials are used when Kelda makes API calls
-to the provider. Kelda will not store your credentials, but simply needs
-access to a credentials file on your machine. If there is no existing
-credentials file, `kelda init` helps create one with the correct format. See
-[Cloud Provider Configuration](#cloud-provider-configuration)
-for instructions on how to get your cloud provider credentials.
-
-<aside class="notice"><code>kelda init</code> is great for getting started with a basic
-infrastructure, but users who have more advanced infrastructure requirements
-like floating IPs or specific disk sizes should specify
-<a href="#Machine"><code>Machine</code></a>s in their blueprint rather than
-using <code>kelda init</code> and <code>baseInfrastructure</code>.
-</aside>

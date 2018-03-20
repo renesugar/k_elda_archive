@@ -22,7 +22,7 @@ blurb about how to use the command.
 
 ## Configuring a Cloud Provider
 This section explains how to get credentials for your cloud provider. Kelda will
-need these to launch machines on your account. Before proceeding:
+need these to launch machines on your account.
 
 1. **Create an account**. Make sure you have an account with one of Kelda's
   supported cloud providers ([Google Cloud](https://cloud.google.com/),
@@ -31,6 +31,13 @@ need these to launch machines on your account. Before proceeding:
 
 2. **Get credentials**. Locate the credentials for your cloud provider account.
 
+3. **Set up credentials**. To create the necessary credential files on your computer,
+run the following command and use the credentials from the previous step:
+
+    ```console
+    $ kelda configure-provider
+    ```
+
 For Amazon EC2, create an account with [Amazon Web Services](https://aws.amazon.com/ec2/),
 find your "Access Keys" on the
 [Security Credentials](https://console.aws.amazon.com/iam/home?#security_credential)
@@ -38,25 +45,25 @@ page in the AWS Management Console, and "Create New Access Key" (or use an
 existing key, if you already have one).
 
 Alternatively, follow the instructions for [Google Cloud](http://docs.kelda.io/#google-compute-engine)
-or [DigitalOcean](http://docs.kelda.io/#digitalocean), but **come back to this
-tutorial before running `kelda init`**. In the next step, you will run
-`kelda init` with some specific inputs.
+or [DigitalOcean](http://docs.kelda.io/#digitalocean).
 
 ## Creating an Infrastructure
 1. **Specify an infrastructure**. Kelda needs to know what infrastructure (e.g. which
-  cloud provider and VMs) to launch the application on. The easiest way to specify
-  this is by running `kelda init`:
+  cloud provider and VMs) to launch the application on. One way to specify an
+  infrastructure is to run `kelda base-infrastructure`:
 
     ```console
-    $ kelda init
+    $ kelda base-infrastructure
     ```
 
-**Note!** When asked for credentials, use the provider credentials from the
-previous section.
-
-<aside class="notice">If you are unsure about how to answer any of the
-questions, the default values are appropriate for this tutorial.
+<aside class="notice">If you are unsure about how to answer any of the questions,
+the default values are appropriate for this tutorial.
 </aside>
+
+It is also possible to create an infrastructure directly in blueprints using
+the [Machine](#Machine) and [Infrastructure](#Infrastructure) classes. We won't
+cover that in this tutorial, but there are good examples in the linked API
+reference.
 
 ## Getting the Blueprint
 

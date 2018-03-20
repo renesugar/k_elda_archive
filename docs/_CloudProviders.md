@@ -18,13 +18,13 @@ your credentials or use them for anything else than deploying your application.
    page in the AWS Management Console. Choose "Access Keys" and then
    "Create New Access Key."
 
-3. Run `kelda init` on the machine that will be running the daemon, and pass
+3. Run `kelda configure-provider` on the machine that will be running the daemon, and pass
   it your AWS credentials. The formatted credentials will be placed in
   `~/.aws/credentials`.
 
 ### Formatting Credentials
-While it is recommended to use `kelda init` to format the provider credentials,
-it is possible to manually create the credentials file in `~/.aws/credentials`
+While it is recommended to use `kelda configure-provider` to format the provider
+credentials, it is possible to manually create the credentials file in `~/.aws/credentials`
 on the machine that will be running the daemon:
 
 ```conf
@@ -45,7 +45,7 @@ top), except with `<YOUR_ID>` and `<YOUR_SECRET_KEY>` filled in appropriately.
 2. Create a new token [here](https://cloud.digitalocean.com/settings/api/tokens).
    The token must have both read and write permissions.
 
-3. Run `kelda init` on the machine that will be running the Kelda daemon, and
+3. Run `kelda configure-provider` on the machine that will be running the Kelda daemon, and
    pass it your token. The token will be placed in `~/.digitalocean/key`.
 
 ### Floating IPs
@@ -76,6 +76,6 @@ used to reserve IPs that Kelda can then assign to droplets.
    service account with the `Project -> Editor` role, and select the JSON output
    option.
 
-5. Run `kelda init` on the machine from which you will be running the Kelda
+5. Run `kelda configure-provider` on the machine from which you will be running the Kelda
   daemon, and give it the path to the downloaded JSON from step 3.
   The credentials will be placed in `~/.gce/kelda.json`.
