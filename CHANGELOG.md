@@ -5,6 +5,8 @@ Up Next
 -------------
 
 - Replace the custom Kelda scheduler for managing containers with Kubernetes.
+- Replace the `kelda init` command with the new commands
+`kelda configure-provider` and `kelda base-infrastructure`.
 
 Release 0.12.0
 -------------

@@ -1,53 +1,34 @@
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions, no-underscore-dangle */
 const expect = require('chai').expect;
-const mock = require('mock-fs');
 const os = require('os');
 const path = require('path');
-const fs = require('fs');
+const mock = require('mock-fs');
 const rewire = require('rewire');
 
-const Provider = rewire('./provider');
+const p = rewire('./provider');
 
 describe('Provider', () => {
   let revertConfig;
+  const credentialsPathA = path.join(os.homedir(), '.some/file');
+  const credentialsPathC = path.join(os.homedir(), '.another/file');
 
   before(() => {
-    revertConfig = Provider.__set__('providerConfig', {
+    revertConfig = p.__set__('credentialsInfo', {
       providerA: {
         credsTemplate: 'aTemplate',
         credsKeys: {
           key: 'aKey',
           secret: 'aSecret',
         },
+        credsLocation: ['.some', 'file'],
       },
       providerB: {},
-      providerC: {},
+      providerC: {
+        credsLocation: ['.another', 'file'],
+      },
     });
-
-    mock({
-      'js/initializer/providers.json': `{
-  "providerA": {
-    "sizes": {
-      "small": "size1",
-      "medium": "size2",
-      "large": "size3"
-    },
-    "regions": {
-      "friendly1": "reg1",
-      "friendly2": "reg2"
-    },
-    "hasPreemptible": true,
-    "credsLocation": [".some", "file"]
-  },
-  "providerB": {
-    "hasPreemptible": false
-  },
-  "providerC": {
-    "credsLocation": [".another", "file"]
-  }
-}`,
-    });
+    mock({ [credentialsPathC]: 'I do exist' });
   });
 
   after(() => {
@@ -61,12 +42,12 @@ describe('Provider', () => {
 
   describe('getName()', () => {
     it('should get name for provider A', () => {
-      providerA = new Provider('providerA');
+      providerA = new p.Provider('providerA');
       expect(providerA.getName()).to.equal('providerA');
     });
 
     it('should get name for provider B', () => {
-      providerB = new Provider('providerB');
+      providerB = new p.Provider('providerB');
       expect(providerB.getName()).to.equal('providerB');
     });
   });
@@ -81,19 +62,6 @@ describe('Provider', () => {
 
     it('should not break when there are no keys', () => {
       expect(providerB.getCredsKeys()).to.deep.equal({});
-    });
-  });
-
-  describe('getRegions()', () => {
-    it('should return correct regions', () => {
-      expect(providerA.getRegions()).to.deep.equal({
-        friendly1: 'reg1',
-        friendly2: 'reg2',
-      });
-    });
-
-    it('should not break when there are no regions', () => {
-      expect(providerB.getRegions()).to.deep.equal({});
     });
   });
 
@@ -118,17 +86,14 @@ describe('Provider', () => {
       });
   });
 
-  const credentialsPathA = path.join(os.homedir(), '.some/file');
-  const credentialsPathC = path.join(os.homedir(), '.another/file');
   describe('credsExist()', () => {
     it('should return false if there are no existing credentials', () => {
-      expect(providerA.credsExist()).to.be.false; // Should test existing
+      expect(providerA.credsExist()).to.be.false;
     });
 
     it('should return true if credentials exist', () => {
-      providerC = new Provider('providerC');
-      fs.mkdir(path.join(os.homedir(), '.another'));
-      fs.writeFileSync(credentialsPathC, 'my credentials');
+      providerC = new p.Provider('providerC');
+      // This file is mocked in the `before` hook.
       expect(providerC.credsExist()).to.be.true;
     });
   });
@@ -142,5 +107,12 @@ describe('Provider', () => {
       () => {
         expect(providerA.getCredsPath()).to.equal(credentialsPathA);
       });
+  });
+
+  describe('allProviders', () => {
+    it('should return the right provider names', () => {
+      expect(p.allProviders()).to.include.members(['providerA', 'providerB', 'providerC']);
+      expect(p.allProviders()).to.have.lengthOf(3);
+    });
   });
 });

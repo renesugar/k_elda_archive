@@ -22,7 +22,7 @@ var commands = map[string]command.SubCommand{
 
 	"secret":              &command.Secret{},
 	"run":                 command.NewRunCommand(),
-	"init":                &command.Init{},
+	"configure-provider":  &command.ConfigProvider{},
 	"base-infrastructure": &command.BaseInfra{},
 	"ssh":        command.NewSSHCommand(),
 	"stop":       command.NewStopCommand(),

@@ -4,55 +4,52 @@ const os = require('os');
 
 const consts = require('./constants');
 
-const providerFile = path.join(__dirname, 'providers.json');
-
 // The credentials key names (e.g. 'key' and 'secret') should correspond to the
 // keys used in the provider's credentials template.
 // If the credentials should be given as a file path, the key name should be
-// [inputCredsPath].
-let providerConfig = { // eslint-disable-line prefer-const
+// [consts.inputCredsPath].
+let credentialsInfo = { // eslint-disable-line prefer-const
   Amazon: {
     credsTemplate: 'amazon_creds_template',
-    credsKeys: {
-      key: 'AWS access key id',
-      secret: 'AWS secret access key',
-    },
+    credsKeys: { key: 'AWS access key id', secret: 'AWS secret access key' },
+    credsLocation: ['.aws', 'credentials'],
   },
   Google: {
-    credsKeys: {
-      [consts.inputCredsPath]: 'Path to GCE service account key',
-    },
+    credsKeys: { [consts.inputCredsPath]: 'Path to GCE service account key' },
+    credsLocation: ['.gce', 'kelda.json'],
   },
   DigitalOcean: {
     credsTemplate: 'digitalocean_creds_template',
-    credsKeys: {
-      key: 'DigitalOcean account token',
-    },
+    credsKeys: { key: 'DigitalOcean account token' },
+    credsLocation: ['.digitalocean', 'key'],
   },
   Vagrant: {},
 };
 
 /**
-  * Represents a Provider.
+  * Return a list of all available provider names.
+  *
+  * @returns {string[]} A list of provider names.
+  */
+function allProviders() {
+  return Object.keys(credentialsInfo);
+}
+
+/**
+  * Represents a cloud provider.
   */
 class Provider {
   /**
-    * Constructs a new Provider instance.
+    * Creates a new Provider instance.
     *
     * @param {string} name The desired name of the provider. Should match the
-    *   name in providers.json.
+    *   name in credentialsInfo.
     */
   constructor(name) {
     this.name = name;
-    this.credsTemplate = providerConfig[name].credsTemplate;
-    this.credsKeys = providerConfig[name].credsKeys;
-
-    const providerInfo = JSON.parse(fs.readFileSync(providerFile, 'utf8'));
-
-    this.sizes = providerInfo[name].sizes;
-    this.regions = providerInfo[name].regions;
-    this.hasPreemptible = providerInfo[name].hasPreemptible;
-    this.credsLocation = providerInfo[name].credsLocation;
+    this.credsTemplate = credentialsInfo[name].credsTemplate;
+    this.credsKeys = credentialsInfo[name].credsKeys;
+    this.credsLocation = credentialsInfo[name].credsLocation;
   }
 
   /**
@@ -69,25 +66,6 @@ class Provider {
     */
   getCredsKeys() {
     return this.credsKeys || {};
-  }
-
-  /**
-    * @returns {Object.<string, string>} An object with suggested sizes for this
-    *   provider. The keys are user friendly descriptions (e.g. 'small') of the
-    *   size, and the values are the actual size names used by the provider.
-    */
-  getSizes() {
-    return this.sizes || {};
-  }
-
-  /**
-    * @returns {Object.<string, string>} An object with supported sizes for this
-    * provider. The keys are user friendly descriptions (e.g. 'N. California')
-    * of the region, and the values are the actual region names used by the
-    * provider (us-west-1).
-    */
-  getRegions() {
-    return this.regions || {};
   }
 
   /**
@@ -131,4 +109,4 @@ class Provider {
   }
 }
 
-module.exports = Provider;
+module.exports = { Provider, allProviders };

@@ -12,7 +12,7 @@
   },
   "bin": {
     "kelda": "kelda",
-    "kelda-initializer.js": "./initializer/initializer.js",
-    "kelda-base-infra.js": "./base-infrastructure/initializer.js"
+    "kelda-base-infra.js": "./base-infrastructure/initializer.js",
+    "kelda-configure-provider.js": "./configure-provider/initializer.js"
   }
 }
