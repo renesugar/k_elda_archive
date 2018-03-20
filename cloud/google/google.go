@@ -31,7 +31,7 @@ const ephemeralIPName = "External NAT"
 const floatingIPName = "Floating IP"
 
 const image = "https://www.googleapis.com/compute/v1/projects/" +
-	"ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20170202"
+	"ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20180306"
 
 const ipv4Range string = "172.16.0.0/12"
 

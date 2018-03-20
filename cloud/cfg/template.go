@@ -14,7 +14,11 @@ initialize_ovs() {
 
 	[Service]
 	Type=oneshot
+	# XXX: Once the Ubuntu images are updated to Kernel version 4.13, the GRE
+	# module will no longer be necessary.
 	ExecStartPre=/sbin/modprobe gre
+	ExecStartPre=/sbin/modprobe geneve
+	ExecStartPre=/sbin/modprobe udp_tunnel
 	ExecStartPre=/sbin/modprobe nf_nat_ipv6
 	ExecStart=/usr/bin/docker run --rm --privileged --net=host {{.KeldaImage}} \
 	bash -c "if [ ! -d /modules/$(uname -r) ]; then \
