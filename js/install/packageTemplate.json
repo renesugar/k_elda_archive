@@ -1,6 +1,6 @@
 {
   "name": "@kelda/install",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "homepage": "http://kelda.io",
   "license": "MIT",
   "preferGlobal": true,
